@@ -41,7 +41,54 @@ fn get_func_inputs(inputs: &[(String, Token)]) -> Vec<TokenStream2> {
 pub struct CairoFunction;
 
 impl CairoFunction {
-    pub fn expand(func: &Function, is_for_reader: bool) -> TokenStream2 {
+    pub fn expand_trait_decl(func: &Function) -> TokenStream2 {
+        let func_name = &func.name;
+        let func_name_ident = utils::str_to_ident(func_name);
+
+        let out_type = if func.outputs.is_empty() {
+            quote!(())
+        } else {
+            // We consider only one type for Cairo 1, if any.
+            // The outputs field is a list for historical reason from Cairo 0
+            // were tuples were used as returned values.
+            let out_type = utils::str_to_type(&func.outputs[0].to_rust_type_path());
+            quote!(#out_type)
+        };
+
+        let inputs = get_func_inputs(&func.inputs);
+        let func_name_call = utils::str_to_ident(&format!("{}_getcall", func_name));
+
+        let ccs = utils::cainome_cairo_serde();
+
+        match &func.state_mutability {
+            StateMutability::View => quote! {
+                #[allow(clippy::ptr_arg)]
+                #[allow(clippy::too_many_arguments)]
+                fn #func_name_ident(
+                    &self,
+                    #(#inputs),*
+                ) -> #ccs::call::FCall<P, #out_type>;
+            },
+            StateMutability::External => {
+                quote! {
+                    #[allow(clippy::ptr_arg)]
+                    #[allow(clippy::too_many_arguments)]
+                    fn #func_name_call(
+                        &self,
+                        #(#inputs),*
+                    ) -> starknet::accounts::Call;
+
+                    #[allow(clippy::ptr_arg)]
+                    fn #func_name_ident(
+                        &self,
+                        #(#inputs),*
+                    ) -> starknet::accounts::Execution<A>;
+                }
+            }
+        }
+    }
+
+    pub fn expand(func: &Function, provider_generic_arg: &str) -> TokenStream2 {
         let func_name = &func.name;
         let func_name_ident = utils::str_to_ident(func_name);
 
@@ -72,11 +119,7 @@ impl CairoFunction {
 
         let inputs = get_func_inputs(&func.inputs);
         let func_name_call = utils::str_to_ident(&format!("{}_getcall", func_name));
-        let type_param = if is_for_reader {
-            utils::str_to_type("P")
-        } else {
-            utils::str_to_type("A::Provider")
-        };
+        let type_param = utils::str_to_type(provider_generic_arg);
 
         let ccs = utils::cainome_cairo_serde();
 
@@ -84,7 +127,7 @@ impl CairoFunction {
             StateMutability::View => quote! {
                 #[allow(clippy::ptr_arg)]
                 #[allow(clippy::too_many_arguments)]
-                pub fn #func_name_ident(
+                fn #func_name_ident(
                     &self,
                     #(#inputs),*
                 ) -> #ccs::call::FCall<#type_param, #out_type> {
@@ -101,7 +144,7 @@ impl CairoFunction {
 
                     #ccs::call::FCall::new(
                         __call,
-                        self.provider(),
+                        self.provider_ref(),
                     )
                 }
             },
@@ -117,7 +160,7 @@ impl CairoFunction {
                 quote! {
                     #[allow(clippy::ptr_arg)]
                     #[allow(clippy::too_many_arguments)]
-                    pub fn #func_name_call(
+                    fn #func_name_call(
                         &self,
                         #(#inputs),*
                     ) -> starknet::accounts::Call {
@@ -134,7 +177,7 @@ impl CairoFunction {
                     }
 
                     #[allow(clippy::ptr_arg)]
-                    pub fn #func_name_ident(
+                    fn #func_name_ident(
                         &self,
                         #(#inputs),*
                     ) -> starknet::accounts::Execution<A> {

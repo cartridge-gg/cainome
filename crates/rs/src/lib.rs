@@ -53,28 +53,121 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
     let mut views = vec![];
     let mut externals = vec![];
 
+    let mut views_decl = vec![];
+    let mut externals_decl = vec![];
+
     if let Some(funcs) = abi_tokens.get("functions") {
         for f in funcs {
             let f = f.to_function().expect("function expected");
             match f.state_mutability {
                 StateMutability::View => {
-                    reader_views.push(CairoFunction::expand(f, true));
-                    views.push(CairoFunction::expand(f, false));
+                    reader_views.push(CairoFunction::expand(f, "P"));
+                    views.push(CairoFunction::expand(f, "A::Provider"));
+
+                    views_decl.push(CairoFunction::expand_trait_decl(f));
                 }
-                StateMutability::External => externals.push(CairoFunction::expand(f, false)),
+                StateMutability::External => {
+                    externals.push(CairoFunction::expand(f, "A::Provider"));
+
+                    externals_decl.push(CairoFunction::expand_trait_decl(f));
+                },
             }
         }
     }
 
     let reader = utils::str_to_ident(format!("{}Reader", contract_name).as_str());
 
+    let contract_trait = utils::str_to_ident(format!("I{}", contract_name).as_str());
+    let reader_trait = utils::str_to_ident(format!("I{}Reader", contract_name).as_str());
+
+    let snrs_types = utils::snrs_types();
+    let snrs_providers = utils::snrs_providers();
+    let snrs_accounts = utils::snrs_accounts();
+
     tokens.push(quote! {
-        impl<A: starknet::accounts::ConnectedAccount + Sync> #contract_name<A> {
-            #(#views)*
+        pub trait #contract_trait<A> {
+            type Provider;
+
+            fn provider(&self) -> &Self::Provider;
+            fn address(&self) -> #snrs_types::FieldElement;
+            fn set_address(&mut self, address: #snrs_types::FieldElement);
+
+            #(#externals_decl)*
+        }
+
+        impl<A> #contract_trait<A> for #contract_name<A>
+        where
+            A: #snrs_accounts::ConnectedAccount + Sync
+        {
+            type Provider = A::Provider;
+
+            fn provider(&self) -> &Self::Provider {
+                self.account.provider()
+            }
+
+            fn set_address(&mut self, address: #snrs_types::FieldElement) {
+                self.address = address;
+            }
+
+            fn address(&self) -> #snrs_types::FieldElement {
+                self.address
+            }
+
             #(#externals)*
         }
 
-        impl<P: starknet::providers::Provider + Sync> #reader<P> {
+        pub trait #reader_trait<P> {
+            fn provider_reader(&self) -> &P;
+            fn address_reader(&self) -> #snrs_types::FieldElement;
+            fn block_id(&self) -> #snrs_types::BlockId;
+            fn set_address(&mut self, address: #snrs_types::FieldElement);
+
+            #(#views_decl)*
+        }
+
+        impl<A> #reader_trait<A::Provider> for #contract_name<A>
+        where
+            A: #snrs_accounts::ConnectedAccount + Sync,
+        {
+            fn provider_reader(&self) -> &A::Provider {
+                &self.account.provider()
+            }
+
+            fn address_reader(&self) -> #snrs_types::FieldElement {
+                self.address
+            }
+
+            fn set_address(&mut self, address: #snrs_types::FieldElement) {
+                self.address = address;
+            }
+
+            fn block_id(&self) -> #snrs_types::BlockId {
+                self.block_id
+            }
+
+            #(#views)*
+        }
+
+        impl<P> #reader_trait<P> for #reader<P>
+        where
+            P: #snrs_providers::Provider + Sync
+        {
+            fn provider_reader(&self) -> &P {
+                &self.provider
+            }
+
+            fn address_reader(&self) -> #snrs_types::FieldElement {
+                self.address
+            }
+
+            fn block_id(&self) -> #snrs_types::BlockId {
+                self.block_id
+            }
+
+            fn set_address(&mut self, address: #snrs_types::FieldElement) {
+                self.address = address;
+            }
+
             #(#reader_views)*
         }
     });

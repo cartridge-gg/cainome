@@ -27,7 +27,7 @@ async fn main() {
 
     // If you only plan to call views functions, you can use the `Reader`, which
     // only requires a provider along with your contract address.
-    let contract = MyContractReader::new(contract_address, &provider);
+    let mut contract = MyContractReader::new(contract_address, &provider);
 
     // To call a view, there is no need to initialize an account. You can directly
     // use the name of the method in the ABI and then use the `call()` method.
