@@ -1,7 +1,8 @@
 //! This file must be in the proc_macro2 crate that must be reworked.
-use crate::{CairoSerde, Error, Result as CairoResult};
 use starknet::core::types::{BlockId, BlockTag, FunctionCall};
 use std::marker::PhantomData;
+
+use crate::{CairoSerde, Error, Result as CairoResult};
 
 #[derive(Debug)]
 pub struct FCall<'p, P, T> {
@@ -39,7 +40,7 @@ where
             .provider
             .call(self.call_raw, self.block_id)
             .await
-            .map_err(|err| Error::Deserialize(format!("Deserialization error {}", err)))?;
+            .map_err(Error::Provider)?;
 
         T::cairo_deserialize(&r, 0)
     }

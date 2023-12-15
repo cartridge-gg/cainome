@@ -1,12 +1,13 @@
 use super::CairoSerde;
 
 use starknet::core::types::FieldElement;
+use starknet::providers::ProviderError;
 
 /// Cairo types result.
 pub type Result<T> = core::result::Result<T, Error>;
 
 /// A cairo type error.
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error("Invalid type found {0:?}.")]
     InvalidTypeString(String),
@@ -14,6 +15,8 @@ pub enum Error {
     Serialize(String),
     #[error("Error during deserialization {0:?}.")]
     Deserialize(String),
+    #[error("Provider errror {0:?}.")]
+    Provider(#[from] ProviderError),
 }
 
 impl CairoSerde for Error {
