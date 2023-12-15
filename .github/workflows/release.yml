@@ -1,8 +1,10 @@
 on:
   push:
-    tags:
-      - "cainome/v*.*.*"
-      - "cainome-*/v*.*.*"
+    branches:
+      - to_be_defined
+    # tags:
+    #   - "cainome/v*.*.*"
+    #   - "cainome-*/v*.*.*"
 
 name: "Release"
 jobs:
