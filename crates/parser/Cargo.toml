@@ -1,0 +1,11 @@
+[package]
+name = "cainome-parser"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+starknet.workspace = true
+thiserror.workspace = true
+syn = { version = "2.0", features = [ "extra-traits" ]}
+quote = "1.0"
+serde_json.workspace = true

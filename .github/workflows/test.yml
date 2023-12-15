@@ -1,0 +1,41 @@
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+name: Tests
+jobs:
+  unix-test:
+    name: Unix tests
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-11]
+        toolchain: [stable, nightly]
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v3
+
+      - name: Compile contracts
+        uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: "2.3.1"
+      - run: |
+          cd ./contracts && make generate_artifacts
+
+      - name: Setup toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.toolchain }}
+          profile: minimal
+          override: true
+
+      - name: Run cargo tests
+        uses: nick-fields/retry@v2
+        with:
+          timeout_minutes: 20
+          max_attempts: 3
+          retry_wait_seconds: 30
+          command: cargo test --workspace --all-features

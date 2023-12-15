@@ -1,0 +1,67 @@
+//! A contract with enums.
+
+#[derive(Serde, Drop, starknet::Store)]
+enum SimpleEnum {
+    Variant1,
+    Variant2,
+}
+
+#[derive(Serde, Drop, starknet::Store)]
+enum TypedEnum {
+    Variant1: felt252,
+    Variant2: u256,
+    Variant3: (felt252, u256),
+}
+
+#[derive(Serde, Drop, starknet::Store)]
+enum MixedEnum {
+    Variant1: felt252,
+    Variant2,
+}
+
+#[starknet::contract]
+mod enums {
+    use super::{SimpleEnum, TypedEnum, MixedEnum};
+
+    #[storage]
+    struct Storage {
+        simple: SimpleEnum,
+        typed: TypedEnum,
+        mixed: MixedEnum,
+    }
+
+    #[external(v0)]
+    fn get_simple_1(self: @ContractState) -> SimpleEnum {
+        self.simple.read()
+    }
+
+    #[external(v0)]
+    fn get_simple_2(self: @ContractState) -> SimpleEnum {
+        SimpleEnum::Variant2
+    }
+
+    #[external(v0)]
+    fn get_typed_1(self: @ContractState) -> TypedEnum {
+        TypedEnum::Variant1(0x123)
+    }
+
+    #[external(v0)]
+    fn get_typed_2(self: @ContractState) -> TypedEnum {
+        TypedEnum::Variant2(0xff_u256)
+    }
+
+    #[external(v0)]
+    fn get_typed_3(self: @ContractState) -> TypedEnum {
+        TypedEnum::Variant3((1, 0xffffff_u256))
+    }
+
+    #[external(v0)]
+    fn get_mixed_1(self: @ContractState) -> MixedEnum {
+        MixedEnum::Variant1(0x123)
+    }
+
+    #[external(v0)]
+    fn get_mixed_2(self: @ContractState) -> MixedEnum {
+        MixedEnum::Variant2
+    }
+}

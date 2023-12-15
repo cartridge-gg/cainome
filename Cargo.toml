@@ -1,0 +1,38 @@
+[package]
+name = "cainome"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+members = [
+    "crates/cairo-serde",
+    "crates/parser",
+    "crates/rs",
+]
+
+[workspace.dependencies]
+# workspace crates
+cainome-cairo-serde = { path = "crates/cairo-serde" }
+cainome-parser = { path = "crates/parser" }
+
+# serde
+serde = { version = "1.0", default-features = false, features = ["alloc"] }
+serde_json = { version = "1.0", default-features = false, features = ["std"] }
+thiserror = "1.0"
+anyhow = "1.0"
+
+starknet = "0.8.0"
+
+[dependencies]
+cainome-parser.workspace = true
+cainome-cairo-serde.workspace = true
+cainome-rs = { path = "crates/rs", optional = true }
+
+[dev-dependencies]
+starknet.workspace = true
+tokio = { version = "1.15.0", features = ["full"] }
+url = "2.2.2"
+
+[features]
+default = []
+abigen-rs = ["cainome-rs"]
