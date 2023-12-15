@@ -40,6 +40,7 @@ impl CairoContract {
             pub struct #reader<P: #snrs_providers::Provider + Sync> {
                 pub address: #snrs_types::FieldElement,
                 pub provider: P,
+                pub block_id: Option<#snrs_types::BlockId>,
             }
 
             impl<P: #snrs_providers::Provider + Sync> #reader<P> {
@@ -47,7 +48,7 @@ impl CairoContract {
                     address: #snrs_types::FieldElement,
                     provider: P,
                 ) -> Self {
-                    Self { address, provider }
+                    Self { address, provider, block_id: None }
                 }
 
                 pub fn set_contract_address(mut self, address: #snrs_types::FieldElement) {
@@ -56,6 +57,10 @@ impl CairoContract {
 
                 pub fn provider(&self) -> &P {
                     &self.provider
+                }
+
+                pub fn with_block(self, block_id: #snrs_types::BlockId) -> Self {
+                    Self { block_id: Some(block_id), ..self }
                 }
             }
         };
