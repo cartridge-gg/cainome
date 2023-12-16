@@ -1,5 +1,7 @@
+use super::constants::CAIRO_GENERIC_BUILTINS;
 use super::genericity;
 use super::Token;
+
 use crate::CainomeResult;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -57,6 +59,20 @@ impl Composite {
 
     pub fn is_generic(&self) -> bool {
         !self.generic_args.is_empty()
+    }
+
+    /// Returns true if the current composite is considered as Cairo builtin.
+    /// This is useful to avoid expanding the structure if already managed by
+    /// the backend (like Option and Result for instance).
+    /// Spans and Arrays are handled by `array`.
+    pub fn is_builtin(&self) -> bool {
+        for b in CAIRO_GENERIC_BUILTINS {
+            if self.type_path.starts_with(b) {
+                return true;
+            }
+        }
+
+        false
     }
 
     pub fn type_name(&self) -> String {

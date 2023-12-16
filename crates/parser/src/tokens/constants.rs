@@ -20,3 +20,5 @@ pub const CAIRO_CORE_BASIC: [&str; 16] = [
 // Technically, a span is a struct. But it's here
 // to match array pattern.
 pub const CAIRO_CORE_SPAN_ARRAY: [&str; 2] = ["core::array::Span", "core::array::Array"];
+
+pub const CAIRO_GENERIC_BUILTINS: [&str; 2] = ["core::option::Option", "core::result::Result"];
