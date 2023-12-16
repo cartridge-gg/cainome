@@ -50,7 +50,7 @@ impl Parse for ContractAbi {
                 .join(json_path.value().trim_start_matches(CARGO_MANIFEST_DIR))
                 .to_string_lossy()
                 .to_string();
-            println!("new path {}", new_dir);
+
             LitStr::new(&new_dir, proc_macro2::Span::call_site())
         } else {
             json_path
