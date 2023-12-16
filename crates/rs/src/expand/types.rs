@@ -27,7 +27,22 @@ impl CairoToRust for Token {
 
                 s
             }
-            Token::Composite(c) => c.type_name_or_alias(),
+            Token::Composite(c) => {
+                let mut s = c.type_name_or_alias();
+
+                if c.is_generic() {
+                    s.push('<');
+                    for (i, (_, g)) in c.generic_args.iter().enumerate() {
+                        s.push_str(&g.to_rust_type());
+                        if i < c.generic_args.len() - 1 {
+                            s.push(',');
+                        }
+                    }
+                    s.push('>');
+                }
+
+                s
+            }
             Token::GenericArg(s) => s.clone(),
             _ => "__FUNCTION_NOT_SUPPORTED__".to_string(),
         }

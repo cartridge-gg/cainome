@@ -7,7 +7,6 @@ use quote::quote;
 mod expand;
 mod macro_inputs;
 mod spanned;
-mod types;
 
 use crate::expand::utils;
 use crate::expand::{CairoContract, CairoEnum, CairoFunction, CairoStruct};

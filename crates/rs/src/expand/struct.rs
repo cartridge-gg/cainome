@@ -10,6 +10,10 @@ pub struct CairoStruct;
 
 impl CairoStruct {
     pub fn expand_decl(composite: &Composite) -> TokenStream2 {
+        if composite.is_builtin() {
+            return quote!();
+        }
+
         let struct_name = utils::str_to_ident(&composite.type_name_or_alias());
 
         let mut members: Vec<TokenStream2> = vec![];
@@ -50,6 +54,10 @@ impl CairoStruct {
     }
 
     pub fn expand_impl(composite: &Composite) -> TokenStream2 {
+        if composite.is_builtin() {
+            return quote!();
+        }
+
         let struct_name = utils::str_to_ident(&composite.type_name_or_alias());
 
         let mut sizes: Vec<TokenStream2> = vec![];

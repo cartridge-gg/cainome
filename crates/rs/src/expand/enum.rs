@@ -10,6 +10,10 @@ pub struct CairoEnum;
 
 impl CairoEnum {
     pub fn expand_decl(composite: &Composite) -> TokenStream2 {
+        if composite.is_builtin() {
+            return quote!();
+        }
+
         let enum_name = utils::str_to_ident(&composite.type_name_or_alias());
 
         let mut variants: Vec<TokenStream2> = vec![];
@@ -55,6 +59,10 @@ impl CairoEnum {
     }
 
     pub fn expand_impl(composite: &Composite) -> TokenStream2 {
+        if composite.is_builtin() {
+            return quote!();
+        }
+
         let name_str = &composite.type_name_or_alias();
         let enum_name = utils::str_to_ident(name_str);
 
