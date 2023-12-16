@@ -15,6 +15,7 @@ use quote::ToTokens;
 use starknet::core::types::contract::AbiEntry;
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
+use std::path::Path;
 use syn::{
     braced,
     ext::IdentExt,
@@ -24,6 +25,8 @@ use syn::{
 };
 
 use crate::spanned::Spanned;
+
+const CARGO_MANIFEST_DIR: &str = "$CARGO_MANIFEST_DIR/";
 
 #[derive(Clone, Debug)]
 pub(crate) struct ContractAbi {
@@ -41,11 +44,27 @@ impl Parse for ContractAbi {
         // Path rooted to the Cargo.toml location.
         let json_path = input.parse::<LitStr>()?;
 
-        let abi =
-            serde_json::from_reader::<_, Vec<AbiEntry>>(File::open(json_path.value()).map_err(
-                |e| syn::Error::new(json_path.span(), format!("JSON open file error: {}", e)),
-            )?)
-            .map_err(|e| syn::Error::new(json_path.span(), format!("JSON parse error: {}", e)))?;
+        let json_path = if json_path.value().starts_with(CARGO_MANIFEST_DIR) {
+            let manifest_dir = env!("CARGO_MANIFEST_DIR");
+            let new_dir = Path::new(manifest_dir)
+                .join(json_path.value().trim_start_matches(CARGO_MANIFEST_DIR))
+                .to_string_lossy()
+                .to_string();
+            println!("new path {}", new_dir);
+            LitStr::new(&new_dir, proc_macro2::Span::call_site())
+        } else {
+            json_path
+        };
+
+        let abi = serde_json::from_reader::<_, Vec<AbiEntry>>(
+            File::open(json_path.value()).map_err(|e| {
+                syn::Error::new(
+                    json_path.span(),
+                    format!("JSON open file {} error: {}", json_path.value(), e),
+                )
+            })?,
+        )
+        .map_err(|e| syn::Error::new(json_path.span(), format!("JSON parse error: {}", e)))?;
 
         let mut output_path: Option<String> = None;
         let mut type_aliases = HashMap::new();

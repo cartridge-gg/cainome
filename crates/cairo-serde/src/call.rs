@@ -30,9 +30,8 @@ where
         self.provider
     }
 
-    pub fn block_id(mut self, block_id: BlockId) -> Self {
-        self.block_id = block_id;
-        self
+    pub fn block_id(self, block_id: BlockId) -> Self {
+        Self { block_id, ..self }
     }
 
     pub async fn call(self) -> CairoResult<T> {
