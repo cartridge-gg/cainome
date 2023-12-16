@@ -21,13 +21,19 @@ mod simple_component {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        Written: Written
+        Written: Written,
+        Written88: WrittenAB,
     }
 
     #[derive(Drop, starknet::Event)]
     struct Written {
         before: felt252,
         after: felt252,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct WrittenAB {
+        data: felt252,
     }
 
     #[embeddable_as(Simple)]
@@ -42,6 +48,7 @@ mod simple_component {
             let before = self.data.read();
             self.data.write(data);
             self.emit(Written { before, after: data });
+            self.emit(WrittenAB { data: 'salut' });
         }
     }
 }

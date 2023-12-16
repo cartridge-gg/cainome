@@ -9,7 +9,7 @@ mod macro_inputs;
 mod spanned;
 
 use crate::expand::utils;
-use crate::expand::{CairoContract, CairoEnum, CairoFunction, CairoStruct};
+use crate::expand::{CairoContract, CairoEnum, CairoEnumEvent, CairoFunction, CairoStruct};
 use crate::macro_inputs::ContractAbi;
 
 #[proc_macro]
@@ -43,10 +43,16 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
             let e_composite = e.to_composite().expect("composite expected");
             tokens.push(CairoEnum::expand_decl(e_composite));
             tokens.push(CairoEnum::expand_impl(e_composite));
+
+            tokens.push(CairoEnumEvent::expand(
+                e.to_composite().expect("composite expected"),
+                enums,
+                abi_tokens
+                    .get("structs")
+                    .expect("at least one struct expected to expand events"),
+            ));
         }
     }
-
-    // TODO: events need to expand auto-deserialization based on selectors.
 
     let mut reader_views = vec![];
     let mut views = vec![];
