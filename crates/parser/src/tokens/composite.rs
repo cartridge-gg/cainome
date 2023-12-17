@@ -89,7 +89,7 @@ impl Composite {
     }
 
     pub fn apply_alias(&mut self, type_path: &str, alias: &str) {
-        if self.type_path.starts_with(type_path) {
+        if self.type_path_no_generic() == type_path {
             self.alias = Some(alias.to_string());
         }
 

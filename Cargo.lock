@@ -240,7 +240,7 @@ checksum = "a2bd12c1caf447e69cd4528f47f94d203fd2582878ecb9e9465484c4148a8223"
 
 [[package]]
 name = "cainome"
-version = "0.1.0"
+version = "0.1.4"
 dependencies = [
  "cainome-cairo-serde",
  "cainome-parser",
