@@ -2,6 +2,21 @@
 
 This crates contains the compile-time rust macro `abigen` to generate rust bindings (using Cairo Serde).
 
+## Import in your project
+
+```toml
+# Cargo.toml
+
+cainome = { git = "https://github.com/cartridge-gg/cainome", tag = "v0.1.5", features = ["abigen-rs"] }
+```
+
+```rust
+// Rust code
+use cainome::rs::abigen;
+
+abigen!(MyContract, "/path/my_contract.json");
+```
+
 ## Usage
 
 For examples, please refer to the [examples](../../examples) folder.
