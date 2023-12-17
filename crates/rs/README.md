@@ -66,13 +66,13 @@ The expansion of the macros generates the following:
   }
   ```
 
-- A type with the identifier of your choice (`MyContract` in the previous example). This types contains all the functions (externals and views) of your contract being exposed in the ABI. To initialize this type, you need the contract address and any type that implements `ConnectedAccount` from `starknet-rs`. Remember that `Arc<ConnectedAccount>` also implements `ConnectedAccount`.
+- **Contract** type with the identifier of your choice (`MyContract` in the previous example). This type contains all the functions (externals and views) of your contract being exposed in the ABI. To initialize this type, you need the contract address and any type that implements `ConnectedAccount` from `starknet-rs`. Remember that `Arc<ConnectedAccount>` also implements `ConnectedAccount`.
   ```rust
   let account = SingleOwnerAccount::new(...);
   let contract_address = FieldElement::from_hex_be("0x1234...");
   let contract = MyContract::new(contract_address, account);
   ```
-- A type with the identifier of your choice with the suffix `Reader` (`MyContractReader`) in the previous example. The reader contains only the views of your contract. To initialize a reader, you need the contract address and a provider from `starknet-rs`.
+- **Contract Reader** type with the identifier of your choice with the suffix `Reader` (`MyContractReader`) in the previous example. The reader contains only the views of your contract. To initialize a reader, you need the contract address and a provider from `starknet-rs`.
   ```rust
   let provider = AnyProvider::JsonRpcHttp(...);
   let contract_address = FieldElement::from_hex_be("0x1234...");
@@ -122,6 +122,22 @@ The expansion of the macros generates the following:
       .send()
       .await
       .expect("Multicall failed");
+  ```
+- For each `Event` enumeration in the contract, the trait `TryFrom<EmittedEvent>` is generated. `EmittedEvent` is the type used
+  by `starknet-rs` when events are fetched using `provider.get_events()`.
+  ```rust
+  let events = provider.get_events(...).await.unwrap();
+
+  for event in events {
+  match event.try_into() {
+    Ok(ev) => {
+        // Here, `ev` is deserialized + selectors are checked.
+    }
+    Err(e) => {
+        trace!("Event can't be deserialized to any known Event variant: {e}");
+        continue;
+    }
+  };
   ```
 
 ## Known limitation
