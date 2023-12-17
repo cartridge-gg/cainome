@@ -123,8 +123,10 @@ The expansion of the macros generates the following:
       .await
       .expect("Multicall failed");
   ```
+
 - For each `Event` enumeration in the contract, the trait `TryFrom<EmittedEvent>` is generated. `EmittedEvent` is the type used
   by `starknet-rs` when events are fetched using `provider.get_events()`.
+
   ```rust
   let events = provider.get_events(...).await.unwrap();
 
