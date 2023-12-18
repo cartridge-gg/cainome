@@ -17,6 +17,8 @@ pub enum Error {
     Deserialize(String),
     #[error("Provider errror {0:?}.")]
     Provider(#[from] ProviderError),
+    #[error("Bytes31 out of range.")]
+    Bytes31OutOfRange,
 }
 
 impl CairoSerde for Error {

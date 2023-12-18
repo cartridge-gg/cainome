@@ -1,6 +1,7 @@
 pub mod array;
 pub mod array_legacy;
 pub mod boolean;
+pub mod byte_array;
 pub mod felt;
 pub mod integers;
 pub mod option;
