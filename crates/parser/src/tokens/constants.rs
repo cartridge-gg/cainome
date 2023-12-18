@@ -13,8 +13,8 @@ pub const CAIRO_CORE_BASIC: [&str; 16] = [
     "core::integer::i64",
     "core::integer::i128",
     "core::starknet::contract_address::ContractAddress",
-    "core::starknet::eth_address::EthAddress",
     "core::starknet::class_hash::ClassHash",
+    "core::bytes_31::bytes31",
 ];
 
 // Technically, a span is a struct. But it's here
@@ -22,3 +22,8 @@ pub const CAIRO_CORE_BASIC: [&str; 16] = [
 pub const CAIRO_CORE_SPAN_ARRAY: [&str; 2] = ["core::array::Span", "core::array::Array"];
 
 pub const CAIRO_GENERIC_BUILTINS: [&str; 2] = ["core::option::Option", "core::result::Result"];
+
+pub const CAIRO_COMPOSITE_BUILTINS: [&str; 2] = [
+    "core::byte_array::ByteArray",
+    "core::starknet::eth_address::EthAddress",
+];

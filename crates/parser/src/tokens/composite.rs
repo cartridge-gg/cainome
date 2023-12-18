@@ -1,4 +1,4 @@
-use super::constants::CAIRO_GENERIC_BUILTINS;
+use super::constants::{CAIRO_COMPOSITE_BUILTINS, CAIRO_GENERIC_BUILTINS};
 use super::genericity;
 use super::Token;
 
@@ -67,6 +67,12 @@ impl Composite {
     /// Spans and Arrays are handled by `array`.
     pub fn is_builtin(&self) -> bool {
         for b in CAIRO_GENERIC_BUILTINS {
+            if self.type_path.starts_with(b) {
+                return true;
+            }
+        }
+
+        for b in CAIRO_COMPOSITE_BUILTINS {
             if self.type_path.starts_with(b) {
                 return true;
             }

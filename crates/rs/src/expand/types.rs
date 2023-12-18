@@ -30,6 +30,11 @@ impl CairoToRust for Token {
             Token::Composite(c) => {
                 let mut s = c.type_name_or_alias();
 
+                let (type_name, is_builtin) = builtin_composite_to_rust(&s);
+                if is_builtin {
+                    s = type_name;
+                }
+
                 if c.is_generic() {
                     s.push('<');
                     for (i, (_, g)) in c.generic_args.iter().enumerate() {
@@ -67,6 +72,11 @@ impl CairoToRust for Token {
             Token::Composite(c) => {
                 let mut s = c.type_name_or_alias();
 
+                let (type_name, is_builtin) = builtin_composite_to_rust(&s);
+                if is_builtin {
+                    s = type_name;
+                }
+
                 if c.is_generic() {
                     s.push_str("::<");
                     for (i, (_, token)) in c.generic_args.iter().enumerate() {
@@ -94,6 +104,18 @@ fn basic_types_to_rust(type_name: &str) -> String {
         "ContractAddress" => format!("{ccsp}::ContractAddress"),
         "EthAddress" => format!("{ccsp}::EthAddress"),
         "felt252" => "starknet::core::types::FieldElement".to_string(),
+        "bytes31" => format!("{ccsp}::Bytes31"),
+        "ByteArray" => format!("{ccsp}::ByteArray"),
         _ => type_name.to_string(),
+    }
+}
+
+fn builtin_composite_to_rust(type_name: &str) -> (String, bool) {
+    let ccsp = utils::cainome_cairo_serde_path();
+
+    match type_name {
+        "EthAddress" => (format!("{ccsp}::EthAddress"), true),
+        "ByteArray" => (format!("{ccsp}::ByteArray"), true),
+        _ => (type_name.to_string(), false),
     }
 }
