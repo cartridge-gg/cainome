@@ -1,7 +1,7 @@
 config := --account katana-0 \
 	--rpc http://0.0.0.0:5050
 
-scarb_build := target/dev/contracts_
+scarb_build := ./target/dev/contracts_
 sierra := .contract_class.json
 artifacts := ./abi/
 
@@ -17,6 +17,7 @@ generate_artifacts:
 	jq .abi ${scarb_build}option_result${sierra} > ${artifacts}option_result.abi.json
 	jq .abi ${scarb_build}simple_interface${sierra} > ${artifacts}simple_interface.abi.json
 	jq .abi ${scarb_build}structs${sierra} > ${artifacts}structs.abi.json
+	jq .abi ${scarb_build}byte_array${sierra} > ${artifacts}byte_array.abi.json
 
 
 setup: setup_simple_get_set
@@ -27,6 +28,14 @@ setup_simple_get_set:
 	$(eval class_hash=$(shell starkli class-hash target/dev/contracts_simple_get_set.contract_class.json))
 	starkli declare target/dev/contracts_simple_get_set.contract_class.json ${config}
 	starkli deploy ${class_hash} --salt 0x1234 ${config}
+
+setup_byte_array:
+	@set -x; \
+	scarb build; \
+	class_hash=$$(starkli class-hash ${scarb_build}byte_array${sierra}); \
+	starkli declare ${scarb_build}byte_array${sierra} ${config}; \
+	sleep 2; \
+	starkli deploy "$${class_hash}" --salt 0x1234 ${config}
 
 # # Declare and deploy the basic contract on katana.
 # setup_basic:

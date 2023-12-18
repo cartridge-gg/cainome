@@ -6,6 +6,7 @@ mod abicov {
     mod simple_types;
     mod structs;
     mod option_result;
+    mod byte_array;
 }
 
 mod simple_get_set;
