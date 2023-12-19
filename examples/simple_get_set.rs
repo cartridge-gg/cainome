@@ -15,7 +15,13 @@ const KATANA_ACCOUNT_0: &str = "0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa
 const KATANA_PRIVKEY_0: &str = "0x1800000000300000180000000000030000000000003006001800006600";
 const KATANA_CHAIN_ID: &str = "0x4b4154414e41";
 
-abigen!(MyContract, "./contracts/abi/simple_get_set.abi.json");
+// You can load of the sierra class entirely from the artifact.
+// Or you can use the extracted abi entries with jq in contracts/abi/.
+abigen!(
+    MyContract,
+    "./contracts/target/dev/contracts_simple_get_set.contract_class.json"
+);
+//abigen!(MyContract, "./contracts/abi/simple_get_set.abi.json");
 
 #[tokio::main]
 async fn main() {
