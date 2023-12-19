@@ -12,7 +12,7 @@
 //! TODO: support the full artifact JSON to be able to
 //! deploy contracts from abigen.
 use quote::ToTokens;
-use starknet::core::types::contract::AbiEntry;
+use starknet::core::types::contract::{AbiEntry, SierraClass};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::path::Path;
@@ -25,6 +25,7 @@ use syn::{
 };
 
 use crate::spanned::Spanned;
+use crate::utils;
 
 const CARGO_MANIFEST_DIR: &str = "$CARGO_MANIFEST_DIR/";
 
@@ -56,15 +57,19 @@ impl Parse for ContractAbi {
             json_path
         };
 
-        let abi = serde_json::from_reader::<_, Vec<AbiEntry>>(
-            File::open(json_path.value()).map_err(|e| {
-                syn::Error::new(
-                    json_path.span(),
-                    format!("JSON open file {} error: {}", json_path.value(), e),
-                )
-            })?,
-        )
-        .map_err(|e| syn::Error::new(json_path.span(), format!("JSON parse error: {}", e)))?;
+        // To prepare the declare and deploy features, we also
+        // accept a full Sierra artifact for the ABI.
+        // To support declare and deploy, the full class must be stored.
+        let abi = if let Ok(sierra) =
+            serde_json::from_reader::<_, SierraClass>(open_json_file(&json_path.value())?)
+        {
+            sierra.abi
+        } else {
+            serde_json::from_reader::<_, Vec<AbiEntry>>(open_json_file(&json_path.value())?)
+                .map_err(|e| {
+                    syn::Error::new(json_path.span(), format!("JSON parse error: {}", e))
+                })?
+        };
 
         let mut output_path: Option<String> = None;
         let mut type_aliases = HashMap::new();
@@ -141,4 +146,12 @@ impl Parse for TypeAlias {
     }
 }
 
+fn open_json_file(file_path: &str) -> Result<File> {
+    File::open(file_path).map_err(|e| {
+        syn::Error::new(
+            utils::str_to_litstr(file_path).span(),
+            format!("JSON open file {} error: {}", file_path, e),
+        )
+    })
+}
 // TODO: add test for argument parsing.
