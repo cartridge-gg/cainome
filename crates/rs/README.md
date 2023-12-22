@@ -7,7 +7,7 @@ This crates contains the compile-time rust macro `abigen` to generate rust bindi
 ```toml
 # Cargo.toml
 
-cainome = { git = "https://github.com/cartridge-gg/cainome", tag = "v0.1.5", features = ["abigen-rs"] }
+cainome = { git = "https://github.com/cartridge-gg/cainome", tag = "v0.1.7", features = ["abigen-rs"] }
 ```
 
 ```rust
@@ -24,11 +24,14 @@ For examples, please refer to the [examples](../../examples) folder.
 The `abigen!` macro takes 2 or 3 inputs:
 
 1. The name you want to assign to the contract type being generated.
-2. Path to the JSON file containing only the list of ABI entries. This can be easily generated with `jq` doing the following:
+2. Path to the JSON file containing the ABI. This file can have two format:
 
-```
-jq .abi ./target/dev/package_contract.contract_class.json > /path/contract.json
-```
+   - The entire Sierra file (`*.contract_class.json`)
+   - Only the array of ABI entries. These can be easily extracted with `jq` doing the following:
+
+   ```
+   jq .abi ./target/dev/package_contract.contract_class.json > /path/contract.json
+   ```
 
 3. Optional parameters:
    - `output_path`: if provided, the content will be generated in the given file instead of being expanded at the location of the macro invocation.
