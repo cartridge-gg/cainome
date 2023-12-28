@@ -42,33 +42,46 @@ impl Parse for ContractAbi {
         let name = input.parse::<Ident>()?;
         input.parse::<Token![,]>()?;
 
-        // Path rooted to the Cargo.toml location.
-        let json_path = input.parse::<LitStr>()?;
+        // ABI path or content.
 
-        let json_path = if json_path.value().starts_with(CARGO_MANIFEST_DIR) {
-            let manifest_dir = env!("CARGO_MANIFEST_DIR");
-            let new_dir = Path::new(manifest_dir)
-                .join(json_path.value().trim_start_matches(CARGO_MANIFEST_DIR))
-                .to_string_lossy()
-                .to_string();
+        // Path rooted to the Cargo.toml location if it's a file.
+        let abi_or_path = input.parse::<LitStr>()?;
 
-            LitStr::new(&new_dir, proc_macro2::Span::call_site())
+        #[allow(clippy::collapsible_else_if)]
+        let abi = if abi_or_path.value().ends_with(".json") {
+            let json_path = if abi_or_path.value().starts_with(CARGO_MANIFEST_DIR) {
+                let manifest_dir = env!("CARGO_MANIFEST_DIR");
+                let new_dir = Path::new(manifest_dir)
+                    .join(abi_or_path.value().trim_start_matches(CARGO_MANIFEST_DIR))
+                    .to_string_lossy()
+                    .to_string();
+
+                LitStr::new(&new_dir, proc_macro2::Span::call_site())
+            } else {
+                abi_or_path
+            };
+
+            // To prepare the declare and deploy features, we also
+            // accept a full Sierra artifact for the ABI.
+            // To support declare and deploy, the full class must be stored.
+            if let Ok(sierra) =
+                serde_json::from_reader::<_, SierraClass>(open_json_file(&json_path.value())?)
+            {
+                sierra.abi
+            } else {
+                serde_json::from_reader::<_, Vec<AbiEntry>>(open_json_file(&json_path.value())?)
+                    .map_err(|e| {
+                        syn::Error::new(json_path.span(), format!("JSON parse error: {}", e))
+                    })?
+            }
         } else {
-            json_path
-        };
-
-        // To prepare the declare and deploy features, we also
-        // accept a full Sierra artifact for the ABI.
-        // To support declare and deploy, the full class must be stored.
-        let abi = if let Ok(sierra) =
-            serde_json::from_reader::<_, SierraClass>(open_json_file(&json_path.value())?)
-        {
-            sierra.abi
-        } else {
-            serde_json::from_reader::<_, Vec<AbiEntry>>(open_json_file(&json_path.value())?)
-                .map_err(|e| {
-                    syn::Error::new(json_path.span(), format!("JSON parse error: {}", e))
+            if let Ok(sierra) = serde_json::from_str::<SierraClass>(&abi_or_path.value()) {
+                sierra.abi
+            } else {
+                serde_json::from_str::<Vec<AbiEntry>>(&abi_or_path.value()).map_err(|e| {
+                    syn::Error::new(abi_or_path.span(), format!("JSON parse error: {}", e))
                 })?
+            }
         };
 
         let mut output_path: Option<String> = None;
