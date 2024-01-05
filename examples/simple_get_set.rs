@@ -10,7 +10,7 @@ use url::Url;
 
 // To run this example, please first run `make setup_simple_get_set` in the contracts directory with a Katana running. This will declare and deploy the testing contract.
 
-const CONTRACT_ADDRESS: &str = "0x001852eaa36c6e8c3729648efb376e5b622a0aa634f0b0d612b42d1bb2a8bd3e";
+const CONTRACT_ADDRESS: &str = "0x00af2b72edfa4c04616c67bb4cab677d951b065b9cf0a9d2874a4c0450755852";
 const KATANA_ACCOUNT_0: &str = "0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973";
 const KATANA_PRIVKEY_0: &str = "0x1800000000300000180000000000030000000000003006001800006600";
 const KATANA_CHAIN_ID: &str = "0x4b4154414e41";

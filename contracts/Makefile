@@ -24,10 +24,12 @@ setup: setup_simple_get_set
 
 # Declare and deploy the simple_get_set contract on katana.
 setup_simple_get_set:
-	scarb build
-	$(eval class_hash=$(shell starkli class-hash target/dev/contracts_simple_get_set.contract_class.json))
-	starkli declare target/dev/contracts_simple_get_set.contract_class.json ${config}
-	starkli deploy ${class_hash} --salt 0x1234 ${config}
+	@set -x; \
+	scarb build; \
+	class_hash=$$(starkli class-hash ${scarb_build}simple_get_set${sierra}); \
+	/mnt/g/sn/starkli/target/debug/starkli declare ${scarb_build}simple_get_set${sierra} ${config} --compiler-version 2.4.0; \
+	sleep 2; \
+	starkli deploy "$${class_hash}" --salt 0x1234 ${config}
 
 setup_byte_array:
 	@set -x; \
