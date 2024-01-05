@@ -40,6 +40,9 @@ pub struct Composite {
 
 impl Composite {
     pub fn parse(type_path: &str) -> CainomeResult<Self> {
+        // TODO: find a better way to avoid rust keywords...
+        let type_path = &type_path.replace("move", "r#move");
+
         let generic_args = genericity::extract_generics_args(type_path)?;
 
         Ok(Self {
