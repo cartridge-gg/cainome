@@ -13,8 +13,6 @@ impl AbiParser {
     /// 1. Entire [`SierraClass`] json representation.
     /// 2. The `abi` key from the [`SierraClass`], which is an array of [`AbiEntry`].
     ///
-    /// TODO: Move to cainome implementation when available.
-    ///
     /// # Arguments
     ///
     /// * `abi` - A string representing the ABI.
@@ -35,8 +33,6 @@ impl AbiParser {
     /// The `abi` can have two formats:
     /// 1. Entire [`SierraClass`] json representation.
     /// 2. The `abi` key from the [`SierraClass`], which is an array of AbiEntry.
-    ///
-    /// TODO: Move to cainome implementation when available.
     ///
     /// # Arguments
     ///
