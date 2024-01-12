@@ -1,12 +1,56 @@
-use starknet::core::types::contract::{AbiEntry, AbiEvent, TypedAbiEvent};
+use starknet::core::types::contract::{AbiEntry, AbiEvent, SierraClass, TypedAbiEvent};
 use std::collections::HashMap;
 
 use crate::tokens::{Array, CompositeInner, CompositeType, CoreBasic, Function, Token};
-use crate::CainomeResult;
+use crate::{CainomeResult, Error};
 
 pub struct AbiParser {}
 
 impl AbiParser {
+    /// Generates the [`Token`]s from the given ABI string.
+    ///
+    /// The `abi` can have two formats:
+    /// 1. Entire [`SierraClass`] json representation.
+    /// 2. The `abi` key from the [`SierraClass`], which is an array of [`AbiEntry`].
+    ///
+    /// TODO: Move to cainome implementation when available.
+    ///
+    /// # Arguments
+    ///
+    /// * `abi` - A string representing the ABI.
+    /// * `type_aliases` - Types to be renamed to avoid name clashing of generated types.
+    pub fn tokens_from_abi_string(
+        abi: &str,
+        type_aliases: &HashMap<String, String>,
+    ) -> CainomeResult<HashMap<String, Vec<Token>>> {
+        let abi_entries = Self::parse_abi_string(abi)?;
+        let abi_tokens = AbiParser::collect_tokens(&abi_entries).expect("failed tokens parsing");
+        let abi_tokens = AbiParser::organize_tokens(abi_tokens, type_aliases);
+
+        Ok(abi_tokens)
+    }
+
+    /// Parses an ABI string to output a `Vec<AbiEntry>`.
+    ///
+    /// The `abi` can have two formats:
+    /// 1. Entire [`SierraClass`] json representation.
+    /// 2. The `abi` key from the [`SierraClass`], which is an array of AbiEntry.
+    ///
+    /// TODO: Move to cainome implementation when available.
+    ///
+    /// # Arguments
+    ///
+    /// * `abi` - A string representing the ABI.
+    pub fn parse_abi_string(abi: &str) -> CainomeResult<Vec<AbiEntry>> {
+        let entries = if let Ok(sierra) = serde_json::from_str::<SierraClass>(abi) {
+            sierra.abi
+        } else {
+            serde_json::from_str::<Vec<AbiEntry>>(abi).map_err(Error::SerdeJson)?
+        };
+
+        Ok(entries)
+    }
+
     /// Organizes the tokens by cairo types.
     pub fn organize_tokens(
         tokens: HashMap<String, Token>,

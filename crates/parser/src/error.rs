@@ -11,6 +11,10 @@ pub enum Error {
     ConversionFailed(String),
     #[error("Parser error: {0}")]
     ParsingFailed(String),
+    #[error(transparent)]
+    IO(#[from] std::io::Error),
+    #[error(transparent)]
+    SerdeJson(#[from] serde_json::Error),
 }
 
 pub type CainomeResult<T, E = Error> = Result<T, E>;
