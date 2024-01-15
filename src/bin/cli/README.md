@@ -2,7 +2,7 @@
 
 Cainome CLI tool.
 
-This tools is still in early development, but it's goal is to support plugin development easily.
+This tools is still in early development.
 
 ## How to build
 
