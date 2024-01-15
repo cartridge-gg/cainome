@@ -10,5 +10,5 @@ pub mod parser {
 
 #[cfg(feature = "abigen-rs")]
 pub mod rs {
-    pub use cainome_rs::*;
+    pub use cainome_rs_macro::*;
 }

@@ -1,30 +1,24 @@
-use cainome_parser::tokens::StateMutability;
-use cainome_parser::AbiParser;
-use proc_macro::TokenStream;
+use cainome_parser::tokens::{StateMutability, Token};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
+use std::collections::HashMap;
 
 mod expand;
-mod macro_inputs;
-mod spanned;
 
 use crate::expand::utils;
 use crate::expand::{CairoContract, CairoEnum, CairoEnumEvent, CairoFunction, CairoStruct};
-use crate::macro_inputs::ContractAbi;
 
-#[proc_macro]
-pub fn abigen(input: TokenStream) -> TokenStream {
-    abigen_internal(input)
-}
-
-fn abigen_internal(input: TokenStream) -> TokenStream {
-    let contract_abi = syn::parse_macro_input!(input as ContractAbi);
-
-    let contract_name = contract_abi.name;
-    let abi_entries = contract_abi.abi;
-
-    let abi_tokens = AbiParser::collect_tokens(&abi_entries).expect("failed tokens parsing");
-    let abi_tokens = AbiParser::organize_tokens(abi_tokens, &contract_abi.type_aliases);
+/// Converts the given ABI (in it's tokenize form) into rust bindings.
+///
+/// # Arguments
+///
+/// * `contract_name` - Name of the contract.
+/// * `abi_tokens` - Tokenized ABI.
+pub fn abi_to_tokenstream(
+    contract_name: &str,
+    abi_tokens: &HashMap<String, Vec<Token>>,
+) -> TokenStream2 {
+    let contract_name = utils::str_to_ident(contract_name);
 
     let mut tokens: Vec<TokenStream2> = vec![];
 
@@ -88,15 +82,5 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
         #(#tokens)*
     };
 
-    if let Some(out_path) = contract_abi.output_path {
-        let content: String = expanded.to_string();
-        match std::fs::write(out_path, content) {
-            Ok(_) => (),
-            Err(e) => panic!("Failed to write to file: {}", e),
-        }
-
-        quote!().into()
-    } else {
-        expanded.into()
-    }
+    expanded
 }

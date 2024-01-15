@@ -25,7 +25,6 @@ use syn::{
 };
 
 use crate::spanned::Spanned;
-use crate::utils;
 
 const CARGO_MANIFEST_DIR: &str = "$CARGO_MANIFEST_DIR/";
 
@@ -162,9 +161,13 @@ impl Parse for TypeAlias {
 fn open_json_file(file_path: &str) -> Result<File> {
     File::open(file_path).map_err(|e| {
         syn::Error::new(
-            utils::str_to_litstr(file_path).span(),
+            str_to_litstr(file_path).span(),
             format!("JSON open file {} error: {}", file_path, e),
         )
     })
 }
-// TODO: add test for argument parsing.
+
+///
+pub fn str_to_litstr(str_in: &str) -> LitStr {
+    LitStr::new(str_in, proc_macro::Span::call_site().into())
+}
