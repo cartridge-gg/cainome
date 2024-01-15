@@ -1,12 +1,16 @@
 [package]
-name = "cainome-rs"
+name = "cainome-rs-macro"
 version = "0.1.0"
 edition = "2021"
+
+[lib]
+proc-macro = true
 
 [dependencies]
 anyhow.workspace = true         
 starknet.workspace = true
 cainome-parser.workspace = true
+cainome-rs.workspace = true
 proc-macro2 = "1.0"
 quote = "1.0"
 syn = "2.0.15"
