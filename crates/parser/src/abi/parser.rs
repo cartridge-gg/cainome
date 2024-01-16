@@ -4,7 +4,7 @@ use std::collections::HashMap;
 use crate::tokens::{Array, CompositeInner, CompositeType, CoreBasic, Function, Token};
 use crate::{CainomeResult, Error};
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Default)]
 pub struct TokenizedAbi {
     /// All enums found in the contract ABI.
     pub enums: Vec<Token>,
