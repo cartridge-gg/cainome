@@ -1,5 +1,4 @@
-use cainome_parser::tokens::Token;
-use cainome_parser::AbiParser;
+use cainome_parser::{AbiParser, TokenizedAbi};
 use camino::Utf8PathBuf;
 use convert_case::{Case, Casing};
 use std::collections::HashMap;
@@ -33,7 +32,7 @@ pub struct ContractData {
     /// Contract's origin.
     pub origin: ContractOrigin,
     /// Tokens parsed from the ABI.
-    pub tokens: HashMap<String, Vec<Token>>,
+    pub tokens: TokenizedAbi,
 }
 
 pub struct ContractParser {}

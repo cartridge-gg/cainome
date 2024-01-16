@@ -4,6 +4,18 @@ use std::collections::HashMap;
 use crate::tokens::{Array, CompositeInner, CompositeType, CoreBasic, Function, Token};
 use crate::{CainomeResult, Error};
 
+#[derive(Debug)]
+pub struct TokenizedAbi {
+    /// All enums found in the contract ABI.
+    pub enums: Vec<Token>,
+    /// All structs found in the contract ABI.
+    pub structs: Vec<Token>,
+    /// Standalone functions in the contract ABI.
+    pub functions: Vec<Token>,
+    /// Fully qualified interface name mapped to all the defined functions in it.
+    pub interfaces: HashMap<String, Vec<Token>>,
+}
+
 pub struct AbiParser {}
 
 impl AbiParser {
@@ -20,12 +32,12 @@ impl AbiParser {
     pub fn tokens_from_abi_string(
         abi: &str,
         type_aliases: &HashMap<String, String>,
-    ) -> CainomeResult<HashMap<String, Vec<Token>>> {
+    ) -> CainomeResult<TokenizedAbi> {
         let abi_entries = Self::parse_abi_string(abi)?;
-        let abi_tokens = AbiParser::collect_tokens(&abi_entries).expect("failed tokens parsing");
-        let abi_tokens = AbiParser::organize_tokens(abi_tokens, type_aliases);
+        let tokenized_abi =
+            AbiParser::collect_tokens(&abi_entries, type_aliases).expect("failed tokens parsing");
 
-        Ok(abi_tokens)
+        Ok(tokenized_abi)
     }
 
     /// Parses an ABI string to output a `Vec<AbiEntry>`.
@@ -47,61 +59,58 @@ impl AbiParser {
         Ok(entries)
     }
 
-    /// Organizes the tokens by cairo types.
-    pub fn organize_tokens(
-        tokens: HashMap<String, Token>,
+    /// Parse all tokens in the ABI.
+    pub fn collect_tokens(
+        entries: &[AbiEntry],
         type_aliases: &HashMap<String, String>,
-    ) -> HashMap<String, Vec<Token>> {
+    ) -> CainomeResult<TokenizedAbi> {
+        let mut token_candidates: HashMap<String, Vec<Token>> = HashMap::new();
+
+        // Entry tokens are structs, enums and events (which are structs and enums).
+        for entry in entries {
+            Self::collect_entry_token(entry, &mut token_candidates)?;
+        }
+
+        let tokens = Self::filter_struct_enum_tokens(token_candidates);
+
         let mut structs = vec![];
         let mut enums = vec![];
-        let mut functions = vec![];
-
+        // Apply type aliases only on structs and enums.
         for (_, mut t) in tokens {
             for (type_path, alias) in type_aliases {
                 t.apply_alias(type_path, alias);
             }
 
-            match t {
-                Token::Composite(ref c) => {
-                    match c.r#type {
-                        CompositeType::Struct => structs.push(t),
-                        CompositeType::Enum => enums.push(t),
-                        _ => (), // TODO: warn?
-                    }
+            if let Token::Composite(ref c) = t {
+                match c.r#type {
+                    CompositeType::Struct => structs.push(t),
+                    CompositeType::Enum => enums.push(t),
+                    _ => (),
                 }
-                Token::Function(_) => functions.push(t),
-                _ => (), // TODO: warn?
             }
         }
 
-        let mut out = HashMap::new();
-        out.insert("structs".to_string(), structs);
-        out.insert("enums".to_string(), enums);
-        out.insert("functions".to_string(), functions);
-        out
-    }
-
-    /// Parse all tokens in the ABI.
-    pub fn collect_tokens(entries: &[AbiEntry]) -> CainomeResult<HashMap<String, Token>> {
-        let mut token_candidates: HashMap<String, Vec<Token>> = HashMap::new();
+        let mut functions = vec![];
+        let mut interfaces: HashMap<String, Vec<Token>> = HashMap::new();
 
         for entry in entries {
-            Self::collect_entry_token(entry, &mut token_candidates)?;
+            Self::collect_entry_function(entry, &mut functions, &mut interfaces, None)?;
         }
 
-        let mut tokens = Self::filter_struct_enum_tokens(token_candidates);
-
-        for entry in entries {
-            Self::collect_entry_function(entry, &mut tokens)?;
-        }
-
-        Ok(tokens)
+        Ok(TokenizedAbi {
+            enums,
+            structs,
+            functions,
+            interfaces,
+        })
     }
 
     ///
     fn collect_entry_function(
         entry: &AbiEntry,
-        tokens: &mut HashMap<String, Token>,
+        functions: &mut Vec<Token>,
+        interfaces: &mut HashMap<String, Vec<Token>>,
+        interface_name: Option<String>,
     ) -> CainomeResult<()> {
         match entry {
             AbiEntry::Function(f) => {
@@ -117,11 +126,23 @@ impl AbiParser {
                     func.outputs.push(Token::parse(&o.r#type)?);
                 }
 
-                tokens.insert(f.name.clone(), Token::Function(func));
+                if let Some(name) = interface_name {
+                    interfaces
+                        .entry(name)
+                        .or_default()
+                        .push(Token::Function(func));
+                } else {
+                    functions.push(Token::Function(func));
+                }
             }
             AbiEntry::Interface(interface) => {
                 for entry in &interface.items {
-                    Self::collect_entry_function(entry, tokens)?;
+                    Self::collect_entry_function(
+                        entry,
+                        functions,
+                        interfaces,
+                        Some(interface.name.clone()),
+                    )?;
                 }
             }
             _ => (),
