@@ -1,7 +1,7 @@
 use starknet::core::types::contract::{AbiEntry, AbiEvent, SierraClass, TypedAbiEvent};
 use std::collections::HashMap;
 
-use crate::tokens::{Array, CompositeInner, CompositeType, CoreBasic, Function, Token};
+use crate::tokens::{Array, Composite, CompositeInner, CompositeType, CoreBasic, Function, Token};
 use crate::{CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -75,6 +75,11 @@ impl AbiParser {
 
         let mut structs = vec![];
         let mut enums = vec![];
+        // This is not memory efficient, but
+        // currently the focus is on search speed.
+        // To be optimized.
+        let mut all_composites: HashMap<String, Composite> = HashMap::new();
+
         // Apply type aliases only on structs and enums.
         for (_, mut t) in tokens {
             for (type_path, alias) in type_aliases {
@@ -82,6 +87,8 @@ impl AbiParser {
             }
 
             if let Token::Composite(ref c) = t {
+                all_composites.insert(c.type_path_no_generic(), c.clone());
+
                 match c.r#type {
                     CompositeType::Struct => structs.push(t),
                     CompositeType::Enum => enums.push(t),
@@ -94,7 +101,13 @@ impl AbiParser {
         let mut interfaces: HashMap<String, Vec<Token>> = HashMap::new();
 
         for entry in entries {
-            Self::collect_entry_function(entry, &mut functions, &mut interfaces, None)?;
+            Self::collect_entry_function(
+                entry,
+                &all_composites,
+                &mut functions,
+                &mut interfaces,
+                None,
+            )?;
         }
 
         Ok(TokenizedAbi {
@@ -108,22 +121,46 @@ impl AbiParser {
     ///
     fn collect_entry_function(
         entry: &AbiEntry,
+        all_composites: &HashMap<String, Composite>,
         functions: &mut Vec<Token>,
         interfaces: &mut HashMap<String, Vec<Token>>,
         interface_name: Option<String>,
     ) -> CainomeResult<()> {
+        /// Gets the existing token into known composite, if any.
+        /// Otherwise, return the parsed token.
+        fn get_existing_token_or_parsed(
+            type_path: &str,
+            all_composites: &HashMap<String, Composite>,
+        ) -> CainomeResult<Token> {
+            let parsed_token = Token::parse(type_path)?;
+
+            // If the token is an known struct or enum, we look up
+            // in existing one to get full info from there as the parsing
+            // of composites is already done before functions.
+            if let Token::Composite(ref c) = parsed_token {
+                match all_composites.get(&c.type_path_no_generic()) {
+                    Some(e) => Ok(Token::Composite(e.clone())),
+                    None => Ok(parsed_token),
+                }
+            } else {
+                Ok(parsed_token)
+            }
+        }
+
+        // TODO: optimize the search and data structures.
+        // HashMap would be more appropriate than vec.
         match entry {
             AbiEntry::Function(f) => {
                 let mut func = Function::new(&f.name, f.state_mutability.clone().into());
 
-                // For functions, we don't need to deal with generics as we need
-                // the flatten type. Parsing the token is enough.
                 for i in &f.inputs {
-                    func.inputs.push((i.name.clone(), Token::parse(&i.r#type)?));
+                    let token = get_existing_token_or_parsed(&i.r#type, all_composites)?;
+                    func.inputs.push((i.name.clone(), token));
                 }
 
                 for o in &f.outputs {
-                    func.outputs.push(Token::parse(&o.r#type)?);
+                    let token = get_existing_token_or_parsed(&o.r#type, all_composites)?;
+                    func.outputs.push(token);
                 }
 
                 if let Some(name) = interface_name {
@@ -139,6 +176,7 @@ impl AbiParser {
                 for entry in &interface.items {
                     Self::collect_entry_function(
                         entry,
+                        all_composites,
                         functions,
                         interfaces,
                         Some(interface.name.clone()),
