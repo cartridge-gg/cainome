@@ -170,6 +170,31 @@ The expansion of the macros generates the following:
   };
   ```
 
+- For cairo 0 contracts, for each method that has at least one output, cainome will generate a `struct` with the output fields.
+
+```json
+{
+  "inputs": [],
+  "name": "get_blockhash_registry",
+  "outputs": [
+    {
+      "name": "address",
+      "type": "felt"
+    }
+  ],
+  "stateMutability": "view",
+  "type": "function"
+}
+```
+
+Will generate with the function's name in PascalCase and the suffix `Output`:
+
+```rust
+pub struct GetBlockhashRegistryOutput {
+    pub address: starknet::core::types::FieldElement,
+}
+```
+
 ## Known limitation
 
 With the current state of the parser, here are some limitations:
