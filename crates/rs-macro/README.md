@@ -17,6 +17,16 @@ use cainome::rs::abigen;
 abigen!(MyContract, "/path/my_contract.json");
 ```
 
+Cairo 0 support is limited (event are not parsed yet), but to interact with a cairo 0
+program you can use the legacy macro:
+
+```rust
+// Rust code
+use cainome::rs::abigen;
+
+abigen_legacy!(MyContract, "/path/cairo_0.json");
+```
+
 ## Usage
 
 For examples, please refer to the [examples](../../examples) folder.
@@ -26,7 +36,7 @@ The `abigen!` macro takes 2 or 3 inputs:
 1. The name you want to assign to the contract type being generated.
 2. Path to the JSON file containing the ABI. This file can have two format:
 
-   - The entire Sierra file (`*.contract_class.json`)
+   - The entire Sierra file (`*.contract_class.json`) [**Only for Cairo 1**]
    - Only the array of ABI entries. These can be easily extracted with `jq` doing the following:
 
    ```

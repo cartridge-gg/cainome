@@ -1,12 +1,16 @@
 use super::constants::CAIRO_CORE_SPAN_ARRAY;
 use super::genericity;
-use super::Token;
+
+use crate::tokens::Token;
 use crate::{CainomeResult, Error};
+
+pub const CAIRO_0_ARRAY: &str = "*";
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Array {
     pub type_path: String,
     pub inner: Box<Token>,
+    pub is_legacy: bool,
 }
 
 impl Array {
@@ -28,8 +32,17 @@ impl Array {
                 return Ok(Self {
                     type_path: type_path.to_string(),
                     inner: Box::new(generic_arg_token.clone()),
+                    is_legacy: false,
                 });
             }
+        }
+
+        if let Some(inner_type) = type_path.strip_suffix(CAIRO_0_ARRAY) {
+            return Ok(Self {
+                type_path: type_path.to_string(),
+                inner: Box::new(Token::parse(inner_type)?),
+                is_legacy: true,
+            });
         }
 
         Err(Error::TokenInitFailed(format!(
@@ -45,6 +58,7 @@ impl Array {
             Token::Array(Self {
                 type_path: self.type_path.clone(),
                 inner: Box::new(self.inner.resolve_generic(generic_name, generic_type_path)),
+                is_legacy: self.is_legacy,
             })
         }
     }
@@ -68,6 +82,7 @@ mod tests {
                 inner: Box::new(Token::CoreBasic(CoreBasic {
                     type_path: "core::felt252".to_string()
                 })),
+                is_legacy: false,
             }
         );
     }

@@ -1,4 +1,5 @@
 use starknet::core::types::contract::{
+    legacy::{RawLegacyEvent, RawLegacyStruct},
     AbiEnum, AbiEventEnum, AbiEventStruct, AbiStruct, EventFieldKind,
     StateMutability as StarknetStateMutability,
 };
@@ -170,6 +171,78 @@ impl TryFrom<&AbiEventEnum> for Token {
         } else {
             Err(Error::ParsingFailed(format!(
                 "AbiEventEnum is expected to be a Composite token, got `{:?}`",
+                value,
+            )))
+        }
+    }
+}
+
+impl TryFrom<&RawLegacyStruct> for Token {
+    type Error = Error;
+
+    fn try_from(value: &RawLegacyStruct) -> Result<Self, Self::Error> {
+        let mut t = Token::parse(&value.name)?;
+
+        if let Token::Composite(ref mut c) = t {
+            c.r#type = CompositeType::Struct;
+
+            for (i, m) in value.members.iter().enumerate() {
+                c.inners.push(CompositeInner {
+                    index: i,
+                    name: m.name.clone(),
+                    token: Token::parse(&m.r#type).unwrap(),
+                    kind: CompositeInnerKind::NotUsed,
+                });
+            }
+
+            Ok(t)
+        } else {
+            Err(Error::ParsingFailed(format!(
+                "RawLegacyStruct is expected to be a Composite token, got `{:?}`",
+                value,
+            )))
+        }
+    }
+}
+
+impl TryFrom<&RawLegacyEvent> for Token {
+    type Error = Error;
+
+    fn try_from(value: &RawLegacyEvent) -> Result<Self, Self::Error> {
+        let mut t = Token::parse(&value.name)?;
+
+        if let Token::Composite(ref mut c) = t {
+            c.r#type = CompositeType::Struct;
+            c.is_event = true;
+
+            let mut i = 0;
+
+            for m in value.data.iter() {
+                c.inners.push(CompositeInner {
+                    index: i,
+                    name: m.name.clone(),
+                    token: Token::parse(&m.r#type).unwrap(),
+                    kind: CompositeInnerKind::Data,
+                });
+
+                i += 1;
+            }
+
+            for m in value.keys.iter() {
+                c.inners.push(CompositeInner {
+                    index: i,
+                    name: m.name.clone(),
+                    token: Token::parse(&m.r#type).unwrap(),
+                    kind: CompositeInnerKind::Key,
+                });
+
+                i += 1;
+            }
+
+            Ok(t)
+        } else {
+            Err(Error::ParsingFailed(format!(
+                "RawLegacyEvent is expected to be a Composite token, got `{:?}`",
                 value,
             )))
         }
