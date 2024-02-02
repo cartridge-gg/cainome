@@ -21,7 +21,14 @@ impl CairoStruct {
             let name = utils::str_to_ident(&inner.name);
             let ty = utils::str_to_type(&inner.token.to_rust_type());
 
-            members.push(quote!(#name: #ty));
+            // r#{name} is not a valid identifier, thus we can't create an ident.
+            // And with proc macro 2, we cannot do `quote!(r##name)`.
+            // TODO: this needs to be done more elegantly...
+            if &inner.name == "type" {
+                members.push(quote!(r#type: #ty));
+            } else {
+                members.push(quote!(#name: #ty));
+            }
         }
 
         if composite.is_generic() {
@@ -67,8 +74,6 @@ impl CairoStruct {
 
         for inner in &composite.inners {
             let name = utils::str_to_ident(&inner.name);
-            names.push(quote!(#name));
-
             let ty = utils::str_to_type(&inner.token.to_rust_type_path());
 
             // Tuples type used as rust type path item path must be surrounded
@@ -78,16 +83,36 @@ impl CairoStruct {
                 _ => quote!(#ty),
             };
 
-            sizes.push(quote! {
-                __size += #ty_punctuated::cairo_serialized_size(&__rust.#name);
-            });
+            // r#{name} is not a valid identifier, thus we can't create an ident.
+            // And with proc macro 2, we cannot do `quote!(r##name)`.
+            // TODO: this needs to be done more elegantly...
+            if &inner.name == "type" {
+                names.push(quote!(r#type));
 
-            sers.push(quote!(__out.extend(#ty_punctuated::cairo_serialize(&__rust.#name));));
+                sizes.push(quote! {
+                    __size += #ty_punctuated::cairo_serialized_size(&__rust.r#type);
+                });
 
-            desers.push(quote! {
-                let #name = #ty_punctuated::cairo_deserialize(__felts, __offset)?;
-                __offset += #ty_punctuated::cairo_serialized_size(&#name);
-            });
+                sers.push(quote!(__out.extend(#ty_punctuated::cairo_serialize(&__rust.r#type));));
+
+                desers.push(quote! {
+                    let r#type = #ty_punctuated::cairo_deserialize(__felts, __offset)?;
+                    __offset += #ty_punctuated::cairo_serialized_size(&r#type);
+                });
+            } else {
+                names.push(quote!(#name));
+
+                sizes.push(quote! {
+                    __size += #ty_punctuated::cairo_serialized_size(&__rust.#name);
+                });
+
+                sers.push(quote!(__out.extend(#ty_punctuated::cairo_serialize(&__rust.#name));));
+
+                desers.push(quote! {
+                    let #name = #ty_punctuated::cairo_deserialize(__felts, __offset)?;
+                    __offset += #ty_punctuated::cairo_serialized_size(&#name);
+                });
+            }
         }
 
         let ccs = utils::cainome_cairo_serde();
