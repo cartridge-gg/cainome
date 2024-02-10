@@ -195,6 +195,7 @@ mod tests {
         Token::Array(Array {
             type_path: "core::array::Array::<core::felt252>".to_string(),
             inner: Box::new(basic_felt252()),
+            is_legacy: false,
         })
     }
 
@@ -367,6 +368,7 @@ mod tests {
             Token::Array(Array {
                 type_path: "core::array::Array::<core::felt252>".to_string(),
                 inner: Box::new(Token::GenericArg("A".to_string())),
+                is_legacy: false,
             }),
         );
     }

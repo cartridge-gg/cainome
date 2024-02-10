@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+convert_case.workspace = true
 starknet.workspace = true
 thiserror.workspace = true
 syn = { version = "2.0", features = [ "extra-traits" ]}

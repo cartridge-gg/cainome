@@ -13,7 +13,7 @@ mod tuple;
 pub use array::Array;
 pub use basic::CoreBasic;
 pub use composite::{Composite, CompositeInner, CompositeInnerKind, CompositeType};
-pub use function::{Function, StateMutability};
+pub use function::{Function, FunctionOutputKind, StateMutability};
 pub use tuple::Tuple;
 
 use crate::{CainomeResult, Error};

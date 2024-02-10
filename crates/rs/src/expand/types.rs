@@ -12,7 +12,14 @@ impl CairoToRust for Token {
     fn to_rust_type(&self) -> String {
         match self {
             Token::CoreBasic(t) => basic_types_to_rust(&t.type_name()),
-            Token::Array(t) => format!("Vec<{}>", t.inner.to_rust_type()),
+            Token::Array(t) => {
+                if t.is_legacy {
+                    let ccsp = utils::cainome_cairo_serde_path();
+                    format!("{}::CairoArrayLegacy<{}>", ccsp, t.inner.to_rust_type())
+                } else {
+                    format!("Vec<{}>", t.inner.to_rust_type())
+                }
+            }
             Token::Tuple(t) => {
                 let mut s = String::from("(");
 
@@ -56,7 +63,18 @@ impl CairoToRust for Token {
     fn to_rust_type_path(&self) -> String {
         match self {
             Token::CoreBasic(t) => basic_types_to_rust(&t.type_name()),
-            Token::Array(t) => format!("Vec::<{}>", t.inner.to_rust_type_path()),
+            Token::Array(t) => {
+                if t.is_legacy {
+                    let ccsp = utils::cainome_cairo_serde_path();
+                    format!(
+                        "{}::CairoArrayLegacy::<{}>",
+                        ccsp,
+                        t.inner.to_rust_type_path()
+                    )
+                } else {
+                    format!("Vec::<{}>", t.inner.to_rust_type_path())
+                }
+            }
             Token::Tuple(t) => {
                 let mut s = String::from("(");
                 for (idx, inner) in t.inners.iter().enumerate() {
@@ -104,6 +122,7 @@ fn basic_types_to_rust(type_name: &str) -> String {
         "ContractAddress" => format!("{ccsp}::ContractAddress"),
         "EthAddress" => format!("{ccsp}::EthAddress"),
         "felt252" => "starknet::core::types::FieldElement".to_string(),
+        "felt" => "starknet::core::types::FieldElement".to_string(),
         "bytes31" => format!("{ccsp}::Bytes31"),
         "ByteArray" => format!("{ccsp}::ByteArray"),
         _ => type_name.to_string(),

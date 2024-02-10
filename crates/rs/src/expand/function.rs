@@ -19,7 +19,7 @@
 //! ```ignore (pseudo-code)
 //! // TODO
 //! ```
-use cainome_parser::tokens::{Function, StateMutability, Token};
+use cainome_parser::tokens::{Function, FunctionOutputKind, StateMutability, Token};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
@@ -60,14 +60,16 @@ impl CairoFunction {
             serializations.push(ser);
         }
 
-        let out_type = if func.outputs.is_empty() {
-            quote!(())
-        } else {
-            // We consider only one type for Cairo 1, if any.
-            // The outputs field is a list for historical reason from Cairo 0
-            // were tuples were used as returned values.
-            let out_type = utils::str_to_type(&func.outputs[0].to_rust_type_path());
-            quote!(#out_type)
+        let out_type = match func.get_output_kind() {
+            FunctionOutputKind::NoOutput => quote!(()),
+            FunctionOutputKind::Cairo1 => {
+                let out_type = utils::str_to_type(&func.outputs[0].to_rust_type_path());
+                quote!(#out_type)
+            }
+            FunctionOutputKind::Cairo0 => {
+                let out_type = utils::str_to_type(&func.get_cairo0_output_name());
+                quote!(#out_type)
+            }
         };
 
         let inputs = get_func_inputs(&func.inputs);

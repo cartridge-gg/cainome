@@ -1,4 +1,5 @@
-pub const CAIRO_CORE_BASIC: [&str; 16] = [
+pub const CAIRO_CORE_BASIC: [&str; 17] = [
+    "felt",
     "core::felt252",
     "core::bool",
     "core::integer::u8",

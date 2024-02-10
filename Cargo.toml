@@ -19,6 +19,7 @@ cainome-rs = { path = "crates/rs" }
 
 anyhow = "1.0"
 async-trait = "0.1.68"
+convert_case = "0.6.0"
 serde = { version = "1.0", default-features = false, features = ["alloc"] }
 serde_json = { version = "1.0", default-features = false, features = ["std"] }
 starknet = "0.8.0"
@@ -38,7 +39,7 @@ anyhow.workspace = true
 camino = { version = "1.1.2", features = [ "serde1" ] }
 clap = { version = "4.2", features = [ "derive" ] }
 clap_complete = "4.3"
-convert_case = "0.6.0"
+convert_case.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 starknet.workspace = true

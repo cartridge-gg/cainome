@@ -60,7 +60,7 @@ where
         let mut offset = offset;
         let len = felts[offset - 1];
 
-        if FieldElement::from(offset) + len >= FieldElement::from(felts.len()) {
+        if FieldElement::from(offset) + len > FieldElement::from(felts.len()) {
             return Err(Error::Deserialize(format!(
                 "Buffer too short to deserialize an array of length {}: offset ({}) : buffer {:?}",
                 len, offset, felts,
@@ -78,5 +78,22 @@ where
         }
 
         Ok(CairoArrayLegacy(out))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use starknet::macros::felt;
+
+    #[test]
+    fn array_offset_len_ok() {
+        let serialized = vec![felt!("4"), felt!("1"), felt!("2"), felt!("3"), felt!("4")];
+        let a = CairoArrayLegacy::<FieldElement>::cairo_deserialize(&serialized, 1).unwrap();
+        assert_eq!(a.len(), 4);
+        assert_eq!(a.0[0], felt!("1"));
+        assert_eq!(a.0[1], felt!("2"));
+        assert_eq!(a.0[2], felt!("3"));
+        assert_eq!(a.0[3], felt!("4"));
     }
 }
