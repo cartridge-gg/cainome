@@ -47,12 +47,14 @@ thiserror.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 url.workspace = true
-tokio = { version = "1.15.0", features = ["full"] }
+tokio = { version = "1.15.0", features = ["full"], optional = true }
 
 [features]
 default = []
 abigen-rs = ["cainome-rs-macro"]
+build-binary = ["tokio"]
 
 [[bin]]
 name = "cainome"
 path = "src/bin/cli/main.rs"
+required-features = ["build-binary"]
