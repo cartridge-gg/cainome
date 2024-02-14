@@ -153,7 +153,7 @@ async fn other_func<A: ConnectedAccount + Sync + 'static>(contract: Arc<MyContra
 
     // Use the estimated fees as a base.
     let _tx_res = set_b
-        .max_fee((estimated_fee * FieldElement::TWO).into())
+        .max_fee(estimated_fee * FieldElement::TWO)
         .send()
         .await
         .expect("invoke failed");
