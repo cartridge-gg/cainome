@@ -27,7 +27,7 @@ impl CairoContract {
                     Self { address, account }
                 }
 
-                pub fn set_contract_address(mut &self, address: #snrs_types::FieldElement) {
+                pub fn set_contract_address(&mut self, address: #snrs_types::FieldElement) {
                     self.address = address;
                 }
 
