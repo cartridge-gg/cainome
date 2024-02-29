@@ -56,7 +56,7 @@ impl CairoStruct {
             }
         } else {
             quote! {
-                #[derive(Debug, PartialEq, Clone)]
+                #[derive(Debug, PartialEq, PartialOrd, Clone)]
                 pub struct #struct_name {
                     #(pub #members),*
                 }
