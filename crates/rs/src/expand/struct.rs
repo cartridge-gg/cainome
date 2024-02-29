@@ -49,14 +49,14 @@ impl CairoStruct {
             // Those phantom fields are ignored by serde.
 
             quote! {
-                #[derive(Debug, PartialEq, Clone)]
+                #[derive(Debug, PartialEq, PartialOrd, Clone)]
                 pub struct #struct_name<#(#gen_args),*> {
                     #(pub #members),*
                 }
             }
         } else {
             quote! {
-                #[derive(Debug, PartialEq, Clone)]
+                #[derive(Debug, PartialEq, PartialOrd, Clone)]
                 pub struct #struct_name {
                     #(pub #members),*
                 }
