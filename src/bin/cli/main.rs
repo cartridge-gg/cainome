@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tracing::trace!("config: {:?}", config);
 
     let contracts = if let Some(path) = config.artifacts_path {
-        ContractParser::from_artifacts_path(path)?
+        ContractParser::from_artifacts_path(path, &config.sierra_ext)?
     } else if let (Some(name), Some(address), Some(url)) = (
         config.contract_name,
         config.contract_address,

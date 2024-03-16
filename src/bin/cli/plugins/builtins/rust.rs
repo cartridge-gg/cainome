@@ -1,5 +1,6 @@
 use async_trait::async_trait;
 use cainome_rs::{self};
+use convert_case::{Case, Casing};
 
 use crate::error::CainomeCliResult;
 use crate::plugins::builtins::BuiltinPlugin;
@@ -16,11 +17,26 @@ impl RustPlugin {
 #[async_trait]
 impl BuiltinPlugin for RustPlugin {
     async fn generate_code(&self, input: &PluginInput) -> CainomeCliResult<()> {
-        tracing::trace!("Rust plugin requested:\n{:?}\n", input);
+        tracing::trace!("Rust plugin requested");
 
         for contract in &input.contracts {
-            let expanded = cainome_rs::abi_to_tokenstream(&contract.name, &contract.tokens);
-            let filename = format!("{}.rs", contract.name);
+            // The contract name contains the fully qualified path of the cairo module.
+            // For now, let's only take the latest part of this path.
+            // TODO: if a project has several contracts with the same name under different
+            // namespaces, we should provide a solution to solve those conflicts.
+            let contract_name = contract
+                .name
+                .split("::")
+                .last()
+                .unwrap_or(&contract.name)
+                .from_case(Case::Snake)
+                .to_case(Case::Pascal);
+
+            let expanded = cainome_rs::abi_to_tokenstream(&contract_name, &contract.tokens);
+            let filename = format!(
+                "{}.rs",
+                contract_name.from_case(Case::Pascal).to_case(Case::Snake)
+            );
 
             let mut out_path = input.output_dir.clone();
             out_path.push(filename);

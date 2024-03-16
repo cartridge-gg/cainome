@@ -1,6 +1,5 @@
 use cainome_parser::{AbiParser, TokenizedAbi};
 use camino::Utf8PathBuf;
-use convert_case::{Case, Casing};
 use std::collections::HashMap;
 use std::fs;
 use url::Url;
@@ -13,8 +12,6 @@ use starknet::{
 };
 
 use crate::error::{CainomeCliResult, Error};
-
-const SIERRA_EXT: &str = ".contract_class.json";
 
 #[derive(Debug)]
 pub enum ContractOrigin {
@@ -38,7 +35,10 @@ pub struct ContractData {
 pub struct ContractParser {}
 
 impl ContractParser {
-    pub fn from_artifacts_path(path: Utf8PathBuf) -> CainomeCliResult<Vec<ContractData>> {
+    pub fn from_artifacts_path(
+        path: Utf8PathBuf,
+        sierra_ext: &str,
+    ) -> CainomeCliResult<Vec<ContractData>> {
         let mut contracts = vec![];
 
         for entry in fs::read_dir(path)? {
@@ -47,7 +47,7 @@ impl ContractParser {
 
             if path.is_file() {
                 if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                    if !file_name.ends_with(SIERRA_EXT) {
+                    if !file_name.ends_with(sierra_ext) {
                         continue;
                     }
 
@@ -60,10 +60,7 @@ impl ContractParser {
 
                     match AbiParser::tokens_from_abi_string(&file_content, &aliases) {
                         Ok(tokens) => {
-                            let contract_name = file_name
-                                .trim_end_matches(SIERRA_EXT)
-                                .from_case(Case::Snake)
-                                .to_case(Case::Pascal);
+                            let contract_name = file_name.trim_end_matches(sierra_ext);
 
                             tracing::trace!(
                                 "Adding {contract_name} ({file_name}) to the list of contracts"
