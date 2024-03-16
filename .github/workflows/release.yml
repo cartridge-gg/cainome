@@ -235,7 +235,6 @@ jobs:
       - "draft-release"
       - "release-non-apple"
       - "release-apple"
-      - "release-docker-multiarch"
 
     steps:
       - name: "Publish release"
