@@ -297,7 +297,7 @@ checksum = "a2bd12c1caf447e69cd4528f47f94d203fd2582878ecb9e9465484c4148a8223"
 
 [[package]]
 name = "cainome"
-version = "0.2.3"
+version = "0.2.5"
 dependencies = [
  "anyhow",
  "async-trait",

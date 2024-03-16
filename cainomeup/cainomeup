@@ -1,0 +1,197 @@
+#!/bin/sh
+
+set -eE
+
+BASE_DIR=${XDG_CONFIG_HOME:-$HOME}
+CAINOME_DIR=${CAINOME_DIR-"$BASE_DIR/.cainome"}
+CAINOME_BIN_DIR="$CAINOME_DIR/bin"
+CAINOME_MAN_DIR="$CAINOME_DIR/share/man/man1"
+
+CAINOME_BIN_PATH="${CAINOME_BIN_DIR}/cainome"
+
+# This MUST be updated whenever this file is changed.
+# TODO: add CI check to ensure this.
+CAINOMEUP_VERSION="2023-08-30"
+
+# Fancy color setup:
+#   https://unix.stackexchange.com/questions/9957/how-to-check-if-bash-can-print-colors
+if test -t 1; then
+    ncolors=$(tput colors)
+    if test -n "$ncolors" && test $ncolors -ge 8; then
+        bold="$(tput bold)"
+        underline="$(tput smul)"
+        standout="$(tput smso)"
+        normal="$(tput sgr0)"
+        black="$(tput setaf 0)"
+        red="$(tput setaf 1)"
+        green="$(tput setaf 2)"
+        yellow="$(tput setaf 3)"
+        blue="$(tput setaf 4)"
+        magenta="$(tput setaf 5)"
+        cyan="$(tput setaf 6)"
+        white="$(tput setaf 7)"
+    fi
+fi
+
+main() {
+    RELEASE_TAG=latest
+
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            -h|--help)
+                usage
+                exit 0
+                ;;
+            -v|--version)
+                if [ $# -gt 1 ]; then
+                    case $2 in
+                        "v"*)
+                            RELEASE_TAG="$2"
+                        ;;
+                        *)
+                            RELEASE_TAG="v$2"
+                        ;;
+                    esac
+                    shift
+                else
+                    echo "${red}Version tag is missing${normal}" 1>&2
+                    exit 1
+                fi
+                ;;
+            *)
+                echo "${red}Unknown option: $1${normal}" 1>&2
+                echo "Run ${yellow}cainomeup --help${normal} to see usage." 1>&2
+                exit 1
+                ;;
+        esac
+        shift
+    done
+
+    install
+
+    echo
+    echo "Installation successfully completed."
+}
+
+install() {
+    if [ $RELEASE_TAG = "latest" ]; then
+        echo "Installing the latest version of cainome..."
+        echo "Fetching the latest release tag from GitHub..."
+        RELEASE_TAG="$(curl -s "https://api.github.com/repos/cartridge-gg/cainome/releases/latest" | grep "tag_name" | cut -d \" -f 4)"
+        echo "Latest version found: ${yellow}${RELEASE_TAG}${normal}"
+    else
+        echo "Installing version ${yellow}${RELEASE_TAG}${normal}..."
+    fi
+
+    detect_host_triple
+    if [ -z "$TRIPLE" ]; then
+        echo "${red}Unable to detect platform.${normal} Please install cainome from source." 1>&2
+        exit 1
+    fi
+
+    echo "Detected host triple: ${cyan}${TRIPLE}${normal}"
+
+    FILE_NAME="cainome-${TRIPLE}.tar.gz"
+    FILE_URL="https://github.com/cartridge-gg/cainome/releases/download/${RELEASE_TAG}/${FILE_NAME}"
+
+    TEMP_DIR="$(mktemp -d)"
+    TEMP_FILE_NAME="${TEMP_DIR}/${FILE_NAME}"
+
+    # TODO: support wget if curl is not found
+    download_release_file
+
+    tar zxf $TEMP_FILE_NAME -C $TEMP_DIR
+
+    mv "${TEMP_DIR}/cainome" "${CAINOME_BIN_PATH}"
+
+    rm -rf $TEMP_DIR
+
+    echo "Successfully installed cainome ${yellow}${LATEST_TAG}${normal}"
+}
+
+download_release_file() {
+    echo "Downloading release file from GitHub..."
+    if command -v curl >/dev/null 2>&1; then
+        HTTP_CODE="$(curl -# -L "$FILE_URL" -o "$TEMP_FILE_NAME" --write-out "%{http_code}")"
+        if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "${red}Couldn't download release file for tag '${RELEASE_TAG}' from GitHub [${HTTP_CODE}].${normal}"
+            exit 1
+        fi
+    else
+        echo "${red}Command 'curl' is required.${normal}"
+        exit 1
+    fi
+}
+
+detect_host_triple() {
+    PLATFORM="$(uname -s)"
+    ARCHITECTURE="$(uname -m)"
+
+    case $PLATFORM in
+        Linux)
+            # Android Termux detection
+            case $PREFIX in
+                *com.termux*)
+                    case $ARCHITECTURE in
+                        aarch64|arm64)
+                            TRIPLE="aarch64-linux-android"
+                            ;;
+                    esac
+                    ;;
+                *)
+                    # Likely very unreliable way to check musl
+                    if [ -n "$(ls /lib | grep "libc.musl-")" ]; then
+                        case $ARCHITECTURE in
+                            x86_64)
+                                TRIPLE="x86_64-unknown-linux-musl"
+                                ;;
+                            aarch64|arm64)
+                                TRIPLE="aarch64-unknown-linux-musl"
+                                ;;
+                        esac
+                    else
+                        case $ARCHITECTURE in
+                            x86_64)
+                                TRIPLE="x86_64-unknown-linux-gnu"
+                                ;;
+                            aarch64|arm64)
+                                TRIPLE="aarch64-unknown-linux-gnu"
+                                ;;
+                        esac
+                    fi
+            esac
+            ;;
+        Darwin)
+            case $ARCHITECTURE in
+                x86_64)
+                    TRIPLE="x86_64-apple-darwin"
+                    ;;
+                aarch64|arm64)
+                    TRIPLE="aarch64-apple-darwin"
+                    ;;
+            esac
+            ;;
+    esac
+}
+
+usage() {
+    cat 1>&2 <<EOF
+cainomeup ${cyan}(${CAINOMEUP_VERSION})${normal}
+The installer for cainome.
+
+Install the latest version of cainome by running without any options.
+
+More installation options will be implemented. To update cainomeup itself, run the installation command again:
+
+    curl https://raw.githubusercontent.com/cartridge-gg/cainome/main/cainomeup/install | sh
+
+USAGE:
+    cainomeup <OPTIONS>
+
+OPTIONS:
+    -h, --help      Print this message
+    -v, --version   The version of cainome to install
+EOF
+}
+
+main "$@"
