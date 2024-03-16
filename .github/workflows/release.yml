@@ -244,4 +244,3 @@ jobs:
             -X PATCH \
             -H "Authorization: Bearer ${{ secrets.GH_TOKEN }}" \
             -d '{"draft":false}'
-
