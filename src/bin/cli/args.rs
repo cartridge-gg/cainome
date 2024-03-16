@@ -31,6 +31,13 @@ pub struct CainomeArgs {
     pub parser_config: Option<Utf8PathBuf>,
 
     #[arg(long)]
+    #[arg(value_name = "EXTENSION")]
+    #[arg(conflicts_with = "contract_address")]
+    #[arg(default_value = ".contract_class.json")]
+    #[arg(help = "Overrides the default Sierra file extension.")]
+    pub sierra_ext: String,
+
+    #[arg(long)]
     #[arg(value_name = "ADDRESS")]
     #[arg(conflicts_with = "artifacts_path")]
     #[arg(requires = "rpc_url")]
