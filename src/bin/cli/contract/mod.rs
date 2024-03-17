@@ -37,6 +37,8 @@ pub struct ContractParserConfig {
     pub sierra_extension: String,
     /// The type aliases to be provided to the Cainome parser.
     pub type_aliases: HashMap<String, String>,
+    /// The contract aliases to be provided to the Cainome parser.
+    pub contract_aliases: HashMap<String, String>,
 }
 
 impl ContractParserConfig {
@@ -52,6 +54,7 @@ impl Default for ContractParserConfig {
         Self {
             sierra_extension: ".contract_class.json".to_string(),
             type_aliases: HashMap::default(),
+            contract_aliases: HashMap::default(),
         }
     }
 }
@@ -79,8 +82,17 @@ impl ContractParser {
 
                     match AbiParser::tokens_from_abi_string(&file_content, &config.type_aliases) {
                         Ok(tokens) => {
-                            let contract_name =
-                                file_name.trim_end_matches(&config.sierra_extension);
+                            let contract_name = {
+                                let n = file_name.trim_end_matches(&config.sierra_extension);
+                                if let Some(alias) = config.contract_aliases.get(n) {
+                                    tracing::trace!(
+                                        "Aliasing {file_name} contract name with {alias}"
+                                    );
+                                    alias
+                                } else {
+                                    n
+                                }
+                            };
 
                             tracing::trace!(
                                 "Adding {contract_name} ({file_name}) to the list of contracts"
