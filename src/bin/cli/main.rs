@@ -7,32 +7,49 @@ mod error;
 mod plugins;
 
 use args::CainomeArgs;
-use contract::ContractParser;
+use contract::{ContractParser, ContractParserConfig};
+use error::{CainomeCliResult, Error};
 use plugins::{PluginInput, PluginManager};
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> CainomeCliResult<()> {
     init_logging()?;
 
-    let config = CainomeArgs::parse();
-    tracing::trace!("config: {:?}", config);
+    let args = CainomeArgs::parse();
+    tracing::trace!("args: {:?}", args);
 
-    let contracts = if let Some(path) = config.artifacts_path {
-        ContractParser::from_artifacts_path(path)?
-    } else if let (Some(name), Some(address), Some(url)) = (
-        config.contract_name,
-        config.contract_address,
-        config.rpc_url,
-    ) {
-        vec![ContractParser::from_chain(&name, address, url).await?]
+    let parser_config = if let Some(path) = args.parser_config {
+        ContractParserConfig::from_json(&path)?
+    } else {
+        ContractParserConfig::default()
+    };
+
+    let contracts = if let Some(path) = args.artifacts_path {
+        let ret = ContractParser::from_artifacts_path(path.clone(), &parser_config)?;
+
+        if ret.is_empty() {
+            tracing::error!(
+                "No contract found with extension '{}' into '{}' directory",
+                parser_config.sierra_extension,
+                path
+            );
+
+            return Err(Error::Other("Invalid arguments".to_string()));
+        }
+
+        ret
+    } else if let (Some(name), Some(address), Some(url)) =
+        (args.contract_name, args.contract_address, args.rpc_url)
+    {
+        vec![ContractParser::from_chain(&name, address, url, &parser_config.type_aliases).await?]
     } else {
         panic!("Invalid arguments: no contracts to be parsed");
     };
 
-    let pm = PluginManager::from(config.plugins);
+    let pm = PluginManager::from(args.plugins);
 
     pm.generate(PluginInput {
-        output_dir: config.output_dir,
+        output_dir: args.output_dir,
         contracts,
     })
     .await?;
@@ -40,12 +57,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-pub fn init_logging() -> Result<(), Box<dyn std::error::Error>> {
+pub fn init_logging() -> CainomeCliResult<()> {
     const DEFAULT_LOG_FILTER: &str = "info,cainome=trace";
 
     let builder = fmt::Subscriber::builder().with_env_filter(
-        EnvFilter::try_from_default_env().or(EnvFilter::try_new(DEFAULT_LOG_FILTER))?,
+        EnvFilter::try_from_default_env()
+            .or(EnvFilter::try_new(DEFAULT_LOG_FILTER))
+            .map_err(|e| Error::Other(format!("Tracing error: {:?}", e)))?,
     );
 
-    Ok(tracing::subscriber::set_global_default(builder.finish())?)
+    tracing::subscriber::set_global_default(builder.finish())
+        .map_err(|e| Error::Other(format!("Tracing error: {:?}", e)))
 }
