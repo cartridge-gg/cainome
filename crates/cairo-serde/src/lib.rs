@@ -13,6 +13,7 @@ pub mod call;
 pub mod types;
 pub use types::array_legacy::*;
 pub use types::byte_array::*;
+pub use types::non_zero::*;
 pub use types::starknet::*;
 pub use types::*;
 
@@ -20,7 +21,13 @@ use ::starknet::core::types::FieldElement;
 
 /// Basic cairo structs that are already implemented inside
 /// this crate and hence skipped during ABI generation.
-pub const CAIRO_BASIC_STRUCTS: [&str; 4] = ["Span", "ClassHash", "ContractAddress", "EthAddress"];
+pub const CAIRO_BASIC_STRUCTS: [&str; 5] = [
+    "Span",
+    "ClassHash",
+    "ContractAddress",
+    "EthAddress",
+    "NonZero",
+];
 
 /// Same as `CAIRO_BASIC_STRUCTS`, but for enums.
 pub const CAIRO_BASIC_ENUMS: [&str; 3] = ["Option", "Result", "bool"];
