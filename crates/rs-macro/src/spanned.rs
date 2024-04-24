@@ -29,6 +29,7 @@ impl<T: ParseInner> Parse for Spanned<T> {
 
 /// A struct that captures `Span` information for inner parsable data.
 #[cfg_attr(test, derive(Clone, Debug))]
+#[allow(dead_code)]
 pub struct Spanned<T>(Span, T);
 
 impl<T> Spanned<T> {
