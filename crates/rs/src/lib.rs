@@ -8,6 +8,17 @@ mod expand;
 use crate::expand::utils;
 use crate::expand::{CairoContract, CairoEnum, CairoEnumEvent, CairoFunction, CairoStruct};
 
+/// Expands the given ABI into rust bindings.
+///
+/// # Arguments
+///
+/// * `contract_name` - Name of the contract.
+/// * `types_aliases` - Types aliases to avoid name conflicts.
+/// * `file_path` - The sierra artifact / abi file path.
+pub fn generate(contract_name: &str, types_aliases: &Vec<(String, String)>, abi_tokens: &TokenizedAbi) -> TokenStream2 {
+    let contract_name = utils::str_to_ident(contract_name);
+}
+
 /// Converts the given ABI (in it's tokenize form) into rust bindings.
 ///
 /// # Arguments
