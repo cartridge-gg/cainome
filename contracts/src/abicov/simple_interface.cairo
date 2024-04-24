@@ -15,7 +15,7 @@ mod simple_interface {
         value: felt252,
     }
 
-    #[external(v0)]
+    #[abi(embed_v0)]
     impl MyInterfaceImpl of MyInterface<ContractState> {
         fn get_value(self: @ContractState) -> felt252 {
             self.value.read()
