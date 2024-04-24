@@ -32,10 +32,11 @@ impl<T: ParseInner> Parse for Spanned<T> {
 pub struct Spanned<T>(Span, T);
 
 impl<T> Spanned<T> {
-    // /// Retrieves the captured `Span` information for the parsed data.
-    // pub fn span(&self) -> Span {
-    //     self.0
-    // }
+    /// Retrieves the captured `Span` information for the parsed data.
+    #[allow(dead_code)]
+    pub fn span(&self) -> Span {
+        self.0
+    }
 
     /// Retrieves the inner data.
     pub fn into_inner(self) -> T {

@@ -11,8 +11,8 @@ use url::Url;
 
 abigen!(MyContract, "./contracts/abi/byte_array.abi.json",);
 
-const CONTRACT_ADDRESS: &str = "0x0722c97752880529933e733e9a7d725685000b3989489d8fbbe7a247d4823921";
-const KATANA_ACCOUNT_0: &str = "0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973";
+const CONTRACT_ADDRESS: &str = "0x06a811e5a04d0c1ff393f77a3e8d804ee1f991a69d25935ab4ce260aa31e5c11";
+const KATANA_ACCOUNT_0: &str = "0x6162896d1d7ab204c7ccac6dd5f8e9e7c25ecd5ae4fcb4ad32e57786bb46e03";
 const KATANA_PRIVKEY_0: &str = "0x1800000000300000180000000000030000000000003006001800006600";
 const KATANA_CHAIN_ID: &str = "0x4b4154414e41";
 
@@ -34,7 +34,7 @@ async fn main() {
         signer,
         address,
         FieldElement::from_hex_be(KATANA_CHAIN_ID).unwrap(),
-        ExecutionEncoding::Legacy,
+        ExecutionEncoding::New,
     ));
 
     let contract = MyContract::new(contract_address, account);
