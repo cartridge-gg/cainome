@@ -77,7 +77,7 @@ impl CairoSerde for ClassHash {
 }
 
 /// EthAddress.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub struct EthAddress(pub FieldElement);
 
 impl From<FieldElement> for EthAddress {
