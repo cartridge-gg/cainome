@@ -125,6 +125,7 @@ fn basic_types_to_rust(type_name: &str) -> String {
         "felt" => "starknet::core::types::FieldElement".to_string(),
         "bytes31" => format!("{ccsp}::Bytes31"),
         "ByteArray" => format!("{ccsp}::ByteArray"),
+        "NonZero" => format!("{ccsp}::NonZero"),
         _ => type_name.to_string(),
     }
 }
@@ -135,6 +136,7 @@ fn builtin_composite_to_rust(type_name: &str) -> (String, bool) {
     match type_name {
         "EthAddress" => (format!("{ccsp}::EthAddress"), true),
         "ByteArray" => (format!("{ccsp}::ByteArray"), true),
+        "NonZero" => (format!("{ccsp}::NonZero"), true),
         _ => (type_name.to_string(), false),
     }
 }
