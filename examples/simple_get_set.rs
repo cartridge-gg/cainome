@@ -10,8 +10,8 @@ use url::Url;
 
 // To run this example, please first run `make setup_simple_get_set` in the contracts directory with a Katana running. This will declare and deploy the testing contract.
 
-const CONTRACT_ADDRESS: &str = "0x00af2b72edfa4c04616c67bb4cab677d951b065b9cf0a9d2874a4c0450755852";
-const KATANA_ACCOUNT_0: &str = "0x517ececd29116499f4a1b64b094da79ba08dfd54a3edaa316134c41f8160973";
+const CONTRACT_ADDRESS: &str = "0x007997dd654f2c079597a6c461489ee89981d0df733b8bcd3525153b0e700f98";
+const KATANA_ACCOUNT_0: &str = "0x6162896d1d7ab204c7ccac6dd5f8e9e7c25ecd5ae4fcb4ad32e57786bb46e03";
 const KATANA_PRIVKEY_0: &str = "0x1800000000300000180000000000030000000000003006001800006600";
 const KATANA_CHAIN_ID: &str = "0x4b4154414e41";
 
@@ -45,7 +45,8 @@ async fn main() {
     println!("a initial value: {:?}", a);
 
     // If you need to explicitely set the block id of the call, you can do as
-    // following. The default value is "Pending".
+    // following. The default value is "Pending". Or you can initialize a `ContractReader`
+    // using the `with_block_id` method, that will be applied to each call.
     let b = contract
         .get_b()
         .block_id(BlockId::Tag(BlockTag::Latest))
@@ -69,9 +70,11 @@ async fn main() {
         signer,
         address,
         FieldElement::from_hex_be(KATANA_CHAIN_ID).unwrap(),
-        ExecutionEncoding::Legacy,
+        ExecutionEncoding::New,
     ));
 
+    // A `Contract` exposes all the methods of the ABI, which includes the views (as the `ContractReader`) and
+    // the externals (sending transaction).
     let contract = MyContract::new(contract_address, account);
 
     // The transaction is actually sent when `send()` is called.
@@ -138,10 +141,6 @@ async fn main() {
 }
 
 async fn other_func<A: ConnectedAccount + Sync + 'static>(contract: Arc<MyContract<A>>) {
-    // As `Arc<MyContract<A>>` is also implementing `ConnectedAccount`,
-    // passing a contract you also have the reader that you can retrieve anytime
-    // by calling `contract.reader()`.
-
     let set_b = contract.set_b(&U256 { low: 0xfe, high: 0 });
 
     // Example of estimation of fees.

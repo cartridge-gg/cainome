@@ -21,7 +21,7 @@ jobs:
       - name: Compile contracts
         uses: software-mansion/setup-scarb@v1
         with:
-          scarb-version: "2.4.0"
+          scarb-version: "2.5.4"
       - run: |
           cd ./contracts && make generate_artifacts
 

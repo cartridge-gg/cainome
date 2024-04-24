@@ -50,10 +50,9 @@ where
 
     fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> Result<Self::RustType> {
         if offset >= felts.len() {
-            return Err(Error::Deserialize(format!(
-                "Buffer too short to deserialize an array: offset ({}) : buffer {:?}",
-                offset, felts,
-            )));
+            // As the length of cairo 0 arrays is not included in the serialized form of the array,
+            // we don't have much choice here to return an empty array instead of an error.
+            return Ok(CairoArrayLegacy(vec![]));
         }
 
         let mut out: Vec<RT> = vec![];
@@ -95,5 +94,13 @@ mod tests {
         assert_eq!(a.0[1], felt!("2"));
         assert_eq!(a.0[2], felt!("3"));
         assert_eq!(a.0[3], felt!("4"));
+    }
+
+    #[test]
+    fn empty_array() {
+        // Array with only the length that is 0 (an other field as we're in cairo 0).
+        // So the deserialization of the array starts at index 1.
+        let serialized = vec![FieldElement::ZERO];
+        let _a = CairoArrayLegacy::<FieldElement>::cairo_deserialize(&serialized, 1).unwrap();
     }
 }

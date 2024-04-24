@@ -27,7 +27,7 @@ setup_simple_get_set:
 	@set -x; \
 	scarb build; \
 	class_hash=$$(starkli class-hash ${scarb_build}simple_get_set${sierra}); \
-	/mnt/g/sn/starkli/target/debug/starkli declare ${scarb_build}simple_get_set${sierra} ${config} --compiler-version 2.4.0; \
+	starkli declare ${scarb_build}simple_get_set${sierra} ${config}; \
 	sleep 2; \
 	starkli deploy "$${class_hash}" --salt 0x1234 ${config}
 

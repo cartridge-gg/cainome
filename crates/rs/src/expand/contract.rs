@@ -20,11 +20,12 @@ impl CairoContract {
             pub struct #contract_name<A: #snrs_accounts::ConnectedAccount + Sync> {
                 pub address: #snrs_types::FieldElement,
                 pub account: A,
+                pub block_id: #snrs_types::BlockId,
             }
 
             impl<A: #snrs_accounts::ConnectedAccount + Sync> #contract_name<A> {
                 pub fn new(address: #snrs_types::FieldElement, account: A) -> Self {
-                    Self { address, account }
+                    Self { address, account, block_id: #snrs_types::BlockId::Tag(#snrs_types::BlockTag::Pending) }
                 }
 
                 pub fn set_contract_address(mut self, address: #snrs_types::FieldElement) {
@@ -33,6 +34,10 @@ impl CairoContract {
 
                 pub fn provider(&self) -> &A::Provider {
                     self.account.provider()
+                }
+
+                pub fn with_block(self, block_id: #snrs_types::BlockId) -> Self {
+                    Self { block_id, ..self }
                 }
             }
 
