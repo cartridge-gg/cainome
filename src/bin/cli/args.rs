@@ -26,6 +26,11 @@ pub struct CainomeArgs {
     pub artifacts_path: Option<Utf8PathBuf>,
 
     #[arg(long)]
+    #[arg(value_name = "PATH")]
+    #[arg(help = "Path of a JSON file defining Cainome parsing configuration.")]
+    pub parser_config: Option<Utf8PathBuf>,
+
+    #[arg(long)]
     #[arg(value_name = "ADDRESS")]
     #[arg(conflicts_with = "artifacts_path")]
     #[arg(requires = "rpc_url")]
