@@ -19,6 +19,7 @@ cainome-rs = { path = "crates/rs" }
 
 anyhow = "1.0"
 async-trait = "0.1.68"
+camino = { version = "1.1.2", features = [ "serde1" ] }
 convert_case = "0.6.0"
 serde = { version = "1.0", default-features = false, features = ["alloc"] }
 serde_json = { version = "1.0", default-features = false, features = ["std"] }
@@ -29,6 +30,7 @@ tracing-subscriber = { version = "0.3.16", features = [ "env-filter", "json" ] }
 url = "2.4.0"
 
 [dependencies]
+camino.workspace = true
 cainome-parser.workspace = true
 cainome-cairo-serde.workspace = true
 cainome-rs.workspace = true
@@ -36,7 +38,6 @@ cainome-rs-macro = { path = "crates/rs-macro", optional = true }
 
 async-trait.workspace = true
 anyhow.workspace = true
-camino = { version = "1.1.2", features = [ "serde1" ] }
 clap = { version = "4.2", features = [ "derive" ] }
 clap_complete = "4.3"
 convert_case.workspace = true
