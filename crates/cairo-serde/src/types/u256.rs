@@ -1,3 +1,5 @@
+use starknet::core::types::FieldElement;
+
 use crate::CairoSerde;
 pub struct U256 {
     pub low: u128,
@@ -30,6 +32,12 @@ impl CairoSerde for U256 {
         Ok(U256 { low, high })
     }
 }
+impl From<(FieldElement, FieldElement)> for U256 {
+    fn from(item: (FieldElement, FieldElement)) -> Self {
+        todo!()
+    }
+}
+
 impl U256 {
     pub fn to_bytes_be(&self) -> [u8; 32] {
         let mut bytes = [0; 32];
