@@ -1,6 +1,5 @@
-use starknet::core::types::FieldElement;
-
 use crate::CairoSerde;
+use starknet::core::types::FieldElement;
 pub struct U256 {
     pub low: u128,
     pub high: u128,
@@ -32,9 +31,20 @@ impl CairoSerde for U256 {
         Ok(U256 { low, high })
     }
 }
+// Implementing From<(FieldElement, FieldElement)> for U256 as big endian
 impl From<(FieldElement, FieldElement)> for U256 {
     fn from(item: (FieldElement, FieldElement)) -> Self {
-        todo!()
+        let high = item
+            .0
+            .to_string()
+            .parse::<u128>()
+            .expect("Failed to parse FieldElement to u128");
+        let low = item
+            .1
+            .to_string()
+            .parse::<u128>()
+            .expect("Failed to parse FieldElement to u128");
+        U256 { high, low }
     }
 }
 
@@ -50,6 +60,24 @@ impl U256 {
         bytes[0..16].copy_from_slice(&self.low.to_le_bytes());
         bytes[16..32].copy_from_slice(&self.high.to_le_bytes());
         bytes
+    }
+    pub fn from_bytes_be(bytes: &[u8; 32]) -> Self {
+        let mut high_bytes = [0; 16];
+        high_bytes.copy_from_slice(&bytes[0..16]);
+        let mut low_bytes = [0; 16];
+        low_bytes.copy_from_slice(&bytes[16..32]);
+        let high = u128::from_be_bytes(high_bytes);
+        let low = u128::from_be_bytes(low_bytes);
+        U256 { low, high }
+    }
+    pub fn from_bytes_le(bytes: &[u8; 32]) -> Self {
+        let mut low_bytes = [0; 16];
+        low_bytes.copy_from_slice(&bytes[0..16]);
+        let mut high_bytes = [0; 16];
+        high_bytes.copy_from_slice(&bytes[16..32]);
+        let low = u128::from_le_bytes(low_bytes);
+        let high = u128::from_le_bytes(high_bytes);
+        U256 { low, high }
     }
 }
 
@@ -124,5 +152,32 @@ mod tests {
             8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // high
         ];
         assert_eq!(bytes, expected_bytes);
+    }
+    #[test]
+    fn test_from_bytes_be() {
+        let bytes: [u8; 32] = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, // high
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, // low
+        ];
+        let u256 = U256::from_bytes_be(&bytes);
+        assert_eq!(u256.low, 9_u128);
+        assert_eq!(u256.high, 8_u128);
+    }
+    #[test]
+    fn test_from_bytes_le() {
+        let bytes: [u8; 32] = [
+            9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // low
+            8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // high
+        ];
+        let u256 = U256::from_bytes_le(&bytes);
+        assert_eq!(u256.low, 9_u128);
+        assert_eq!(u256.high, 8_u128);
+    }
+    #[test]
+    fn test_from_field_element() {
+        let felts = (FieldElement::from(9_u128), FieldElement::from(8_u128));
+        let u256 = U256::from(felts);
+        assert_eq!(u256.low, 8_u128);
+        assert_eq!(u256.high, 9_u128);
     }
 }
