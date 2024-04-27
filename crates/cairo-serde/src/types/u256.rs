@@ -8,29 +8,44 @@ impl CairoSerde for U256 {
     const SERIALIZED_SIZE: std::option::Option<usize> = None;
     #[inline]
     fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-        let mut __size = 0;
-        __size += u128::cairo_serialized_size(&__rust.low);
-        __size += u128::cairo_serialized_size(&__rust.high);
-        __size
+        let mut size = 0;
+        size += u128::cairo_serialized_size(&__rust.low);
+        size += u128::cairo_serialized_size(&__rust.high);
+        size
     }
     fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::FieldElement> {
-        let mut __out: Vec<starknet::core::types::FieldElement> = vec![];
-        __out.extend(u128::cairo_serialize(&__rust.low));
-        __out.extend(u128::cairo_serialize(&__rust.high));
-        __out
+        let mut out: Vec<starknet::core::types::FieldElement> = vec![];
+        out.extend(u128::cairo_serialize(&__rust.low));
+        out.extend(u128::cairo_serialize(&__rust.high));
+        out
     }
     fn cairo_deserialize(
-        __felts: &[starknet::core::types::FieldElement],
-        __offset: usize,
+        felts: &[starknet::core::types::FieldElement],
+        offset: usize,
     ) -> Result<Self::RustType, crate::Error> {
-        let mut __offset = __offset;
-        let low = u128::cairo_deserialize(__felts, __offset)?;
-        __offset += u128::cairo_serialized_size(&low);
-        let high = u128::cairo_deserialize(__felts, __offset)?;
-        __offset += u128::cairo_serialized_size(&high);
+        let mut offset = offset;
+        let low = u128::cairo_deserialize(felts, offset)?;
+        offset += u128::cairo_serialized_size(&low);
+        let high = u128::cairo_deserialize(felts, offset)?;
+        offset += u128::cairo_serialized_size(&high);
         Ok(U256 { low, high })
     }
 }
+impl U256 {
+    pub fn to_bytes_be(&self) -> [u8; 32]{
+        let mut bytes = [0; 32];
+        bytes[0..16].copy_from_slice(&self.high.to_be_bytes());
+        bytes[16..32].copy_from_slice(&self.low.to_be_bytes());
+        bytes
+    }
+    pub fn to_bytes_le(&self) -> [u8 ;32]{
+        let mut bytes = [0; 32];
+        bytes[0..16].copy_from_slice(&self.low.to_le_bytes());
+        bytes[16..32].copy_from_slice(&self.high.to_le_bytes());
+        bytes
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
@@ -77,5 +92,31 @@ mod tests {
             high: 8_u128,
         };
         assert_eq!(U256::cairo_serialized_size(&u256), 2);
+    }
+    #[test]
+    fn test_to_bytes_be() {
+        let u256 = U256 {
+            low: 9_u128,
+            high: 8_u128,
+        };
+        let bytes = u256.to_bytes_be();
+        let expected_bytes: [u8; 32] = [
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8,  // high
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9,  // low
+        ];
+        assert_eq!(bytes,expected_bytes);
+    }
+    #[test]
+    fn test_to_bytes_le() {
+        let u256 = U256 {
+            low: 9_u128,
+            high: 8_u128,
+        };
+        let bytes = u256.to_bytes_le();
+        let expected_bytes: [u8; 32] = [
+            9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // low
+            8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // high
+        ];
+        assert_eq!(bytes,expected_bytes);
     }
 }
