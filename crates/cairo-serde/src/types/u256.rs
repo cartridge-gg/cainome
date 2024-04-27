@@ -27,25 +27,23 @@ impl CairoSerde for U256 {
         let low = u128::cairo_deserialize(felts, offset)?;
         offset += u128::cairo_serialized_size(&low);
         let high = u128::cairo_deserialize(felts, offset)?;
-        offset += u128::cairo_serialized_size(&high);
         Ok(U256 { low, high })
     }
 }
 impl U256 {
-    pub fn to_bytes_be(&self) -> [u8; 32]{
+    pub fn to_bytes_be(&self) -> [u8; 32] {
         let mut bytes = [0; 32];
         bytes[0..16].copy_from_slice(&self.high.to_be_bytes());
         bytes[16..32].copy_from_slice(&self.low.to_be_bytes());
         bytes
     }
-    pub fn to_bytes_le(&self) -> [u8 ;32]{
+    pub fn to_bytes_le(&self) -> [u8; 32] {
         let mut bytes = [0; 32];
         bytes[0..16].copy_from_slice(&self.low.to_le_bytes());
         bytes[16..32].copy_from_slice(&self.high.to_le_bytes());
         bytes
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -81,9 +79,9 @@ mod tests {
     #[test]
     fn test_deserialize_u256() {
         let felts = vec![FieldElement::from(9_u128), FieldElement::from(8_u128)];
-            let num_u256 = U256::cairo_deserialize(&felts, 0).unwrap();
-            assert_eq!(num_u256.low, 9_u128);
-            assert_eq!(num_u256.high, 8_u128);
+        let num_u256 = U256::cairo_deserialize(&felts, 0).unwrap();
+        assert_eq!(num_u256.low, 9_u128);
+        assert_eq!(num_u256.high, 8_u128);
     }
     #[test]
     fn test_serialized_size_u256() {
@@ -101,10 +99,10 @@ mod tests {
         };
         let bytes = u256.to_bytes_be();
         let expected_bytes: [u8; 32] = [
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8,  // high
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9,  // low
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, // high
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, // low
         ];
-        assert_eq!(bytes,expected_bytes);
+        assert_eq!(bytes, expected_bytes);
     }
     #[test]
     fn test_to_bytes_le() {
@@ -114,9 +112,9 @@ mod tests {
         };
         let bytes = u256.to_bytes_le();
         let expected_bytes: [u8; 32] = [
-            9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // low
-            8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,  // high
+            9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // low
+            8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // high
         ];
-        assert_eq!(bytes,expected_bytes);
+        assert_eq!(bytes, expected_bytes);
     }
 }
