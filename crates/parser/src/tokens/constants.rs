@@ -22,9 +22,14 @@ pub const CAIRO_CORE_BASIC: [&str; 17] = [
 // to match array pattern.
 pub const CAIRO_CORE_SPAN_ARRAY: [&str; 2] = ["core::array::Span", "core::array::Array"];
 
-pub const CAIRO_GENERIC_BUILTINS: [&str; 2] = ["core::option::Option", "core::result::Result"];
+pub const CAIRO_GENERIC_BUILTINS: [&str; 3] = [
+    "core::option::Option",
+    "core::result::Result",
+    "core::zeroable::NonZero",
+];
 
-pub const CAIRO_COMPOSITE_BUILTINS: [&str; 2] = [
+pub const CAIRO_COMPOSITE_BUILTINS: [&str; 3] = [
     "core::byte_array::ByteArray",
     "core::starknet::eth_address::EthAddress",
+    "core::integer::u256",
 ];

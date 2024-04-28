@@ -9,6 +9,7 @@ pub mod option;
 pub mod result;
 pub mod starknet;
 pub mod tuple;
+pub mod u256;
 
 #[cfg(test)]
 mod tests {
