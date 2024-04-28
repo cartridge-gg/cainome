@@ -1,5 +1,5 @@
 use crate::CairoSerde;
-use starknet::core::types::FieldElement;
+use starknet::core::types::{FieldElement, ValueOutOfRangeError};
 pub struct U256 {
     pub low: u128,
     pub high: u128,
@@ -24,20 +24,25 @@ impl CairoSerde for U256 {
         Ok(U256 { low, high })
     }
 }
-// Implementing From<(FieldElement, FieldElement)> for U256 as big endian
-impl From<(FieldElement, FieldElement)> for U256 {
-    fn from(item: (FieldElement, FieldElement)) -> Self {
-        let high = item
-            .0
-            .to_string()
-            .parse::<u128>()
-            .expect("Failed to parse FieldElement to u128");
-        let low = item
-            .1
-            .to_string()
-            .parse::<u128>()
-            .expect("Failed to parse FieldElement to u128");
-        U256 { high, low }
+/// FieldElement to U256 conversion as if the tuple was a cairo serialized U256
+impl TryFrom<(FieldElement, FieldElement)> for U256 {
+    type Error = ValueOutOfRangeError;
+    fn try_from((a, b): (FieldElement, FieldElement)) -> Result<U256, Self::Error> {
+        let U256 {
+            low: a_low,
+            high: a_high,
+        } = U256::from_bytes_be(&a.to_bytes_be());
+        let U256 {
+            low: b_low,
+            high: b_high,
+        } = U256::from_bytes_be(&b.to_bytes_be());
+        if b_high != 0 || a_high != 0 {
+            return Err(ValueOutOfRangeError);
+        }
+        Ok(U256 {
+            low: a_low,
+            high: b_low,
+        })
     }
 }
 
@@ -161,8 +166,8 @@ mod tests {
     #[test]
     fn test_from_field_element() {
         let felts = (FieldElement::from(9_u128), FieldElement::from(8_u128));
-        let u256 = U256::from(felts);
-        assert_eq!(u256.low, 8_u128);
-        assert_eq!(u256.high, 9_u128);
+        let u256 = U256::try_from(felts).unwrap();
+        assert_eq!(u256.low, 9_u128);
+        assert_eq!(u256.high, 8_u128);
     }
 }
