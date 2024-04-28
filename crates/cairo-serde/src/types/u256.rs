@@ -6,28 +6,21 @@ pub struct U256 {
 }
 impl CairoSerde for U256 {
     type RustType = Self;
-    const SERIALIZED_SIZE: std::option::Option<usize> = None;
+    const SERIALIZED_SIZE: Option<usize> = None;
     #[inline]
-    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-        let mut size = 0;
-        size += u128::cairo_serialized_size(&__rust.low);
-        size += u128::cairo_serialized_size(&__rust.high);
-        size
+    fn cairo_serialized_size(this: &U256) -> usize {
+        u128::cairo_serialized_size(&this.low) + u128::cairo_serialized_size(&this.high)
     }
-    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::FieldElement> {
-        let mut out: Vec<starknet::core::types::FieldElement> = vec![];
-        out.extend(u128::cairo_serialize(&__rust.low));
-        out.extend(u128::cairo_serialize(&__rust.high));
-        out
+    fn cairo_serialize(this: &U256) -> Vec<FieldElement> {
+        [
+            u128::cairo_serialize(&this.low),
+            u128::cairo_serialize(&this.high),
+        ]
+        .concat()
     }
-    fn cairo_deserialize(
-        felts: &[starknet::core::types::FieldElement],
-        offset: usize,
-    ) -> Result<Self::RustType, crate::Error> {
-        let mut offset = offset;
+    fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> Result<U256, crate::Error> {
         let low = u128::cairo_deserialize(felts, offset)?;
-        offset += u128::cairo_serialized_size(&low);
-        let high = u128::cairo_deserialize(felts, offset)?;
+        let high = u128::cairo_deserialize(felts, offset + u128::cairo_serialized_size(&low))?;
         Ok(U256 { low, high })
     }
 }
@@ -62,21 +55,13 @@ impl U256 {
         bytes
     }
     pub fn from_bytes_be(bytes: &[u8; 32]) -> Self {
-        let mut high_bytes = [0; 16];
-        high_bytes.copy_from_slice(&bytes[0..16]);
-        let mut low_bytes = [0; 16];
-        low_bytes.copy_from_slice(&bytes[16..32]);
-        let high = u128::from_be_bytes(high_bytes);
-        let low = u128::from_be_bytes(low_bytes);
+        let high = u128::from_be_bytes(bytes[0..16].try_into().unwrap());
+        let low = u128::from_be_bytes(bytes[16..32].try_into().unwrap());
         U256 { low, high }
     }
     pub fn from_bytes_le(bytes: &[u8; 32]) -> Self {
-        let mut low_bytes = [0; 16];
-        low_bytes.copy_from_slice(&bytes[0..16]);
-        let mut high_bytes = [0; 16];
-        high_bytes.copy_from_slice(&bytes[16..32]);
-        let low = u128::from_le_bytes(low_bytes);
-        let high = u128::from_le_bytes(high_bytes);
+        let low = u128::from_le_bytes(bytes[0..16].try_into().unwrap());
+        let high = u128::from_le_bytes(bytes[16..32].try_into().unwrap());
         U256 { low, high }
     }
 }
