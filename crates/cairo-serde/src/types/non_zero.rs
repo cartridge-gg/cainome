@@ -20,6 +20,9 @@ impl<T: Zeroable> NonZero<T> {
     pub fn inner<'a>(&'a self) -> &'a T {
         &self.0
     }
+    pub fn inner_mut<'a>(&'a mut self) -> &'a mut T {
+        &mut self.0
+    }
     pub fn into_inner(self) -> T {
         self.0
     }
