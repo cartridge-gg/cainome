@@ -1,6 +1,6 @@
 //! CairoSerde implementation for NonZero.
 //!
-//! NonZero serializes with zero ( hehe :) ) overhead as the inner value
+//! NonZero serializes as the inner value with zero ( hehe :) ) overhead
 //!
 //! https://github.com/starkware-libs/cairo/blob/main/corelib/src/zeroable.cairo#L38
 use crate::{CairoSerde, ContractAddress, Result, U256};
@@ -28,27 +28,26 @@ impl<T: Zeroable> NonZero<T> {
     }
 }
 
-impl<T, RT> CairoSerde for NonZero<T>
+impl<T> CairoSerde for NonZero<T>
 where
-    T: CairoSerde<RustType = RT>,
+    T: CairoSerde<RustType = T>,
     T: Zeroable,
-    RT: Zeroable,
 {
-    type RustType = NonZero<RT>;
+    type RustType = Self;
 
     const SERIALIZED_SIZE: Option<usize> = T::SERIALIZED_SIZE;
     const DYNAMIC: bool = T::DYNAMIC;
 
     #[inline]
-    fn cairo_serialized_size(rust: &Self::RustType) -> usize {
+    fn cairo_serialized_size(rust: &NonZero<T>) -> usize {
         T::cairo_serialized_size(&rust.0)
     }
 
-    fn cairo_serialize(rust: &Self::RustType) -> Vec<FieldElement> {
+    fn cairo_serialize(rust: &NonZero<T>) -> Vec<FieldElement> {
         T::cairo_serialize(&rust.0)
     }
 
-    fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> Result<Self::RustType> {
+    fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> Result<NonZero<T>> {
         NonZero::new(T::cairo_deserialize(felts, offset)?).ok_or(crate::Error::ZeroedNonZero)
     }
 }
