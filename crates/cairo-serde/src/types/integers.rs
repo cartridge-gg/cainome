@@ -64,6 +64,7 @@ implement_trait_for_signed!(i16);
 implement_trait_for_signed!(i32);
 implement_trait_for_signed!(i64);
 implement_trait_for_signed!(i128);
+implement_trait_for_signed!(isize);
 
 #[cfg(test)]
 mod tests {
