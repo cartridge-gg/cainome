@@ -25,7 +25,10 @@ impl PartialOrd for U256 {
 
 impl CairoSerde for U256 {
     type RustType = Self;
-    const SERIALIZED_SIZE: Option<usize> = None;
+
+    const SERIALIZED_SIZE: Option<usize> = Some(2);
+    const DYNAMIC: bool = false;
+
     #[inline]
     fn cairo_serialized_size(this: &U256) -> usize {
         u128::cairo_serialized_size(&this.low) + u128::cairo_serialized_size(&this.high)

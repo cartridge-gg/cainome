@@ -33,6 +33,9 @@ where
 {
     type RustType = NonZero<RT>;
 
+    const SERIALIZED_SIZE: Option<usize> = T::SERIALIZED_SIZE;
+    const DYNAMIC: bool = T::DYNAMIC;
+
     #[inline]
     fn cairo_serialized_size(rust: &Self::RustType) -> usize {
         T::cairo_serialized_size(&rust.0)
@@ -121,5 +124,11 @@ mod tests {
             Err(Error::ZeroedNonZero) => (),
             _ => panic!("Expected ZeroedNonZero error"),
         }
+    }
+    #[test]
+    fn test_non_zero_const_size() {
+        assert_eq!(NonZero::<u32>::SERIALIZED_SIZE, Some(1));
+        assert_eq!(NonZero::<U256>::SERIALIZED_SIZE, Some(2));
+        assert_eq!(NonZero::<i8>::DYNAMIC, false);
     }
 }
