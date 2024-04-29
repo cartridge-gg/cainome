@@ -22,7 +22,6 @@ use ::starknet::core::types::FieldElement;
 
 /// Basic cairo structs that are already implemented inside
 /// this crate and hence skipped during ABI generation.
-/// TODO: What is this for????
 pub const CAIRO_BASIC_STRUCTS: [&str; 6] = [
     "Span",
     "ClassHash",
