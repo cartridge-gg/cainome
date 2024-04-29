@@ -1,5 +1,6 @@
 use crate::CairoSerde;
 use starknet::core::types::{FieldElement, ValueOutOfRangeError};
+use std::cmp::Ordering;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Ord)]
 pub struct U256 {
@@ -8,18 +9,11 @@ pub struct U256 {
 }
 
 impl PartialOrd for U256 {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        use std::cmp::Ordering;
-        if self.high < other.high {
-            return Some(Ordering::Less);
-        } else if self.high > other.high {
-            return Some(Ordering::Greater);
-        } else if self.low < other.low {
-            return Some(Ordering::Less);
-        } else if self.low > other.low {
-            return Some(Ordering::Greater);
-        }
-        Some(Ordering::Equal)
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(match self.high.cmp(&other.high) {
+            Ordering::Equal => self.low.cmp(&other.low),
+            ordering => ordering,
+        })
     }
 }
 
@@ -193,13 +187,37 @@ mod tests {
         assert_eq!(u256.high, 8_u128);
     }
     #[test]
-    fn test_ordering() {
+    fn test_ordering_1() {
         let u256_1 = U256 {
             low: 9_u128,
             high: 8_u128,
         };
         let u256_2 = U256 {
             low: 0_u128,
+            high: 9_u128,
+        };
+        assert!(u256_1 < u256_2);
+    }
+    #[test]
+    fn test_ordering_2() {
+        let u256_1 = U256 {
+            low: 9_u128,
+            high: 8_u128,
+        };
+        let u256_2 = U256 {
+            low: 9_u128,
+            high: 8_u128,
+        };
+        assert!(u256_1 == u256_2);
+    }
+    #[test]
+    fn test_ordering_3() {
+        let u256_1 = U256 {
+            low: 8_u128,
+            high: 9_u128,
+        };
+        let u256_2 = U256 {
+            low: 9_u128,
             high: 9_u128,
         };
         assert!(u256_1 < u256_2);
