@@ -91,6 +91,7 @@ impl U256 {
 mod tests {
     use super::*;
     use starknet::core::types::FieldElement;
+
     #[test]
     fn test_serialize_u256() {
         let low = 9_u128;
@@ -100,6 +101,7 @@ mod tests {
         assert_eq!(felts[0], FieldElement::from(9_u128));
         assert_eq!(felts[1], FieldElement::from(8_u128));
     }
+
     #[test]
     fn test_serialize_u256_max() {
         let low = u128::MAX;
@@ -109,6 +111,7 @@ mod tests {
         assert_eq!(felts[0], FieldElement::from(u128::MAX));
         assert_eq!(felts[1], FieldElement::from(u128::MAX));
     }
+
     #[test]
     fn test_serialize_u256_min() {
         let low = u128::MIN;
@@ -118,6 +121,7 @@ mod tests {
         assert_eq!(felts[0], FieldElement::from(u128::MIN));
         assert_eq!(felts[1], FieldElement::from(u128::MIN));
     }
+
     #[test]
     fn test_deserialize_u256() {
         let felts = vec![FieldElement::from(9_u128), FieldElement::from(8_u128)];
@@ -125,6 +129,7 @@ mod tests {
         assert_eq!(num_u256.low, 9_u128);
         assert_eq!(num_u256.high, 8_u128);
     }
+
     #[test]
     fn test_serialized_size_u256() {
         let u256 = U256 {
@@ -133,6 +138,7 @@ mod tests {
         };
         assert_eq!(U256::cairo_serialized_size(&u256), 2);
     }
+
     #[test]
     fn test_to_bytes_be() {
         let u256 = U256 {
@@ -146,6 +152,7 @@ mod tests {
         ];
         assert_eq!(bytes, expected_bytes);
     }
+
     #[test]
     fn test_to_bytes_le() {
         let u256 = U256 {
@@ -159,6 +166,7 @@ mod tests {
         ];
         assert_eq!(bytes, expected_bytes);
     }
+
     #[test]
     fn test_from_bytes_be() {
         let bytes: [u8; 32] = [
@@ -169,6 +177,7 @@ mod tests {
         assert_eq!(u256.low, 9_u128);
         assert_eq!(u256.high, 8_u128);
     }
+
     #[test]
     fn test_from_bytes_le() {
         let bytes: [u8; 32] = [
@@ -179,6 +188,7 @@ mod tests {
         assert_eq!(u256.low, 9_u128);
         assert_eq!(u256.high, 8_u128);
     }
+
     #[test]
     fn test_from_field_element() {
         let felts = (FieldElement::from(9_u128), FieldElement::from(8_u128));
@@ -186,6 +196,7 @@ mod tests {
         assert_eq!(u256.low, 9_u128);
         assert_eq!(u256.high, 8_u128);
     }
+
     #[test]
     fn test_ordering_1() {
         let u256_1 = U256 {
@@ -198,6 +209,7 @@ mod tests {
         };
         assert!(u256_1 < u256_2);
     }
+
     #[test]
     fn test_ordering_2() {
         let u256_1 = U256 {
@@ -210,6 +222,7 @@ mod tests {
         };
         assert!(u256_1 == u256_2);
     }
+
     #[test]
     fn test_ordering_3() {
         let u256_1 = U256 {

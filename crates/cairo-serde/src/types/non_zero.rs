@@ -128,6 +128,7 @@ mod tests {
             _ => panic!("Expected ZeroedNonZero error"),
         }
     }
+
     #[test]
     fn test_non_zero_const_size() {
         assert_eq!(NonZero::<u32>::SERIALIZED_SIZE, Some(1));
