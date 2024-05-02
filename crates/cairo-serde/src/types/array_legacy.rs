@@ -2,7 +2,7 @@
 use crate::{CairoSerde, Error, Result};
 use starknet::core::types::FieldElement;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct CairoArrayLegacy<T>(pub Vec<T>);
 
 impl<T: std::clone::Clone> CairoArrayLegacy<T> {

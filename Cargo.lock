@@ -323,6 +323,7 @@ dependencies = [
 name = "cainome-cairo-serde"
 version = "0.1.0"
 dependencies = [
+ "serde",
  "starknet",
  "thiserror",
 ]
