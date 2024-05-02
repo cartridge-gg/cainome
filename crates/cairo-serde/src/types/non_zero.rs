@@ -17,12 +17,15 @@ impl<T: Zeroable> NonZero<T> {
             Some(NonZero(value))
         }
     }
-    pub fn inner<'a>(&'a self) -> &'a T {
+
+    pub fn inner(&self) -> &T {
         &self.0
     }
-    pub fn inner_mut<'a>(&'a mut self) -> &'a mut T {
+
+    pub fn inner_mut(&mut self) -> &mut T {
         &mut self.0
     }
+
     pub fn into_inner(self) -> T {
         self.0
     }
@@ -133,6 +136,8 @@ mod tests {
     fn test_non_zero_const_size() {
         assert_eq!(NonZero::<u32>::SERIALIZED_SIZE, Some(1));
         assert_eq!(NonZero::<U256>::SERIALIZED_SIZE, Some(2));
-        assert_eq!(NonZero::<i8>::DYNAMIC, false);
+
+        let is_dynamic = NonZero::<i8>::DYNAMIC;
+        assert!(!is_dynamic);
     }
 }
