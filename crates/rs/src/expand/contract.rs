@@ -36,8 +36,8 @@ impl CairoContract {
                     self.account.provider()
                 }
 
-                pub fn with_block(self, block_id: #snrs_types::BlockId) -> Self {
-                    Self { block_id, ..self }
+                pub fn with_block(self, block_id: &#snrs_types::BlockId) -> Self {
+                    Self { block_id: block_id.clone(), ..self }
                 }
             }
 
@@ -64,8 +64,8 @@ impl CairoContract {
                     &self.provider
                 }
 
-                pub fn with_block(self, block_id: #snrs_types::BlockId) -> Self {
-                    Self { block_id, ..self }
+                pub fn with_block(self, block_id: &#snrs_types::BlockId) -> Self {
+                    Self { block_id: block_id.clone(), ..self }
                 }
             }
         };
