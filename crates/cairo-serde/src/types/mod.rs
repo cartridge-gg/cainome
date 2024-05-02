@@ -4,10 +4,12 @@ pub mod boolean;
 pub mod byte_array;
 pub mod felt;
 pub mod integers;
+pub mod non_zero;
 pub mod option;
 pub mod result;
 pub mod starknet;
 pub mod tuple;
+pub mod u256;
 
 #[cfg(test)]
 mod tests {

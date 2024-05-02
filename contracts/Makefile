@@ -9,6 +9,7 @@ generate_artifacts:
 	scarb build
 	mkdir -p ${artifacts}
 
+	jq .abi ${scarb_build}basic${sierra} > ${artifacts}basic.abi.json
 	jq .abi ${scarb_build}simple_events${sierra} > ${artifacts}events.abi.json
 	jq .abi ${scarb_build}simple_get_set${sierra} > ${artifacts}simple_get_set.abi.json
 	jq .abi ${scarb_build}simple_types${sierra} > ${artifacts}simple_types.abi.json
@@ -19,6 +20,10 @@ generate_artifacts:
 	jq .abi ${scarb_build}structs${sierra} > ${artifacts}structs.abi.json
 	jq .abi ${scarb_build}byte_array${sierra} > ${artifacts}byte_array.abi.json
 
+generate_rust:
+	scarb build
+	mkdir -p generated
+	cargo run --all-features -- --artifacts-path target/dev --output-dir generated --rust
 
 setup: setup_simple_get_set
 

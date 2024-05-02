@@ -8,7 +8,14 @@ By implementing this trait, the Rust type becomes (de)serializable from / into a
 The types considered built-in by Cairo Serde are the following:
 
 ```rust
-pub const CAIRO_BASIC_STRUCTS: [&str; 4] = ["Span", "ClassHash", "ContractAddress", "EthAddress"];
+pub const CAIRO_BASIC_STRUCTS: [&str; 6] = [
+    "Span",
+    "ClassHash",
+    "ContractAddress",
+    "EthAddress",
+    "NonZero",
+    "U256",
+];
 
 pub const CAIRO_BASIC_ENUMS: [&str; 3] = ["Option", "Result", "bool"];
 ```
@@ -29,6 +36,8 @@ Cairo Serde provides serialization support for the following types:
 - `ClassHash` -> Custom type in this crate `ClassHash`.
 - `Array/Span` -> `Vec`.
 - `Tuple` -> native tuples + the unit `()` type.
+- `NonZero` -> Custom type in this crate `NonZero`.
+- `u256` -> Custom type in this crate `U256`.
 
 ## `CairoSerde` trait
 

@@ -10,3 +10,4 @@ mod abicov {
 }
 
 mod simple_get_set;
+mod basic;

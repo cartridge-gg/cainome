@@ -19,6 +19,8 @@ pub enum Error {
     Provider(#[from] ProviderError),
     #[error("Bytes31 out of range.")]
     Bytes31OutOfRange,
+    #[error("NonZero that is zero")]
+    ZeroedNonZero,
 }
 
 impl CairoSerde for Error {

@@ -1,3 +1,4 @@
+use cainome::cairo_serde::U256;
 use cainome::rs::abigen;
 use starknet::{
     accounts::{Account, ConnectedAccount, ExecutionEncoding, SingleOwnerAccount},
