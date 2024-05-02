@@ -5,7 +5,7 @@ use crate::{CairoSerde, Error, Result};
 use starknet::core::types::FieldElement;
 
 /// ContractAddress.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ContractAddress(pub FieldElement);
 
 impl From<FieldElement> for ContractAddress {
@@ -42,7 +42,7 @@ impl CairoSerde for ContractAddress {
 }
 
 /// ClassHash.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct ClassHash(pub FieldElement);
 
 impl From<FieldElement> for ClassHash {
@@ -77,7 +77,7 @@ impl CairoSerde for ClassHash {
 }
 
 /// EthAddress.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct EthAddress(pub FieldElement);
 
 impl From<FieldElement> for EthAddress {

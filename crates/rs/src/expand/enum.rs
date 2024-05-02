@@ -42,15 +42,18 @@ impl CairoEnum {
             // Add one phantom for each generic type.
             // Those phantom fields are ignored by serde.
 
+            // TODO: as for struct, we need to have a better way for the user to specify the
+            // traits to derive.
+
             quote! {
-                #[derive(Debug, PartialEq, Clone)]
+                #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
                 pub enum #enum_name<#(#gen_args),*> {
                     #(#variants),*
                 }
             }
         } else {
             quote! {
-                #[derive(Debug, PartialEq, Clone)]
+                #[derive(Debug, PartialEq, Clone, serde::Serialize, serde::Deserialize)]
                 pub enum #enum_name {
                     #(#variants),*
                 }
