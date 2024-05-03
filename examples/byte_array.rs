@@ -2,7 +2,7 @@ use cainome::cairo_serde::ByteArray;
 use cainome::rs::abigen;
 use starknet::{
     accounts::{ExecutionEncoding, SingleOwnerAccount},
-    core::types::{BlockId, BlockTag, FieldElement},
+    core::types::FieldElement,
     providers::{jsonrpc::HttpTransport, AnyProvider, JsonRpcClient},
     signers::{LocalWallet, SigningKey},
 };
@@ -37,8 +37,7 @@ async fn main() {
         ExecutionEncoding::New,
     ));
 
-    // Clone Arc only.
-    let contract = MyContract::new(contract_address, account.clone());
+    let contract = MyContract::new(contract_address, account);
 
     let byte_array =
         ByteArray::from_string("super long string that does not fit into a felt252").unwrap();
@@ -72,8 +71,4 @@ async fn main() {
 
     let string: String = byte_array.to_string().unwrap();
     println!("byte_array str: {}", string);
-
-    let block_id = BlockId::Tag(BlockTag::Latest);
-
-    let _contract = MyContract::new(contract_address, account).with_block(&block_id);
 }
