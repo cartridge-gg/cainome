@@ -36,7 +36,7 @@ impl CairoContract {
                     self.account.provider()
                 }
 
-                pub fn set_block(mut self, block_id: #snrs_types::BlockId) {
+                pub fn set_block(&mut self, block_id: #snrs_types::BlockId) {
                     self.block_id = block_id;
                 }
             }
@@ -64,7 +64,7 @@ impl CairoContract {
                     &self.provider
                 }
 
-                pub fn set_block(mut self, block_id: #snrs_types::BlockId) {
+                pub fn set_block(&mut self, block_id: #snrs_types::BlockId) {
                     self.block_id = block_id;
                 }
             }
