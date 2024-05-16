@@ -28,7 +28,7 @@ pub const BYTES31_MAX: FieldElement = FieldElement::from_mont([
     576460566199927480,
 ]);
 
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Bytes31(FieldElement);
 
 impl Bytes31 {
@@ -71,7 +71,7 @@ impl CairoSerde for Bytes31 {
     }
 }
 
-#[derive(Debug, Clone, Eq, PartialEq, Default)]
+#[derive(Debug, Clone, Eq, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct ByteArray {
     pub data: Vec<Bytes31>,
     pub pending_word: FieldElement,
