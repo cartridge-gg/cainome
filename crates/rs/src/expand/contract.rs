@@ -28,7 +28,7 @@ impl CairoContract {
                     Self { address, account, block_id: #snrs_types::BlockId::Tag(#snrs_types::BlockTag::Pending) }
                 }
 
-                pub fn set_contract_address(mut self, address: #snrs_types::FieldElement) {
+                pub fn set_contract_address(&mut self, address: #snrs_types::FieldElement) {
                     self.address = address;
                 }
 
@@ -38,6 +38,10 @@ impl CairoContract {
 
                 pub fn set_block(&mut self, block_id: #snrs_types::BlockId) {
                     self.block_id = block_id;
+                }
+
+                pub fn with_block(self, block_id: #snrs_types::BlockId) -> Self {
+                    Self { block_id, ..self }
                 }
             }
 
@@ -56,7 +60,7 @@ impl CairoContract {
                     Self { address, provider, block_id: #snrs_types::BlockId::Tag(#snrs_types::BlockTag::Pending) }
                 }
 
-                pub fn set_contract_address(mut self, address: #snrs_types::FieldElement) {
+                pub fn set_contract_address(&mut self, address: #snrs_types::FieldElement) {
                     self.address = address;
                 }
 
@@ -66,6 +70,10 @@ impl CairoContract {
 
                 pub fn set_block(&mut self, block_id: #snrs_types::BlockId) {
                     self.block_id = block_id;
+                }
+
+                pub fn with_block(self, block_id: #snrs_types::BlockId) -> Self {
+                    Self { block_id, ..self }
                 }
             }
         };
