@@ -118,7 +118,15 @@ impl AbiParser {
         })
     }
 
+    /// Collects the function from the ABI entry.
     ///
+    /// # Arguments
+    ///
+    /// * `entry` - The ABI entry to collect functions from.
+    /// * `all_composites` - All known composites tokens.
+    /// * `functions` - The list of functions already collected.
+    /// * `interfaces` - The list of interfaces already collected.
+    /// * `interface_name` - The name of the interface (if any).
     fn collect_entry_function(
         entry: &AbiEntry,
         all_composites: &HashMap<String, Composite>,
@@ -189,7 +197,12 @@ impl AbiParser {
         Ok(())
     }
 
+    /// Collects the token from the ABI entry.
     ///
+    /// # Arguments
+    ///
+    /// * `entry` - The ABI entry to collect tokens from.
+    /// * `tokens` - The list of tokens already collected.
     fn collect_entry_token(
         entry: &AbiEntry,
         tokens: &mut HashMap<String, Vec<Token>>,

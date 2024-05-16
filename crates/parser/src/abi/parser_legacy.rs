@@ -89,7 +89,12 @@ impl AbiParserLegacy {
         })
     }
 
+    /// Collects the token from the ABI entry.
     ///
+    /// # Arguments
+    ///
+    /// * `entry` - The ABI entry to collect tokens from.
+    /// * `tokens` - The list of tokens already collected.
     fn collect_entry_token(
         entry: &RawLegacyAbiEntry,
         tokens: &mut HashMap<String, Token>,
@@ -114,7 +119,14 @@ impl AbiParserLegacy {
         Ok(())
     }
 
+    /// Collects the function from the ABI entry.
     ///
+    /// # Arguments
+    ///
+    /// * `entry` - The ABI entry to collect functions from.
+    /// * `all_composites` - All known composites tokens.
+    /// * `structs` - The list of structs already collected.
+    /// * `functions` - The list of functions already collected.
     fn collect_entry_function(
         entry: &RawLegacyAbiEntry,
         all_composites: &mut HashMap<String, Composite>,
