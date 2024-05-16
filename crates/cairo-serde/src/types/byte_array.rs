@@ -1,5 +1,5 @@
 //! Support for string compatibility with Cairo `ByteArray`.
-//! https://github.com/starkware-libs/cairo/blob/a4de08fbd75fa1d58c69d054d6b3d99aaf318f90/corelib/src/byte_array.cairo
+//! <https://github.com/starkware-libs/cairo/blob/a4de08fbd75fa1d58c69d054d6b3d99aaf318f90/corelib/src/byte_array.cairo>
 //!
 //! The basic concept of this `ByteArray` is relying on a string being
 //! represented as an array of bytes packed by 31 bytes in a felt.

@@ -2,7 +2,7 @@
 //!
 //! NonZero serializes with zero ( hehe :) ) overhead as the inner value
 //!
-//! https://github.com/starkware-libs/cairo/blob/main/corelib/src/zeroable.cairo#L38
+//! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/zeroable.cairo#L38>
 use crate::{CairoSerde, ContractAddress, Result, U256};
 use starknet::core::types::FieldElement;
 

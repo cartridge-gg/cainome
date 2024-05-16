@@ -13,12 +13,6 @@
 //!
 //! * `FCall` - Struct for readonly functions.
 //! * `Execution` - Struct from starknet-rs for transaction based functions.
-//!
-//! ## Examples
-//!
-//! ```ignore (pseudo-code)
-//! // TODO
-//! ```
 use cainome_parser::tokens::{Function, FunctionOutputKind, StateMutability, Token};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;

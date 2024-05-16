@@ -37,6 +37,11 @@ jobs:
       - name: Check Rust format
         run: |
           cargo fmt --all -- --check
+
       - name: Run Clippy lints
         run: |
           cargo clippy --all --all-targets --all-features -- -D warnings
+
+      - name: check Rust docs
+        run: |
+          RUSTDOCFLAGS="-Dwarnings" cargo doc --document-private-items --no-deps --all-features --workspace

@@ -59,7 +59,7 @@ pub trait CairoSerde {
     /// Serializes the given type into a FieldElement sequence.
     fn cairo_serialize(rust: &Self::RustType) -> Vec<FieldElement>;
 
-    /// TODO: add serialize_to(rust: &Self::RustType, out: &mut Vec<FieldElement>)
+    /// TODO: add `serialize_to(rust: &Self::RustType, out: &mut Vec<FieldElement>)`.
     /// for large buffers optimization.
 
     /// Deserializes an array of felts into the given type.
