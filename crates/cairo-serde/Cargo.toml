@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 starknet.workspace = true
 thiserror.workspace = true
+serde.workspace = true

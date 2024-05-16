@@ -167,7 +167,6 @@ fn open_json_file(file_path: &str) -> Result<File> {
     })
 }
 
-///
 pub fn str_to_litstr(str_in: &str) -> LitStr {
     LitStr::new(str_in, proc_macro::Span::call_site().into())
 }

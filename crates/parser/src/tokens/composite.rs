@@ -134,7 +134,7 @@ impl Composite {
     }
 }
 
-///
+/// Converts a snake case string to pascal case.
 pub fn snake_to_pascal_case(s: &str) -> String {
     s.split('_')
         .map(|word| {
@@ -147,7 +147,7 @@ pub fn snake_to_pascal_case(s: &str) -> String {
         .collect()
 }
 
-///
+/// Escapes Rust keywords that may be found into cairo code.
 pub fn escape_rust_keywords(s: &str) -> String {
     let keywords = ["move", "type", "final"];
 

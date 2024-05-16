@@ -2,7 +2,7 @@ use crate::CairoSerde;
 use starknet::core::types::{FieldElement, ValueOutOfRangeError};
 use std::cmp::Ordering;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct U256 {
     pub low: u128,
     pub high: u128,

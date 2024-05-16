@@ -48,15 +48,18 @@ impl CairoStruct {
             // Add one phantom for each generic type.
             // Those phantom fields are ignored by serde.
 
+            // TODO: add a way for the user to specify which trait must be derived for the
+            // generated structs. For now Serde is used to ensure easy serialization.
+
             quote! {
-                #[derive(Debug, PartialEq, PartialOrd, Clone)]
+                #[derive(Debug, PartialEq, PartialOrd, Clone, serde::Serialize, serde::Deserialize)]
                 pub struct #struct_name<#(#gen_args),*> {
                     #(pub #members),*
                 }
             }
         } else {
             quote! {
-                #[derive(Debug, PartialEq, PartialOrd, Clone)]
+                #[derive(Debug, PartialEq, PartialOrd, Clone, serde::Serialize, serde::Deserialize)]
                 pub struct #struct_name {
                     #(pub #members),*
                 }

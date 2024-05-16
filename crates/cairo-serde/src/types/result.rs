@@ -1,6 +1,6 @@
 //! CairoSerde implementation for Result.
 //!
-//! https://github.com/starkware-libs/cairo/blob/main/corelib/src/result.cairo#L6
+//! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/result.cairo#L6>
 use crate::{CairoSerde, Error as CairoError, Result as CairoResult};
 use starknet::core::types::FieldElement;
 

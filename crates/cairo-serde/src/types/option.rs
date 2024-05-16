@@ -3,7 +3,7 @@
 //! In cairo, `Some` is the first field and `None` the second one.
 //! To follow the serialization rule, `Some` has index 0, and `None` index 1.
 //!
-//! https://github.com/starkware-libs/cairo/blob/main/corelib/src/option.cairo#L6
+//! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/option.cairo#L6>
 use crate::{CairoSerde, Error, Result};
 use starknet::core::types::FieldElement;
 
