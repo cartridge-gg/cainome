@@ -7,7 +7,7 @@ This crates contains the compile-time rust macro `abigen` to generate rust bindi
 ```toml
 # Cargo.toml
 
-cainome = { git = "https://github.com/cartridge-gg/cainome", tag = "v0.1.10", features = ["abigen-rs"] }
+cainome = { git = "https://github.com/cartridge-gg/cainome", tag = "v0.2.9", features = ["abigen-rs"] }
 ```
 
 ```rust
