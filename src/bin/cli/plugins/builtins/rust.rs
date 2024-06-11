@@ -36,7 +36,8 @@ impl BuiltinPlugin for RustPlugin {
             // TODO: add typeshare support?
             let add_typeshare = false;
 
-            let expanded = cainome_rs::abi_to_tokenstream(&contract_name, &contract.tokens, add_typeshare);
+            let expanded =
+                cainome_rs::abi_to_tokenstream(&contract_name, &contract.tokens, add_typeshare);
             let filename = format!(
                 "{}.rs",
                 contract_name.from_case(Case::Pascal).to_case(Case::Snake)
