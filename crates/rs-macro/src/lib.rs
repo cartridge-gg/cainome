@@ -29,7 +29,12 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
     let abi_tokens = AbiParser::collect_tokens(&abi_entries, &contract_abi.type_aliases)
         .expect("failed tokens parsing");
 
-    let expanded = cainome_rs::abi_to_tokenstream(&contract_name.to_string(), &abi_tokens);
+    // Typeshare is not parseable when the macro is expanded before compilation but not not
+    // written to a file.
+    let add_typeshare = false;
+
+    let expanded =
+        cainome_rs::abi_to_tokenstream(&contract_name.to_string(), &abi_tokens, add_typeshare);
 
     if let Some(out_path) = contract_abi.output_path {
         let content: String = expanded.to_string();
@@ -53,7 +58,10 @@ fn abigen_internal_legacy(input: TokenStream) -> TokenStream {
     let abi_tokens = AbiParserLegacy::collect_tokens(&abi_entries, &contract_abi.type_aliases)
         .expect("failed tokens parsing");
 
-    let expanded = cainome_rs::abi_to_tokenstream(&contract_name.to_string(), &abi_tokens);
+    let add_typeshare = false;
+
+    let expanded =
+        cainome_rs::abi_to_tokenstream(&contract_name.to_string(), &abi_tokens, add_typeshare);
 
     if let Some(out_path) = contract_abi.output_path {
         let content: String = expanded.to_string();

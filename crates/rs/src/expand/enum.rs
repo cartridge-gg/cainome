@@ -9,7 +9,7 @@ use crate::expand::utils;
 pub struct CairoEnum;
 
 impl CairoEnum {
-    pub fn expand_decl(composite: &Composite) -> TokenStream2 {
+    pub fn expand_decl(composite: &Composite, add_typeshare: bool) -> TokenStream2 {
         if composite.is_builtin() {
             return quote!();
         }
@@ -17,6 +17,8 @@ impl CairoEnum {
         let enum_name = utils::str_to_ident(&composite.type_name_or_alias());
 
         let mut variants: Vec<TokenStream2> = vec![];
+
+        let mut is_algebraic = false;
 
         for inner in &composite.inners {
             let name = utils::str_to_ident(&inner.name);
@@ -26,10 +28,11 @@ impl CairoEnum {
                 variants.push(quote!(#name));
             } else {
                 variants.push(quote!(#name(#ty)));
+                is_algebraic = true;
             }
         }
 
-        if composite.is_generic() {
+        let decl = if composite.is_generic() {
             let gen_args: Vec<Ident> = composite
                 .generic_args
                 .iter()
@@ -58,6 +61,23 @@ impl CairoEnum {
                     #(#variants),*
                 }
             }
+        };
+
+        if add_typeshare {
+            if is_algebraic {
+                quote! {
+                    #[typeshare]
+                    #[serde(tag = "type", content = "content")]
+                    #decl
+                }
+            } else {
+                quote! {
+                    #[typeshare]
+                    #decl
+                }
+            }
+        } else {
+            decl
         }
     }
 

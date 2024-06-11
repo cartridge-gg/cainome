@@ -24,6 +24,7 @@ impl BuiltinPlugin for RustPlugin {
             // For now, let's only take the latest part of this path.
             // TODO: if a project has several contracts with the same name under different
             // namespaces, we should provide a solution to solve those conflicts.
+            // Check how the aliases can be passed here.
             let contract_name = contract
                 .name
                 .split("::")
@@ -32,7 +33,10 @@ impl BuiltinPlugin for RustPlugin {
                 .from_case(Case::Snake)
                 .to_case(Case::Pascal);
 
-            let expanded = cainome_rs::abi_to_tokenstream(&contract_name, &contract.tokens);
+            // TODO: add typeshare support?
+            let add_typeshare = false;
+
+            let expanded = cainome_rs::abi_to_tokenstream(&contract_name, &contract.tokens, add_typeshare);
             let filename = format!(
                 "{}.rs",
                 contract_name.from_case(Case::Pascal).to_case(Case::Snake)
