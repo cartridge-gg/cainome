@@ -109,7 +109,7 @@ async fn main() {
     // the full control from starknet-rs library.
     let _tx_res = contract
         .account
-        .execute(vec![set_a_call, set_b_call])
+        .execute_v1(vec![set_a_call, set_b_call])
         .send()
         .await
         .expect("Multicall failed");

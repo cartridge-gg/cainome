@@ -133,7 +133,7 @@ impl CairoFunction {
                     pub fn #func_name_ident(
                         &self,
                         #(#inputs),*
-                    ) -> starknet::accounts::Execution<A> {
+                    ) -> starknet::accounts::ExecutionV1<A> {
                         use #ccs::CairoSerde;
 
                         let mut __calldata = vec![];
@@ -145,7 +145,7 @@ impl CairoFunction {
                             calldata: __calldata,
                         };
 
-                        self.account.execute(vec![__call])
+                        self.account.execute_v1(vec![__call])
                     }
                 }
             }
