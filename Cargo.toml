@@ -23,7 +23,7 @@ camino = { version = "1.1.2", features = [ "serde1" ] }
 convert_case = "0.6.0"
 serde = { version = "1.0", default-features = false, features = ["alloc"] }
 serde_json = { version = "1.0", default-features = false, features = ["std"] }
-starknet = "0.10.0"
+starknet = { git = "https://github.com/xJonathanLEI/starknet-rs", rev = "82bac8b196a59c340519249b92db410d0084d74d" }
 thiserror = "1.0"
 tracing = "0.1.34"
 tracing-subscriber = { version = "0.3.16", features = [ "env-filter", "json" ] }
