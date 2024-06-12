@@ -6,7 +6,7 @@
 use crate::{CairoSerde, ContractAddress, Result, U256};
 use starknet::core::types::FieldElement;
 
-#[derive(Debug, PartialEq, PartialOrd, Clone)]
+#[derive(Debug, PartialEq, PartialOrd, Clone, serde::Serialize, serde::Deserialize)]
 pub struct NonZero<T: Zeroable>(T);
 
 impl<T: Zeroable> NonZero<T> {
