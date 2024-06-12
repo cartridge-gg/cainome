@@ -6,6 +6,10 @@ This tools is still in early development.
 
 ## How to build
 
+`cargo install --git https://github.com/cartridge-gg/cainome --features="build-binary"`
+
+or locally:
+
 `cargo build`
 
 ## How to use
