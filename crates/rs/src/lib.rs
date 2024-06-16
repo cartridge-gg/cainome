@@ -63,6 +63,8 @@ pub struct Abigen {
     /// Types aliases to avoid name conflicts, as for now the types are limited to the
     /// latest segment of the fully qualified path.
     pub types_aliases: HashMap<String, String>,
+    /// Adds the typeshare attribute to the generated types.
+    pub add_typeshare: bool,
 }
 
 impl Abigen {
@@ -78,6 +80,7 @@ impl Abigen {
             contract_name: contract_name.to_string(),
             abi_source: Utf8PathBuf::from(abi_source),
             types_aliases: HashMap::new(),
+            add_typeshare: false,
         }
     }
 
@@ -91,13 +94,19 @@ impl Abigen {
         self
     }
 
+    /// Adds the typeshare attribute to the generated types.
+    pub fn with_typeshare(mut self) -> Self {
+        self.add_typeshare = true;
+        self
+    }
+
     /// Generates the contract bindings.
     pub fn generate(&self) -> Result<ContractBindings> {
         let file_content = std::fs::read_to_string(&self.abi_source)?;
 
         match AbiParser::tokens_from_abi_string(&file_content, &self.types_aliases) {
             Ok(tokens) => {
-                let expanded = abi_to_tokenstream(&self.contract_name, &tokens);
+                let expanded = abi_to_tokenstream(&self.contract_name, &tokens, self.add_typeshare);
 
                 Ok(ContractBindings {
                     name: self.contract_name.clone(),
@@ -120,7 +129,12 @@ impl Abigen {
 ///
 /// * `contract_name` - Name of the contract.
 /// * `abi_tokens` - Tokenized ABI.
-pub fn abi_to_tokenstream(contract_name: &str, abi_tokens: &TokenizedAbi) -> TokenStream2 {
+/// * `add_typeshare` - Adds the typeshare attribute to the generated types.
+pub fn abi_to_tokenstream(
+    contract_name: &str,
+    abi_tokens: &TokenizedAbi,
+    add_typeshare: bool,
+) -> TokenStream2 {
     let contract_name = utils::str_to_ident(contract_name);
 
     let mut tokens: Vec<TokenStream2> = vec![];
@@ -129,13 +143,13 @@ pub fn abi_to_tokenstream(contract_name: &str, abi_tokens: &TokenizedAbi) -> Tok
 
     for s in &abi_tokens.structs {
         let s_composite = s.to_composite().expect("composite expected");
-        tokens.push(CairoStruct::expand_decl(s_composite));
+        tokens.push(CairoStruct::expand_decl(s_composite, add_typeshare));
         tokens.push(CairoStruct::expand_impl(s_composite));
     }
 
     for e in &abi_tokens.enums {
         let e_composite = e.to_composite().expect("composite expected");
-        tokens.push(CairoEnum::expand_decl(e_composite));
+        tokens.push(CairoEnum::expand_decl(e_composite, add_typeshare));
         tokens.push(CairoEnum::expand_impl(e_composite));
 
         tokens.push(CairoEnumEvent::expand(

@@ -9,7 +9,7 @@ use crate::expand::utils;
 pub struct CairoStruct;
 
 impl CairoStruct {
-    pub fn expand_decl(composite: &Composite) -> TokenStream2 {
+    pub fn expand_decl(composite: &Composite, add_typeshare: bool) -> TokenStream2 {
         if composite.is_builtin() {
             return quote!();
         }
@@ -35,7 +35,7 @@ impl CairoStruct {
             }
         }
 
-        if composite.is_generic() {
+        let decl = if composite.is_generic() {
             let gen_args: Vec<Ident> = composite
                 .generic_args
                 .iter()
@@ -64,6 +64,15 @@ impl CairoStruct {
                     #(pub #members),*
                 }
             }
+        };
+
+        if add_typeshare {
+            quote! {
+                #[typeshare]
+                #decl
+            }
+        } else {
+            decl
         }
     }
 
