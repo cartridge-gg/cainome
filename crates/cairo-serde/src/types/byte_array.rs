@@ -22,10 +22,10 @@ use crate::CairoSerde;
 const MAX_WORD_LEN: usize = 31;
 
 pub const BYTES31_MAX: Felt = Felt::from_raw([
-    18446744062762287141,
-    20123647,
-    18446744073709514624,
     576460566199927480,
+    18446744073709514624,
+    20123647,
+    18446744062762287141,
 ]);
 
 #[derive(
