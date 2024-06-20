@@ -1,5 +1,5 @@
 use crate::CairoSerde;
-use starknet::core::types::{Felt, ValueOutOfRangeError};
+use starknet::core::types::Felt;
 use std::cmp::Ordering;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -40,6 +40,11 @@ impl CairoSerde for U256 {
         Ok(U256 { low, high })
     }
 }
+
+#[derive(Debug, thiserror::Error)]
+#[error("Value out of range")]
+pub struct ValueOutOfRangeError;
+
 /// Felt to U256 conversion as if the tuple was a cairo serialized U256
 impl TryFrom<(Felt, Felt)> for U256 {
     type Error = ValueOutOfRangeError;

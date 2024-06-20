@@ -20,7 +20,7 @@ macro_rules! implement_trait_for_unsigned {
                     )));
                 }
 
-                let temp: u128 = felts[offset].try_into().unwrap();
+                let temp: u128 = <Felt as num_traits::ToPrimitive>::to_u128(&felts[offset]).unwrap();
                 Ok(temp as $type)
             }
         }
@@ -45,7 +45,7 @@ macro_rules! implement_trait_for_signed {
                     )));
                 }
 
-                let temp: u128 = felts[offset].try_into().unwrap();
+                let temp: u128 = <Felt as num_traits::ToPrimitive>::to_u128(&felts[offset]).unwrap();
                 Ok(temp as $type)
             }
         }

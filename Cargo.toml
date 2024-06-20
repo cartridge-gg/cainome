@@ -50,6 +50,9 @@ tracing-subscriber.workspace = true
 url.workspace = true
 tokio = { version = "1.15.0", features = ["full"], optional = true }
 
+[patch.crates-io]
+starknet = { git = "https://github.com/xJonathanLEI/starknet-rs.git" , rev = "71b1911"}
+
 [features]
 default = []
 abigen-rs = ["cainome-rs-macro"]
