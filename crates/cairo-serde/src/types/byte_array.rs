@@ -14,14 +14,14 @@ use std::{
     string::FromUtf8Error,
 };
 
-use starknet::core::types::FieldElement;
+use starknet::core::types::Felt;
 
 use crate::error::{Error, Result as CainomeResult};
 use crate::CairoSerde;
 
 const MAX_WORD_LEN: usize = 31;
 
-pub const BYTES31_MAX: FieldElement = FieldElement::from_mont([
+pub const BYTES31_MAX: Felt = Felt::from_raw([
     18446744062762287141,
     20123647,
     18446744073709514624,
@@ -31,10 +31,10 @@ pub const BYTES31_MAX: FieldElement = FieldElement::from_mont([
 #[derive(
     Debug, Clone, Eq, PartialEq, PartialOrd, Default, serde::Serialize, serde::Deserialize,
 )]
-pub struct Bytes31(FieldElement);
+pub struct Bytes31(Felt);
 
 impl Bytes31 {
-    pub fn new(felt: FieldElement) -> CainomeResult<Self> {
+    pub fn new(felt: Felt) -> CainomeResult<Self> {
         if felt > BYTES31_MAX {
             Err(Error::Bytes31OutOfRange)
         } else {
@@ -42,21 +42,21 @@ impl Bytes31 {
         }
     }
 
-    pub fn felt(&self) -> FieldElement {
+    pub fn felt(&self) -> Felt {
         self.0
     }
 }
 
-impl From<Bytes31> for FieldElement {
+impl From<Bytes31> for Felt {
     fn from(value: Bytes31) -> Self {
         value.felt()
     }
 }
 
-impl TryFrom<FieldElement> for Bytes31 {
+impl TryFrom<Felt> for Bytes31 {
     type Error = Error;
 
-    fn try_from(value: FieldElement) -> Result<Self, Self::Error> {
+    fn try_from(value: Felt) -> Result<Self, Self::Error> {
         Self::new(value)
     }
 }
@@ -64,11 +64,11 @@ impl TryFrom<FieldElement> for Bytes31 {
 impl CairoSerde for Bytes31 {
     type RustType = Self;
 
-    fn cairo_serialize(rust: &Self::RustType) -> Vec<FieldElement> {
+    fn cairo_serialize(rust: &Self::RustType) -> Vec<Felt> {
         vec![rust.felt()]
     }
 
-    fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> CainomeResult<Self::RustType> {
+    fn cairo_deserialize(felts: &[Felt], offset: usize) -> CainomeResult<Self::RustType> {
         Self::new(felts[offset])
     }
 }
@@ -78,7 +78,7 @@ impl CairoSerde for Bytes31 {
 )]
 pub struct ByteArray {
     pub data: Vec<Bytes31>,
-    pub pending_word: FieldElement,
+    pub pending_word: Felt,
     pub pending_word_len: usize,
 }
 
@@ -90,25 +90,25 @@ impl CairoSerde for ByteArray {
     fn cairo_serialized_size(rust: &Self::RustType) -> usize {
         let mut size = 0;
         size += Vec::<Bytes31>::cairo_serialized_size(&rust.data);
-        size += FieldElement::cairo_serialized_size(&rust.pending_word);
+        size += Felt::cairo_serialized_size(&rust.pending_word);
         size += u32::cairo_serialized_size(&(rust.pending_word_len as u32));
         size
     }
 
-    fn cairo_serialize(rust: &Self::RustType) -> Vec<FieldElement> {
-        let mut out: Vec<FieldElement> = vec![];
+    fn cairo_serialize(rust: &Self::RustType) -> Vec<Felt> {
+        let mut out: Vec<Felt> = vec![];
         out.extend(Vec::<Bytes31>::cairo_serialize(&rust.data));
-        out.extend(FieldElement::cairo_serialize(&rust.pending_word));
+        out.extend(Felt::cairo_serialize(&rust.pending_word));
         out.extend(u32::cairo_serialize(&(rust.pending_word_len as u32)));
         out
     }
 
-    fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> CainomeResult<Self::RustType> {
+    fn cairo_deserialize(felts: &[Felt], offset: usize) -> CainomeResult<Self::RustType> {
         let mut offset = offset;
         let data = Vec::<Bytes31>::cairo_deserialize(felts, offset)?;
         offset += Vec::<Bytes31>::cairo_serialized_size(&data);
-        let pending_word = FieldElement::cairo_deserialize(felts, offset)?;
-        offset += FieldElement::cairo_serialized_size(&pending_word);
+        let pending_word = Felt::cairo_deserialize(felts, offset)?;
+        offset += Felt::cairo_serialized_size(&pending_word);
         let pending_word_len = u32::cairo_deserialize(felts, offset)?;
 
         Ok(ByteArray {
@@ -147,19 +147,18 @@ impl ByteArray {
             let len = r.len();
             (
                 // Safe to unwrap as pending word always fit in a felt.
-                FieldElement::from_byte_slice_be(&r).unwrap(),
+                // Felt::from_byte_slice_be(&r).unwrap(),
+                Felt::from_bytes_be_slice(&r),
                 len,
             )
         } else {
-            (FieldElement::ZERO, 0)
+            (Felt::ZERO, 0)
         };
 
         let mut data = Vec::new();
         for chunk in full_chunks {
             // Safe to unwrap as full chunks are 31 bytes long, always fit in a felt.
-            data.push(Bytes31::new(
-                FieldElement::from_byte_slice_be(chunk).unwrap(),
-            )?)
+            data.push(Bytes31::new(Felt::from_bytes_be_slice(chunk))?)
         }
 
         Ok(Self {
@@ -197,7 +196,7 @@ impl ByteArray {
 /// * `len` - The number of bytes in the felt, at most 31. In the context
 ///           of `ByteArray`, we don't need to check `len` as the `MAX_WORD_LEN`
 ///           already protect against that.
-fn felt_to_utf8(felt: &FieldElement, len: usize) -> Result<String, FromUtf8Error> {
+fn felt_to_utf8(felt: &Felt, len: usize) -> Result<String, FromUtf8Error> {
     let mut buffer = Vec::new();
 
     // ByteArray always enforce to have the first byte equal to 0.
@@ -228,7 +227,7 @@ impl TryFrom<&str> for ByteArray {
 #[cfg(test)]
 mod tests {
     use super::ByteArray;
-    use starknet::core::types::FieldElement;
+    use starknet::core::types::Felt;
 
     #[test]
     fn test_from_string_empty_string_default() {
@@ -243,7 +242,7 @@ mod tests {
             b,
             ByteArray {
                 data: vec![],
-                pending_word: FieldElement::from_hex_be(
+                pending_word: Felt::from_hex(
                     "0x0000000000000000000000000000000000000000000000000000000041424344"
                 )
                 .unwrap(),
@@ -261,7 +260,7 @@ mod tests {
             b,
             ByteArray {
                 data: vec![],
-                pending_word: FieldElement::from_hex_be(
+                pending_word: Felt::from_hex(
                     "0x00004142434445464748494a4b4c4d4e4f505152535455565758595a31323334"
                 )
                 .unwrap(),
@@ -277,13 +276,13 @@ mod tests {
         assert_eq!(
             b,
             ByteArray {
-                data: vec![FieldElement::from_hex_be(
+                data: vec![Felt::from_hex(
                     "0x004142434445464748494a4b4c4d4e4f505152535455565758595a3132333435"
                 )
                 .unwrap()
                 .try_into()
                 .unwrap()],
-                pending_word: FieldElement::ZERO,
+                pending_word: Felt::ZERO,
                 pending_word_len: 0,
             }
         );
@@ -300,20 +299,20 @@ mod tests {
             b,
             ByteArray {
                 data: vec![
-                    FieldElement::from_hex_be(
+                    Felt::from_hex(
                         "0x004142434445464748494a4b4c4d4e4f505152535455565758595a3132333435"
                     )
                     .unwrap()
                     .try_into()
                     .unwrap(),
-                    FieldElement::from_hex_be(
+                    Felt::from_hex(
                         "0x004142434445464748494a4b4c4d4e4f505152535455565758595a3132333435"
                     )
                     .unwrap()
                     .try_into()
                     .unwrap(),
                 ],
-                pending_word: FieldElement::ZERO,
+                pending_word: Felt::ZERO,
                 pending_word_len: 0,
             }
         );
@@ -330,20 +329,20 @@ mod tests {
             b,
             ByteArray {
                 data: vec![
-                    FieldElement::from_hex_be(
+                    Felt::from_hex(
                         "0x004142434445464748494a4b4c4d4e4f505152535455565758595a3132333435"
                     )
                     .unwrap()
                     .try_into()
                     .unwrap(),
-                    FieldElement::from_hex_be(
+                    Felt::from_hex(
                         "0x004142434445464748494a4b4c4d4e4f505152535455565758595a3132333435"
                     )
                     .unwrap()
                     .try_into()
                     .unwrap(),
                 ],
-                pending_word: FieldElement::from_hex_be(
+                pending_word: Felt::from_hex(
                     "0x0000000000000000000000000000000000000000000000000000000041424344"
                 )
                 .unwrap(),
@@ -362,7 +361,7 @@ mod tests {
     fn test_to_string_only_pending_word() {
         let b = ByteArray {
             data: vec![],
-            pending_word: FieldElement::from_hex_be(
+            pending_word: Felt::from_hex(
                 "0x0000000000000000000000000000000000000000000000000000000041424344",
             )
             .unwrap(),
@@ -376,7 +375,7 @@ mod tests {
     fn test_to_string_max_pending_word_len() {
         let b = ByteArray {
             data: vec![],
-            pending_word: FieldElement::from_hex_be(
+            pending_word: Felt::from_hex(
                 "0x00004142434445464748494a4b4c4d4e4f505152535455565758595a31323334",
             )
             .unwrap(),
@@ -389,13 +388,13 @@ mod tests {
     #[test]
     fn test_to_string_data_only() {
         let b = ByteArray {
-            data: vec![FieldElement::from_hex_be(
+            data: vec![Felt::from_hex(
                 "0x004142434445464748494a4b4c4d4e4f505152535455565758595a3132333435",
             )
             .unwrap()
             .try_into()
             .unwrap()],
-            pending_word: FieldElement::ZERO,
+            pending_word: Felt::ZERO,
             pending_word_len: 0,
         };
 
@@ -406,20 +405,20 @@ mod tests {
     fn test_to_string_data_only_multiple() {
         let b = ByteArray {
             data: vec![
-                FieldElement::from_hex_be(
+                Felt::from_hex(
                     "0x004142434445464748494a4b4c4d4e4f505152535455565758595a3132333435",
                 )
                 .unwrap()
                 .try_into()
                 .unwrap(),
-                FieldElement::from_hex_be(
+                Felt::from_hex(
                     "0x004142434445464748494a4b4c4d4e4f505152535455565758595a3132333435",
                 )
                 .unwrap()
                 .try_into()
                 .unwrap(),
             ],
-            pending_word: FieldElement::ZERO,
+            pending_word: Felt::ZERO,
             pending_word_len: 0,
         };
 
@@ -433,20 +432,20 @@ mod tests {
     fn test_to_string_data_and_pending_word() {
         let b = ByteArray {
             data: vec![
-                FieldElement::from_hex_be(
+                Felt::from_hex(
                     "0x004142434445464748494a4b4c4d4e4f505152535455565758595a3132333435",
                 )
                 .unwrap()
                 .try_into()
                 .unwrap(),
-                FieldElement::from_hex_be(
+                Felt::from_hex(
                     "0x004142434445464748494a4b4c4d4e4f505152535455565758595a3132333435",
                 )
                 .unwrap()
                 .try_into()
                 .unwrap(),
             ],
-            pending_word: FieldElement::from_hex_be(
+            pending_word: Felt::from_hex(
                 "0x0000000000000000000000000000000000000000000000000000000041424344",
             )
             .unwrap(),
@@ -464,7 +463,7 @@ mod tests {
     fn test_to_string_invalid_utf8() {
         let b = ByteArray {
             data: vec![],
-            pending_word: FieldElement::from_hex_be(
+            pending_word: Felt::from_hex(
                 "0x00000000000000000000000000000000000000000000000000000000ffffffff",
             )
             .unwrap(),
@@ -482,7 +481,7 @@ mod tests {
             b,
             ByteArray {
                 data: vec![],
-                pending_word: FieldElement::from_hex_be(
+                pending_word: Felt::from_hex(
                     "0x000000000000000000000000000000000000000000000000f09fa680f09f8c9f",
                 )
                 .unwrap(),

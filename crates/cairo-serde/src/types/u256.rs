@@ -1,5 +1,5 @@
 use crate::CairoSerde;
-use starknet::core::types::{FieldElement, ValueOutOfRangeError};
+use starknet::core::types::{Felt, ValueOutOfRangeError};
 use std::cmp::Ordering;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -27,23 +27,23 @@ impl CairoSerde for U256 {
     fn cairo_serialized_size(this: &U256) -> usize {
         u128::cairo_serialized_size(&this.low) + u128::cairo_serialized_size(&this.high)
     }
-    fn cairo_serialize(this: &U256) -> Vec<FieldElement> {
+    fn cairo_serialize(this: &U256) -> Vec<Felt> {
         [
             u128::cairo_serialize(&this.low),
             u128::cairo_serialize(&this.high),
         ]
         .concat()
     }
-    fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> Result<U256, crate::Error> {
+    fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<U256, crate::Error> {
         let low = u128::cairo_deserialize(felts, offset)?;
         let high = u128::cairo_deserialize(felts, offset + u128::cairo_serialized_size(&low))?;
         Ok(U256 { low, high })
     }
 }
-/// FieldElement to U256 conversion as if the tuple was a cairo serialized U256
-impl TryFrom<(FieldElement, FieldElement)> for U256 {
+/// Felt to U256 conversion as if the tuple was a cairo serialized U256
+impl TryFrom<(Felt, Felt)> for U256 {
     type Error = ValueOutOfRangeError;
-    fn try_from((a, b): (FieldElement, FieldElement)) -> Result<U256, Self::Error> {
+    fn try_from((a, b): (Felt, Felt)) -> Result<U256, Self::Error> {
         let U256 {
             low: a_low,
             high: a_high,
@@ -90,7 +90,6 @@ impl U256 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use starknet::core::types::FieldElement;
 
     #[test]
     fn test_serialize_u256() {
@@ -98,8 +97,8 @@ mod tests {
         let high = 8_u128;
         let felts = U256::cairo_serialize(&U256 { low, high });
         assert_eq!(felts.len(), 2);
-        assert_eq!(felts[0], FieldElement::from(9_u128));
-        assert_eq!(felts[1], FieldElement::from(8_u128));
+        assert_eq!(felts[0], Felt::from(9_u128));
+        assert_eq!(felts[1], Felt::from(8_u128));
     }
 
     #[test]
@@ -108,8 +107,8 @@ mod tests {
         let high = u128::MAX;
         let felts = U256::cairo_serialize(&U256 { low, high });
         assert_eq!(felts.len(), 2);
-        assert_eq!(felts[0], FieldElement::from(u128::MAX));
-        assert_eq!(felts[1], FieldElement::from(u128::MAX));
+        assert_eq!(felts[0], Felt::from(u128::MAX));
+        assert_eq!(felts[1], Felt::from(u128::MAX));
     }
 
     #[test]
@@ -118,13 +117,13 @@ mod tests {
         let high = u128::MIN;
         let felts = U256::cairo_serialize(&U256 { low, high });
         assert_eq!(felts.len(), 2);
-        assert_eq!(felts[0], FieldElement::from(u128::MIN));
-        assert_eq!(felts[1], FieldElement::from(u128::MIN));
+        assert_eq!(felts[0], Felt::from(u128::MIN));
+        assert_eq!(felts[1], Felt::from(u128::MIN));
     }
 
     #[test]
     fn test_deserialize_u256() {
-        let felts = vec![FieldElement::from(9_u128), FieldElement::from(8_u128)];
+        let felts = vec![Felt::from(9_u128), Felt::from(8_u128)];
         let num_u256 = U256::cairo_deserialize(&felts, 0).unwrap();
         assert_eq!(num_u256.low, 9_u128);
         assert_eq!(num_u256.high, 8_u128);
@@ -191,7 +190,7 @@ mod tests {
 
     #[test]
     fn test_from_field_element() {
-        let felts = (FieldElement::from(9_u128), FieldElement::from(8_u128));
+        let felts = (Felt::from(9_u128), Felt::from(8_u128));
         let u256 = U256::try_from(felts).unwrap();
         assert_eq!(u256.low, 9_u128);
         assert_eq!(u256.high, 8_u128);

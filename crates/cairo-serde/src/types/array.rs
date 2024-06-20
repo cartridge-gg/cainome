@@ -1,7 +1,7 @@
 //! CairoSerde implementation for `Vec`.
 //! They are used for Array and Span cairo types.
 use crate::{CairoSerde, Error, Result};
-use starknet::core::types::FieldElement;
+use starknet::core::types::Felt;
 
 impl<T, RT> CairoSerde for Vec<T>
 where
@@ -18,13 +18,13 @@ where
         1 + data.iter().map(T::cairo_serialized_size).sum::<usize>()
     }
 
-    fn cairo_serialize(rust: &Self::RustType) -> Vec<FieldElement> {
-        let mut out: Vec<FieldElement> = vec![rust.len().into()];
+    fn cairo_serialize(rust: &Self::RustType) -> Vec<Felt> {
+        let mut out: Vec<Felt> = vec![rust.len().into()];
         rust.iter().for_each(|r| out.extend(T::cairo_serialize(r)));
         out
     }
 
-    fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> Result<Self::RustType> {
+    fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType> {
         if offset >= felts.len() {
             return Err(Error::Deserialize(format!(
                 "Buffer too short to deserialize an array: offset ({}) : buffer {:?}",
@@ -70,19 +70,15 @@ mod tests {
         let v: Vec<u32> = vec![1, 2, 3];
         let felts = Vec::<u32>::cairo_serialize(&v);
         assert_eq!(felts.len(), 4);
-        assert_eq!(felts[0], FieldElement::from(3_u32));
-        assert_eq!(felts[1], FieldElement::ONE);
-        assert_eq!(felts[2], FieldElement::TWO);
-        assert_eq!(felts[3], FieldElement::THREE);
+        assert_eq!(felts[0], Felt::from(3_u32));
+        assert_eq!(felts[1], Felt::ONE);
+        assert_eq!(felts[2], Felt::TWO);
+        assert_eq!(felts[3], Felt::THREE);
     }
 
     #[test]
     fn test_deserialize_array() {
-        let felts: Vec<FieldElement> = vec![
-            FieldElement::from(2_u32),
-            FieldElement::from(123_u32),
-            FieldElement::from(9988_u32),
-        ];
+        let felts: Vec<Felt> = vec![Felt::from(2_u32), Felt::from(123_u32), Felt::from(9988_u32)];
 
         let vals = Vec::<u32>::cairo_deserialize(&felts, 0).unwrap();
         assert_eq!(vals.len(), 2);
@@ -95,23 +91,23 @@ mod tests {
         let v: Vec<Vec<u32>> = vec![vec![1, 2], vec![3]];
         let felts = Vec::<Vec<u32>>::cairo_serialize(&v);
         assert_eq!(felts.len(), 6);
-        assert_eq!(felts[0], FieldElement::TWO);
-        assert_eq!(felts[1], FieldElement::TWO);
-        assert_eq!(felts[2], FieldElement::ONE);
-        assert_eq!(felts[3], FieldElement::TWO);
-        assert_eq!(felts[4], FieldElement::ONE);
-        assert_eq!(felts[5], FieldElement::THREE);
+        assert_eq!(felts[0], Felt::TWO);
+        assert_eq!(felts[1], Felt::TWO);
+        assert_eq!(felts[2], Felt::ONE);
+        assert_eq!(felts[3], Felt::TWO);
+        assert_eq!(felts[4], Felt::ONE);
+        assert_eq!(felts[5], Felt::THREE);
     }
 
     #[test]
     fn test_deserialize_array_nested() {
-        let felts: Vec<FieldElement> = vec![
-            FieldElement::TWO,
-            FieldElement::TWO,
-            FieldElement::ONE,
-            FieldElement::TWO,
-            FieldElement::ONE,
-            FieldElement::THREE,
+        let felts: Vec<Felt> = vec![
+            Felt::TWO,
+            Felt::TWO,
+            Felt::ONE,
+            Felt::TWO,
+            Felt::ONE,
+            Felt::THREE,
         ];
 
         let vals = Vec::<Vec<u32>>::cairo_deserialize(&felts, 0).unwrap();
@@ -122,24 +118,20 @@ mod tests {
 
     #[test]
     fn test_serialize_array_tuple() {
-        let v: Vec<(u32, FieldElement)> = vec![(12, FieldElement::TWO)];
-        let felts = Vec::<(u32, FieldElement)>::cairo_serialize(&v);
+        let v: Vec<(u32, Felt)> = vec![(12, Felt::TWO)];
+        let felts = Vec::<(u32, Felt)>::cairo_serialize(&v);
         assert_eq!(felts.len(), 3);
-        assert_eq!(felts[0], FieldElement::from(1_u32));
-        assert_eq!(felts[1], FieldElement::from(12_u32));
-        assert_eq!(felts[2], FieldElement::TWO);
+        assert_eq!(felts[0], Felt::from(1_u32));
+        assert_eq!(felts[1], Felt::from(12_u32));
+        assert_eq!(felts[2], Felt::TWO);
     }
 
     #[test]
     fn test_deserialize_array_tuple() {
-        let felts: Vec<FieldElement> = vec![
-            FieldElement::from(1_u32),
-            FieldElement::from(12_u32),
-            FieldElement::TWO,
-        ];
+        let felts: Vec<Felt> = vec![Felt::from(1_u32), Felt::from(12_u32), Felt::TWO];
 
-        let vals = Vec::<(u32, FieldElement)>::cairo_deserialize(&felts, 0).unwrap();
+        let vals = Vec::<(u32, Felt)>::cairo_deserialize(&felts, 0).unwrap();
         assert_eq!(vals.len(), 1);
-        assert_eq!(vals[0], (12, FieldElement::TWO));
+        assert_eq!(vals[0], (12, Felt::TWO));
     }
 }

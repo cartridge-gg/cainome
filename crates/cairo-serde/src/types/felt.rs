@@ -1,14 +1,14 @@
 use crate::{CairoSerde, Error, Result};
-use starknet::core::types::FieldElement;
+use starknet::core::types::Felt;
 
-impl CairoSerde for FieldElement {
+impl CairoSerde for Felt {
     type RustType = Self;
 
-    fn cairo_serialize(rust: &Self::RustType) -> Vec<FieldElement> {
+    fn cairo_serialize(rust: &Self::RustType) -> Vec<Felt> {
         vec![*rust]
     }
 
-    fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> Result<Self::RustType> {
+    fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType> {
         if offset >= felts.len() {
             return Err(Error::Deserialize(format!(
                 "Buffer too short to deserialize a felt: offset ({}) : buffer {:?}",
@@ -26,26 +26,17 @@ mod tests {
 
     #[test]
     fn test_serialize_field_element() {
-        let f = FieldElement::ZERO;
-        let felts = FieldElement::cairo_serialize(&f);
+        let f = Felt::ZERO;
+        let felts = Felt::cairo_serialize(&f);
         assert_eq!(felts.len(), 1);
-        assert_eq!(felts[0], FieldElement::ZERO);
+        assert_eq!(felts[0], Felt::ZERO);
     }
 
     #[test]
     fn test_deserialize_field_element() {
-        let felts = vec![FieldElement::ZERO, FieldElement::ONE, FieldElement::TWO];
-        assert_eq!(
-            FieldElement::cairo_deserialize(&felts, 0).unwrap(),
-            FieldElement::ZERO
-        );
-        assert_eq!(
-            FieldElement::cairo_deserialize(&felts, 1).unwrap(),
-            FieldElement::ONE
-        );
-        assert_eq!(
-            FieldElement::cairo_deserialize(&felts, 2).unwrap(),
-            FieldElement::TWO
-        );
+        let felts = vec![Felt::ZERO, Felt::ONE, Felt::TWO];
+        assert_eq!(Felt::cairo_deserialize(&felts, 0).unwrap(), Felt::ZERO);
+        assert_eq!(Felt::cairo_deserialize(&felts, 1).unwrap(), Felt::ONE);
+        assert_eq!(Felt::cairo_deserialize(&felts, 2).unwrap(), Felt::TWO);
     }
 }
