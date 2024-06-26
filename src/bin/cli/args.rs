@@ -36,7 +36,6 @@ pub struct CainomeArgs {
     #[arg(requires = "rpc_url")]
     #[arg(requires = "contract_name")]
     #[arg(help = "Address of the contract to fetch the ABI from.")]
-    // #[arg(value_parser = Felt::from_hex)]
     pub contract_address: Option<Felt>,
 
     #[arg(long)]
