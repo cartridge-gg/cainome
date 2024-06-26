@@ -1,5 +1,5 @@
 //! This crate contains the definition of traits and types
-//! that map to Cairo types that can then be (de)serializable from an array of `FieldElement`.
+//! that map to Cairo types that can then be (de)serializable from an array of `Felt`.
 //!
 //! Some of the Cairo types are provided in the ABI event if they are very generic
 //! like `Option`, `Result`, etc...

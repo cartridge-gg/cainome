@@ -162,13 +162,13 @@ impl CairoEnum {
                     }
                 }
 
-                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::FieldElement> {
+                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
                     match __rust {
                         #(#serializations),*
                     }
                 }
 
-                fn cairo_deserialize(__felts: &[starknet::core::types::FieldElement], __offset: usize) -> #ccs::Result<Self::RustType> {
+                fn cairo_deserialize(__felts: &[starknet::core::types::Felt], __offset: usize) -> #ccs::Result<Self::RustType> {
                     let __index:u128 = __felts[__offset].try_into().unwrap();
                     match __index as usize {
                         #(#deserializations),*

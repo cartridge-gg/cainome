@@ -89,7 +89,7 @@ The expansion of the macros generates the following:
 
   // This will generate a rust struct with the make `MyStruct`:
   MyStruct {
-    a: starknet::core::types::FieldElement,
+    a: starknet::core::types::Felt,
     a: U256, // Note the `PascalCase` here. As `u256` is a struct, it follows the common rule.
   }
   ```
@@ -97,16 +97,16 @@ The expansion of the macros generates the following:
 - **Contract** type with the identifier of your choice (`MyContract` in the previous example). This type contains all the functions (externals and views) of your contract being exposed in the ABI. To initialize this type, you need the contract address and any type that implements `ConnectedAccount` from `starknet-rs`. Remember that `Arc<ConnectedAccount>` also implements `ConnectedAccount`.
   ```rust
   let account = SingleOwnerAccount::new(...);
-  let contract_address = FieldElement::from_hex_be("0x1234...");
+  let contract_address = Felt::from_hex("0x1234...");
   let contract = MyContract::new(contract_address, account);
   ```
 - **Contract Reader** type with the identifier of your choice with the suffix `Reader` (`MyContractReader`) in the previous example. The reader contains only the views of your contract. To initialize a reader, you need the contract address and a provider from `starknet-rs`.
   ```rust
   let provider = AnyProvider::JsonRpcHttp(...);
-  let contract_address = FieldElement::from_hex_be("0x1234...");
+  let contract_address = Felt::from_hex("0x1234...");
   let contract_reader = MyContractReader::new(contract_address, &provider);
   ```
-- For each **view**, the contract type and the contract reader type contain a function with the exact same arguments. Calling the function returns a `cainome_cairo_serde::call::FCall` struct to allow you to customize how you want the function to be called. Currently, the only setting is the `block_id`. Finally, to actually do the RPC call, you have to use `call()` method on the `FCall` struct.  
+- For each **view**, the contract type and the contract reader type contain a function with the exact same arguments. Calling the function returns a `cainome_cairo_serde::call::FCall` struct to allow you to customize how you want the function to be called. Currently, the only setting is the `block_id`. Finally, to actually do the RPC call, you have to use `call()` method on the `FCall` struct.
   The default `block_id` value is `BlockTag::Pending`.
   ```rust
   let my_struct = contract
@@ -120,7 +120,7 @@ The expansion of the macros generates the following:
 
   ```rust
   let my_struct = MyStruct {
-      a: FieldElement::ONE,
+      a: Felt::ONE,
       b: U256 {
           low: 1,
           high: 0,
@@ -140,7 +140,7 @@ The expansion of the macros generates the following:
 
   ```rust
   // Gather the `Call`s.
-  let set_a_call = contract.set_a_getcall(&FieldElement::ONE);
+  let set_a_call = contract.set_a_getcall(&Felt::ONE);
   let set_b_call = contract.set_b_getcall(&U256 { low: 0xff, high: 0 });
 
   // Then use the account exposed by the `MyContract` type to realize the multicall.
@@ -191,7 +191,7 @@ The expansion of the macros generates the following:
 
   ```rust
   pub struct GetBlockhashRegistryOutput {
-      pub address: starknet::core::types::FieldElement,
+      pub address: starknet::core::types::Felt,
   }
   ```
 

@@ -2,7 +2,7 @@ use cainome::cairo_serde::U256;
 use cainome::rs::abigen;
 use starknet::{
     accounts::{Account, ConnectedAccount, ExecutionEncoding, SingleOwnerAccount},
-    core::types::{BlockId, BlockTag, FieldElement},
+    core::types::{BlockId, BlockTag, Felt},
     providers::{jsonrpc::HttpTransport, AnyProvider, JsonRpcClient},
     signers::{LocalWallet, SigningKey},
 };
@@ -30,7 +30,7 @@ async fn main() {
     let provider =
         AnyProvider::JsonRpcHttp(JsonRpcClient::new(HttpTransport::new(rpc_url.clone())));
 
-    let contract_address = FieldElement::from_hex_be(CONTRACT_ADDRESS).unwrap();
+    let contract_address = Felt::from_hex(CONTRACT_ADDRESS).unwrap();
 
     // If you only plan to call views functions, you can use the `Reader`, which
     // only requires a provider along with your contract address.
@@ -62,15 +62,15 @@ async fn main() {
 
     // If you want to do some invoke for external functions, you must use an account.
     let signer = LocalWallet::from(SigningKey::from_secret_scalar(
-        FieldElement::from_hex_be(KATANA_PRIVKEY_0).unwrap(),
+        Felt::from_hex(KATANA_PRIVKEY_0).unwrap(),
     ));
-    let address = FieldElement::from_hex_be(KATANA_ACCOUNT_0).unwrap();
+    let address = Felt::from_hex(KATANA_ACCOUNT_0).unwrap();
 
     let account = Arc::new(SingleOwnerAccount::new(
         provider,
         signer,
         address,
-        FieldElement::from_hex_be(KATANA_CHAIN_ID).unwrap(),
+        Felt::from_hex(KATANA_CHAIN_ID).unwrap(),
         ExecutionEncoding::New,
     ));
 
@@ -82,7 +82,7 @@ async fn main() {
     // You can before that configure the fees, or even only run an estimation of the
     // fees without actually sending the transaction.
     let _tx_res = contract
-        .set_a(&(a + FieldElement::ONE))
+        .set_a(&(a + Felt::ONE))
         .max_fee(1000000000000000_u128.into())
         .send()
         .await
@@ -101,7 +101,7 @@ async fn main() {
     // Now let's say we want to do multicall, and in one transaction we want to set a and b.
     // You can call the same function name with `_getcall` prefix to get the
     // call only, ready to be added in a multicall array.
-    let set_a_call = contract.set_a_getcall(&FieldElement::from_hex_be("0xee").unwrap());
+    let set_a_call = contract.set_a_getcall(&Felt::from_hex("0xee").unwrap());
     let set_b_call = contract.set_b_getcall(&U256 { low: 0xff, high: 0 });
 
     // Then, we use the account exposed by the contract to execute the multicall.
@@ -153,7 +153,7 @@ async fn other_func<A: ConnectedAccount + Sync + 'static>(contract: Arc<MyContra
 
     // Use the estimated fees as a base.
     let _tx_res = set_b
-        .max_fee(estimated_fee * FieldElement::TWO)
+        .max_fee(estimated_fee * Felt::TWO)
         .send()
         .await
         .expect("invoke failed");
@@ -167,7 +167,7 @@ async fn other_func<A: ConnectedAccount + Sync + 'static>(contract: Arc<MyContra
         .expect("Call to `get_b` failed");
     println!("b set in task: {:?}", b);
 
-    let arr = vec![FieldElement::THREE, FieldElement::ONE, FieldElement::ZERO];
+    let arr = vec![Felt::THREE, Felt::ONE, Felt::ZERO];
 
     let tx_res = contract
         .set_array(&arr)

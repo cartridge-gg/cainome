@@ -191,7 +191,7 @@ impl ByteArray {
 ///
 /// # Arguments
 ///
-/// * `felt` - The `FieldElement` to convert. In the context of `ByteArray` this
+/// * `felt` - The `Felt` to convert. In the context of `ByteArray` this
 ///            felt always contains at most 31 bytes.
 /// * `len` - The number of bytes in the felt, at most 31. In the context
 ///           of `ByteArray`, we don't need to check `len` as the `MAX_WORD_LEN`
