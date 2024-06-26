@@ -116,7 +116,7 @@ The expansion of the macros generates the following:
       .await
       .expect("Call to `get_my_struct` failed");
   ```
-- For each **external**, the contract type contains a function with the same arguments. Calling the function return a `starknet::accounts::Execution` type from `starknet-rs`, which allows you to completly customize the fees, doing only a simulation etc... To actually send the transaction, you use the `send()` method on the `Execution` struct. You can find the [associated methods with this struct on starknet-rs repo](https://github.com/xJonathanLEI/starknet-rs/blob/0df9ad3417a5f10d486348737fe75659ca4bcfdc/starknet-accounts/src/account/execution.rs#L118).
+- For each **external**, the contract type contains a function with the same arguments. Calling the function return a `starknet::accounts::ExecutionV1` type from `starknet-rs`, which allows you to completly customize the fees, doing only a simulation etc... To actually send the transaction, you use the `send()` method on the `ExecutionV1` struct. You can find the [associated methods with this struct on starknet-rs repo](https://github.com/xJonathanLEI/starknet-rs/blob/0df9ad3417a5f10d486348737fe75659ca4bcfdc/starknet-accounts/src/account/execution.rs#L118).
 
   ```rust
   let my_struct = MyStruct {
@@ -135,7 +135,7 @@ The expansion of the macros generates the following:
       .expect("Call to `set_my_struct` failed");
   ```
 
-  To support multicall, currently `Execution` type does not expose the `Call`s.
+  To support multicall, currently `ExecutionV1` type does not expose the `Call`s.
   To circumvey this, for each of the external function an other function with `_getcall` suffix is generated:
 
   ```rust
