@@ -236,6 +236,7 @@ dependencies = [
  "serde",
  "serde_json",
  "starknet",
+ "starknet-types-core",
  "thiserror",
  "tokio",
  "tracing",
@@ -1874,8 +1875,9 @@ dependencies = [
 
 [[package]]
 name = "starknet-types-core"
-version = "0.1.3"
-source = "git+https://github.com/starknet-io/types-rs?rev=d3d77a5#d3d77a5c24096dd75f2b7c4809bb9060bee8790a"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "65799574816ba83cb04b21a3cb16f791b9882687cd9093415fd1b3821dbac29d"
 dependencies = [
  "lambdaworks-crypto",
  "lambdaworks-math",

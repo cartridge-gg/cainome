@@ -52,11 +52,9 @@ tracing.workspace = true
 tracing-subscriber.workspace = true
 url.workspace = true
 tokio = { version = "1.15.0", features = ["full"], optional = true }
+starknet-types-core = "=0.1.4"
 
 [patch.crates-io]
-# Remove this patch once `starknet-rs` has been updated to use a version of `starknet-types-core` which includes the specified rev.
-# This specific rev is to implement `FromStr` for `Felt`
-starknet-types-core = { git = "https://github.com/starknet-io/types-rs", rev = "d3d77a5" }
 # Remove this patch once the following PR is merged: <https://github.com/xJonathanLEI/starknet-rs/pull/615>
 # To enable std feature on `starknet-types-core`.
 starknet-core = { git = "https://github.com/kariy/starknet-rs", rev = "fffe8e9" }
