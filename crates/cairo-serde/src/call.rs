@@ -44,7 +44,7 @@ where
         T::cairo_deserialize(&r, 0)
     }
 
-    pub async fn raw_call(self) -> CairoResult<Vec<starknet::core::types::FieldElement>> {
+    pub async fn raw_call(self) -> CairoResult<Vec<starknet::core::types::Felt>> {
         self.provider
             .call(self.call_raw, self.block_id)
             .await

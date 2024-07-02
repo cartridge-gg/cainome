@@ -1,5 +1,5 @@
 //! This crate contains the definition of traits and types
-//! that map to Cairo types that can then be (de)serializable from an array of `FieldElement`.
+//! that map to Cairo types that can then be (de)serializable from an array of `Felt`.
 //!
 //! Some of the Cairo types are provided in the ABI event if they are very generic
 //! like `Option`, `Result`, etc...
@@ -18,7 +18,7 @@ pub use types::starknet::*;
 pub use types::u256::*;
 pub use types::*;
 
-use ::starknet::core::types::FieldElement;
+use ::starknet::core::types::Felt;
 
 /// Basic cairo structs that are already implemented inside
 /// this crate and hence skipped during ABI generation.
@@ -56,12 +56,12 @@ pub trait CairoSerde {
         Self::SERIALIZED_SIZE.unwrap()
     }
 
-    /// Serializes the given type into a FieldElement sequence.
-    fn cairo_serialize(rust: &Self::RustType) -> Vec<FieldElement>;
+    /// Serializes the given type into a Felt sequence.
+    fn cairo_serialize(rust: &Self::RustType) -> Vec<Felt>;
 
-    /// TODO: add `serialize_to(rust: &Self::RustType, out: &mut Vec<FieldElement>)`.
+    /// TODO: add `serialize_to(rust: &Self::RustType, out: &mut Vec<Felt>)`.
     /// for large buffers optimization.
 
     /// Deserializes an array of felts into the given type.
-    fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> Result<Self::RustType>;
+    fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType>;
 }

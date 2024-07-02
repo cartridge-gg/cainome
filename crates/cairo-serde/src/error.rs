@@ -1,7 +1,6 @@
 use super::CairoSerde;
 
-use starknet::core::types::FieldElement;
-use starknet::providers::ProviderError;
+use starknet::{core::types::Felt, providers::ProviderError};
 
 /// Cairo types result.
 pub type Result<T> = core::result::Result<T, Error>;
@@ -26,11 +25,11 @@ pub enum Error {
 impl CairoSerde for Error {
     type RustType = Self;
 
-    fn cairo_serialize(_rust: &Self::RustType) -> Vec<FieldElement> {
+    fn cairo_serialize(_rust: &Self::RustType) -> Vec<Felt> {
         vec![]
     }
 
-    fn cairo_deserialize(_felts: &[FieldElement], _offset: usize) -> Result<Self::RustType> {
+    fn cairo_deserialize(_felts: &[Felt], _offset: usize) -> Result<Self::RustType> {
         Ok(Error::Deserialize(
             "Error cairotype deserialized?".to_string(),
         ))

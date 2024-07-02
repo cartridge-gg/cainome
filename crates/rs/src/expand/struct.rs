@@ -184,13 +184,13 @@ impl CairoStruct {
                     __size
                 }
 
-                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::FieldElement> {
-                    let mut __out: Vec<starknet::core::types::FieldElement> = vec![];
+                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+                    let mut __out: Vec<starknet::core::types::Felt> = vec![];
                     #(#sers)*
                     __out
                 }
 
-                fn cairo_deserialize(__felts: &[starknet::core::types::FieldElement], __offset: usize) -> #ccs::Result<Self::RustType> {
+                fn cairo_deserialize(__felts: &[starknet::core::types::Felt], __offset: usize) -> #ccs::Result<Self::RustType> {
                     let mut __offset = __offset;
                     #(#desers)*
                     Ok(#struct_name {

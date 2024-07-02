@@ -1,15 +1,15 @@
 //! CairoSerde implementation for bool.
 use crate::{CairoSerde, Error, Result};
-use starknet::core::types::FieldElement;
+use starknet::core::types::Felt;
 
 impl CairoSerde for bool {
     type RustType = Self;
 
-    fn cairo_serialize(rust: &Self::RustType) -> Vec<FieldElement> {
-        vec![FieldElement::from(*rust as u32)]
+    fn cairo_serialize(rust: &Self::RustType) -> Vec<Felt> {
+        vec![Felt::from(*rust as u32)]
     }
 
-    fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> Result<Self::RustType> {
+    fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType> {
         if offset >= felts.len() {
             return Err(Error::Deserialize(format!(
                 "Buffer too short to deserialize a boolean: offset ({}) : buffer {:?}",
@@ -17,7 +17,7 @@ impl CairoSerde for bool {
             )));
         }
 
-        if felts[offset] == FieldElement::ONE {
+        if felts[offset] == Felt::ONE {
             Ok(true)
         } else {
             Ok(false)
@@ -34,17 +34,17 @@ mod tests {
         let v = true;
         let felts = bool::cairo_serialize(&v);
         assert_eq!(felts.len(), 1);
-        assert_eq!(felts[0], FieldElement::ONE);
+        assert_eq!(felts[0], Felt::ONE);
 
         let v = false;
         let felts = bool::cairo_serialize(&v);
         assert_eq!(felts.len(), 1);
-        assert_eq!(felts[0], FieldElement::ZERO);
+        assert_eq!(felts[0], Felt::ZERO);
     }
 
     #[test]
     fn test_deserialize_bool() {
-        let felts = vec![FieldElement::ZERO, FieldElement::ONE, FieldElement::TWO];
+        let felts = vec![Felt::ZERO, Felt::ONE, Felt::TWO];
         assert!(!bool::cairo_deserialize(&felts, 0).unwrap());
         assert!(bool::cairo_deserialize(&felts, 1).unwrap());
         assert!(!bool::cairo_deserialize(&felts, 2).unwrap());

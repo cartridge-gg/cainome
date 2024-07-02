@@ -6,7 +6,7 @@ use std::fs;
 use url::Url;
 
 use starknet::{
-    core::types::{BlockId, BlockTag, ContractClass, FieldElement},
+    core::types::{BlockId, BlockTag, ContractClass, Felt},
     providers::{jsonrpc::HttpTransport, AnyProvider, JsonRpcClient, Provider},
 };
 
@@ -18,7 +18,7 @@ pub enum ContractOrigin {
     /// with the given file name.
     SierraClassFile(String),
     /// Contract's ABI was fetched from the given address.
-    FetchedFromChain(FieldElement),
+    FetchedFromChain(Felt),
 }
 
 #[derive(Debug)]
@@ -116,7 +116,7 @@ impl ContractParser {
 
     pub async fn from_chain(
         name: &str,
-        address: FieldElement,
+        address: Felt,
         rpc_url: Url,
         type_aliases: &HashMap<String, String>,
     ) -> CainomeCliResult<ContractData> {

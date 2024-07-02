@@ -2,7 +2,7 @@
 //!
 use camino::Utf8PathBuf;
 use clap::{Args, Parser};
-use starknet::core::types::FieldElement;
+use starknet::core::types::Felt;
 use url::Url;
 
 use crate::plugins::builtins::BuiltinPlugins;
@@ -36,7 +36,7 @@ pub struct CainomeArgs {
     #[arg(requires = "rpc_url")]
     #[arg(requires = "contract_name")]
     #[arg(help = "Address of the contract to fetch the ABI from.")]
-    pub contract_address: Option<FieldElement>,
+    pub contract_address: Option<Felt>,
 
     #[arg(long)]
     #[arg(value_name = "NAME")]

@@ -12,7 +12,7 @@
 //! based on it's state mutability found in the ABI itself.
 //!
 //! * `FCall` - Struct for readonly functions.
-//! * `Execution` - Struct from starknet-rs for transaction based functions.
+//! * `ExecutionV1` - Struct from starknet-rs for transaction based functions.
 use cainome_parser::tokens::{Function, FunctionOutputKind, StateMutability, Token};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
@@ -102,7 +102,7 @@ impl CairoFunction {
                 }
             },
             StateMutability::External => {
-                // For now, Execution can't return the list of calls.
+                // For now, ExecutionV1 can't return the list of calls.
                 // This would be helpful to easily access the calls
                 // without having to add `_getcall()` method.
                 // If starknet-rs provides a way to get the calls,
@@ -133,7 +133,7 @@ impl CairoFunction {
                     pub fn #func_name_ident(
                         &self,
                         #(#inputs),*
-                    ) -> starknet::accounts::Execution<A> {
+                    ) -> starknet::accounts::ExecutionV1<A> {
                         use #ccs::CairoSerde;
 
                         let mut __calldata = vec![];
@@ -145,7 +145,7 @@ impl CairoFunction {
                             calldata: __calldata,
                         };
 
-                        self.account.execute(vec![__call])
+                        self.account.execute_v1(vec![__call])
                     }
                 }
             }

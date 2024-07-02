@@ -1,6 +1,6 @@
 //! CairoSerde implementation for tuples.
 use crate::{CairoSerde, Result};
-use starknet::core::types::FieldElement;
+use starknet::core::types::Felt;
 
 impl CairoSerde for () {
     type RustType = Self;
@@ -10,11 +10,11 @@ impl CairoSerde for () {
         0
     }
 
-    fn cairo_serialize(_rust: &Self::RustType) -> Vec<FieldElement> {
+    fn cairo_serialize(_rust: &Self::RustType) -> Vec<Felt> {
         vec![]
     }
 
-    fn cairo_deserialize(_felts: &[FieldElement], _offset: usize) -> Result<Self::RustType> {
+    fn cairo_deserialize(_felts: &[Felt], _offset: usize) -> Result<Self::RustType> {
         Ok(())
     }
 }
@@ -39,15 +39,15 @@ macro_rules! impl_tuples {
                 size
             }
 
-            fn cairo_serialize(rust: &Self::RustType) -> Vec<FieldElement> {
-                let mut out: Vec<FieldElement> = vec![];
+            fn cairo_serialize(rust: &Self::RustType) -> Vec<Felt> {
+                let mut out: Vec<Felt> = vec![];
 
                 $( out.extend($ty::cairo_serialize(& rust.$no)); )*
 
                 out
             }
 
-            fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> Result<Self::RustType> {
+            fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType> {
                 let mut offset = offset;
 
                 $(
@@ -71,40 +71,42 @@ impl_tuples!(5, A:RA:r0:0, B:RB:r1:1, C:RC:r2:2, D:RD:r3:3, E:RE:r4:4);
 
 #[cfg(test)]
 mod tests {
+    use starknet::core::types::Felt;
+
     use super::*;
 
     #[test]
     fn test_serialize_tuple2() {
-        let v = (FieldElement::ONE, 128_u32);
-        let felts = <(FieldElement, u32)>::cairo_serialize(&v);
+        let v = (Felt::ONE, 128_u32);
+        let felts = <(Felt, u32)>::cairo_serialize(&v);
         assert_eq!(felts.len(), 2);
-        assert_eq!(felts[0], FieldElement::ONE);
-        assert_eq!(felts[1], FieldElement::from(128_u32));
+        assert_eq!(felts[0], Felt::ONE);
+        assert_eq!(felts[1], Felt::from(128_u32));
     }
 
     #[test]
     fn test_deserialize_tuple2() {
-        let felts = vec![FieldElement::THREE, 99_u32.into()];
-        let vals = <(FieldElement, u32)>::cairo_deserialize(&felts, 0).unwrap();
-        assert_eq!(vals.0, FieldElement::THREE);
+        let felts = vec![Felt::THREE, 99_u32.into()];
+        let vals = <(Felt, u32)>::cairo_deserialize(&felts, 0).unwrap();
+        assert_eq!(vals.0, Felt::THREE);
         assert_eq!(vals.1, 99_u32);
     }
 
     #[test]
     fn test_serialize_tuple2_array() {
-        let v = (vec![FieldElement::ONE], 128_u32);
-        let felts = <(Vec<FieldElement>, u32)>::cairo_serialize(&v);
+        let v = (vec![Felt::ONE], 128_u32);
+        let felts = <(Vec<Felt>, u32)>::cairo_serialize(&v);
         assert_eq!(felts.len(), 3);
-        assert_eq!(felts[0], FieldElement::ONE);
-        assert_eq!(felts[1], FieldElement::ONE);
-        assert_eq!(felts[2], FieldElement::from(128_u32));
+        assert_eq!(felts[0], Felt::ONE);
+        assert_eq!(felts[1], Felt::ONE);
+        assert_eq!(felts[2], Felt::from(128_u32));
     }
 
     #[test]
     fn test_deserialize_tuple2_array() {
-        let felts = vec![FieldElement::ONE, FieldElement::ONE, 99_u32.into()];
-        let vals = <(Vec<FieldElement>, u32)>::cairo_deserialize(&felts, 0).unwrap();
-        assert_eq!(vals.0, vec![FieldElement::ONE]);
+        let felts = vec![Felt::ONE, Felt::ONE, 99_u32.into()];
+        let vals = <(Vec<Felt>, u32)>::cairo_deserialize(&felts, 0).unwrap();
+        assert_eq!(vals.0, vec![Felt::ONE]);
         assert_eq!(vals.1, 99_u32);
     }
 }
