@@ -169,7 +169,9 @@ impl CairoEnum {
                 }
 
                 fn cairo_deserialize(__felts: &[starknet::core::types::Felt], __offset: usize) -> #ccs::Result<Self::RustType> {
-                    let __index: u128 = <starknet::core::types::Felt as num_traits::ToPrimitive>::to_u128(&__felts[__offset]).unwrap();
+                    let __f = __felts[__offset];
+                    let __index = u128::from_be_bytes(__f.to_bytes_be()[16..].try_into().unwrap());
+
                     match __index as usize {
                         #(#deserializations),*
                     }

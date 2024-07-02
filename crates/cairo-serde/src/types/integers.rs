@@ -20,7 +20,9 @@ macro_rules! implement_trait_for_unsigned {
                     )));
                 }
 
-                let temp: u128 = <Felt as num_traits::ToPrimitive>::to_u128(&felts[offset]).unwrap();
+                let f = felts[offset];
+                let temp = u128::from_be_bytes(f.to_bytes_be()[16..].try_into().unwrap());
+
                 Ok(temp as $type)
             }
         }
@@ -45,7 +47,9 @@ macro_rules! implement_trait_for_signed {
                     )));
                 }
 
-                let temp: u128 = <Felt as num_traits::ToPrimitive>::to_u128(&felts[offset]).unwrap();
+                let f = felts[offset];
+                let temp = u128::from_be_bytes(f.to_bytes_be()[16..].try_into().unwrap());
+
                 Ok(temp as $type)
             }
         }
