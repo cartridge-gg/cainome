@@ -18,17 +18,17 @@ impl CairoContract {
 
             #[derive(Debug)]
             pub struct #contract_name<A: #snrs_accounts::ConnectedAccount + Sync> {
-                pub address: #snrs_types::FieldElement,
+                pub address: #snrs_types::Felt,
                 pub account: A,
                 pub block_id: #snrs_types::BlockId,
             }
 
             impl<A: #snrs_accounts::ConnectedAccount + Sync> #contract_name<A> {
-                pub fn new(address: #snrs_types::FieldElement, account: A) -> Self {
+                pub fn new(address: #snrs_types::Felt, account: A) -> Self {
                     Self { address, account, block_id: #snrs_types::BlockId::Tag(#snrs_types::BlockTag::Pending) }
                 }
 
-                pub fn set_contract_address(&mut self, address: #snrs_types::FieldElement) {
+                pub fn set_contract_address(&mut self, address: #snrs_types::Felt) {
                     self.address = address;
                 }
 
@@ -47,20 +47,20 @@ impl CairoContract {
 
             #[derive(Debug)]
             pub struct #reader<P: #snrs_providers::Provider + Sync> {
-                pub address: #snrs_types::FieldElement,
+                pub address: #snrs_types::Felt,
                 pub provider: P,
                 pub block_id: #snrs_types::BlockId,
             }
 
             impl<P: #snrs_providers::Provider + Sync> #reader<P> {
                 pub fn new(
-                    address: #snrs_types::FieldElement,
+                    address: #snrs_types::Felt,
                     provider: P,
                 ) -> Self {
                     Self { address, provider, block_id: #snrs_types::BlockId::Tag(#snrs_types::BlockTag::Pending) }
                 }
 
-                pub fn set_contract_address(&mut self, address: #snrs_types::FieldElement) {
+                pub fn set_contract_address(&mut self, address: #snrs_types::Felt) {
                     self.address = address;
                 }
 

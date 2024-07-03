@@ -10,7 +10,7 @@ for different languages (backends).
 - **cli**: inside `src/bin/cli`, the cainome CLI binary can be built using `cargo build`: [README](./src/bin/cli/README.md).
 - **lib**: inside `src/lib.rs`, the cainome library can be built using `cargo build --lib`.
 - **parser**: a run-time library to parse an ABI file into `Token`s [README](./crates/parser/README.md).
-- **cairo-serde**: a compile-time library that implements serialization for native Rust types from `FieldElement` buffer [README](./crates/cairo-serde/README.md).
+- **cairo-serde**: a compile-time library that implements serialization for native Rust types from `Felt` buffer [README](./crates/cairo-serde/README.md).
 - **rs-macro**: a compile-time library backend for the `abigen` macro to generate rust bindings [README](./crates/rs-macro/README.md).
 - **rs**: a a run-time library to generated rust bindings [README](./crates/rs/README.md).
 - **ts**: a compile-time library backend to generate `TypeScript` bindings (coming soon).

@@ -1,6 +1,6 @@
 //! Dedicated struct for cairo 0 arrays, where len is not prefixed.
 use crate::{CairoSerde, Error, Result};
-use starknet::core::types::FieldElement;
+use starknet::core::types::Felt;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize)]
 pub struct CairoArrayLegacy<T>(pub Vec<T>);
@@ -40,15 +40,15 @@ where
         data.iter().map(T::cairo_serialized_size).sum::<usize>()
     }
 
-    fn cairo_serialize(rust: &Self::RustType) -> Vec<FieldElement> {
-        let mut out: Vec<FieldElement> = vec![];
+    fn cairo_serialize(rust: &Self::RustType) -> Vec<Felt> {
+        let mut out: Vec<Felt> = vec![];
         rust.0
             .iter()
             .for_each(|r| out.extend(T::cairo_serialize(r)));
         out
     }
 
-    fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> Result<Self::RustType> {
+    fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType> {
         if offset >= felts.len() {
             // As the length of cairo 0 arrays is not included in the serialized form of the array,
             // we don't have much choice here to return an empty array instead of an error.
@@ -59,7 +59,7 @@ where
         let mut offset = offset;
         let len = felts[offset - 1];
 
-        if FieldElement::from(offset) + len > FieldElement::from(felts.len()) {
+        if Felt::from(offset) + len > Felt::from(felts.len()) {
             return Err(Error::Deserialize(format!(
                 "Buffer too short to deserialize an array of length {}: offset ({}) : buffer {:?}",
                 len, offset, felts,
@@ -67,7 +67,7 @@ where
         }
 
         loop {
-            if FieldElement::from(out.len()) == len {
+            if Felt::from(out.len()) == len {
                 break;
             }
 
@@ -88,7 +88,7 @@ mod tests {
     #[test]
     fn array_offset_len_ok() {
         let serialized = vec![felt!("4"), felt!("1"), felt!("2"), felt!("3"), felt!("4")];
-        let a = CairoArrayLegacy::<FieldElement>::cairo_deserialize(&serialized, 1).unwrap();
+        let a = CairoArrayLegacy::<Felt>::cairo_deserialize(&serialized, 1).unwrap();
         assert_eq!(a.len(), 4);
         assert_eq!(a.0[0], felt!("1"));
         assert_eq!(a.0[1], felt!("2"));
@@ -100,7 +100,7 @@ mod tests {
     fn empty_array() {
         // Array with only the length that is 0 (an other field as we're in cairo 0).
         // So the deserialization of the array starts at index 1.
-        let serialized = vec![FieldElement::ZERO];
-        let _a = CairoArrayLegacy::<FieldElement>::cairo_deserialize(&serialized, 1).unwrap();
+        let serialized = vec![Felt::ZERO];
+        let _a = CairoArrayLegacy::<Felt>::cairo_deserialize(&serialized, 1).unwrap();
     }
 }

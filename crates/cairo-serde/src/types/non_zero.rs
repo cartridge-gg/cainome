@@ -4,7 +4,7 @@
 //!
 //! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/zeroable.cairo#L38>
 use crate::{CairoSerde, ContractAddress, Result, U256};
-use starknet::core::types::FieldElement;
+use starknet::core::types::Felt;
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, serde::Serialize, serde::Deserialize)]
 pub struct NonZero<T: Zeroable>(T);
@@ -47,11 +47,11 @@ where
         T::cairo_serialized_size(&rust.0)
     }
 
-    fn cairo_serialize(rust: &Self::RustType) -> Vec<FieldElement> {
+    fn cairo_serialize(rust: &Self::RustType) -> Vec<Felt> {
         T::cairo_serialize(&rust.0)
     }
 
-    fn cairo_deserialize(felts: &[FieldElement], offset: usize) -> Result<Self::RustType> {
+    fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType> {
         NonZero::new(T::cairo_deserialize(felts, offset)?).ok_or(crate::Error::ZeroedNonZero)
     }
 }
@@ -89,15 +89,15 @@ impl Zeroable for U256 {
     }
 }
 
-impl Zeroable for FieldElement {
+impl Zeroable for Felt {
     fn is_zero(&self) -> bool {
-        *self == FieldElement::ZERO
+        *self == Felt::ZERO
     }
 }
 
 impl Zeroable for ContractAddress {
     fn is_zero(&self) -> bool {
-        self.0 == FieldElement::ZERO
+        self.0 == Felt::ZERO
     }
 }
 
@@ -112,19 +112,19 @@ mod tests {
         let non_zero = NonZero(1_u32);
         let felts = NonZero::<u32>::cairo_serialize(&non_zero);
         assert_eq!(felts.len(), 1);
-        assert_eq!(felts[0], FieldElement::from(1_u32));
+        assert_eq!(felts[0], Felt::from(1_u32));
     }
 
     #[test]
     fn test_non_zero_cairo_deserialize() {
-        let felts = vec![FieldElement::from(1_u32)];
+        let felts = vec![Felt::from(1_u32)];
         let non_zero = NonZero::<u32>::cairo_deserialize(&felts, 0).unwrap();
         assert_eq!(non_zero, NonZero(1_u32))
     }
 
     #[test]
     fn test_non_zero_cairo_deserialize_zero() {
-        let felts = vec![FieldElement::ZERO, FieldElement::ZERO];
+        let felts = vec![Felt::ZERO, Felt::ZERO];
         let non_zero = NonZero::<U256>::cairo_deserialize(&felts, 0);
         match non_zero {
             Err(Error::ZeroedNonZero) => (),

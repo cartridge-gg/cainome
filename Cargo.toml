@@ -23,11 +23,13 @@ camino = { version = "1.1.2", features = [ "serde1" ] }
 convert_case = "0.6.0"
 serde = { version = "1.0", default-features = false, features = ["alloc"] }
 serde_json = { version = "1.0", default-features = false, features = ["std"] }
-starknet = "0.10.0"
 thiserror = "1.0"
 tracing = "0.1.34"
 tracing-subscriber = { version = "0.3.16", features = [ "env-filter", "json" ] }
 url = "2.4.0"
+starknet = "0.11.0"
+# This version ensures `Felt` can be converted using `FromStr` for command line parsing.
+starknet-types-core = ">=0.1.4"
 
 [dependencies]
 camino.workspace = true
@@ -44,11 +46,17 @@ convert_case.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 starknet.workspace = true
+starknet-types-core.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 url.workspace = true
 tokio = { version = "1.15.0", features = ["full"], optional = true }
+
+[patch.crates-io]
+# Remove this patch once the following PR is merged: <https://github.com/xJonathanLEI/starknet-rs/pull/615>
+# To enable std feature on `starknet-types-core`.
+starknet-core = { git = "https://github.com/kariy/starknet-rs", rev = "fffe8e9" }
 
 [features]
 default = []

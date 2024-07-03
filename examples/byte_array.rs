@@ -2,7 +2,7 @@ use cainome::cairo_serde::ByteArray;
 use cainome::rs::abigen;
 use starknet::{
     accounts::{ExecutionEncoding, SingleOwnerAccount},
-    core::types::FieldElement,
+    core::types::Felt,
     providers::{jsonrpc::HttpTransport, AnyProvider, JsonRpcClient},
     signers::{LocalWallet, SigningKey},
 };
@@ -22,18 +22,18 @@ async fn main() {
     let provider =
         AnyProvider::JsonRpcHttp(JsonRpcClient::new(HttpTransport::new(rpc_url.clone())));
 
-    let contract_address = FieldElement::from_hex_be(CONTRACT_ADDRESS).unwrap();
+    let contract_address = Felt::from_hex(CONTRACT_ADDRESS).unwrap();
 
     let signer = LocalWallet::from(SigningKey::from_secret_scalar(
-        FieldElement::from_hex_be(KATANA_PRIVKEY_0).unwrap(),
+        Felt::from_hex(KATANA_PRIVKEY_0).unwrap(),
     ));
-    let address = FieldElement::from_hex_be(KATANA_ACCOUNT_0).unwrap();
+    let address = Felt::from_hex(KATANA_ACCOUNT_0).unwrap();
 
     let account = Arc::new(SingleOwnerAccount::new(
         provider,
         signer,
         address,
-        FieldElement::from_hex_be(KATANA_CHAIN_ID).unwrap(),
+        Felt::from_hex(KATANA_CHAIN_ID).unwrap(),
         ExecutionEncoding::New,
     ));
 
