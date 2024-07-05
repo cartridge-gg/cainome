@@ -16,6 +16,7 @@ use starknet::core::types::contract::{AbiEntry, SierraClass};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::path::Path;
+use std::str::FromStr;
 use syn::{
     braced,
     ext::IdentExt,
@@ -25,6 +26,7 @@ use syn::{
 };
 
 use crate::spanned::Spanned;
+use cainome_rs::ExecutionVersion;
 
 const CARGO_MANIFEST_DIR: &str = "$CARGO_MANIFEST_DIR/";
 
@@ -34,6 +36,7 @@ pub(crate) struct ContractAbi {
     pub abi: Vec<AbiEntry>,
     pub output_path: Option<String>,
     pub type_aliases: HashMap<String, String>,
+    pub execution_version: ExecutionVersion,
 }
 
 impl Parse for ContractAbi {
@@ -84,6 +87,7 @@ impl Parse for ContractAbi {
         };
 
         let mut output_path: Option<String> = None;
+        let mut execution_version = ExecutionVersion::V1;
         let mut type_aliases = HashMap::new();
 
         loop {
@@ -123,6 +127,14 @@ impl Parse for ContractAbi {
                     parenthesized!(content in input);
                     output_path = Some(content.parse::<LitStr>()?.value());
                 }
+                "execution_version" => {
+                    let content;
+                    parenthesized!(content in input);
+                    let ev = content.parse::<LitStr>()?.value();
+                    execution_version = ExecutionVersion::from_str(&ev).map_err(|e| {
+                        syn::Error::new(content.span(), format!("Invalid execution version: {}", e))
+                    })?;
+                }
                 _ => panic!("unexpected named parameter `{}`", name),
             }
         }
@@ -132,6 +144,7 @@ impl Parse for ContractAbi {
             abi,
             output_path,
             type_aliases,
+            execution_version,
         })
     }
 }

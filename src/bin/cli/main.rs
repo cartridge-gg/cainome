@@ -51,6 +51,7 @@ async fn main() -> CainomeCliResult<()> {
     pm.generate(PluginInput {
         output_dir: args.output_dir,
         contracts,
+        execution_version: args.execution_version,
     })
     .await?;
 
