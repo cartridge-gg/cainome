@@ -9,6 +9,7 @@ pub enum ExecutionVersion {
     /// Execute the transaction using the `execute_v3` method, where fees are payable in WEI or FRI.
     V3,
 }
+
 #[derive(Debug, PartialEq, Eq)]
 pub struct ParseExecutionVersionError {
     invalid_value: String,
