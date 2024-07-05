@@ -1,5 +1,6 @@
 //! Cainome CLI arguments.
 //!
+use cainome_rs::ExecutionVersion;
 use camino::Utf8PathBuf;
 use clap::{Args, Parser};
 use starknet::core::types::Felt;
@@ -56,6 +57,11 @@ pub struct CainomeArgs {
     #[command(flatten)]
     #[command(next_help_heading = "Plugins options")]
     pub plugins: PluginOptions,
+
+    #[arg(long)]
+    #[arg(value_name = "EXECUTION_VERSION")]
+    #[arg(help = "The execution version to use. Supported values are 'v1', 'V1', 'v3', or 'V3'.")]
+    pub execution_version: ExecutionVersion,
 }
 
 #[derive(Debug, Args, Clone)]

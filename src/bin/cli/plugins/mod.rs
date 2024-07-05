@@ -1,3 +1,4 @@
+use cainome_rs::ExecutionVersion;
 use camino::Utf8PathBuf;
 
 pub mod builtins;
@@ -11,6 +12,7 @@ use crate::plugins::builtins::{BuiltinPlugin, RustPlugin};
 pub struct PluginInput {
     pub output_dir: Utf8PathBuf,
     pub contracts: Vec<ContractData>,
+    pub execution_version: ExecutionVersion,
 }
 
 #[derive(Debug)]

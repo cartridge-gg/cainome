@@ -9,7 +9,9 @@ use std::fmt;
 use std::fs;
 use std::io;
 
+mod execution_version;
 mod expand;
+pub use execution_version::{ExecutionVersion, ParseExecutionVersionError};
 
 use crate::expand::utils;
 use crate::expand::{CairoContract, CairoEnum, CairoEnumEvent, CairoFunction, CairoStruct};
@@ -63,6 +65,8 @@ pub struct Abigen {
     /// Types aliases to avoid name conflicts, as for now the types are limited to the
     /// latest segment of the fully qualified path.
     pub types_aliases: HashMap<String, String>,
+    /// The version of transaction to be executed.
+    pub execution_version: ExecutionVersion,
 }
 
 impl Abigen {
@@ -78,6 +82,7 @@ impl Abigen {
             contract_name: contract_name.to_string(),
             abi_source: Utf8PathBuf::from(abi_source),
             types_aliases: HashMap::new(),
+            execution_version: ExecutionVersion::V1,
         }
     }
 
@@ -91,13 +96,24 @@ impl Abigen {
         self
     }
 
+    /// Sets the execution version to be used.
+    ///
+    /// # Arguments
+    ///
+    /// * `execution_version` - The version of transaction to be executed.
+    pub fn with_execution_version(mut self, execution_version: ExecutionVersion) -> Self {
+        self.execution_version = execution_version;
+        self
+    }
+
     /// Generates the contract bindings.
     pub fn generate(&self) -> Result<ContractBindings> {
         let file_content = std::fs::read_to_string(&self.abi_source)?;
 
         match AbiParser::tokens_from_abi_string(&file_content, &self.types_aliases) {
             Ok(tokens) => {
-                let expanded = abi_to_tokenstream(&self.contract_name, &tokens);
+                let expanded =
+                    abi_to_tokenstream(&self.contract_name, &tokens, self.execution_version);
 
                 Ok(ContractBindings {
                     name: self.contract_name.clone(),
@@ -120,7 +136,11 @@ impl Abigen {
 ///
 /// * `contract_name` - Name of the contract.
 /// * `abi_tokens` - Tokenized ABI.
-pub fn abi_to_tokenstream(contract_name: &str, abi_tokens: &TokenizedAbi) -> TokenStream2 {
+pub fn abi_to_tokenstream(
+    contract_name: &str,
+    abi_tokens: &TokenizedAbi,
+    execution_version: ExecutionVersion,
+) -> TokenStream2 {
     let contract_name = utils::str_to_ident(contract_name);
 
     let mut tokens: Vec<TokenStream2> = vec![];
@@ -160,10 +180,12 @@ pub fn abi_to_tokenstream(contract_name: &str, abi_tokens: &TokenizedAbi) -> Tok
         let f = f.to_function().expect("function expected");
         match f.state_mutability {
             StateMutability::View => {
-                reader_views.push(CairoFunction::expand(f, true));
-                views.push(CairoFunction::expand(f, false));
+                reader_views.push(CairoFunction::expand(f, true, execution_version));
+                views.push(CairoFunction::expand(f, false, execution_version));
             }
-            StateMutability::External => externals.push(CairoFunction::expand(f, false)),
+            StateMutability::External => {
+                externals.push(CairoFunction::expand(f, false, execution_version))
+            }
         }
     }
 

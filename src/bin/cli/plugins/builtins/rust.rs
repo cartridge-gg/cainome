@@ -32,7 +32,11 @@ impl BuiltinPlugin for RustPlugin {
                 .from_case(Case::Snake)
                 .to_case(Case::Pascal);
 
-            let expanded = cainome_rs::abi_to_tokenstream(&contract_name, &contract.tokens);
+            let expanded = cainome_rs::abi_to_tokenstream(
+                &contract_name,
+                &contract.tokens,
+                input.execution_version,
+            );
             let filename = format!(
                 "{}.rs",
                 contract_name.from_case(Case::Pascal).to_case(Case::Snake)

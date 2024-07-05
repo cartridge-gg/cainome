@@ -19,6 +19,23 @@ use quote::quote;
 
 use crate::expand::types::CairoToRust;
 use crate::expand::utils;
+use crate::ExecutionVersion;
+
+impl ExecutionVersion {
+    pub fn get_type_str(&self) -> String {
+        match self {
+            ExecutionVersion::V1 => "starknet::accounts::ExecutionV1<A>".to_string(),
+            ExecutionVersion::V3 => "starknet::accounts::ExecutionV3<A>".to_string(),
+        }
+    }
+
+    pub fn get_call_str(&self) -> TokenStream2 {
+        match self {
+            ExecutionVersion::V1 => quote!(self.account.execute_v1(vec![__call])),
+            ExecutionVersion::V3 => quote!(self.account.execute_v3(vec![__call])),
+        }
+    }
+}
 
 fn get_func_inputs(inputs: &[(String, Token)]) -> Vec<TokenStream2> {
     let mut out: Vec<TokenStream2> = vec![];
@@ -35,7 +52,11 @@ fn get_func_inputs(inputs: &[(String, Token)]) -> Vec<TokenStream2> {
 pub struct CairoFunction;
 
 impl CairoFunction {
-    pub fn expand(func: &Function, is_for_reader: bool) -> TokenStream2 {
+    pub fn expand(
+        func: &Function,
+        is_for_reader: bool,
+        execution_version: ExecutionVersion,
+    ) -> TokenStream2 {
         let func_name = &func.name;
         let func_name_ident = utils::str_to_ident(func_name);
 
@@ -110,6 +131,9 @@ impl CairoFunction {
                 //
                 // TODO: if it's possible to do it with lifetime,
                 // this can be tried in an issue.
+                let exec_type = utils::str_to_type(&execution_version.get_type_str());
+                let exec_call = execution_version.get_call_str();
+
                 quote! {
                     #[allow(clippy::ptr_arg)]
                     #[allow(clippy::too_many_arguments)]
@@ -133,7 +157,7 @@ impl CairoFunction {
                     pub fn #func_name_ident(
                         &self,
                         #(#inputs),*
-                    ) -> starknet::accounts::ExecutionV1<A> {
+                    ) -> #exec_type {
                         use #ccs::CairoSerde;
 
                         let mut __calldata = vec![];
@@ -145,7 +169,7 @@ impl CairoFunction {
                             calldata: __calldata,
                         };
 
-                        self.account.execute_v1(vec![__call])
+                        #exec_call
                     }
                 }
             }
