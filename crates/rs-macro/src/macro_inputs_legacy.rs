@@ -12,7 +12,7 @@
 //! TODO: support the full artifact JSON to be able to
 //! deploy contracts from abigen.
 use quote::ToTokens;
-use starknet::core::types::contract::legacy::RawLegacyAbiEntry;
+use starknet::core::types::contract::legacy::{LegacyContractClass, RawLegacyAbiEntry};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::path::Path;
@@ -60,14 +60,28 @@ impl Parse for ContractAbiLegacy {
                 abi_or_path
             };
 
-            serde_json::from_reader::<_, Vec<RawLegacyAbiEntry>>(open_json_file(
-                &json_path.value(),
-            )?)
-            .map_err(|e| syn::Error::new(json_path.span(), format!("JSON parse error: {}", e)))?
+            if let Ok(legacy_class) = serde_json::from_reader::<_, LegacyContractClass>(
+                open_json_file(&json_path.value())?,
+            ) {
+                legacy_class.abi
+            } else {
+                serde_json::from_reader::<_, Vec<RawLegacyAbiEntry>>(open_json_file(
+                    &json_path.value(),
+                )?)
+                .map_err(|e| {
+                    syn::Error::new(json_path.span(), format!("JSON parse error: {}", e))
+                })?
+            }
         } else {
-            serde_json::from_str::<Vec<RawLegacyAbiEntry>>(&abi_or_path.value()).map_err(|e| {
-                syn::Error::new(abi_or_path.span(), format!("JSON parse error: {}", e))
-            })?
+            if let Ok(legacy_class) =
+                serde_json::from_str::<LegacyContractClass>(&abi_or_path.value())
+            {
+                legacy_class.abi
+            } else {
+                serde_json::from_str::<Vec<RawLegacyAbiEntry>>(&abi_or_path.value()).map_err(
+                    |e| syn::Error::new(abi_or_path.span(), format!("JSON parse error: {}", e)),
+                )?
+            }
         };
 
         let mut output_path: Option<String> = None;

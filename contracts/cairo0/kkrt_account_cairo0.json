@@ -1,0 +1,599 @@
+{
+    "abi": [
+        {
+            "members": [
+                {
+                    "name": "caller",
+                    "offset": 0,
+                    "type": "felt"
+                },
+                {
+                    "name": "nonce",
+                    "offset": 1,
+                    "type": "felt"
+                },
+                {
+                    "name": "execute_after",
+                    "offset": 2,
+                    "type": "felt"
+                },
+                {
+                    "name": "execute_before",
+                    "offset": 3,
+                    "type": "felt"
+                }
+            ],
+            "name": "OutsideExecution",
+            "size": 4,
+            "type": "struct"
+        },
+        {
+            "members": [
+                {
+                    "name": "to",
+                    "offset": 0,
+                    "type": "felt"
+                },
+                {
+                    "name": "selector",
+                    "offset": 1,
+                    "type": "felt"
+                },
+                {
+                    "name": "data_offset",
+                    "offset": 2,
+                    "type": "felt"
+                },
+                {
+                    "name": "data_len",
+                    "offset": 3,
+                    "type": "felt"
+                }
+            ],
+            "name": "CallArray",
+            "size": 4,
+            "type": "struct"
+        },
+        {
+            "members": [
+                {
+                    "name": "low",
+                    "offset": 0,
+                    "type": "felt"
+                },
+                {
+                    "name": "high",
+                    "offset": 1,
+                    "type": "felt"
+                }
+            ],
+            "name": "Uint256",
+            "size": 2,
+            "type": "struct"
+        },
+        {
+            "data": [
+                {
+                    "name": "previousOwner",
+                    "type": "felt"
+                },
+                {
+                    "name": "newOwner",
+                    "type": "felt"
+                }
+            ],
+            "keys": [],
+            "name": "OwnershipTransferred",
+            "type": "event"
+        },
+        {
+            "data": [
+                {
+                    "name": "response_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "response",
+                    "type": "felt*"
+                },
+                {
+                    "name": "success",
+                    "type": "felt"
+                },
+                {
+                    "name": "gas_used",
+                    "type": "felt"
+                }
+            ],
+            "keys": [],
+            "name": "transaction_executed",
+            "type": "event"
+        },
+        {
+            "inputs": [],
+            "name": "constructor",
+            "outputs": [],
+            "type": "constructor"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "kakarot_address",
+                    "type": "felt"
+                },
+                {
+                    "name": "evm_address",
+                    "type": "felt"
+                },
+                {
+                    "name": "implementation_class",
+                    "type": "felt"
+                }
+            ],
+            "name": "initialize",
+            "outputs": [],
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "version",
+            "outputs": [
+                {
+                    "name": "version",
+                    "type": "felt"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "get_evm_address",
+            "outputs": [
+                {
+                    "name": "address",
+                    "type": "felt"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "get_implementation",
+            "outputs": [
+                {
+                    "name": "implementation",
+                    "type": "felt"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "implementation_class",
+                    "type": "felt"
+                }
+            ],
+            "name": "set_implementation",
+            "outputs": [],
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "is_initialized",
+            "outputs": [
+                {
+                    "name": "is_initialized",
+                    "type": "felt"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "outside_execution",
+                    "type": "OutsideExecution"
+                },
+                {
+                    "name": "call_array_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "call_array",
+                    "type": "CallArray*"
+                },
+                {
+                    "name": "calldata_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "calldata",
+                    "type": "felt*"
+                },
+                {
+                    "name": "signature_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "signature",
+                    "type": "felt*"
+                }
+            ],
+            "name": "execute_from_outside",
+            "outputs": [
+                {
+                    "name": "response_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "response",
+                    "type": "felt*"
+                }
+            ],
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "call_array_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "call_array",
+                    "type": "CallArray*"
+                },
+                {
+                    "name": "calldata_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "calldata",
+                    "type": "felt*"
+                }
+            ],
+            "name": "__validate__",
+            "outputs": [],
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "class_hash",
+                    "type": "felt"
+                }
+            ],
+            "name": "__validate_declare__",
+            "outputs": [],
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "call_array_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "call_array",
+                    "type": "CallArray*"
+                },
+                {
+                    "name": "calldata_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "calldata",
+                    "type": "felt*"
+                }
+            ],
+            "name": "__execute__",
+            "outputs": [
+                {
+                    "name": "response_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "response",
+                    "type": "felt*"
+                }
+            ],
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "bytecode_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "bytecode",
+                    "type": "felt*"
+                }
+            ],
+            "name": "write_bytecode",
+            "outputs": [],
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "bytecode",
+            "outputs": [
+                {
+                    "name": "bytecode_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "bytecode",
+                    "type": "felt*"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "bytecode_len",
+            "outputs": [
+                {
+                    "name": "len",
+                    "type": "felt"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "storage_addr",
+                    "type": "felt"
+                },
+                {
+                    "name": "value",
+                    "type": "Uint256"
+                }
+            ],
+            "name": "write_storage",
+            "outputs": [],
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "storage_addr",
+                    "type": "felt"
+                }
+            ],
+            "name": "storage",
+            "outputs": [
+                {
+                    "name": "value",
+                    "type": "Uint256"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "name": "get_nonce",
+            "outputs": [
+                {
+                    "name": "nonce",
+                    "type": "felt"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "nonce",
+                    "type": "felt"
+                }
+            ],
+            "name": "set_nonce",
+            "outputs": [],
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "jumpdests_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "jumpdests",
+                    "type": "felt*"
+                }
+            ],
+            "name": "write_jumpdests",
+            "outputs": [],
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "index",
+                    "type": "felt"
+                }
+            ],
+            "name": "is_valid_jumpdest",
+            "outputs": [
+                {
+                    "name": "is_valid",
+                    "type": "felt"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "message_hash",
+                    "type": "Uint256"
+                }
+            ],
+            "name": "set_authorized_pre_eip155_tx",
+            "outputs": [],
+            "type": "function"
+        },
+        {
+            "inputs": [
+                {
+                    "name": "to",
+                    "type": "felt"
+                },
+                {
+                    "name": "function_selector",
+                    "type": "felt"
+                },
+                {
+                    "name": "calldata_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "calldata",
+                    "type": "felt*"
+                }
+            ],
+            "name": "execute_starknet_call",
+            "outputs": [
+                {
+                    "name": "retdata_len",
+                    "type": "felt"
+                },
+                {
+                    "name": "retdata",
+                    "type": "felt*"
+                },
+                {
+                    "name": "success",
+                    "type": "felt"
+                }
+            ],
+            "type": "function"
+        }
+    ],
+    "entry_points_by_type": {
+        "CONSTRUCTOR": [
+            {
+                "offset": 4330,
+                "selector": "0x28ffe4ff0f226a9107253e17a904099aa4f63a02a5621de0576e5aa71bc5194"
+            }
+        ],
+        "EXTERNAL": [
+            {
+                "offset": 4974,
+                "selector": "0xfd0dcf7643c604e0d46d006ce389bf83393a40bf3827c92237ef6177d8fa9"
+            },
+            {
+                "offset": 4358,
+                "selector": "0x79dc0da7c54b95f10aa182ad0a46400db63156920adb65eca2654c0945a463"
+            },
+            {
+                "offset": 4644,
+                "selector": "0x7ec457cd7ed1630225a8328f826a29a327b19486f6b2882b4176545ebdbe3d"
+            },
+            {
+                "offset": 5003,
+                "selector": "0xa50795cece646a88f1c8fa86f0ab01dd69ff34f4acfeaafac29be4cd979aa8"
+            },
+            {
+                "offset": 5181,
+                "selector": "0xa77514abc7946d5c7ea9bddebdb0b08efbef87c1216370c8c8b35f44e9047f"
+            },
+            {
+                "offset": 4488,
+                "selector": "0xc4e105e5276c704b5490fa2ab565b6b1904912203fbc6e7bcdeb51fa8c1ef2"
+            },
+            {
+                "offset": 4524,
+                "selector": "0x1199477cb0ce72bf66c6d439da76bc568947cb9aad287402ba7b93353c94092"
+            },
+            {
+                "offset": 4430,
+                "selector": "0x158359fe4236681f6236a2f303f9350495f73f078c9afd1ca0890fa4143c2ed"
+            },
+            {
+                "offset": 4820,
+                "selector": "0x15d40a3d6ca2ac30f4031e42be28da9b056fef9bb7357ac5e85627ee876e5ad"
+            },
+            {
+                "offset": 4714,
+                "selector": "0x162da33a4585851fe8d3af3c2a9c60b557814e221e0d4f30ff0b2189d9c7775"
+            },
+            {
+                "offset": 5213,
+                "selector": "0x17502e934f45348d795ef49c573f2d4152b98035342263eca37ab7c75f4ade4"
+            },
+            {
+                "offset": 5080,
+                "selector": "0x1ac47721ee58ba2813c2a816bca188512839a00d3970f67c05eab986b14006d"
+            },
+            {
+                "offset": 5136,
+                "selector": "0x1d72e194ca9e10e2c0aee99c6266568a349e08a093bfecb77622b9af9d41439"
+            },
+            {
+                "offset": 4462,
+                "selector": "0x21691762da057c1b71f851f9b709e0c143628acf6e0cbc9735411a65663d747"
+            },
+            {
+                "offset": 4397,
+                "selector": "0x21b4dd49a85c82b73f138b112d5135149203ed36c1ec80c46f8c572daa7c5ec"
+            },
+            {
+                "offset": 4765,
+                "selector": "0x289da278a8dc833409cabfdad1581e8e7d40e42dcaed693fa4008dcdb4963b3"
+            },
+            {
+                "offset": 4880,
+                "selector": "0x2924428227755519d0d1f4c445655beb5ab0661745d485288bffc03b761480e"
+            },
+            {
+                "offset": 5106,
+                "selector": "0x2ade3af3505b3b742763322397c7987e19c6e0b2a10162f81fd34e8574a8c67"
+            },
+            {
+                "offset": 4936,
+                "selector": "0x2f22d9e1ae4a391b4a190b8225f2f6f772a083382b7ded3e8d85743a8fcfdcd"
+            },
+            {
+                "offset": 5304,
+                "selector": "0x322f580476fa55c93659ce1b16c09a621c34e073f86251d02e4ffcbceec4086"
+            },
+            {
+                "offset": 5044,
+                "selector": "0x35fe13a5db37080bfbfae639e6c19be9719e0fbdd4db062eb83cceb4d85a7fe"
+            }
+        ],
+        "L1_HANDLER": []
+    },
+    "program": {
+        "attributes": [],
+        "builtins": [
+            "pedersen",
+            "range_check",
+            "ecdsa",
+            "bitwise"
+        ],
+        "compiler_version": "0.13.1",
+        "data": [
+            "0x1234"
+        ],
+        "hints": {},
+        "main_scope": "kkrt",
+        "identifiers": {},
+        "prime": "0x1234",
+        "reference_manager": {
+            "references": []
+        }
+    }
+}

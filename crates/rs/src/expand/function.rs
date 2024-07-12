@@ -154,6 +154,7 @@ impl CairoFunction {
                     }
 
                     #[allow(clippy::ptr_arg)]
+                    #[allow(clippy::too_many_arguments)]
                     pub fn #func_name_ident(
                         &self,
                         #(#inputs),*
