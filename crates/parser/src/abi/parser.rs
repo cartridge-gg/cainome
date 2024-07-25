@@ -360,8 +360,7 @@ impl AbiParser {
                         if inner_composite.r#type == CompositeType::Unknown {
                             inner.token = filtered
                                 .get(&inner.token.type_path())
-                                .expect(&format!(
-                                    "In composite {} the inner token type for {} is expected to exist: {}",
+                                .unwrap_or_else(|| panic!("In composite {} the inner token type for {} is expected to exist: {}",
                                     name,
                                     inner.name,
                                     inner.token.type_path()
