@@ -54,9 +54,9 @@ url.workspace = true
 tokio = { version = "1.15.0", features = ["full"], optional = true }
 
 [patch.crates-io]
-# Remove this patch once the following PR is merged: <https://github.com/xJonathanLEI/starknet-rs/pull/615>
-# To enable std feature on `starknet-types-core`.
-starknet-core = { git = "https://github.com/kariy/starknet-rs", rev = "fffe8e9" }
+# Remove this patch once starknet-rs and types-core new revs in
+# <https://github.com/cartridge-gg/cainome/pull/44> are supported by Dojo.
+starknet-core = { git = "https://github.com/dojoengine/starknet-rs", branch = "fix/include-patch" }
 
 [features]
 default = []
