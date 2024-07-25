@@ -1740,8 +1740,8 @@ dependencies = [
 
 [[package]]
 name = "starknet-core"
-version = "0.11.1"
-source = "git+https://github.com/kariy/starknet-rs?rev=fffe8e9#fffe8e9af69e73ac5a0925fe49266aa9198fff4a"
+version = "0.11.0"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=fix/include-patch#d4a1e36699daa51587a1ef10f6b1549771d57a52"
 dependencies = [
  "base64 0.21.7",
  "crypto-bigint",
@@ -1759,7 +1759,7 @@ dependencies = [
 [[package]]
 name = "starknet-crypto"
 version = "0.7.0"
-source = "git+https://github.com/kariy/starknet-rs?rev=fffe8e9#fffe8e9af69e73ac5a0925fe49266aa9198fff4a"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=fix/include-patch#d4a1e36699daa51587a1ef10f6b1549771d57a52"
 dependencies = [
  "crypto-bigint",
  "hex",
@@ -1769,8 +1769,8 @@ dependencies = [
  "num-traits",
  "rfc6979",
  "sha2",
- "starknet-crypto-codegen 0.4.0 (git+https://github.com/kariy/starknet-rs?rev=fffe8e9)",
- "starknet-curve 0.5.0 (git+https://github.com/kariy/starknet-rs?rev=fffe8e9)",
+ "starknet-crypto-codegen 0.4.0 (git+https://github.com/dojoengine/starknet-rs?branch=fix/include-patch)",
+ "starknet-curve 0.5.0 (git+https://github.com/dojoengine/starknet-rs?branch=fix/include-patch)",
  "starknet-types-core",
  "zeroize",
 ]
@@ -1809,9 +1809,9 @@ dependencies = [
 [[package]]
 name = "starknet-crypto-codegen"
 version = "0.4.0"
-source = "git+https://github.com/kariy/starknet-rs?rev=fffe8e9#fffe8e9af69e73ac5a0925fe49266aa9198fff4a"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=fix/include-patch#d4a1e36699daa51587a1ef10f6b1549771d57a52"
 dependencies = [
- "starknet-curve 0.5.0 (git+https://github.com/kariy/starknet-rs?rev=fffe8e9)",
+ "starknet-curve 0.5.0 (git+https://github.com/dojoengine/starknet-rs?branch=fix/include-patch)",
  "starknet-types-core",
  "syn 2.0.68",
 ]
@@ -1828,7 +1828,7 @@ dependencies = [
 [[package]]
 name = "starknet-curve"
 version = "0.5.0"
-source = "git+https://github.com/kariy/starknet-rs?rev=fffe8e9#fffe8e9af69e73ac5a0925fe49266aa9198fff4a"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=fix/include-patch#d4a1e36699daa51587a1ef10f6b1549771d57a52"
 dependencies = [
  "starknet-types-core",
 ]

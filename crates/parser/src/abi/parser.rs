@@ -347,6 +347,31 @@ impl AbiParser {
             }
         }
 
+        // Can be a very huge copy here. Need an other way to do that in the loop
+        // above here.
+        let filtered = tokens_filtered.clone();
+
+        // So now once it's filtered, we may actually iterate again on the tokens
+        // to resolve all structs/enums inners that may reference existing types.
+        for (name, tokens) in tokens_filtered.iter_mut() {
+            if let Token::Composite(ref mut composite) = tokens {
+                for inner in &mut composite.inners {
+                    if let Token::Composite(ref mut inner_composite) = inner.token {
+                        if inner_composite.r#type == CompositeType::Unknown {
+                            inner.token = filtered
+                                .get(&inner.token.type_path())
+                                .unwrap_or_else(|| panic!("In composite {} the inner token type for {} is expected to exist: {}",
+                                    name,
+                                    inner.name,
+                                    inner.token.type_path()
+                                ))
+                                .clone();
+                        }
+                    }
+                }
+            }
+        }
+
         tokens_filtered
     }
 }
