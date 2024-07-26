@@ -9,7 +9,7 @@ use crate::expand::utils;
 pub struct CairoEnum;
 
 impl CairoEnum {
-    pub fn expand_decl(composite: &Composite) -> TokenStream2 {
+    pub fn expand_decl(composite: &Composite, derives: &[String]) -> TokenStream2 {
         if composite.is_builtin() {
             return quote!();
         }
@@ -29,6 +29,12 @@ impl CairoEnum {
             }
         }
 
+        let mut internal_derives = vec![];
+
+        for d in derives {
+            internal_derives.push(utils::str_to_type(d));
+        }
+
         if composite.is_generic() {
             let gen_args: Vec<Ident> = composite
                 .generic_args
@@ -42,18 +48,15 @@ impl CairoEnum {
             // Add one phantom for each generic type.
             // Those phantom fields are ignored by serde.
 
-            // TODO: as for struct, we need to have a better way for the user to specify the
-            // traits to derive.
-
             quote! {
-                #[derive(Debug, PartialEq, PartialOrd, Clone, serde::Serialize, serde::Deserialize)]
+                #[derive(#(#internal_derives,)*)]
                 pub enum #enum_name<#(#gen_args),*> {
                     #(#variants),*
                 }
             }
         } else {
             quote! {
-                #[derive(Debug, PartialEq, PartialOrd, Clone, serde::Serialize, serde::Deserialize)]
+                #[derive(#(#internal_derives,)*)]
                 pub enum #enum_name {
                     #(#variants),*
                 }
