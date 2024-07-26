@@ -19,6 +19,7 @@ generate_artifacts:
 	jq .abi ${scarb_build}simple_interface${sierra} > ${artifacts}simple_interface.abi.json
 	jq .abi ${scarb_build}structs${sierra} > ${artifacts}structs.abi.json
 	jq .abi ${scarb_build}byte_array${sierra} > ${artifacts}byte_array.abi.json
+	jq .abi ${scarb_build}gen${sierra} > ${artifacts}gen.abi.json
 
 generate_rust:
 	scarb build
@@ -50,11 +51,14 @@ setup_byte_array:
 # 	starkli declare target/dev/contracts_basic.sierra.json ${config}
 # 	starkli deploy ${class_hash} --salt 0x1234 ${config}
 
-# # Declare and deploy the basic contract on katana.
-# setup_gen:
-# 	$(eval class_hash=$(shell starkli class-hash target/dev/contracts_gen.sierra.json))
-# 	starkli declare target/dev/contracts_gen.sierra.json ${config}
-# 	starkli deploy ${class_hash} --salt 0x1234 ${config}
+# Declare and deploy the basic contract on katana.
+setup_gen:
+	@set -x; \
+	scarb build; \
+	class_hash=$$(starkli class-hash ${scarb_build}gen${sierra}); \
+	starkli declare ${scarb_build}gen${sierra} ${config}; \
+	sleep 2; \
+	starkli deploy "$${class_hash}" --salt 0x1234 ${config}
 
 # # Declare and deploy the event contract on katana.
 # setup_event:

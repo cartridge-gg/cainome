@@ -67,6 +67,8 @@ pub struct Abigen {
     pub types_aliases: HashMap<String, String>,
     /// The version of transaction to be executed.
     pub execution_version: ExecutionVersion,
+    /// Derives to be added to the generated types.
+    pub derives: Vec<String>,
 }
 
 impl Abigen {
@@ -83,6 +85,7 @@ impl Abigen {
             abi_source: Utf8PathBuf::from(abi_source),
             types_aliases: HashMap::new(),
             execution_version: ExecutionVersion::V1,
+            derives: vec![],
         }
     }
 
@@ -112,8 +115,12 @@ impl Abigen {
 
         match AbiParser::tokens_from_abi_string(&file_content, &self.types_aliases) {
             Ok(tokens) => {
-                let expanded =
-                    abi_to_tokenstream(&self.contract_name, &tokens, self.execution_version);
+                let expanded = abi_to_tokenstream(
+                    &self.contract_name,
+                    &tokens,
+                    self.execution_version,
+                    &self.derives,
+                );
 
                 Ok(ContractBindings {
                     name: self.contract_name.clone(),
@@ -140,6 +147,7 @@ pub fn abi_to_tokenstream(
     contract_name: &str,
     abi_tokens: &TokenizedAbi,
     execution_version: ExecutionVersion,
+    derives: &[String],
 ) -> TokenStream2 {
     let contract_name = utils::str_to_ident(contract_name);
 
@@ -149,13 +157,13 @@ pub fn abi_to_tokenstream(
 
     for s in &abi_tokens.structs {
         let s_composite = s.to_composite().expect("composite expected");
-        tokens.push(CairoStruct::expand_decl(s_composite));
+        tokens.push(CairoStruct::expand_decl(s_composite, derives));
         tokens.push(CairoStruct::expand_impl(s_composite));
     }
 
     for e in &abi_tokens.enums {
         let e_composite = e.to_composite().expect("composite expected");
-        tokens.push(CairoEnum::expand_decl(e_composite));
+        tokens.push(CairoEnum::expand_decl(e_composite, derives));
         tokens.push(CairoEnum::expand_impl(e_composite));
 
         tokens.push(CairoEnumEvent::expand(
