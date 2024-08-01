@@ -20,20 +20,6 @@ pub use types::*;
 
 use ::starknet::core::types::Felt;
 
-/// Basic cairo structs that are already implemented inside
-/// this crate and hence skipped during ABI generation.
-pub const CAIRO_BASIC_STRUCTS: [&str; 6] = [
-    "Span",
-    "ClassHash",
-    "ContractAddress",
-    "EthAddress",
-    "NonZero",
-    "U256",
-];
-
-/// Same as `CAIRO_BASIC_STRUCTS`, but for enums.
-pub const CAIRO_BASIC_ENUMS: [&str; 3] = ["Option", "Result", "bool"];
-
 /// CairoSerde trait to implement in order to serialize/deserialize
 /// a Rust type to/from a CairoSerde.
 pub trait CairoSerde {
