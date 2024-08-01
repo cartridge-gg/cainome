@@ -358,6 +358,10 @@ impl AbiParser {
                 for inner in &mut composite.inners {
                     if let Token::Composite(ref mut inner_composite) = inner.token {
                         if inner_composite.r#type == CompositeType::Unknown {
+                            if inner_composite.is_builtin() {
+                                continue;
+                            }
+
                             inner.token = filtered
                                 .get(&inner.token.type_path())
                                 .unwrap_or_else(|| panic!("In composite {} the inner token type for {} is expected to exist: {}",
@@ -373,5 +377,52 @@ impl AbiParser {
         }
 
         tokens_filtered
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::tokens::CompositeType;
+
+    #[test]
+    fn test_parse_abi_struct() {
+        let abi_json = r#"
+        [
+            {
+                "type": "struct",
+                "name": "package::StructOne",
+                "members": [
+                    {
+                        "name": "a",
+                        "type": "core::integer::u64"
+                    },
+                    {
+                        "name": "b",
+                        "type": "core::zeroable::NonZero"
+                    },
+                    {
+                        "name": "c",
+                        "type": "core::integer::u256"
+                    }
+                ]
+            }
+        ]
+        "#;
+
+        let result = AbiParser::tokens_from_abi_string(abi_json, &HashMap::new()).unwrap();
+
+        assert_eq!(result.structs.len(), 1);
+        assert_eq!(result.interfaces.len(), 0);
+        assert_eq!(result.functions.len(), 0);
+        assert_eq!(result.enums.len(), 0);
+
+        let s = result.structs[0].to_composite().unwrap();
+        assert_eq!(s.type_path, "package::StructOne");
+        assert_eq!(s.r#type, CompositeType::Struct);
+        assert_eq!(s.inners.len(), 3);
+        assert_eq!(s.inners[0].name, "a");
+        assert_eq!(s.inners[1].name, "b");
+        assert_eq!(s.inners[2].name, "c");
     }
 }
