@@ -9,7 +9,7 @@ use crate::expand::utils;
 pub struct CairoStruct;
 
 impl CairoStruct {
-    pub fn expand_decl(composite: &Composite) -> TokenStream2 {
+    pub fn expand_decl(composite: &Composite, derives: &[String]) -> TokenStream2 {
         if composite.is_builtin() {
             return quote!();
         }
@@ -35,6 +35,12 @@ impl CairoStruct {
             }
         }
 
+        let mut internal_derives = vec![];
+
+        for d in derives {
+            internal_derives.push(utils::str_to_type(d));
+        }
+
         if composite.is_generic() {
             let gen_args: Vec<Ident> = composite
                 .generic_args
@@ -48,18 +54,15 @@ impl CairoStruct {
             // Add one phantom for each generic type.
             // Those phantom fields are ignored by serde.
 
-            // TODO: add a way for the user to specify which trait must be derived for the
-            // generated structs. For now Serde is used to ensure easy serialization.
-
             quote! {
-                #[derive(Debug, PartialEq, PartialOrd, Clone, serde::Serialize, serde::Deserialize)]
+                #[derive(#(#internal_derives,)*)]
                 pub struct #struct_name<#(#gen_args),*> {
                     #(pub #members),*
                 }
             }
         } else {
             quote! {
-                #[derive(Debug, PartialEq, PartialOrd, Clone, serde::Serialize, serde::Deserialize)]
+                #[derive(#(#internal_derives,)*)]
                 pub struct #struct_name {
                     #(pub #members),*
                 }

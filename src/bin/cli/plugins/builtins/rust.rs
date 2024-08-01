@@ -36,6 +36,7 @@ impl BuiltinPlugin for RustPlugin {
                 &contract_name,
                 &contract.tokens,
                 input.execution_version,
+                &input.derives,
             );
             let filename = format!(
                 "{}.rs",
