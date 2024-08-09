@@ -62,6 +62,11 @@ pub struct CainomeArgs {
     #[arg(value_name = "EXECUTION_VERSION")]
     #[arg(help = "The execution version to use. Supported values are 'v1', 'V1', 'v3', or 'V3'.")]
     pub execution_version: ExecutionVersion,
+
+    #[arg(long)]
+    #[arg(value_name = "DERIVES")]
+    #[arg(help = "Derives to be added to the generated types.")]
+    pub derives: Option<Vec<String>>,
 }
 
 #[derive(Debug, Args, Clone)]
