@@ -1694,7 +1694,7 @@ checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
 [[package]]
 name = "starknet"
 version = "0.11.0"
-source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=af107dd#af107ddae981ece9a053ebecc18d79057f2e08a8"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=2ddc694#2ddc69479d326ed154df438d22f2d720fbba746e"
 dependencies = [
  "starknet-accounts",
  "starknet-contract",
@@ -1708,7 +1708,7 @@ dependencies = [
 [[package]]
 name = "starknet-accounts"
 version = "0.10.0"
-source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=af107dd#af107ddae981ece9a053ebecc18d79057f2e08a8"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=2ddc694#2ddc69479d326ed154df438d22f2d720fbba746e"
 dependencies = [
  "async-trait",
  "auto_impl",
@@ -1722,7 +1722,7 @@ dependencies = [
 [[package]]
 name = "starknet-contract"
 version = "0.10.0"
-source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=af107dd#af107ddae981ece9a053ebecc18d79057f2e08a8"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=2ddc694#2ddc69479d326ed154df438d22f2d720fbba746e"
 dependencies = [
  "serde",
  "serde_json",
@@ -1736,7 +1736,7 @@ dependencies = [
 [[package]]
 name = "starknet-core"
 version = "0.11.1"
-source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=af107dd#af107ddae981ece9a053ebecc18d79057f2e08a8"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=2ddc694#2ddc69479d326ed154df438d22f2d720fbba746e"
 dependencies = [
  "base64 0.21.7",
  "crypto-bigint",
@@ -1754,7 +1754,7 @@ dependencies = [
 [[package]]
 name = "starknet-crypto"
 version = "0.7.1"
-source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=af107dd#af107ddae981ece9a053ebecc18d79057f2e08a8"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=2ddc694#2ddc69479d326ed154df438d22f2d720fbba746e"
 dependencies = [
  "crypto-bigint",
  "hex",
@@ -1772,7 +1772,7 @@ dependencies = [
 [[package]]
 name = "starknet-curve"
 version = "0.5.0"
-source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=af107dd#af107ddae981ece9a053ebecc18d79057f2e08a8"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=2ddc694#2ddc69479d326ed154df438d22f2d720fbba746e"
 dependencies = [
  "starknet-types-core 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -1780,7 +1780,7 @@ dependencies = [
 [[package]]
 name = "starknet-macros"
 version = "0.2.0"
-source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=af107dd#af107ddae981ece9a053ebecc18d79057f2e08a8"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=2ddc694#2ddc69479d326ed154df438d22f2d720fbba746e"
 dependencies = [
  "starknet-core",
  "syn 2.0.72",
@@ -1789,7 +1789,7 @@ dependencies = [
 [[package]]
 name = "starknet-providers"
 version = "0.11.0"
-source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=af107dd#af107ddae981ece9a053ebecc18d79057f2e08a8"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=2ddc694#2ddc69479d326ed154df438d22f2d720fbba746e"
 dependencies = [
  "async-trait",
  "auto_impl",
@@ -1809,7 +1809,7 @@ dependencies = [
 [[package]]
 name = "starknet-signers"
 version = "0.9.0"
-source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=af107dd#af107ddae981ece9a053ebecc18d79057f2e08a8"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=2ddc694#2ddc69479d326ed154df438d22f2d720fbba746e"
 dependencies = [
  "async-trait",
  "auto_impl",
