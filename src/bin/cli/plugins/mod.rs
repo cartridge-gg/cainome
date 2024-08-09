@@ -13,6 +13,7 @@ pub struct PluginInput {
     pub output_dir: Utf8PathBuf,
     pub contracts: Vec<ContractData>,
     pub execution_version: ExecutionVersion,
+    pub derives: Vec<String>,
 }
 
 #[derive(Debug)]
