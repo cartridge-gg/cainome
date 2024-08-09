@@ -169,18 +169,18 @@ pub(crate) struct TypeAlias {
 
 impl Parse for TypeAlias {
     fn parse(input: ParseStream) -> Result<Self> {
-        let abi = input
-            .parse::<Type>()?
-            .into_token_stream()
-            .to_string()
-            .replace(' ', "");
+        let abi = sanitize_str(&input.parse::<Type>()?.into_token_stream().to_string());
 
         input.parse::<Token![as]>()?;
 
-        let alias = input.parse::<Ident>()?.to_string();
+        let alias = sanitize_str(&input.parse::<Ident>()?.to_string());
 
         Ok(TypeAlias { abi, alias })
     }
+}
+
+fn sanitize_str(abi: &str) -> String {
+    abi.trim().replace([' ', '\n', '\t'], "").to_string()
 }
 
 fn open_json_file(file_path: &str) -> Result<File> {
