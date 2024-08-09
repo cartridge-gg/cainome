@@ -140,13 +140,13 @@ impl CairoFunction {
                     pub fn #func_name_call(
                         &self,
                         #(#inputs),*
-                    ) -> starknet::accounts::Call {
+                    ) -> starknet::core::types::Call {
                         use #ccs::CairoSerde;
 
                         let mut __calldata = vec![];
                         #(#serializations)*
 
-                        starknet::accounts::Call {
+                        starknet::core::types::Call {
                             to: self.address,
                             selector: starknet::macros::selector!(#func_name),
                             calldata: __calldata,
@@ -164,7 +164,7 @@ impl CairoFunction {
                         let mut __calldata = vec![];
                         #(#serializations)*
 
-                        let __call = starknet::accounts::Call {
+                        let __call = starknet::core::types::Call {
                             to: self.address,
                             selector: starknet::macros::selector!(#func_name),
                             calldata: __calldata,
