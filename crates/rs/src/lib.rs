@@ -109,6 +109,16 @@ impl Abigen {
         self
     }
 
+    /// Sets the derives to be added to the generated types.
+    ///
+    /// # Arguments
+    ///
+    /// * `derives` - Derives to be added to the generated types.
+    pub fn with_derives(mut self, derives: Vec<String>) -> Self {
+        self.derives = derives;
+        self
+    }
+
     /// Generates the contract bindings.
     pub fn generate(&self) -> Result<ContractBindings> {
         let file_content = std::fs::read_to_string(&self.abi_source)?;
