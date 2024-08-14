@@ -169,13 +169,39 @@ pub fn abi_to_tokenstream(
 
     tokens.push(CairoContract::expand(contract_name.clone()));
 
-    for s in &abi_tokens.structs {
+    let mut sorted_structs = abi_tokens.structs.clone();
+    sorted_structs.sort_by(|a, b| {
+        let a_name = a
+            .to_composite()
+            .expect("composite expected")
+            .type_name_or_alias();
+        let b_name = b
+            .to_composite()
+            .expect("composite expected")
+            .type_name_or_alias();
+        a_name.cmp(&b_name)
+    });
+
+    let mut sorted_enums = abi_tokens.enums.clone();
+    sorted_enums.sort_by(|a, b| {
+        let a_name = a
+            .to_composite()
+            .expect("composite expected")
+            .type_name_or_alias();
+        let b_name = b
+            .to_composite()
+            .expect("composite expected")
+            .type_name_or_alias();
+        a_name.cmp(&b_name)
+    });
+
+    for s in &sorted_structs {
         let s_composite = s.to_composite().expect("composite expected");
         tokens.push(CairoStruct::expand_decl(s_composite, derives));
         tokens.push(CairoStruct::expand_impl(s_composite));
     }
 
-    for e in &abi_tokens.enums {
+    for e in &sorted_enums {
         let e_composite = e.to_composite().expect("composite expected");
         tokens.push(CairoEnum::expand_decl(e_composite, derives));
         tokens.push(CairoEnum::expand_impl(e_composite));
@@ -197,6 +223,12 @@ pub fn abi_to_tokenstream(
     for funcs in abi_tokens.interfaces.values() {
         functions.extend(funcs.clone());
     }
+
+    functions.sort_by(|a, b| {
+        let a_name = a.to_function().expect("function expected").name.to_string();
+        let b_name = b.to_function().expect("function expected").name.to_string();
+        a_name.cmp(&b_name)
+    });
 
     for f in functions {
         let f = f.to_function().expect("function expected");
