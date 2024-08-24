@@ -1,0 +1,5 @@
+error: unexpected named parameter `my_other_parameter`
+  --> tests/abigen/unexpected_named_parameter.rs:22:5
+   |
+22 |     my_other_parameter(path = "hello")
+   |     ^^^^^^^^^^^^^^^^^^
