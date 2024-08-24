@@ -1,6 +1,7 @@
 use cainome_parser::{AbiParser, AbiParserLegacy};
 use cainome_rs::{self};
 use proc_macro::TokenStream;
+use proc_macro_error::proc_macro_error;
 use quote::quote;
 
 mod macro_inputs;
@@ -10,11 +11,13 @@ mod spanned;
 use crate::macro_inputs::ContractAbi;
 use crate::macro_inputs_legacy::ContractAbiLegacy;
 
+#[proc_macro_error]
 #[proc_macro]
 pub fn abigen(input: TokenStream) -> TokenStream {
     abigen_internal(input)
 }
 
+#[proc_macro_error]
 #[proc_macro]
 pub fn abigen_legacy(input: TokenStream) -> TokenStream {
     abigen_internal_legacy(input)

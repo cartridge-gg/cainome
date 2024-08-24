@@ -11,6 +11,7 @@
 //!
 //! TODO: support the full artifact JSON to be able to
 //! deploy contracts from abigen.
+use proc_macro_error::emit_error;
 use quote::ToTokens;
 use starknet::core::types::contract::{AbiEntry, SierraClass};
 use std::collections::{HashMap, HashSet};
@@ -114,10 +115,16 @@ impl Parse for ContractAbi {
 
                     for type_alias in parsed {
                         if !abi_types.insert(type_alias.abi.clone()) {
-                            panic!("{} duplicate abi type", type_alias.abi)
+                            emit_error!(
+                                type_alias.span(),
+                                format!("{} duplicate abi type", type_alias.abi)
+                            );
                         }
                         if !aliases.insert(type_alias.alias.clone()) {
-                            panic!("{} duplicate alias name", type_alias.alias)
+                            emit_error!(
+                                type_alias.span(),
+                                format!("{} duplicate alias name", type_alias.alias)
+                            );
                         }
 
                         let ta = type_alias.into_inner();
@@ -146,7 +153,7 @@ impl Parse for ContractAbi {
                         derives.push(derive.to_token_stream().to_string());
                     }
                 }
-                _ => panic!("unexpected named parameter `{}`", name),
+                _ => emit_error!(name.span(), format!("unexpected named parameter `{name}`")),
             }
         }
 
