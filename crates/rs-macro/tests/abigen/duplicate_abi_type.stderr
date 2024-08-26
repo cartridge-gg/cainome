@@ -1,0 +1,5 @@
+error: core::integer::u256 duplicate abi type
+  --> tests/abigen/duplicate_abi_type.rs:24:9
+   |
+24 |         core::integer::u256 as MyStruct2;
+   |         ^^^^

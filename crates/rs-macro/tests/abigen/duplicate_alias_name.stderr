@@ -1,0 +1,5 @@
+error: MyStruct duplicate alias name
+  --> tests/abigen/duplicate_alias_name.rs:34:9
+   |
+34 |         core::starknet::eth_address::EthAddress as MyStruct;
+   |         ^^^^
