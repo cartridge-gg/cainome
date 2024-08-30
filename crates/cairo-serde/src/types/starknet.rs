@@ -5,7 +5,7 @@ use crate::{CairoSerde, Error, Result};
 use starknet::core::types::Felt;
 
 /// ContractAddress.
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, serde::Serialize, serde::Deserialize)]
 pub struct ContractAddress(pub Felt);
 
 impl From<Felt> for ContractAddress {
@@ -40,7 +40,7 @@ impl CairoSerde for ContractAddress {
 }
 
 /// ClassHash.
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, serde::Serialize, serde::Deserialize)]
 pub struct ClassHash(pub Felt);
 
 impl From<Felt> for ClassHash {
@@ -75,7 +75,7 @@ impl CairoSerde for ClassHash {
 }
 
 /// EthAddress.
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, serde::Serialize, serde::Deserialize)]
 pub struct EthAddress(pub Felt);
 
 impl From<Felt> for EthAddress {
