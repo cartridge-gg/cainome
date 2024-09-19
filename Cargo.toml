@@ -27,7 +27,7 @@ thiserror = "1.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = [ "env-filter", "json" ] }
 url = "2.5"
-starknet = { git = "https://github.com/xJonathanLEI/starknet-rs", rev = "4a12730" }
+starknet = "0.12"
 starknet-types-core = "0.1.5"
 
 [dependencies]
