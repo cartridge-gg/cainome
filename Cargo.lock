@@ -260,6 +260,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "cainome-cairo-serde-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.77",
+]
+
+[[package]]
 name = "cainome-parser"
 version = "0.1.0"
 dependencies = [
