@@ -1,5 +1,5 @@
 use cainome_cairo_serde::CairoSerde;
-use cairo_serde_derive::CairoSerde;
+use cainome_cairo_serde_derive::CairoSerde;
 use starknet_types_core::felt::Felt;
 
 #[derive(Debug, CairoSerde)]

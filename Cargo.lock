@@ -232,6 +232,7 @@ dependencies = [
  "anyhow",
  "async-trait",
  "cainome-cairo-serde",
+ "cainome-cairo-serde-derive",
  "cainome-parser",
  "cainome-rs",
  "cainome-rs-macro",

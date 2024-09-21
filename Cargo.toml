@@ -36,6 +36,7 @@ starknet-types-core = "0.1.5"
 camino.workspace = true
 cainome-parser.workspace = true
 cainome-cairo-serde.workspace = true
+cainome-cairo-serde-derive.workspace = true
 cainome-rs.workspace = true
 cainome-rs-macro = { path = "crates/rs-macro", optional = true }
 

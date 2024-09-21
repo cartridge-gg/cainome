@@ -4,6 +4,10 @@ pub mod cairo_serde {
     pub use cainome_cairo_serde::*;
 }
 
+pub mod cairo_serde_derive {
+    pub use cainome_cairo_serde_derive::*;
+}
+
 pub mod parser {
     pub use cainome_parser::*;
 }
