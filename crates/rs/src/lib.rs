@@ -126,6 +126,16 @@ impl Abigen {
         self
     }
 
+    /// Sets the derives to be added to the generated contract.
+    ///
+    /// # Arguments
+    ///
+    /// * `derives` - Derives to be added to the generated contract.
+    pub fn with_contract_derives(mut self, derives: Vec<String>) -> Self {
+        self.contract_derives = derives;
+        self
+    }
+
     /// Generates the contract bindings.
     pub fn generate(&self) -> Result<ContractBindings> {
         let file_content = std::fs::read_to_string(&self.abi_source)?;
@@ -175,7 +185,10 @@ pub fn abi_to_tokenstream(
 
     let mut tokens: Vec<TokenStream2> = vec![];
 
-    tokens.push(CairoContract::expand(contract_name.clone(), contract_derives));
+    tokens.push(CairoContract::expand(
+        contract_name.clone(),
+        contract_derives,
+    ));
 
     let mut sorted_structs = abi_tokens.structs.clone();
     sorted_structs.sort_by(|a, b| {

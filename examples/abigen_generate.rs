@@ -10,7 +10,9 @@ async fn main() {
         "MyContract",
         "./contracts/target/dev/contracts_simple_get_set.contract_class.json",
     )
-    .with_types_aliases(aliases);
+    .with_types_aliases(aliases)
+    .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
+    .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()]);
 
     abigen
         .generate()
