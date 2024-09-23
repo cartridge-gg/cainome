@@ -36,6 +36,7 @@ pub(crate) struct ContractAbiLegacy {
     pub output_path: Option<String>,
     pub type_aliases: HashMap<String, String>,
     pub derives: Vec<String>,
+    pub contract_derives: Vec<String>,
 }
 
 impl Parse for ContractAbiLegacy {
@@ -89,6 +90,7 @@ impl Parse for ContractAbiLegacy {
         let mut output_path: Option<String> = None;
         let mut type_aliases = HashMap::new();
         let mut derives = Vec::new();
+        let mut contract_derives = Vec::new();
 
         loop {
             if input.parse::<Token![,]>().is_err() {
@@ -142,6 +144,15 @@ impl Parse for ContractAbiLegacy {
                         derives.push(derive.to_token_stream().to_string());
                     }
                 }
+                "contract_derives" => {
+                    let content;
+                    parenthesized!(content in input);
+                    let parsed = content.parse_terminated(Spanned::<Type>::parse, Token![,])?;
+
+                    for derive in parsed {
+                        contract_derives.push(derive.to_token_stream().to_string());
+                    }
+                }
                 _ => emit_error!(name.span(), format!("unexpected named parameter `{name}`")),
             }
         }
@@ -152,6 +163,7 @@ impl Parse for ContractAbiLegacy {
             output_path,
             type_aliases,
             derives,
+            contract_derives,
         })
     }
 }

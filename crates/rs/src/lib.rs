@@ -73,6 +73,8 @@ pub struct Abigen {
     pub execution_version: ExecutionVersion,
     /// Derives to be added to the generated types.
     pub derives: Vec<String>,
+    /// Derives to be added to the generated contract.
+    pub contract_derives: Vec<String>,
 }
 
 impl Abigen {
@@ -90,6 +92,7 @@ impl Abigen {
             types_aliases: HashMap::new(),
             execution_version: ExecutionVersion::V1,
             derives: vec![],
+            contract_derives: vec![],
         }
     }
 
@@ -134,6 +137,7 @@ impl Abigen {
                     &tokens,
                     self.execution_version,
                     &self.derives,
+                    &self.contract_derives,
                 );
 
                 Ok(ContractBindings {
@@ -157,17 +161,21 @@ impl Abigen {
 ///
 /// * `contract_name` - Name of the contract.
 /// * `abi_tokens` - Tokenized ABI.
+/// * `execution_version` - The version of transaction to be executed.
+/// * `derives` - Derives to be added to the generated types.
+/// * `contract_derives` - Derives to be added to the generated contract.
 pub fn abi_to_tokenstream(
     contract_name: &str,
     abi_tokens: &TokenizedAbi,
     execution_version: ExecutionVersion,
     derives: &[String],
+    contract_derives: &[String],
 ) -> TokenStream2 {
     let contract_name = utils::str_to_ident(contract_name);
 
     let mut tokens: Vec<TokenStream2> = vec![];
 
-    tokens.push(CairoContract::expand(contract_name.clone()));
+    tokens.push(CairoContract::expand(contract_name.clone(), contract_derives));
 
     let mut sorted_structs = abi_tokens.structs.clone();
     sorted_structs.sort_by(|a, b| {

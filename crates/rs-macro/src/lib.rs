@@ -37,6 +37,7 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
         &abi_tokens,
         contract_abi.execution_version,
         &contract_abi.derives,
+        &contract_abi.contract_derives,
     );
 
     if let Some(out_path) = contract_abi.output_path {
@@ -66,6 +67,7 @@ fn abigen_internal_legacy(input: TokenStream) -> TokenStream {
         &abi_tokens,
         cainome_rs::ExecutionVersion::V1,
         &contract_abi.derives,
+        &contract_abi.contract_derives,
     );
 
     if let Some(out_path) = contract_abi.output_path {

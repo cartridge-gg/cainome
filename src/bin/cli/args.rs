@@ -67,6 +67,11 @@ pub struct CainomeArgs {
     #[arg(value_name = "DERIVES")]
     #[arg(help = "Derives to be added to the generated types.")]
     pub derives: Option<Vec<String>>,
+
+    #[arg(long)]
+    #[arg(value_name = "CONTRACT_DERIVES")]
+    #[arg(help = "Derives to be added to the generated contract.")]
+    pub contract_derives: Option<Vec<String>>,
 }
 
 #[derive(Debug, Args, Clone)]
