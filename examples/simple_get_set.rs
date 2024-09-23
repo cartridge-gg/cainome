@@ -20,7 +20,9 @@ const KATANA_CHAIN_ID: &str = "0x4b4154414e41";
 // Or you can use the extracted abi entries with jq in contracts/abi/.
 abigen!(
     MyContract,
-    "./contracts/target/dev/contracts_simple_get_set.contract_class.json"
+    "./contracts/target/dev/contracts_simple_get_set.contract_class.json",
+    derives(Debug, PartialEq),
+    contract_derives(Debug, Clone)
 );
 //abigen!(MyContract, "./contracts/abi/simple_get_set.abi.json");
 

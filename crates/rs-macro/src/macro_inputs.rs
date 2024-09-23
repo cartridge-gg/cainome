@@ -39,6 +39,7 @@ pub(crate) struct ContractAbi {
     pub type_aliases: HashMap<String, String>,
     pub execution_version: ExecutionVersion,
     pub derives: Vec<String>,
+    pub contract_derives: Vec<String>,
 }
 
 impl Parse for ContractAbi {
@@ -92,6 +93,7 @@ impl Parse for ContractAbi {
         let mut execution_version = ExecutionVersion::V1;
         let mut type_aliases = HashMap::new();
         let mut derives = Vec::new();
+        let mut contract_derives = Vec::new();
 
         loop {
             if input.parse::<Token![,]>().is_err() {
@@ -153,6 +155,15 @@ impl Parse for ContractAbi {
                         derives.push(derive.to_token_stream().to_string());
                     }
                 }
+                "contract_derives" => {
+                    let content;
+                    parenthesized!(content in input);
+                    let parsed = content.parse_terminated(Spanned::<Type>::parse, Token![,])?;
+
+                    for derive in parsed {
+                        contract_derives.push(derive.to_token_stream().to_string());
+                    }
+                }
                 _ => emit_error!(name.span(), format!("unexpected named parameter `{name}`")),
             }
         }
@@ -164,6 +175,7 @@ impl Parse for ContractAbi {
             type_aliases,
             execution_version,
             derives,
+            contract_derives,
         })
     }
 }

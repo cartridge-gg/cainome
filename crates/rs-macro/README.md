@@ -46,6 +46,8 @@ The `abigen!` macro takes 2 or 3 inputs:
 3. Optional parameters:
    - `output_path`: if provided, the content will be generated in the given file instead of being expanded at the location of the macro invocation.
    - `type_aliases`: to avoid type name conflicts between components / contracts, you can rename some type by providing an alias for the full type path. It is important to give the **full** type path to ensure aliases are applied correctly.
+   - `derive`: to specify the derive for the generated structs/enums.
+   - `contract_derives`: to specify the derive for the generated contract type.
 
 ```rust
 use cainome::rs::abigen;
@@ -64,6 +66,14 @@ abigen!(
         package::module1::component1::MyStruct as MyStruct1;
         package::module2::component2::MyStruct as MyStruct2;
     },
+);
+
+// Example with custom derives:
+abigen!(
+    MyContract,
+    "./contracts/abi/components.abi.json",
+    derive(Debug, Clone),
+    contract_derives(Debug, Clone)
 );
 
 fn main() {

@@ -7,16 +7,22 @@ use super::utils;
 pub struct CairoContract;
 
 impl CairoContract {
-    pub fn expand(contract_name: Ident) -> TokenStream2 {
+    pub fn expand(contract_name: Ident, contract_derives: &[String]) -> TokenStream2 {
         let reader = utils::str_to_ident(format!("{}Reader", contract_name).as_str());
 
         let snrs_types = utils::snrs_types();
         let snrs_accounts = utils::snrs_accounts();
         let snrs_providers = utils::snrs_providers();
 
+        let mut internal_derives = vec![];
+
+        for d in contract_derives {
+            internal_derives.push(utils::str_to_type(d));
+        }
+
         let q = quote! {
 
-            #[derive(Debug)]
+            #[derive(#(#internal_derives,)*)]
             pub struct #contract_name<A: #snrs_accounts::ConnectedAccount + Sync> {
                 pub address: #snrs_types::Felt,
                 pub account: A,
@@ -45,7 +51,7 @@ impl CairoContract {
                 }
             }
 
-            #[derive(Debug)]
+            #[derive(#(#internal_derives,)*)]
             pub struct #reader<P: #snrs_providers::Provider + Sync> {
                 pub address: #snrs_types::Felt,
                 pub provider: P,
