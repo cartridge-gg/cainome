@@ -15,7 +15,7 @@ pub fn derive_enum(ident: Ident, data: DataEnum) -> TokenStream {
         .variants
         .iter()
         .enumerate()
-        .map(|(i, v)| derive_enum_variant(&ident, i, &v))
+        .map(|(i, v)| derive_enum_variant(&ident, i, v))
         .collect::<Vec<_>>()
         .into_iter()
         .unzip_n_vec();
@@ -100,7 +100,7 @@ fn derive_enum_variant(
     (
         derive_variant_cairo_serialized_size(&fields, &types),
         derive_variant_cairo_serialize(index, &fields, &types),
-        derive_variant_cairo_deserialize(ident, &variant, &fields, &types),
+        derive_variant_cairo_deserialize(ident, variant, &fields, &types),
     )
 }
 
