@@ -13,7 +13,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
             .cloned()
             .map(|field| (field.ident.clone().unwrap(), field.ty))
             .unzip(),
-        _ => panic!("CairoSerde can only be derived for structs"),
+        _ => todo!("CairoSerde can only be derived for structs at the moment"),
     };
 
     let cairo_serialized_size = quote! {
@@ -26,7 +26,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
     };
 
     let cairo_serialize = quote! {
-        fn cairo_serialize(rust: &Self::RustType) -> Vec<Felt> {
+        fn cairo_serialize(rust: &Self::RustType) -> Vec<::starknet::core::types::Felt> {
             let mut result = Vec::new();
             #(
                 result.extend(<#types as ::cainome_cairo_serde::CairoSerde>::cairo_serialize(&rust.#idents));
@@ -51,7 +51,7 @@ pub fn derive(input: TokenStream) -> TokenStream {
     };
 
     let output = quote! {
-        impl CairoSerde for #ident {
+        impl ::cainome::cairo_serde::CairoSerde for #ident {
             type RustType = Self;
 
             #cairo_serialized_size
