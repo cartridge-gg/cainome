@@ -50,9 +50,14 @@ pub fn derive(input: TokenStream) -> TokenStream {
         }
     };
 
+    // There is no easy way to check for the members being staticaly sized at compile time.
+    // Any of the members of the composite type can have a dynamic size.
+    // This is why we return `None` for the `SERIALIZED_SIZE` constant.
     let output = quote! {
         impl ::cainome::cairo_serde::CairoSerde for #ident {
             type RustType = Self;
+
+            const SERIALIZED_SIZE: Option<usize> = None;
 
             #cairo_serialized_size
             #cairo_serialize
