@@ -72,7 +72,7 @@ abigen!(
 abigen!(
     MyContract,
     "./contracts/abi/components.abi.json",
-    derive(Debug, Clone),
+    derives(Debug, Clone),
     contract_derives(Debug, Clone)
 );
 
