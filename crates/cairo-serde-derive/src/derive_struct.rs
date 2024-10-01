@@ -43,7 +43,7 @@ pub fn derive_struct(ident: Ident, data: DataStruct) -> TokenStream {
     // Any of the members of the composite type can have a dynamic size.
     // This is why we return `None` for the `SERIALIZED_SIZE` constant.
     let output = quote! {
-        impl ::cainome::cairo_serde::CairoSerde for #ident {
+        impl ::cainome_cairo_serde::CairoSerde for #ident {
             type RustType = Self;
 
             const SERIALIZED_SIZE: Option<usize> = None;
