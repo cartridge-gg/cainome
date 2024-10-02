@@ -6,6 +6,7 @@ edition = "2021"
 [workspace]
 members = [
     "crates/cairo-serde",
+    "crates/cairo-serde-derive",
     "crates/parser",
     "crates/rs",
     "crates/rs-macro",
@@ -14,6 +15,7 @@ members = [
 [workspace.dependencies]
 # workspace crates
 cainome-cairo-serde = { path = "crates/cairo-serde" }
+cainome-cairo-serde-derive = { path = "crates/cairo-serde-derive" }
 cainome-parser = { path = "crates/parser" }
 cainome-rs = { path = "crates/rs" }
 
@@ -34,6 +36,7 @@ starknet-types-core = "0.1.6"
 camino.workspace = true
 cainome-parser.workspace = true
 cainome-cairo-serde.workspace = true
+cainome-cairo-serde-derive.workspace = true
 cainome-rs.workspace = true
 cainome-rs-macro = { path = "crates/rs-macro", optional = true }
 
