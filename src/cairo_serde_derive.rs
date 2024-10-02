@@ -31,6 +31,7 @@ mod tests {
         Tuple(ExampleSimple, ExampleSimple),
         Struct { x: ExampleTuple, y: ExampleSimple },
     }
+
     #[test]
     fn test_derive_struct() {
         let tuple = ExampleTuple(
