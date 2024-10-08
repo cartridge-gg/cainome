@@ -1,6 +1,9 @@
 use crate::CairoSerde;
 use starknet::core::types::Felt;
-use std::{cmp::Ordering, ops::Add};
+use std::{
+    cmp::Ordering,
+    ops::{Add, BitOr},
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct U256 {
@@ -26,6 +29,17 @@ impl Add for U256 {
         }
         let (high, _overflow_high) = self.high.overflowing_add(other.high);
         U256 { low, high }
+    }
+}
+
+impl BitOr for U256 {
+    type Output = Self;
+
+    fn bitor(self, other: Self) -> Self {
+        U256 {
+            low: self.low | other.low,
+            high: self.high | other.high,
+        }
     }
 }
 
@@ -148,6 +162,21 @@ mod tests {
 
         assert_eq!(u256_3.low, 0_u128);
         assert_eq!(u256_3.high, 0_u128);
+    }
+
+    #[test]
+    fn test_bit_or_u256() {
+        let u256_1 = U256 {
+            low: 0b1010_u128,
+            high: 0b1100_u128,
+        };
+        let u256_2 = U256 {
+            low: 0b0110_u128,
+            high: 0b0011_u128,
+        };
+        let u256_3 = u256_1 | u256_2;
+        assert_eq!(u256_3.low, 0b1110_u128);
+        assert_eq!(u256_3.high, 0b1111_u128);
     }
 
     #[test]
