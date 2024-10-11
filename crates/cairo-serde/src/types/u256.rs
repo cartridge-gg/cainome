@@ -1,11 +1,15 @@
 use crate::CairoSerde;
+use num_bigint::{BigInt, BigUint, ParseBigIntError};
+use serde_with::{DeserializeAs, DisplayFromStr, SerializeAs};
 use starknet::core::types::Felt;
 use std::{
     cmp::Ordering,
+    fmt::Display,
     ops::{Add, BitOr},
+    str::FromStr,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct U256 {
     pub low: u128,
     pub high: u128,
@@ -40,6 +44,58 @@ impl BitOr for U256 {
             low: self.low | other.low,
             high: self.high | other.high,
         }
+    }
+}
+
+impl Display for U256 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut num = BigUint::from(0u128);
+        num = num + BigUint::from(self.high);
+        num = num << 128;
+        num = num + BigUint::from(self.low);
+        write!(f, "{}", num)
+    }
+}
+
+impl FromStr for U256 {
+    type Err = ParseBigIntError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let num = BigInt::from_str(s)?;
+        let num_big_uint = num.to_biguint().unwrap();
+        let mask = (BigUint::from(1u128) << 128u32) - BigUint::from(1u128);
+        let b_low: BigUint = (num_big_uint.clone() >> 0) & mask.clone();
+        let b_high: BigUint = (num_big_uint.clone() >> 128) & mask.clone();
+
+        let mut low = 0;
+        let mut high = 0;
+
+        for (i, digit) in b_low.to_u64_digits().iter().take(2).enumerate() {
+            low |= (*digit as u128) << (i * 64);
+        }
+
+        for (i, digit) in b_high.to_u64_digits().iter().take(2).enumerate() {
+            high |= (*digit as u128) << (i * 64);
+        }
+
+        Ok(U256 { low, high })
+    }
+}
+
+impl serde::Serialize for U256 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        DisplayFromStr::serialize_as(self, serializer)
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for U256 {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        DisplayFromStr::deserialize_as(deserializer)
     }
 }
 
@@ -176,7 +232,7 @@ mod tests {
         };
         let u256_3 = u256_1 | u256_2;
         assert_eq!(u256_3.low, 0b1110_u128);
-        assert_eq!(u256_3.high, 0b1111_u128);
+        assert_eq!(u256_3.high, 0b1111_u128)
     }
 
     #[test]
@@ -197,6 +253,23 @@ mod tests {
         assert_eq!(felts.len(), 2);
         assert_eq!(felts[0], Felt::from(u128::MIN));
         assert_eq!(felts[1], Felt::from(u128::MIN));
+    }
+
+    #[test]
+    fn test_display_u256() {
+        let u256 = U256 {
+            low: 12_u128,
+            high: 0_u128,
+        };
+        println!("{}", u256);
+        assert_eq!(format!("{}", u256), "12");
+    }
+
+    #[test]
+    fn test_from_str() {
+        let u256 = U256::from_str("18446744073709551616").unwrap();
+        assert_eq!(u256.low, 18446744073709551616_u128);
+        assert_eq!(u256.high, 0_u128);
     }
 
     #[test]

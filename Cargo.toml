@@ -21,13 +21,14 @@ cainome-rs = { path = "crates/rs" }
 
 anyhow = "1.0"
 async-trait = "0.1"
-camino = { version = "1.1", features = [ "serde1" ] }
+num-bigint = "0.4.6"
+camino = { version = "1.1", features = ["serde1"] }
 convert_case = "0.6"
 serde = { version = "1.0", default-features = false, features = ["alloc"] }
 serde_json = { version = "1.0", default-features = false, features = ["std"] }
 thiserror = "1.0"
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = [ "env-filter", "json" ] }
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 url = "2.5"
 starknet = "0.12"
 starknet-types-core = "0.1.6"
@@ -42,7 +43,7 @@ cainome-rs-macro = { path = "crates/rs-macro", optional = true }
 
 async-trait.workspace = true
 anyhow.workspace = true
-clap = { version = "4.5", features = [ "derive" ] }
+clap = { version = "4.5", features = ["derive"] }
 clap_complete = "4.5"
 convert_case.workspace = true
 serde.workspace = true
