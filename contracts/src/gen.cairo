@@ -59,10 +59,8 @@ mod gen {
     }
 
     #[external(v0)]
-    fn func3(self: @ContractState, _a: PlainStruct) {
-    }
+    fn func3(self: @ContractState, _a: PlainStruct) {}
 
     #[external(v0)]
-    fn func4(self: @ContractState, _a: MyEnum) {
-    }
+    fn func4(self: @ContractState, _a: MyEnum) {}
 }
