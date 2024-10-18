@@ -17,6 +17,8 @@ async fn main() {
         f5: 5,
         f6: Felt::from(6),
         f7: (Felt::from(7), 8),
+        f8: vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        f9: vec![1_u128, 2_u128],
     };
 
     println!("{}", serde_json::to_string(&s).unwrap());

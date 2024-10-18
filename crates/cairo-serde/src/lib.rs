@@ -62,6 +62,23 @@ where
     serializer.serialize_str(&format!("{:#x}", value))
 }
 
+/// Serialize a vector of values as a hex string.
+pub fn serialize_as_hex_vec<S, T>(
+    value: &Vec<T>,
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+    T: serde::Serialize + std::fmt::LowerHex,
+{
+    let mut seq = serializer.serialize_seq(Some(value.len()))?;
+    for v in value {
+        seq.serialize_element(&format!("{:#x}", v))?;
+    }
+    seq.end()
+}
+
+/// Serialize a tuple of two values as a hex string.
 pub fn serialize_as_hex_t2<S, T1, T2>(
     value: &(T1, T2),
     serializer: S,
@@ -77,6 +94,7 @@ where
     seq.end()
 }
 
+/// Serialize a tuple of three values as a hex string.
 pub fn serialize_as_hex_t3<S, T1, T2, T3>(
     value: &(T1, T2, T3),
     serializer: S,

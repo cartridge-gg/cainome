@@ -17,6 +17,8 @@ mod gen {
         f5: u128,
         f6: felt252,
         f7: (felt252, u64),
+        f8: Array<u8>,
+        f9: Array<u128>,
     }
 
     #[derive(Serde, Drop)]
@@ -64,3 +66,4 @@ mod gen {
     #[external(v0)]
     fn func4(self: @ContractState, _a: MyEnum) {}
 }
+
