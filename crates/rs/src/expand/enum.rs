@@ -22,10 +22,12 @@ impl CairoEnum {
             let name = utils::str_to_ident(&inner.name);
             let ty = utils::str_to_type(&inner.token.to_rust_type());
 
+            let serde = utils::serde_hex_derive(&inner.token.to_rust_type());
+
             if inner.token.type_name() == "()" {
-                variants.push(quote!(#name));
+                variants.push(quote!(#serde #name));
             } else {
-                variants.push(quote!(#name(#ty)));
+                variants.push(quote!(#serde #name(#ty)));
             }
         }
 

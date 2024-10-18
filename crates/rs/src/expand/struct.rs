@@ -21,17 +21,19 @@ impl CairoStruct {
             let name = utils::str_to_ident(&inner.name);
             let ty = utils::str_to_type(&inner.token.to_rust_type());
 
+            let serde = utils::serde_hex_derive(&inner.token.to_rust_type());
+
             // r#{name} is not a valid identifier, thus we can't create an ident.
             // And with proc macro 2, we cannot do `quote!(r##name)`.
             // TODO: this needs to be done more elegantly...
             if &inner.name == "type" {
-                members.push(quote!(r#type: #ty));
+                members.push(quote!(#serde pub r#type: #ty));
             } else if &inner.name == "move" {
-                members.push(quote!(r#move: #ty));
+                members.push(quote!(#serde pub r#move: #ty));
             } else if &inner.name == "final" {
-                members.push(quote!(r#final: #ty));
+                members.push(quote!(#serde pub r#final: #ty));
             } else {
-                members.push(quote!(#name: #ty));
+                members.push(quote!(#serde pub #name: #ty));
             }
         }
 
@@ -57,14 +59,14 @@ impl CairoStruct {
             quote! {
                 #[derive(#(#internal_derives,)*)]
                 pub struct #struct_name<#(#gen_args),*> {
-                    #(pub #members),*
+                    #(#members),*
                 }
             }
         } else {
             quote! {
                 #[derive(#(#internal_derives,)*)]
                 pub struct #struct_name {
-                    #(pub #members),*
+                    #(#members),*
                 }
             }
         }

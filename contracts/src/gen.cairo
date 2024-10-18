@@ -9,10 +9,33 @@ mod gen {
     }
 
     #[derive(Serde, Drop)]
+    struct PlainStruct {
+        f1: u8,
+        f2: u16,
+        f3: u32,
+        f4: u64,
+        f5: u128,
+        f6: felt252,
+    }
+
+    #[derive(Serde, Drop)]
     struct MyStruct<T> {
         f1: felt252,
         f2: T,
         f3: felt252,
+    }
+
+    #[derive(Serde, Drop)]
+    enum MyEnum {
+        One: u8,
+        Two: u16,
+        Three: u32,
+        Four: u64,
+        Five: u128,
+        Six: felt252,
+        Seven: i32,
+        Eight: i64,
+        Nine: i128,
     }
 
     #[external(v0)]
@@ -30,5 +53,13 @@ mod gen {
     #[external(v0)]
     fn read(self: @ContractState) -> (felt252, felt252) {
         (self.v1.read(), self.v2.read())
+    }
+
+    #[external(v0)]
+    fn func3(self: @ContractState, _a: PlainStruct) {
+    }
+
+    #[external(v0)]
+    fn func4(self: @ContractState, _a: MyEnum) {
     }
 }

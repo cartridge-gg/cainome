@@ -51,3 +51,12 @@ pub trait CairoSerde {
     /// Deserializes an array of felts into the given type.
     fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType>;
 }
+
+/// Serialize a value as a hex string.
+pub fn serialize_as_hex<S, T>(value: &T, serializer: S) -> std::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+    T: serde::Serialize + std::fmt::LowerHex,
+{
+    serializer.serialize_str(&format!("{:#x}", value))
+}

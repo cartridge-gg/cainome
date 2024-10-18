@@ -74,3 +74,25 @@ pub fn rust_associated_type_gen_args(entity_name: &Ident, gen_args: &[Ident]) ->
 
     quote!(type RustType = #entity_name<#(#gen_args_rust),*>;)
 }
+
+/// To simplify the serde interop with client in javascript,
+/// we use the hex format for all the types greater than u32.
+/// IEEE 754 standard for floating-point arithmetic,
+/// which can safely represent integers up to 2^53 - 1, which is what Javascript uses.
+#[inline]
+fn is_serde_hex_int(ty: &str) -> bool {
+    ty == "u128" || ty == "u64" || ty == "i128" || ty == "i64"
+}
+
+/// Serde derive for hex serialization of struct member or enum variant.
+pub fn serde_hex_derive(ty: &str) -> TokenStream2 {
+    let serde_path = format!("{}::serialize_as_hex", cainome_cairo_serde_path());
+
+    if is_serde_hex_int(ty) {
+        quote! {
+            #[serde(serialize_with = #serde_path)]
+        }
+    } else {
+        quote!()
+    }
+}
