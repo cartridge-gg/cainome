@@ -16,6 +16,7 @@ async fn main() {
         f4: 4,
         f5: 5,
         f6: Felt::from(6),
+        f7: (Felt::from(7), 8),
     };
 
     println!("{}", serde_json::to_string(&s).unwrap());
@@ -47,5 +48,11 @@ async fn main() {
     println!("{}", serde_json::to_string(&e).unwrap());
 
     let e = MyEnum::Nine(-1_i128);
+    println!("{}", serde_json::to_string(&e).unwrap());
+
+    let e = MyEnum::Ten((1_u8, 1_u128));
+    println!("{}", serde_json::to_string(&e).unwrap());
+
+    let e = MyEnum::Eleven((Felt::from(1), 1_u8, 1_u128));
     println!("{}", serde_json::to_string(&e).unwrap());
 }

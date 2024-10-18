@@ -16,6 +16,7 @@ mod gen {
         f4: u64,
         f5: u128,
         f6: felt252,
+        f7: (felt252, u64),
     }
 
     #[derive(Serde, Drop)]
@@ -36,6 +37,8 @@ mod gen {
         Seven: i32,
         Eight: i64,
         Nine: i128,
+        Ten: (u8, u128),
+        Eleven: (felt252, u8, u128),
     }
 
     #[external(v0)]

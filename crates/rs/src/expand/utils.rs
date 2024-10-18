@@ -79,20 +79,53 @@ pub fn rust_associated_type_gen_args(entity_name: &Ident, gen_args: &[Ident]) ->
 /// we use the hex format for all the types greater than u32.
 /// IEEE 754 standard for floating-point arithmetic,
 /// which can safely represent integers up to 2^53 - 1, which is what Javascript uses.
+///
+/// This function returns the number of type that require serde_hex serialization.
+/// The type might be a single integer type, or a tuple of integer types.
 #[inline]
-fn is_serde_hex_int(ty: &str) -> bool {
-    ty == "u128" || ty == "u64" || ty == "i128" || ty == "i64"
+fn is_serde_hex_int(ty: &str) -> usize {
+    fn parse_tuple(ty: &str) -> (bool, usize) {
+        if ty.starts_with('(') && ty.ends_with(')') {
+            let elements: Vec<&str> = ty[1..ty.len() - 1].split(',').collect();
+            let is_hex_int = elements.iter().any(|t| is_serde_hex_int(t.trim()) > 0);
+            return (is_hex_int, elements.len());
+        }
+
+        (false, 0)
+    }
+
+    let (is_tuple, n) = parse_tuple(ty);
+    if is_tuple {
+        return n;
+    }
+
+    if ty == "u128" || ty == "u64" || ty == "i128" || ty == "i64" {
+        return 1;
+    }
+
+    0
 }
 
 /// Serde derive for hex serialization of struct member or enum variant.
+/// In the case of tuples, all the elements will be serialized as hex.
 pub fn serde_hex_derive(ty: &str) -> TokenStream2 {
-    let serde_path = format!("{}::serialize_as_hex", cainome_cairo_serde_path());
+    let serde_path_1 = format!("{}::serialize_as_hex", cainome_cairo_serde_path());
+    let serde_path_2 = format!("{}::serialize_as_hex_t2", cainome_cairo_serde_path());
+    let serde_path_3 = format!("{}::serialize_as_hex_t3", cainome_cairo_serde_path());
 
-    if is_serde_hex_int(ty) {
-        quote! {
-            #[serde(serialize_with = #serde_path)]
-        }
-    } else {
-        quote!()
+    let n_serde_hex = is_serde_hex_int(ty);
+
+    match n_serde_hex {
+        0 => quote!(),
+        1 => quote! {
+            #[serde(serialize_with = #serde_path_1)]
+        },
+        2 => quote! {
+            #[serde(serialize_with = #serde_path_2)]
+        },
+        3 => quote! {
+            #[serde(serialize_with = #serde_path_3)]
+        },
+        _ => panic!("Unsupported type {} for serde_hex", ty),
     }
 }

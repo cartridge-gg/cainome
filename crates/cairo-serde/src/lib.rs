@@ -11,6 +11,7 @@ pub use error::{Error, Result};
 
 pub mod call;
 pub mod types;
+use serde::ser::SerializeSeq;
 pub use types::array_legacy::*;
 pub use types::byte_array::*;
 pub use types::non_zero::*;
@@ -59,4 +60,36 @@ where
     T: serde::Serialize + std::fmt::LowerHex,
 {
     serializer.serialize_str(&format!("{:#x}", value))
+}
+
+pub fn serialize_as_hex_t2<S, T1, T2>(
+    value: &(T1, T2),
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+    T1: serde::Serialize + std::fmt::LowerHex,
+    T2: serde::Serialize + std::fmt::LowerHex,
+{
+    let mut seq = serializer.serialize_seq(Some(2))?;
+    seq.serialize_element(&format!("{:#x}", value.0))?;
+    seq.serialize_element(&format!("{:#x}", value.1))?;
+    seq.end()
+}
+
+pub fn serialize_as_hex_t3<S, T1, T2, T3>(
+    value: &(T1, T2, T3),
+    serializer: S,
+) -> std::result::Result<S::Ok, S::Error>
+where
+    S: serde::Serializer,
+    T1: serde::Serialize + std::fmt::LowerHex,
+    T2: serde::Serialize + std::fmt::LowerHex,
+    T3: serde::Serialize + std::fmt::LowerHex,
+{
+    let mut seq = serializer.serialize_seq(Some(2))?;
+    seq.serialize_element(&format!("{:#x}", value.0))?;
+    seq.serialize_element(&format!("{:#x}", value.1))?;
+    seq.serialize_element(&format!("{:#x}", value.2))?;
+    seq.end()
 }
