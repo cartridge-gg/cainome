@@ -198,7 +198,10 @@ mod tests {
     #[test]
     fn test_is_serde_hex_tuple() {
         assert_eq!(is_serde_hex_tuple("(u32, u64)"), SerdeHexType::Tuple(2));
-        assert_eq!(is_serde_hex_tuple("(u128, u64, i128)"), SerdeHexType::Tuple(3));
+        assert_eq!(
+            is_serde_hex_tuple("(u128, u64, i128)"),
+            SerdeHexType::Tuple(3)
+        );
         assert_eq!(is_serde_hex_tuple("(felt252, u32)"), SerdeHexType::None);
     }
 
