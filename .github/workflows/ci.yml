@@ -38,4 +38,6 @@ jobs:
           timeout_minutes: 20
           max_attempts: 3
           retry_wait_seconds: 30
-          command: cargo test --workspace --all-features
+          command: |
+            cargo test --workspace --all-features
+            cargo run --example structs --all-features
