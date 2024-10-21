@@ -97,21 +97,26 @@ pub fn serde_hex_derive(ty: &str) -> TokenStream2 {
     let serde_tuple_2 = format!("{}::serialize_as_hex_t2", cainome_cairo_serde_path());
     let serde_tuple_3 = format!("{}::serialize_as_hex_t3", cainome_cairo_serde_path());
 
+    let deser_single = format!("{}::deserialize_from_hex", cainome_cairo_serde_path());
+    let deser_vec = format!("{}::deserialize_from_hex_vec", cainome_cairo_serde_path());
+    let deser_tuple_2 = format!("{}::deserialize_from_hex_t2", cainome_cairo_serde_path());
+    let deser_tuple_3 = format!("{}::deserialize_from_hex_t3", cainome_cairo_serde_path());
+
     let serde_hex = is_serde_hex_int(ty);
 
     match serde_hex {
         SerdeHexType::None => quote!(),
         SerdeHexType::Single => quote! {
-            #[serde(serialize_with = #serde_single)]
+            #[serde(serialize_with = #serde_single, deserialize_with = #deser_single)]
         },
         SerdeHexType::Tuple(2) => quote! {
-            #[serde(serialize_with = #serde_tuple_2)]
+            #[serde(serialize_with = #serde_tuple_2, deserialize_with = #deser_tuple_2)]
         },
         SerdeHexType::Tuple(3) => quote! {
-            #[serde(serialize_with = #serde_tuple_3)]
+            #[serde(serialize_with = #serde_tuple_3, deserialize_with = #deser_tuple_3)]
         },
         SerdeHexType::Vec => quote! {
-            #[serde(serialize_with = #serde_vec)]
+            #[serde(serialize_with = #serde_vec, deserialize_with = #deser_vec)]
         },
         _ => panic!("Unsupported type {} for serde_hex", ty),
     }
