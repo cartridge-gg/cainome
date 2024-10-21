@@ -1,11 +1,29 @@
 use cainome::rs::abigen;
+use paste::paste;
 use starknet::core::types::Felt;
 
 abigen!(
     MyContract,
     "./contracts/abi/gen.abi.json",
-    derives(Debug, Clone, serde::Serialize)
+    derives(
+        Debug,
+        Clone,
+        PartialEq,
+        serde::Serialize,
+        serde::Deserialize
+    )
 );
+
+/// Uses paste since `concat_ident` is not available for stable Rust yet.
+macro_rules! test_enum {
+    ($name:ident, $variant:expr) => {
+        paste! {
+            let $name = $variant;
+            let [<$name _deser>] = serde_json::from_str(&serde_json::to_string(&$name).unwrap()).unwrap();
+            assert_eq!($name, [<$name _deser>]);
+        }
+    };
+}
 
 #[tokio::main]
 async fn main() {
@@ -21,40 +39,24 @@ async fn main() {
         f9: vec![1_u128, 2_u128],
     };
 
-    println!("{}", serde_json::to_string(&s).unwrap());
+    let s_str = serde_json::to_string(&s).unwrap();
+    println!("{}", s_str);
+
+    let s_deser = serde_json::from_str(&s_str).unwrap();
+    assert_eq!(s, s_deser);
+    println!("{:?}", s_deser);
 
     let _s2 = s.clone();
 
-    let e = MyEnum::One(1_u8);
-    println!("{}", serde_json::to_string(&e).unwrap());
-
-    let e = MyEnum::Two(1_u16);
-    println!("{}", serde_json::to_string(&e).unwrap());
-
-    let e = MyEnum::Three(1_u32);
-    println!("{}", serde_json::to_string(&e).unwrap());
-
-    let e = MyEnum::Four(1_u64);
-    println!("{}", serde_json::to_string(&e).unwrap());
-
-    let e = MyEnum::Five(1_u128);
-    println!("{}", serde_json::to_string(&e).unwrap());
-
-    let e = MyEnum::Six(Felt::from(6));
-    println!("{}", serde_json::to_string(&e).unwrap());
-
-    let e = MyEnum::Seven(-1_i32);
-    println!("{}", serde_json::to_string(&e).unwrap());
-
-    let e = MyEnum::Eight(-1_i64);
-    println!("{}", serde_json::to_string(&e).unwrap());
-
-    let e = MyEnum::Nine(-1_i128);
-    println!("{}", serde_json::to_string(&e).unwrap());
-
-    let e = MyEnum::Ten((1_u8, 1_u128));
-    println!("{}", serde_json::to_string(&e).unwrap());
-
-    let e = MyEnum::Eleven((Felt::from(1), 1_u8, 1_u128));
-    println!("{}", serde_json::to_string(&e).unwrap());
+    test_enum!(e1, MyEnum::One(1_u8));
+    test_enum!(e2, MyEnum::Two(1_u16));
+    test_enum!(e3, MyEnum::Three(1_u32));
+    test_enum!(e4, MyEnum::Four(1_u64));
+    test_enum!(e5, MyEnum::Five(1_u128));
+    test_enum!(e6, MyEnum::Six(Felt::from(6)));
+    test_enum!(e7, MyEnum::Seven(-1_i32));
+    test_enum!(e8, MyEnum::Eight(-1_i64));
+    test_enum!(e9, MyEnum::Nine(-1_i128));
+    test_enum!(e10, MyEnum::Ten((1_u8, 1_u128)));
+    test_enum!(e11, MyEnum::Eleven((Felt::from(1), 1_u8, 1_u128)));
 }

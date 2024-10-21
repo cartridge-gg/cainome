@@ -10,8 +10,10 @@ mod error;
 pub use error::{Error, Result};
 
 pub mod call;
+pub mod serde_hex;
 pub mod types;
-use serde::ser::SerializeSeq;
+
+pub use serde_hex::*;
 pub use types::array_legacy::*;
 pub use types::byte_array::*;
 pub use types::non_zero::*;
@@ -51,63 +53,4 @@ pub trait CairoSerde {
 
     /// Deserializes an array of felts into the given type.
     fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType>;
-}
-
-/// Serialize a value as a hex string.
-pub fn serialize_as_hex<S, T>(value: &T, serializer: S) -> std::result::Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-    T: serde::Serialize + std::fmt::LowerHex,
-{
-    serializer.serialize_str(&format!("{:#x}", value))
-}
-
-/// Serialize a vector of values as a hex string.
-pub fn serialize_as_hex_vec<S, T>(
-    value: &Vec<T>,
-    serializer: S,
-) -> std::result::Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-    T: serde::Serialize + std::fmt::LowerHex,
-{
-    let mut seq = serializer.serialize_seq(Some(value.len()))?;
-    for v in value {
-        seq.serialize_element(&format!("{:#x}", v))?;
-    }
-    seq.end()
-}
-
-/// Serialize a tuple of two values as a hex string.
-pub fn serialize_as_hex_t2<S, T1, T2>(
-    value: &(T1, T2),
-    serializer: S,
-) -> std::result::Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-    T1: serde::Serialize + std::fmt::LowerHex,
-    T2: serde::Serialize + std::fmt::LowerHex,
-{
-    let mut seq = serializer.serialize_seq(Some(2))?;
-    seq.serialize_element(&format!("{:#x}", value.0))?;
-    seq.serialize_element(&format!("{:#x}", value.1))?;
-    seq.end()
-}
-
-/// Serialize a tuple of three values as a hex string.
-pub fn serialize_as_hex_t3<S, T1, T2, T3>(
-    value: &(T1, T2, T3),
-    serializer: S,
-) -> std::result::Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-    T1: serde::Serialize + std::fmt::LowerHex,
-    T2: serde::Serialize + std::fmt::LowerHex,
-    T3: serde::Serialize + std::fmt::LowerHex,
-{
-    let mut seq = serializer.serialize_seq(Some(2))?;
-    seq.serialize_element(&format!("{:#x}", value.0))?;
-    seq.serialize_element(&format!("{:#x}", value.1))?;
-    seq.serialize_element(&format!("{:#x}", value.2))?;
-    seq.end()
 }
