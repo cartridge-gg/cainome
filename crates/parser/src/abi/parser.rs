@@ -1,4 +1,5 @@
 use starknet::core::types::contract::{AbiEntry, AbiEvent, SierraClass, TypedAbiEvent};
+use starknet::core::types::requests::TraceTransactionRequestRef;
 use std::collections::HashMap;
 
 use crate::tokens::{Array, Composite, CompositeInner, CompositeType, CoreBasic, Function, Token};
@@ -372,6 +373,21 @@ impl AbiParser {
                                 .clone();
                         }
                     }
+                    if let Token::Array(ref mut inner_array) = inner.token {
+                        if let Token::Composite(ref mut inner_composite) = *inner_array.inner {
+                            if inner_composite.r#type == CompositeType::Unknown {
+                                *inner_array.inner = *Box::new(
+                                    filtered.get(&inner_composite.type_path)
+                                .unwrap_or_else(|| panic!("In composite {} the inner token type for {} is expected to exist: {}",
+                                    name,
+                                    &inner.name,
+                                    &inner_composite.type_path
+                                ))
+                                    .clone()
+                                );
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -424,5 +440,26 @@ mod tests {
         assert_eq!(s.inners[0].name, "a");
         assert_eq!(s.inners[1].name, "b");
         assert_eq!(s.inners[2].name, "c");
+    }
+
+    #[test]
+    fn test_dojo_starter_direction_available_abi() {
+        let abi = AbiParser::tokens_from_abi_string(
+            include_str!("../../test_data/dojo_starter-directions_available.abi.json"),
+            &HashMap::new(),
+        )
+        .unwrap();
+
+        assert_eq!(abi.structs.len(), 1);
+        let s = abi.structs[0].to_composite().unwrap();
+        if let Token::Array(a) = &s.inners[1].token {
+            let inner_array = a.inner.to_composite().unwrap();
+            assert_eq!(5, inner_array.inners.len());
+            // Check that copy was properly done
+            let src_enum = abi.enums[0].to_composite().unwrap();
+            assert_eq!(inner_array, src_enum);
+        } else {
+            panic!("Expected array");
+        }
     }
 }
