@@ -1,7 +1,7 @@
 use starknet::core::types::contract::{AbiEntry, AbiEvent, SierraClass, TypedAbiEvent};
 use std::collections::HashMap;
 
-use crate::tokens::{Array, Composite, CompositeInner, CompositeType, CoreBasic, Function, Token};
+use crate::tokens::{Array, Composite, CompositeType, CoreBasic, Function, Token};
 use crate::{CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -296,56 +296,7 @@ impl AbiParser {
     fn filter_struct_enum_tokens(
         token_candidates: HashMap<String, Vec<Token>>,
     ) -> HashMap<String, Token> {
-        let mut tokens_filtered: HashMap<String, Token> = HashMap::new();
-        for (name, tokens) in token_candidates.into_iter() {
-            if tokens.len() == 1 {
-                // Only token with this type path -> we keep it without comparison.
-                tokens_filtered.insert(name, tokens[0].clone());
-            } else if let Token::Composite(composite_0) = &tokens[0] {
-                // Currently, it's hard to know the original generic arguments
-                // for each struct/enum member types.
-                // The following algorithm simply takes the most abundant
-                // type for each member.
-
-                let mut unique_composite = composite_0.clone();
-                // Clear the inner list as they will be compared to select
-                // the most accurate.
-                unique_composite.inners.clear();
-
-                for inner in &composite_0.inners {
-                    let mut inner_tokens: HashMap<String, (usize, CompositeInner)> = HashMap::new();
-
-                    for __t in &tokens {
-                        for __t_inner in
-                            &__t.to_composite().expect("only composite expected").inners
-                        {
-                            if __t_inner.name != inner.name {
-                                continue;
-                            }
-
-                            let type_path = __t_inner.token.type_path();
-
-                            let counter = if let Some(c) = inner_tokens.get(&type_path) {
-                                (c.0 + 1, c.1.clone())
-                            } else {
-                                (1, __t_inner.clone())
-                            };
-
-                            inner_tokens.insert(type_path, counter);
-                        }
-                    }
-
-                    // Take the most abundant type path for each members, sorted by
-                    // the usize counter in descending order.
-                    let mut entries: Vec<_> = inner_tokens.into_iter().collect();
-                    entries.sort_by(|a, b| b.1 .0.cmp(&a.1 .0));
-
-                    unique_composite.inners.push(entries[0].1 .1.clone());
-                }
-
-                tokens_filtered.insert(name, Token::Composite(unique_composite));
-            }
-        }
+        let tokens_filtered = Self::filter_token_candidates(token_candidates);
 
         // Can be a very huge copy here. Need an other way to do that in the loop
         // above here.
@@ -353,37 +304,389 @@ impl AbiParser {
 
         // So now once it's filtered, we may actually iterate again on the tokens
         // to resolve all structs/enums inners that may reference existing types.
-        for (name, tokens) in tokens_filtered.iter_mut() {
-            if let Token::Composite(ref mut composite) = tokens {
-                for inner in &mut composite.inners {
-                    if let Token::Composite(ref mut inner_composite) = inner.token {
-                        if inner_composite.r#type == CompositeType::Unknown {
-                            if inner_composite.is_builtin() {
-                                continue;
-                            }
+        Self::hydrate_composites(tokens_filtered, filtered)
+    }
 
-                            inner.token = filtered
-                                .get(&inner.token.type_path())
-                                .unwrap_or_else(|| panic!("In composite {} the inner token type for {} is expected to exist: {}",
-                                    name,
-                                    inner.name,
-                                    inner.token.type_path()
-                                ))
-                                .clone();
-                        }
-                    }
+    /// ABI is a flat list of tokens that represents any types declared in cairo code.
+    /// We need therefore to filter them out and resolve generic types.
+    /// * `token_candidates` - A map of type name to a list of tokens that can be a type.
+    ///
+    fn filter_token_candidates(
+        token_candidates: HashMap<String, Vec<Token>>,
+    ) -> HashMap<String, Token> {
+        token_candidates
+            .into_iter()
+            .filter_map(|(name, tokens)| {
+                if tokens.is_empty() {
+                    return None;
                 }
-            }
-        }
 
+                if tokens.len() == 1 {
+                    // Only token with this type path -> we keep it without comparison.
+                    return Some((name, tokens[0].clone()));
+                }
+
+                if let Token::Composite(composite_0) = &tokens[0] {
+                    let unique_composite = composite_0.clone();
+                    let inners = composite_0
+                        .inners
+                        .iter()
+                        .map(|inner| {
+                            let inner_tokens = tokens
+                                .iter()
+                                .filter_map(|__t| {
+                                    __t.to_composite().ok().and_then(|comp| {
+                                        comp.inners
+                                            .iter()
+                                            .find(|__t_inner| __t_inner.name == inner.name)
+                                    })
+                                })
+                                .fold(HashMap::new(), |mut acc, __t_inner| {
+                                    let type_path = __t_inner.token.type_path();
+                                    let counter = acc
+                                        .entry(type_path.clone())
+                                        .or_insert((0, __t_inner.clone()));
+                                    counter.0 += 1;
+                                    acc
+                                });
+
+                            // Take the most abundant type path for each member, sorted by the usize counter in descending order.
+                            inner_tokens
+                                .into_iter()
+                                .max_by_key(|(_, (count, _))| *count)
+                                .map(|(_, (_, inner))| inner)
+                                .unwrap()
+                        })
+                        .collect();
+
+                    let mut unique_composite = unique_composite;
+                    unique_composite.inners = inners;
+
+                    return Some((name, Token::Composite(unique_composite)));
+                }
+
+                None
+            })
+            .collect()
+    }
+
+    fn hydrate_composites(
+        tokens_filtered: HashMap<String, Token>,
+        filtered: HashMap<String, Token>,
+    ) -> HashMap<String, Token> {
         tokens_filtered
+            .into_iter()
+            .fold(HashMap::new(), |mut acc, (name, token)| {
+                acc.insert(name, Token::hydrate(token, &filtered));
+                acc
+            })
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tokens::CompositeType;
+    use crate::tokens::{CompositeInner, CompositeInnerKind, CompositeType};
+    #[test]
+    fn test_filter_token_candidates_single_inner() {
+        let mut input: HashMap<String, Vec<Token>> = HashMap::new();
+        input.insert(
+            "dojo_starter::models::Direction".to_owned(),
+            vec![Token::Composite(Composite {
+                type_path: "dojo_starter::models::Direction".to_owned(),
+                inners: vec![
+                    CompositeInner {
+                        index: 0,
+                        name: "None".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::CoreBasic(CoreBasic {
+                            type_path: "()".to_owned(),
+                        }),
+                    },
+                    CompositeInner {
+                        index: 1,
+                        name: "North".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::CoreBasic(CoreBasic {
+                            type_path: "()".to_owned(),
+                        }),
+                    },
+                    CompositeInner {
+                        index: 2,
+                        name: "South".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::CoreBasic(CoreBasic {
+                            type_path: "()".to_owned(),
+                        }),
+                    },
+                    CompositeInner {
+                        index: 3,
+                        name: "West".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::CoreBasic(CoreBasic {
+                            type_path: "()".to_owned(),
+                        }),
+                    },
+                    CompositeInner {
+                        index: 4,
+                        name: "East".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::CoreBasic(CoreBasic {
+                            type_path: "()".to_owned(),
+                        }),
+                    },
+                ],
+                generic_args: vec![],
+                r#type: CompositeType::Enum,
+                is_event: false,
+                alias: None,
+            })],
+        );
+        input.insert(
+            "dojo_starter::models::DirectionsAvailable".to_owned(),
+            vec![Token::Composite(Composite {
+                type_path: "dojo_starter::models::DirectionsAvailable".to_owned(),
+                inners: vec![
+                    CompositeInner {
+                        index: 0,
+                        name: "player".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::CoreBasic(CoreBasic {
+                            type_path: "core::starknet::contract_address::ContractAddress"
+                                .to_owned(),
+                        }),
+                    },
+                    CompositeInner {
+                        index: 1,
+                        name: "directions".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::Array(Array {
+                            is_legacy: false,
+                            type_path: "core::array::Array::<dojo_starter::models::Direction>"
+                                .to_owned(),
+                            inner: Box::new(Token::Composite(Composite {
+                                type_path: "dojo_starter::models::Direction".to_owned(),
+                                inners: vec![],
+                                generic_args: vec![],
+                                r#type: CompositeType::Unknown,
+                                is_event: false,
+                                alias: None,
+                            })),
+                        }),
+                    },
+                ],
+                generic_args: vec![],
+                r#type: CompositeType::Struct,
+                is_event: false,
+                alias: None,
+            })],
+        );
+        let filtered = AbiParser::filter_token_candidates(input);
+        assert_eq!(2, filtered.len());
+        assert!(filtered.contains_key("dojo_starter::models::Direction"));
+        assert!(filtered.contains_key("dojo_starter::models::DirectionsAvailable"));
+    }
+
+    #[test]
+    fn test_filter_token_candidates_multiple_composites() {
+        let mut input = HashMap::new();
+
+        // First composite: Enum with multiple variants
+        input.insert(
+            "game::models::ItemType".to_owned(),
+            vec![
+                Token::Composite(Composite {
+                    type_path: "game::models::ItemType".to_owned(),
+                    inners: vec![
+                        CompositeInner {
+                            index: 0,
+                            name: "Weapon".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::CoreBasic(CoreBasic {
+                                type_path: "core::felt252".to_owned(),
+                            }),
+                        },
+                        CompositeInner {
+                            index: 1,
+                            name: "Armor".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::CoreBasic(CoreBasic {
+                                type_path: "core::felt252".to_owned(),
+                            }),
+                        },
+                    ],
+                    generic_args: vec![],
+                    r#type: CompositeType::Enum,
+                    is_event: false,
+                    alias: None,
+                }),
+                Token::Composite(Composite {
+                    type_path: "game::models::ItemType".to_owned(),
+                    inners: vec![
+                        CompositeInner {
+                            index: 0,
+                            name: "Weapon".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::CoreBasic(CoreBasic {
+                                type_path: "core::integer::u8".to_owned(),
+                            }),
+                        },
+                        CompositeInner {
+                            index: 1,
+                            name: "Armor".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::CoreBasic(CoreBasic {
+                                type_path: "core::integer::u8".to_owned(),
+                            }),
+                        },
+                    ],
+                    generic_args: vec![],
+                    r#type: CompositeType::Enum,
+                    is_event: false,
+                    alias: None,
+                }),
+                Token::Composite(Composite {
+                    type_path: "game::models::ItemType".to_owned(),
+                    inners: vec![
+                        CompositeInner {
+                            index: 0,
+                            name: "Weapon".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::CoreBasic(CoreBasic {
+                                type_path: "core::felt252".to_owned(),
+                            }),
+                        },
+                        CompositeInner {
+                            index: 1,
+                            name: "Armor".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::CoreBasic(CoreBasic {
+                                type_path: "core::felt252".to_owned(),
+                            }),
+                        },
+                    ],
+                    generic_args: vec![],
+                    r#type: CompositeType::Enum,
+                    is_event: false,
+                    alias: None,
+                }),
+            ],
+        );
+
+        // Second composite: Struct with different types for a member
+        input.insert(
+            "game::models::Player".to_owned(),
+            vec![
+                Token::Composite(Composite {
+                    type_path: "game::models::Player".to_owned(),
+                    inners: vec![
+                        CompositeInner {
+                            index: 0,
+                            name: "id".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::CoreBasic(CoreBasic {
+                                type_path: "core::integer::u64".to_owned(),
+                            }),
+                        },
+                        CompositeInner {
+                            index: 1,
+                            name: "name".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::CoreBasic(CoreBasic {
+                                type_path: "core::felt252".to_owned(),
+                            }),
+                        },
+                    ],
+                    generic_args: vec![],
+                    r#type: CompositeType::Struct,
+                    is_event: false,
+                    alias: None,
+                }),
+                Token::Composite(Composite {
+                    type_path: "game::models::Player".to_owned(),
+                    inners: vec![
+                        CompositeInner {
+                            index: 0,
+                            name: "id".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::CoreBasic(CoreBasic {
+                                type_path: "core::integer::u128".to_owned(),
+                            }),
+                        },
+                        CompositeInner {
+                            index: 1,
+                            name: "name".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::CoreBasic(CoreBasic {
+                                type_path: "core::felt252".to_owned(),
+                            }),
+                        },
+                    ],
+                    generic_args: vec![],
+                    r#type: CompositeType::Struct,
+                    is_event: false,
+                    alias: None,
+                }),
+                Token::Composite(Composite {
+                    type_path: "game::models::Player".to_owned(),
+                    inners: vec![
+                        CompositeInner {
+                            index: 0,
+                            name: "id".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::CoreBasic(CoreBasic {
+                                type_path: "core::integer::u64".to_owned(),
+                            }),
+                        },
+                        CompositeInner {
+                            index: 1,
+                            name: "name".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::CoreBasic(CoreBasic {
+                                type_path: "core::felt252".to_owned(),
+                            }),
+                        },
+                    ],
+                    generic_args: vec![],
+                    r#type: CompositeType::Struct,
+                    is_event: false,
+                    alias: None,
+                }),
+            ],
+        );
+
+        let filtered = AbiParser::filter_token_candidates(input);
+
+        assert_eq!(2, filtered.len());
+        assert!(filtered.contains_key("game::models::ItemType"));
+        assert!(filtered.contains_key("game::models::Player"));
+
+        // Check ItemType
+        let item_type = filtered
+            .get("game::models::ItemType")
+            .unwrap()
+            .to_composite()
+            .unwrap();
+        assert_eq!(item_type.inners.len(), 2);
+        assert_eq!(item_type.inners[0].name, "Weapon");
+        assert_eq!(item_type.inners[1].name, "Armor");
+        // The most abundant type should be chosen (felt252 in this case)
+        assert_eq!(item_type.inners[0].token.type_path(), "core::felt252");
+        assert_eq!(item_type.inners[1].token.type_path(), "core::felt252");
+
+        // Check Player
+        let player = filtered
+            .get("game::models::Player")
+            .unwrap()
+            .to_composite()
+            .unwrap();
+        assert_eq!(player.inners.len(), 2);
+        assert_eq!(player.inners[0].name, "id");
+        assert_eq!(player.inners[1].name, "name");
+        // The most abundant type should be chosen (u64 for id, felt252 for name)
+        assert_eq!(player.inners[0].token.type_path(), "core::integer::u64");
+        assert_eq!(player.inners[1].token.type_path(), "core::felt252");
+    }
 
     #[test]
     fn test_parse_abi_struct() {
@@ -424,5 +727,51 @@ mod tests {
         assert_eq!(s.inners[0].name, "a");
         assert_eq!(s.inners[1].name, "b");
         assert_eq!(s.inners[2].name, "c");
+    }
+
+    #[test]
+    fn test_dojo_starter_direction_available_abi() {
+        let abi = AbiParser::tokens_from_abi_string(
+            include_str!("../../test_data/dojo_starter-directions_available.abi.json"),
+            &HashMap::new(),
+        )
+        .unwrap();
+
+        assert_eq!(abi.structs.len(), 1);
+        let s = abi.structs[0].to_composite().unwrap();
+        if let Token::Array(a) = &s.inners[1].token {
+            let inner_array = a.inner.to_composite().unwrap();
+            assert_eq!(5, inner_array.inners.len());
+            // Check that copy was properly done
+            let src_enum = abi.enums[0].to_composite().unwrap();
+            assert_eq!(inner_array, src_enum);
+        } else {
+            panic!("Expected array");
+        }
+    }
+
+    #[test]
+    fn test_nested_tuple() {
+        let abi = AbiParser::tokens_from_abi_string(
+            include_str!("../../test_data/struct_tuple.abi.json"),
+            &HashMap::new(),
+        )
+        .unwrap();
+
+        assert_eq!(abi.structs.len(), 1);
+        let s = abi.structs[0].to_composite().unwrap();
+        if let Token::Array(a) = &s.inners[1].token {
+            if let Token::Tuple(t) = *a.inner.to_owned() {
+                let inner_array = t.inners[0].to_composite().unwrap();
+                assert_eq!(5, inner_array.inners.len());
+                // Check that copy was properly done
+                let src_enum = abi.enums[0].to_composite().unwrap();
+                assert_eq!(inner_array, src_enum);
+            } else {
+                panic!("Expected tuple");
+            }
+        } else {
+            panic!("Expected array");
+        }
     }
 }

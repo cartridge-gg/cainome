@@ -1,0 +1,42 @@
+  [
+    {
+      "type": "enum",
+      "name": "dojo_starter::models::Direction",
+      "variants": [
+        {
+          "name": "None",
+          "type": "()"
+        },
+        {
+          "name": "Left",
+          "type": "()"
+        },
+        {
+          "name": "Right",
+          "type": "()"
+        },
+        {
+          "name": "Up",
+          "type": "()"
+        },
+        {
+          "name": "Down",
+          "type": "()"
+        }
+      ]
+    },
+    {
+      "type": "struct",
+      "name": "dojo_starter::models::DirectionsAvailable",
+      "members": [
+        {
+          "name": "player",
+          "type": "core::starknet::contract_address::ContractAddress"
+        },
+        {
+          "name": "directions",
+          "type": "core::array::Array::<dojo_starter::models::Direction>"
+        }
+      ]
+    }
+  ]
