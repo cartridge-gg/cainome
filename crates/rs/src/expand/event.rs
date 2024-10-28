@@ -40,17 +40,6 @@ impl CairoEnumEvent {
                 }
             }
         }
-
-        // TODO:
-        // For each enum in enums -> check if it's an event.
-        // if yes ->
-        // 1. impl a function to retrieve the selector + string name of the event.
-        // 2. impl `TryFrom` EmittedEvent. Need to take in account the new flat keyword.
-        //    - if nested => the selector is the name of the enum variant.
-        //    - if nested and the type it points to is also an enum => first selector is
-        //      the name of the variant of the current enum, and then we've to check
-        //      recursively until the event type is a struct and not an enum.
-        //    - if it's flat, we just take the name of the current variant.
     }
 
     pub fn expand_event_enum(
@@ -64,6 +53,8 @@ impl CairoEnumEvent {
 
         let event_name_str = composite.type_name_or_alias();
         let event_name = utils::str_to_ident(&composite.type_name_or_alias());
+
+        let snrs_utils = utils::snrs_utils();
 
         for variant in &composite.inners {
             let selector_key_offset = utils::str_to_litint(&depth.to_string());
@@ -117,7 +108,7 @@ impl CairoEnumEvent {
 
                     quote! {
                         let selector = event.keys[#selector_key_offset];
-                        if selector == starknet::core::utils::get_selector_from_name(#variant_name_str).unwrap_or_else(|_| panic!("Invalid selector for {}", #variant_name_str)) {
+                        if selector == #snrs_utils::get_selector_from_name(#variant_name_str).unwrap_or_else(|_| panic!("Invalid selector for {}", #variant_name_str)) {
                             #inner_content
                         }
                     }
@@ -143,7 +134,7 @@ impl CairoEnumEvent {
 
                     quote! {
                         let selector = event.keys[#selector_key_offset];
-                        if selector == starknet::core::utils::get_selector_from_name(#variant_name_str).unwrap_or_else(|_| panic!("Invalid selector for {}", #variant_name_str)) {
+                        if selector == #snrs_utils::get_selector_from_name(#variant_name_str).unwrap_or_else(|_| panic!("Invalid selector for {}", #variant_name_str)) {
                             let mut key_offset = #selector_key_offset + 1;
                             let mut data_offset = 0;
 

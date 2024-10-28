@@ -78,6 +78,7 @@ impl CairoStruct {
         }
 
         let struct_name = utils::str_to_ident(&composite.type_name_or_alias());
+        let struct_name_str = utils::str_to_litstr(&composite.type_name_or_alias());
 
         let mut sizes: Vec<TokenStream2> = vec![];
         let mut sers: Vec<TokenStream2> = vec![];
@@ -154,6 +155,25 @@ impl CairoStruct {
         }
 
         let ccs = utils::cainome_cairo_serde();
+        let snrs_types = utils::snrs_types();
+        let snrs_utils = utils::snrs_utils();
+
+        let event_impl = if composite.is_event {
+            quote! {
+                impl #struct_name {
+                    pub fn event_selector() -> #snrs_types::Felt {
+                        // Ok to unwrap since the event name comes from the ABI, which is already validated.
+                        #snrs_utils::get_selector_from_name(#struct_name_str).unwrap()
+                    }
+
+                    pub fn event_name() -> &'static str {
+                        #struct_name_str
+                    }
+                }
+            }
+        } else {
+            quote!()
+        };
 
         let (impl_line, rust_type) = if composite.is_generic() {
             let gen_args: Vec<Ident> = composite
@@ -189,13 +209,13 @@ impl CairoStruct {
                     __size
                 }
 
-                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-                    let mut __out: Vec<starknet::core::types::Felt> = vec![];
+                fn cairo_serialize(__rust: &Self::RustType) -> Vec<#snrs_types::Felt> {
+                    let mut __out: Vec<#snrs_types::Felt> = vec![];
                     #(#sers)*
                     __out
                 }
 
-                fn cairo_deserialize(__felts: &[starknet::core::types::Felt], __offset: usize) -> #ccs::Result<Self::RustType> {
+                fn cairo_deserialize(__felts: &[#snrs_types::Felt], __offset: usize) -> #ccs::Result<Self::RustType> {
                     let mut __offset = __offset;
                     #(#desers)*
                     Ok(#struct_name {
@@ -203,6 +223,8 @@ impl CairoStruct {
                     })
                 }
             }
+
+            #event_impl
         }
     }
 }

@@ -23,6 +23,10 @@ pub fn snrs_types() -> Type {
     str_to_type("starknet::core::types")
 }
 
+pub fn snrs_utils() -> Type {
+    str_to_type("starknet::core::utils")
+}
+
 pub fn snrs_accounts() -> Type {
     str_to_type("starknet::accounts")
 }
