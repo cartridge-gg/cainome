@@ -8,6 +8,19 @@ mod gen {
         v2: felt252,
     }
 
+    #[event]
+    #[derive(Drop, starknet::Event)]
+    enum Event {
+        E1: E1,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct E1 {
+        #[key]
+        key: felt252,
+        value: Span<felt252>,
+    }
+
     #[derive(Serde, Drop)]
     struct PlainStruct {
         f1: u8,
