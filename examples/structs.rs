@@ -30,7 +30,7 @@ macro_rules! test_enum {
 #[tokio::main]
 async fn main() {
     assert_eq!(
-        E1::selector(),
+        E1::event_selector(),
         Felt::from_str("0x00ba2026c84b59ce46a4007300eb97e3e275d4119261ee402d7a3eb40ad58807")
             .unwrap()
     );

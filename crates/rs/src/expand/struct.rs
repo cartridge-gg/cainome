@@ -161,7 +161,7 @@ impl CairoStruct {
         let event_impl = if composite.is_event {
             quote! {
                 impl #struct_name {
-                    pub fn selector() -> #snrs_types::Felt {
+                    pub fn event_selector() -> #snrs_types::Felt {
                         // Ok to unwrap since the event name comes from the ABI, which is already validated.
                         #snrs_utils::get_selector_from_name(#struct_name_str).unwrap()
                     }
