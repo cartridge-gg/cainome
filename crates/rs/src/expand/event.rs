@@ -39,6 +39,22 @@ impl CairoEnumEvent {
                     Err(format!("Could not match any event from keys {:?}", event.keys))
                 }
             }
+
+            impl TryFrom<#snrs_types::Event> for #event_name {
+                type Error = String;
+
+                fn try_from(event: #snrs_types::Event) -> Result<Self, Self::Error> {
+                    use #ccs::CairoSerde;
+
+                    if event.keys.is_empty() {
+                        return Err("Event has no key".to_string());
+                    }
+
+                    #content
+
+                    Err(format!("Could not match any event from keys {:?}", event.keys))
+                }
+            }
         }
     }
 
