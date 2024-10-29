@@ -5,7 +5,7 @@ use starknet::core::types::Felt;
 use std::{
     cmp::Ordering,
     fmt::Display,
-    ops::{Add, BitOr},
+    ops::{Add, BitOr, Sub},
     str::FromStr,
 };
 
@@ -33,6 +33,29 @@ impl Add for U256 {
         }
         let (high, _overflow_high) = self.high.overflowing_add(other.high);
         U256 { low, high }
+    }
+}
+
+impl Sub for U256 {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self {
+        let (low, overflow_low) = self.low.overflowing_sub(other.low);
+        let (high, overflow_high) = self.high.overflowing_sub(other.high);
+        if overflow_high {
+            panic!("High underflow");
+        }
+        let final_high = if overflow_low {
+            if high == 0 {
+                panic!("High underflow");
+            }
+            high.wrapping_sub(1)
+        } else {
+            high
+        };
+        U256 {
+            low,
+            high: final_high,
+        }
     }
 }
 
@@ -218,6 +241,64 @@ mod tests {
 
         assert_eq!(u256_3.low, 0_u128);
         assert_eq!(u256_3.high, 0_u128);
+    }
+
+    #[test]
+    fn test_sub_u256() {
+        let u256_1 = U256 {
+            low: 1_u128,
+            high: 2_u128,
+        };
+        let u256_2 = U256 {
+            low: 0_u128,
+            high: 1_u128,
+        };
+        let u256_3 = u256_1 - u256_2;
+        assert_eq!(u256_3.low, 1_u128);
+        assert_eq!(u256_3.high, 1_u128);
+    }
+
+    #[test]
+    fn test_sub_u256_underflow_low() {
+        let u256_1 = U256 {
+            low: 0_u128,
+            high: 1_u128,
+        };
+        let u256_2 = U256 {
+            low: 2_u128,
+            high: 0_u128,
+        };
+        let u256_3 = u256_1 - u256_2;
+        assert_eq!(u256_3.low, u128::MAX - 1);
+        assert_eq!(u256_3.high, 0_u128);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_sub_u256_underflow_high() {
+        let u256_1 = U256 {
+            low: 0_u128,
+            high: 1_u128,
+        };
+        let u256_2 = U256 {
+            low: 0_u128,
+            high: 2_u128,
+        };
+        let _u256_3 = u256_1 - u256_2;
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_sub_u256_underflow_high_2() {
+        let u256_1 = U256 {
+            low: 10_u128,
+            high: 2_u128,
+        };
+        let u256_2 = U256 {
+            low: 11_u128,
+            high: 2_u128,
+        };
+        let _u256_3 = u256_1 - u256_2;
     }
 
     #[test]
