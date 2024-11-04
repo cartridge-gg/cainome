@@ -47,7 +47,7 @@ pub fn derive_enum(ident: Ident, data: DataEnum) -> TokenStream {
         .map(|(i, _)| syn::LitInt::new(&i.to_string(), Span::call_site()))
         .collect::<Vec<_>>();
     let cairo_deserialize = quote! {
-        fn cairo_deserialize(felt: &[Felt], offset: usize) -> Result<Self::RustType, ::cainome_cairo_serde::Error> {
+        fn cairo_deserialize(felt: &[::starknet::core::types::Felt], offset: usize) -> Result<Self::RustType, ::cainome_cairo_serde::Error> {
             let offset = offset + 1;
             #(
                 if felt[offset - 1] == ::starknet::core::types::Felt::from(#deserialize_matches) {
