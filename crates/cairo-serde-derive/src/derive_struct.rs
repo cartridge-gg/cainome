@@ -25,7 +25,7 @@ pub fn derive_struct(ident: Ident, data: DataStruct) -> TokenStream {
     };
 
     let cairo_deserialize = quote! {
-        fn cairo_deserialize(felt: &[Felt], offset: usize) -> Result<Self::RustType, ::cainome_cairo_serde::Error> {
+        fn cairo_deserialize(felt: &[::starknet::core::types::Felt], offset: usize) -> Result<Self::RustType, ::cainome_cairo_serde::Error> {
             let mut current_offset = offset;
             Ok(Self {
                 #(
