@@ -1,8 +1,15 @@
 use crate::CairoSerde;
+use num_bigint::{BigInt, BigUint, ParseBigIntError};
+use serde_with::{DeserializeAs, DisplayFromStr, SerializeAs};
 use starknet::core::types::Felt;
-use std::cmp::Ordering;
+use std::{
+    cmp::Ordering,
+    fmt::Display,
+    ops::{Add, BitOr, Sub},
+    str::FromStr,
+};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct U256 {
     pub low: u128,
     pub high: u128,
@@ -14,6 +21,104 @@ impl PartialOrd for U256 {
             Ordering::Equal => self.low.cmp(&other.low),
             ordering => ordering,
         })
+    }
+}
+
+impl Add for U256 {
+    type Output = Self;
+    fn add(mut self, other: Self) -> Self {
+        let (low, overflow_low) = self.low.overflowing_add(other.low);
+        if overflow_low {
+            self.high += 1;
+        }
+        let (high, _overflow_high) = self.high.overflowing_add(other.high);
+        U256 { low, high }
+    }
+}
+
+impl Sub for U256 {
+    type Output = Self;
+    fn sub(self, other: Self) -> Self {
+        let (low, overflow_low) = self.low.overflowing_sub(other.low);
+        let (high, overflow_high) = self.high.overflowing_sub(other.high);
+        if overflow_high {
+            panic!("High underflow");
+        }
+        let final_high = if overflow_low {
+            if high == 0 {
+                panic!("High underflow");
+            }
+            high.wrapping_sub(1)
+        } else {
+            high
+        };
+        U256 {
+            low,
+            high: final_high,
+        }
+    }
+}
+
+impl BitOr for U256 {
+    type Output = Self;
+
+    fn bitor(self, other: Self) -> Self {
+        U256 {
+            low: self.low | other.low,
+            high: self.high | other.high,
+        }
+    }
+}
+
+impl Display for U256 {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut num = BigUint::from(0u128);
+        num = num + BigUint::from(self.high);
+        num = num << 128;
+        num = num + BigUint::from(self.low);
+        write!(f, "{}", num)
+    }
+}
+
+impl FromStr for U256 {
+    type Err = ParseBigIntError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let num = BigInt::from_str(s)?;
+        let num_big_uint = num.to_biguint().unwrap();
+        let mask = (BigUint::from(1u128) << 128u32) - BigUint::from(1u128);
+        let b_low: BigUint = (num_big_uint.clone() >> 0) & mask.clone();
+        let b_high: BigUint = (num_big_uint.clone() >> 128) & mask.clone();
+
+        let mut low = 0;
+        let mut high = 0;
+
+        for (i, digit) in b_low.to_u64_digits().iter().take(2).enumerate() {
+            low |= (*digit as u128) << (i * 64);
+        }
+
+        for (i, digit) in b_high.to_u64_digits().iter().take(2).enumerate() {
+            high |= (*digit as u128) << (i * 64);
+        }
+
+        Ok(U256 { low, high })
+    }
+}
+
+impl serde::Serialize for U256 {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        DisplayFromStr::serialize_as(self, serializer)
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for U256 {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        DisplayFromStr::deserialize_as(deserializer)
     }
 }
 
@@ -107,6 +212,111 @@ mod tests {
     }
 
     #[test]
+    fn test_add_u256_low_overflow() {
+        let u256_1 = U256 {
+            low: u128::MAX,
+            high: 1_u128,
+        };
+        let u256_2 = U256 {
+            low: 1_u128,
+            high: 2_u128,
+        };
+        let u256_3 = u256_1 + u256_2;
+        assert_eq!(u256_3.low, 0_u128);
+        assert_eq!(u256_3.high, 4_u128);
+    }
+
+    #[test]
+    fn test_add_u256_high_overflow() {
+        let u256_1 = U256 {
+            low: 0_u128,
+            high: u128::MAX,
+        };
+        let u256_2 = U256 {
+            low: 0_u128,
+            high: 1_u128,
+        };
+
+        let u256_3 = u256_1 + u256_2;
+
+        assert_eq!(u256_3.low, 0_u128);
+        assert_eq!(u256_3.high, 0_u128);
+    }
+
+    #[test]
+    fn test_sub_u256() {
+        let u256_1 = U256 {
+            low: 1_u128,
+            high: 2_u128,
+        };
+        let u256_2 = U256 {
+            low: 0_u128,
+            high: 1_u128,
+        };
+        let u256_3 = u256_1 - u256_2;
+        assert_eq!(u256_3.low, 1_u128);
+        assert_eq!(u256_3.high, 1_u128);
+    }
+
+    #[test]
+    fn test_sub_u256_underflow_low() {
+        let u256_1 = U256 {
+            low: 0_u128,
+            high: 1_u128,
+        };
+        let u256_2 = U256 {
+            low: 2_u128,
+            high: 0_u128,
+        };
+        let u256_3 = u256_1 - u256_2;
+        assert_eq!(u256_3.low, u128::MAX - 1);
+        assert_eq!(u256_3.high, 0_u128);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_sub_u256_underflow_high() {
+        let u256_1 = U256 {
+            low: 0_u128,
+            high: 1_u128,
+        };
+        let u256_2 = U256 {
+            low: 0_u128,
+            high: 2_u128,
+        };
+        let _u256_3 = u256_1 - u256_2;
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_sub_u256_underflow_high_2() {
+        let u256_1 = U256 {
+            low: 10_u128,
+            high: 2_u128,
+        };
+        let u256_2 = U256 {
+            low: 11_u128,
+            high: 2_u128,
+        };
+        let _u256_3 = u256_1 - u256_2;
+    }
+
+    #[test]
+    fn test_bit_or_u256() {
+        let u256_1 = U256 {
+            low: 0b1010_u128,
+            high: 0b1100_u128,
+        };
+        let u256_2 = U256 {
+            low: 0b0110_u128,
+            high: 0b0011_u128,
+        };
+        let u256_3 = u256_1 | u256_2;
+        assert_eq!(u256_3.low, 0b1110_u128);
+        assert_eq!(u256_3.high, 0b1111_u128)
+    }
+
+    #[test]
     fn test_serialize_u256_max() {
         let low = u128::MAX;
         let high = u128::MAX;
@@ -124,6 +334,23 @@ mod tests {
         assert_eq!(felts.len(), 2);
         assert_eq!(felts[0], Felt::from(u128::MIN));
         assert_eq!(felts[1], Felt::from(u128::MIN));
+    }
+
+    #[test]
+    fn test_display_u256() {
+        let u256 = U256 {
+            low: 12_u128,
+            high: 0_u128,
+        };
+        println!("{}", u256);
+        assert_eq!(format!("{}", u256), "12");
+    }
+
+    #[test]
+    fn test_from_str() {
+        let u256 = U256::from_str("18446744073709551616").unwrap();
+        assert_eq!(u256.low, 18446744073709551616_u128);
+        assert_eq!(u256.high, 0_u128);
     }
 
     #[test]
