@@ -173,7 +173,11 @@ impl Token {
                             token: Self::hydrate(i.token, filtered),
                         })
                         .collect(),
-                    generic_args: comp.generic_args,
+                    generic_args: comp
+                        .generic_args
+                        .into_iter()
+                        .map(|(name, token)| (name, Self::hydrate(token, filtered)))
+                        .collect(),
                     r#type: comp.r#type,
                     is_event: comp.is_event,
                     alias: comp.alias,

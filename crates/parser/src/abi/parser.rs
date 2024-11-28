@@ -387,6 +387,7 @@ impl AbiParser {
 mod tests {
     use super::*;
     use crate::tokens::{CompositeInner, CompositeInnerKind, CompositeType};
+
     #[test]
     fn test_filter_token_candidates_single_inner() {
         let mut input: HashMap<String, Vec<Token>> = HashMap::new();
@@ -772,6 +773,226 @@ mod tests {
             }
         } else {
             panic!("Expected array");
+        }
+    }
+
+    #[test]
+    fn test_composite_generic_args_hydratation() {
+        let mut input: HashMap<String, Vec<Token>> = HashMap::new();
+        input.insert(
+            "tournament::ls15_components::models::tournament::GatedEntryType".to_owned(),
+            vec![Token::Composite(Composite {
+                type_path: "tournament::ls15_components::models::tournament::GatedEntryType"
+                    .to_owned(),
+                inners: vec![
+                    CompositeInner {
+                        index: 0,
+                        name: "criteria".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::Composite(Composite {
+                            type_path:
+                                "tournament::ls15_components::models::tournament::EntryCriteria"
+                                    .to_owned(),
+                            inners: vec![
+                                CompositeInner {
+                                    index: 0,
+                                    name: "token_id".to_owned(),
+                                    kind: CompositeInnerKind::NotUsed,
+                                    token: Token::CoreBasic(CoreBasic {
+                                        type_path: "core::integer::u128".to_owned(),
+                                    }),
+                                },
+                                CompositeInner {
+                                    index: 1,
+                                    name: "entry_count".to_owned(),
+                                    kind: CompositeInnerKind::NotUsed,
+                                    token: Token::CoreBasic(CoreBasic {
+                                        type_path: "core::integer::u64".to_owned(),
+                                    }),
+                                },
+                            ],
+                            generic_args: vec![],
+                            r#type: CompositeType::Struct,
+                            is_event: false,
+                            alias: None,
+                        }),
+                    },
+                    CompositeInner {
+                        index: 1,
+                        name: "uniform".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::CoreBasic(CoreBasic {
+                            type_path: "core::integer::u64".to_owned(),
+                        }),
+                    },
+                ],
+                generic_args: vec![],
+                r#type: CompositeType::Enum,
+                is_event: false,
+                alias: None,
+            })],
+        );
+
+        input.insert(
+            "tournament::ls15_components::models::tournament::GatedToken".to_owned(),
+            vec![Token::Composite(Composite {
+                type_path: "tournament::ls15_components::models::tournament::GatedToken".to_owned(),
+                inners: vec![
+                    CompositeInner {
+                        index: 0,
+                        name: "token".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::CoreBasic(CoreBasic {
+                            type_path: "core::starknet::contract_address::ContractAddress"
+                                .to_owned(),
+                        }),
+                    },
+                    CompositeInner {
+                        index: 1,
+                        name: "entry_type".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::Composite(Composite {
+                            type_path:
+                                "tournament::ls15_components::models::tournament::GatedEntryType"
+                                    .to_owned(),
+                            inners: vec![],
+                            generic_args: vec![],
+                            r#type: CompositeType::Unknown,
+                            is_event: false,
+                            alias: None,
+                        }),
+                    },
+                ],
+                generic_args: vec![],
+                r#type: CompositeType::Struct,
+                is_event: false,
+                alias: None,
+            })],
+        );
+        input.insert(
+            "tournament::ls15_components::models::tournament::GatedType".to_owned(),
+            vec![Token::Composite(
+Composite {
+    type_path: "tournament::ls15_components::models::tournament::GatedType".to_owned(),
+    inners: vec![
+        CompositeInner {
+            index: 0,
+            name: "token".to_owned(),
+            kind: CompositeInnerKind::NotUsed,
+            token: Token::Composite(
+                Composite {
+                    type_path: "tournament::ls15_components::models::tournament::GatedToken".to_owned(),
+                    inners: vec![
+                        CompositeInner {
+                            index: 0,
+                            name: "token".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::CoreBasic(
+                                CoreBasic {
+                                    type_path: "core::starknet::contract_address::ContractAddress".to_owned(),
+                                },
+                            ),
+                        },
+                        CompositeInner {
+                            index: 1,
+                            name: "entry_type".to_owned(),
+                            kind: CompositeInnerKind::NotUsed,
+                            token: Token::Composite(
+                                Composite {
+                                    type_path: "tournament::ls15_components::models::tournament::GatedEntryType".to_owned(),
+                                    inners: vec![],
+                                    generic_args: vec![],
+                                    r#type: CompositeType::Unknown,
+                                    is_event: false,
+                                    alias: None,
+                                },
+                            ),
+                        },
+                    ],
+                    generic_args: vec![],
+                    r#type: CompositeType::Struct,
+                    is_event: false,
+                    alias: None,
+                },
+            ),
+        },
+        CompositeInner {
+            index: 1,
+            name: "tournament".to_owned(),
+            kind: CompositeInnerKind::NotUsed,
+            token: Token::Array(
+                Array {
+                    type_path: "core::array::Span::<core::integer::u64>".to_owned(),
+                    inner: Box::new(Token::CoreBasic(
+                        CoreBasic {
+                            type_path: "core::integer::u64".to_owned(),
+                        },
+                    )),
+                    is_legacy: false,
+                },
+            ),
+        },
+        CompositeInner {
+            index: 2,
+            name: "address".to_owned(),
+            kind: CompositeInnerKind::NotUsed,
+            token: Token::Array(
+                Array {
+                    type_path: "core::array::Span::<core::starknet::contract_address::ContractAddress>".to_owned(),
+                    inner: Box::new(
+                        Token::CoreBasic(
+                        CoreBasic {
+                            type_path: "core::starknet::contract_address::ContractAddress".to_owned(),
+                        },
+                    )
+                    ),
+                    is_legacy: false,
+                },
+            ),
+        },
+    ],
+    generic_args: vec![],
+    r#type: CompositeType::Enum,
+    is_event: false,
+    alias: None,
+}            )],
+        );
+        input.insert(
+            "tournament::ls15_components::models::tournament::TournamentModelValue".to_owned(),
+            vec![Token::Composite(Composite {
+                type_path: "tournament::ls15_components::models::tournament::TournamentModelValue"
+                    .to_owned(),
+                inners: vec![CompositeInner {
+                    index: 0,
+                    name: "gated_type".to_owned(),
+                    kind: CompositeInnerKind::NotUsed,
+                    token: Token::Composite(Composite { type_path: "core::option::Option::<tournament::ls15_components::models::tournament::GatedType>".to_owned(), inners: vec![], generic_args: vec![
+                ("A".to_owned(), Token::Composite(Composite { type_path: "tournament::ls15_components::models::tournament::GatedType".to_owned(), inners: vec![], generic_args: vec![], r#type: CompositeType::Unknown, is_event: false, alias: None })),
+                    ], r#type: CompositeType::Unknown, is_event: false, alias: None }),
+                }],
+                generic_args: vec![],
+                r#type: CompositeType::Struct,
+                is_event: false,
+                alias: None,
+            })],
+        );
+
+        let filtered = AbiParser::filter_struct_enum_tokens(input);
+        let tmv = filtered
+            .get("tournament::ls15_components::models::tournament::TournamentModelValue")
+            .unwrap()
+            .to_composite()
+            .unwrap();
+        if let Token::Composite(c) = &tmv.inners[0].token {
+            if let Token::Composite(cc) = &c.generic_args[0].1 {
+                // Checking that inners are not empty ensures us that hydration was done, even for
+                // `generic_args`.
+                assert_ne!(0, cc.inners.len());
+            } else {
+                panic!("Expected composite");
+            }
+        } else {
+            panic!("Expected composite");
         }
     }
 }
