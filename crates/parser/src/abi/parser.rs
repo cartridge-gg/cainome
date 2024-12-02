@@ -995,4 +995,150 @@ Composite {
             panic!("Expected composite");
         }
     }
+    #[test]
+    fn test_deep_nested_hydration() {
+        let mut input: HashMap<String, Vec<Token>> = HashMap::new();
+        input.insert(
+            "tournament::ls15_components::models::loot_survivor::Item".to_owned(),
+            vec![Token::Composite(Composite {
+                type_path: "tournament::ls15_components::models::loot_survivor::Item".to_owned(),
+                inners: vec![
+                    CompositeInner {
+                        index: 0,
+                        name: "id".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::CoreBasic(CoreBasic {
+                            type_path: "core::integer::u8".to_owned(),
+                        }),
+                    },
+                    CompositeInner {
+                        index: 1,
+                        name: "name".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::CoreBasic(CoreBasic {
+                            type_path: "core::integer::u16".to_owned(),
+                        }),
+                    },
+                ],
+                generic_args: vec![],
+                r#type: CompositeType::Struct,
+                is_event: false,
+                alias: None,
+            })],
+        );
+        input.insert(
+            "tournament::ls15_components::models::loot_survivor::Equipment".to_owned(),
+            vec![Token::Composite(Composite {
+                type_path: "tournament::ls15_components::models::loot_survivor::Equipment"
+                    .to_owned(),
+                inners: vec![
+                    CompositeInner {
+                        index: 0,
+                        name: "weapon".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::Composite(Composite {
+                            type_path: "tournament::ls15_components::models::loot_survivor::Item"
+                                .to_owned(),
+                            inners: vec![],
+                            generic_args: vec![],
+                            r#type: CompositeType::Unknown,
+                            is_event: false,
+                            alias: None,
+                        }),
+                    },
+                    CompositeInner {
+                        index: 1,
+                        name: "chest".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::Composite(Composite {
+                            type_path: "tournament::ls15_components::models::loot_survivor::Item"
+                                .to_owned(),
+                            inners: vec![],
+                            generic_args: vec![],
+                            r#type: CompositeType::Unknown,
+                            is_event: false,
+                            alias: None,
+                        }),
+                    },
+                ],
+                generic_args: vec![],
+                r#type: CompositeType::Struct,
+                is_event: false,
+                alias: None,
+            })],
+        );
+        input.insert(
+            "tournament::ls15_components::models::loot_survivor::Adventurer".to_owned(),
+            vec![Token::Composite(Composite {
+                type_path: "tournament::ls15_components::models::loot_survivor::Adventurer"
+                    .to_owned(),
+                inners: vec![CompositeInner {
+                    index: 0,
+                    name: "equipment".to_owned(),
+                    kind: CompositeInnerKind::NotUsed,
+                    token: Token::Composite(Composite {
+                        type_path: "tournament::ls15_components::models::loot_survivor::Equipment"
+                            .to_owned(),
+                        inners: vec![],
+                        generic_args: vec![],
+                        r#type: CompositeType::Unknown,
+                        is_event: false,
+                        alias: None,
+                    }),
+                }],
+                generic_args: vec![],
+                r#type: CompositeType::Struct,
+                is_event: false,
+                alias: None,
+            })],
+        );
+        input.insert(
+            "tournament::ls15_components::models::loot_survivor::AdventurerModel".to_owned(),
+            vec![Token::Composite(Composite {
+                type_path: "tournament::ls15_components::models::loot_survivor::AdventurerModel"
+                    .to_owned(),
+                inners: vec![
+                    CompositeInner {
+                        index: 0,
+                        name: "adventurer_id".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::CoreBasic(CoreBasic {
+                            type_path: "core::felt252".to_owned(),
+                        }),
+                    },
+                    CompositeInner {
+                        index: 1,
+                        name: "adventurer".to_owned(),
+                        kind: CompositeInnerKind::NotUsed,
+                        token: Token::Composite(Composite {
+                            type_path:
+                                "tournament::ls15_components::models::loot_survivor::Adventurer"
+                                    .to_owned(),
+                            inners: vec![],
+                            generic_args: vec![],
+                            r#type: CompositeType::Unknown,
+                            is_event: false,
+                            alias: None,
+                        }),
+                    },
+                ],
+                generic_args: vec![],
+                r#type: CompositeType::Struct,
+                is_event: false,
+                alias: None,
+            })],
+        );
+
+        let filtered = AbiParser::filter_struct_enum_tokens(input);
+        fn check_token_inners(token: &Token) {
+            // end of recursion, if token is composite and inners are empty, this means hydration
+            // was not properly done.
+            if let Token::Composite(c) = token {
+                assert_ne!(0, c.inners.len());
+                // deep dive into compsite,
+                c.inners.iter().for_each(|i| check_token_inners(&i.token));
+            }
+        }
+        filtered.iter().for_each(|(_, t)| check_token_inners(t));
+    }
 }
