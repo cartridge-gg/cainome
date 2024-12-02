@@ -156,7 +156,7 @@ impl Token {
             Token::Composite(comp) => {
                 if comp.r#type == CompositeType::Unknown && !comp.is_builtin() {
                     if let Some(hydrated) = filtered.get(&comp.type_path) {
-                        return hydrated.clone();
+                        return Token::hydrate(hydrated.clone(), filtered);
                     } else {
                         panic!("Composite {} not found in filtered tokens", comp.type_path);
                     }
