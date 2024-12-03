@@ -377,7 +377,7 @@ impl AbiParser {
         tokens_filtered
             .into_iter()
             .fold(HashMap::new(), |mut acc, (name, token)| {
-                acc.insert(name, Token::hydrate(token, &filtered));
+                acc.insert(name, Token::hydrate(token, &filtered, 10, 0));
                 acc
             })
     }
@@ -1140,5 +1140,16 @@ Composite {
             }
         }
         filtered.iter().for_each(|(_, t)| check_token_inners(t));
+    }
+
+    #[test]
+    fn test_collect_tokens() {
+        let sierra_abi = include_str!("../../test_data/cairo_ls_abi.json");
+        let sierra = serde_json::from_str::<SierraClass>(sierra_abi).unwrap();
+        let tokens = AbiParser::collect_tokens(&sierra.abi, &HashMap::new()).unwrap();
+        assert_ne!(tokens.enums.len(), 0);
+        assert_ne!(tokens.functions.len(), 0);
+        assert_ne!(tokens.interfaces.len(), 0);
+        assert_ne!(tokens.structs.len(), 0);
     }
 }
