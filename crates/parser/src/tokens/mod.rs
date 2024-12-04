@@ -136,12 +136,27 @@ impl Token {
     ///
     /// * `token` - The token to hydrate.
     /// * `filtered` - A map of type path to token that have already been hydrated.
+    /// * `recursion_max_depth` - Max depth recursion for token to hydrate.
+    /// * `iteration_count` - Current iteration count.
     ///
-    pub fn hydrate(token: Self, filtered: &HashMap<String, Token>) -> Self {
+    pub fn hydrate(
+        token: Self,
+        filtered: &HashMap<String, Token>,
+        recursion_max_depth: usize,
+        iteration_count: usize,
+    ) -> Self {
+        if recursion_max_depth < iteration_count {
+            return token;
+        }
         match token {
             Token::CoreBasic(_) | Token::GenericArg(_) => token,
             Token::Array(arr) => Token::Array(Array {
-                inner: Box::new(Self::hydrate(*arr.inner, filtered)),
+                inner: Box::new(Self::hydrate(
+                    *arr.inner,
+                    filtered,
+                    recursion_max_depth,
+                    iteration_count + 1,
+                )),
                 type_path: arr.type_path,
                 is_legacy: arr.is_legacy,
             }),
@@ -149,14 +164,21 @@ impl Token {
                 inners: tup
                     .inners
                     .into_iter()
-                    .map(|inner| Self::hydrate(inner, filtered))
+                    .map(|inner| {
+                        Self::hydrate(inner, filtered, recursion_max_depth, iteration_count + 1)
+                    })
                     .collect(),
                 type_path: tup.type_path,
             }),
             Token::Composite(comp) => {
                 if comp.r#type == CompositeType::Unknown && !comp.is_builtin() {
                     if let Some(hydrated) = filtered.get(&comp.type_path) {
-                        return Token::hydrate(hydrated.clone(), filtered);
+                        return Token::hydrate(
+                            hydrated.clone(),
+                            filtered,
+                            recursion_max_depth,
+                            iteration_count + 1,
+                        );
                     } else {
                         panic!("Composite {} not found in filtered tokens", comp.type_path);
                     }
@@ -170,13 +192,28 @@ impl Token {
                             index: i.index,
                             name: i.name,
                             kind: i.kind,
-                            token: Self::hydrate(i.token, filtered),
+                            token: Self::hydrate(
+                                i.token,
+                                filtered,
+                                recursion_max_depth,
+                                iteration_count + 1,
+                            ),
                         })
                         .collect(),
                     generic_args: comp
                         .generic_args
                         .into_iter()
-                        .map(|(name, token)| (name, Self::hydrate(token, filtered)))
+                        .map(|(name, token)| {
+                            (
+                                name,
+                                Self::hydrate(
+                                    token,
+                                    filtered,
+                                    recursion_max_depth,
+                                    iteration_count + 1,
+                                ),
+                            )
+                        })
                         .collect(),
                     r#type: comp.r#type,
                     is_event: comp.is_event,
@@ -188,17 +225,39 @@ impl Token {
                 inputs: func
                     .inputs
                     .into_iter()
-                    .map(|(name, token)| (name, Self::hydrate(token, filtered)))
+                    .map(|(name, token)| {
+                        (
+                            name,
+                            Self::hydrate(
+                                token,
+                                filtered,
+                                recursion_max_depth,
+                                iteration_count + 1,
+                            ),
+                        )
+                    })
                     .collect(),
                 outputs: func
                     .outputs
                     .into_iter()
-                    .map(|token| Self::hydrate(token, filtered))
+                    .map(|token| {
+                        Self::hydrate(token, filtered, recursion_max_depth, iteration_count + 1)
+                    })
                     .collect(),
                 named_outputs: func
                     .named_outputs
                     .into_iter()
-                    .map(|(name, token)| (name, Self::hydrate(token, filtered)))
+                    .map(|(name, token)| {
+                        (
+                            name,
+                            Self::hydrate(
+                                token,
+                                filtered,
+                                recursion_max_depth,
+                                iteration_count + 1,
+                            ),
+                        )
+                    })
                     .collect(),
                 state_mutability: func.state_mutability,
             }),
