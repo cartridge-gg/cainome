@@ -24,10 +24,26 @@ impl CairoEnumEvent {
         let ccs = utils::cainome_cairo_serde();
 
         quote! {
-            impl TryFrom<#snrs_types::EmittedEvent> for #event_name {
+            impl TryFrom<&#snrs_types::EmittedEvent> for #event_name {
                 type Error = String;
 
-                fn try_from(event: #snrs_types::EmittedEvent) -> Result<Self, Self::Error> {
+                fn try_from(event: &#snrs_types::EmittedEvent) -> Result<Self, Self::Error> {
+                    use #ccs::CairoSerde;
+
+                    if event.keys.is_empty() {
+                        return Err("Event has no key".to_string());
+                    }
+
+                    #content
+
+                    Err(format!("Could not match any event from keys {:?}", event.keys))
+                }
+            }
+
+            impl TryFrom<&#snrs_types::Event> for #event_name {
+                type Error = String;
+
+                fn try_from(event: &#snrs_types::Event) -> Result<Self, Self::Error> {
                     use #ccs::CairoSerde;
 
                     if event.keys.is_empty() {
