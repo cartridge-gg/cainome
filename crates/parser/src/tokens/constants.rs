@@ -26,7 +26,7 @@ pub const CAIRO_GENERIC_BUILTINS: [&str; 4] = [
     "core::option::Option",
     "core::result::Result",
     "core::zeroable::NonZero",
-    "core::internal::bounded_int::BoundedInt"
+    "core::internal::bounded_int::BoundedInt",
 ];
 
 pub const CAIRO_COMPOSITE_BUILTINS: [&str; 3] = [
