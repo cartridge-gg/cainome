@@ -139,6 +139,7 @@ fn builtin_composite_to_rust(type_name: &str) -> (String, bool) {
         "ByteArray" => (format!("{ccsp}::ByteArray"), true),
         "NonZero" => (format!("{ccsp}::NonZero"), true),
         "U256" => (format!("{ccsp}::U256"), true),
+        "BoundedInt" => ("starknet::core::types::Felt".to_string(), true),
         _ => (type_name.to_string(), false),
     }
 }
