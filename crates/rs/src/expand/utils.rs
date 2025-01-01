@@ -41,8 +41,12 @@ pub fn cainome_cairo_serde() -> Type {
 
 #[inline]
 pub fn cainome_cairo_serde_path() -> String {
-    //String::from("cainome_cairo_serde")
     String::from("cainome::cairo_serde")
+}
+
+#[inline]
+pub fn starknet_rs_types_path() -> String {
+    String::from("starknet::core::types")
 }
 
 /// Expands the implementation line with generic types.
