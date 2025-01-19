@@ -59,7 +59,7 @@ impl Parse for ContractAbi {
         // If the input starts with a `[` token then we parse it as a JSON array.
         let abi = if input.peek(syn::token::Bracket) {
             let array_content = input.parse::<proc_macro2::TokenStream>()?;
-            let array_str = dbg!(array_content.to_string());
+            let array_str = array_content.to_string();
 
             serde_json::from_str::<Vec<AbiEntry>>(&array_str)
                 .map_err(|e| syn::Error::new(input.span(), format!("Invalid ABI format: {e}")))?
