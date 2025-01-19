@@ -22,7 +22,6 @@ use std::fs::File;
 use std::io::{BufReader, Seek, SeekFrom};
 use std::path::Path;
 use std::str::FromStr;
-use syn::parse::ParseBuffer;
 use syn::{
     braced,
     ext::IdentExt,
