@@ -19,7 +19,7 @@ use quote::ToTokens;
 use starknet::core::types::contract::{AbiEntry, SierraClass};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
-use std::io::BufReader;
+use std::io::{BufReader, Seek, SeekFrom};
 use std::path::Path;
 use std::str::FromStr;
 use syn::parse::ParseBuffer;
@@ -86,14 +86,19 @@ impl Parse for ContractAbi {
                     abi_str_or_path
                 };
 
+                let mut file = open_json_file(&json_path.value())?;
+
                 // To prepare the declare and deploy features, we also
                 // accept a full Sierra artifact for the ABI.
                 // To support declare and deploy, the full class must be stored.
-                let file = open_json_file(&json_path.value())?;
                 if let Ok(class) = serde_json::from_reader::<_, SierraClass>(BufReader::new(&file))
                 {
                     class.abi
                 } else {
+                    // Reset the file pointer back to the beginning of the file.
+                    let pos = SeekFrom::Start(0);
+                    file.seek(pos).expect("failed to reset file pointer");
+
                     serde_json::from_reader::<_, Vec<AbiEntry>>(BufReader::new(&file)).map_err(
                         |e| syn::Error::new(json_path.span(), format!("JSON parse error: {e}")),
                     )?
