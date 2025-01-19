@@ -7,6 +7,14 @@ use url::Url;
 
 abigen!(MyContractFile, "./contracts/abi/simple_types.abi.json",);
 
+abigen!(
+    MyContractLitStr,
+    "[{\"type\":\"function\",\"name\":\"get_bool\",\
+	\"inputs\":[],\"outputs\":[{\"type\":\"core::bool\"}],\"state_mutability\":\
+	\"view\"},{\"type\":\"function\",\"name\":\"get_felt\",\"inputs\":[],\"outputs\":\
+	[{\"type\":\"core::felt252\"}],\"state_mutability\":\"view\"}]",
+);
+
 abigen!(MyContractEmbed, [
     {
     "type": "function",
@@ -54,6 +62,10 @@ async fn main() {
     let _ = contract.get_felt().call().await.unwrap();
 
     let contract = MyContractFileReader::new(felt!("0x1337"), &provider);
+    let _ = contract.get_bool().call().await.unwrap();
+    let _ = contract.get_felt().call().await.unwrap();
+
+    let contract = MyContractLitStrReader::new(felt!("0x1337"), &provider);
     let _ = contract.get_bool().call().await.unwrap();
     let _ = contract.get_felt().call().await.unwrap();
 }
