@@ -4,10 +4,13 @@
 //! passed to the macro. We should then parse the
 //! token stream to ensure the arguments are correct.
 //!
-//! At this moment, the macro supports one fashion:
+//! The macro supports two forms:
 //!
-//! Loading from a file with only the ABI array.
-//! abigen!(ContractName, "path/to/abi.json"
+//! 1. Loading from a file with the ABI array:
+//! abigen!(ContractName, "path/to/abi.json")
+//!
+//! 2. Direct JSON array input:
+//! abigen!(ContractName, [{"type": "function", ...}])
 //!
 //! TODO: support the full artifact JSON to be able to
 //! deploy contracts from abigen.
@@ -16,6 +19,7 @@ use quote::ToTokens;
 use starknet::core::types::contract::{AbiEntry, SierraClass};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
+use std::io::{BufReader, Seek, SeekFrom};
 use std::path::Path;
 use std::str::FromStr;
 use syn::{
@@ -49,42 +53,58 @@ impl Parse for ContractAbi {
 
         // ABI path or content.
 
-        // Path rooted to the Cargo.toml location if it's a file.
-        let abi_or_path = input.parse::<LitStr>()?;
+        // Parse either a JSON array literal or a path to the contract class artifact.
+        //
+        // If the input starts with a `[` token then we parse it as a JSON array.
+        let abi = if input.peek(syn::token::Bracket) {
+            let array_content = input.parse::<proc_macro2::TokenStream>()?;
+            let array_str = array_content.to_string();
 
-        #[allow(clippy::collapsible_else_if)]
-        let abi = if abi_or_path.value().ends_with(".json") {
-            let json_path = if abi_or_path.value().starts_with(CARGO_MANIFEST_DIR) {
-                let manifest_dir = env!("CARGO_MANIFEST_DIR");
-                let new_dir = Path::new(manifest_dir)
-                    .join(abi_or_path.value().trim_start_matches(CARGO_MANIFEST_DIR))
-                    .to_string_lossy()
-                    .to_string();
+            serde_json::from_str::<Vec<AbiEntry>>(&array_str)
+                .map_err(|e| syn::Error::new(input.span(), format!("Invalid ABI format: {e}")))?
+        }
+        // Otherwise, parse it either as a path to the full JSON contract class artifact
+        else {
+            // Handle file path case
+            let abi_str_or_path = input.parse::<LitStr>()?;
 
-                LitStr::new(&new_dir, proc_macro2::Span::call_site())
-            } else {
-                abi_or_path
-            };
+            if abi_str_or_path.value().ends_with(".json") {
+                let json_path = if abi_str_or_path.value().starts_with(CARGO_MANIFEST_DIR) {
+                    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+                    let new_dir = Path::new(manifest_dir)
+                        .join(
+                            abi_str_or_path
+                                .value()
+                                .trim_start_matches(CARGO_MANIFEST_DIR),
+                        )
+                        .to_string_lossy()
+                        .to_string();
 
-            // To prepare the declare and deploy features, we also
-            // accept a full Sierra artifact for the ABI.
-            // To support declare and deploy, the full class must be stored.
-            if let Ok(sierra) =
-                serde_json::from_reader::<_, SierraClass>(open_json_file(&json_path.value())?)
-            {
-                sierra.abi
+                    LitStr::new(&new_dir, proc_macro2::Span::call_site())
+                } else {
+                    abi_str_or_path
+                };
+
+                let mut file = open_json_file(&json_path.value())?;
+
+                // To prepare the declare and deploy features, we also
+                // accept a full Sierra artifact for the ABI.
+                // To support declare and deploy, the full class must be stored.
+                if let Ok(class) = serde_json::from_reader::<_, SierraClass>(BufReader::new(&file))
+                {
+                    class.abi
+                } else {
+                    // Reset the file pointer back to the beginning of the file.
+                    let pos = SeekFrom::Start(0);
+                    file.seek(pos).expect("failed to reset file pointer");
+
+                    serde_json::from_reader::<_, Vec<AbiEntry>>(BufReader::new(&file)).map_err(
+                        |e| syn::Error::new(json_path.span(), format!("JSON parse error: {e}")),
+                    )?
+                }
             } else {
-                serde_json::from_reader::<_, Vec<AbiEntry>>(open_json_file(&json_path.value())?)
-                    .map_err(|e| {
-                        syn::Error::new(json_path.span(), format!("JSON parse error: {}", e))
-                    })?
-            }
-        } else {
-            if let Ok(sierra) = serde_json::from_str::<SierraClass>(&abi_or_path.value()) {
-                sierra.abi
-            } else {
-                serde_json::from_str::<Vec<AbiEntry>>(&abi_or_path.value()).map_err(|e| {
-                    syn::Error::new(abi_or_path.span(), format!("JSON parse error: {}", e))
+                serde_json::from_str::<Vec<AbiEntry>>(&abi_str_or_path.value()).map_err(|e| {
+                    syn::Error::new(abi_str_or_path.span(), format!("JSON parse error: {}", e))
                 })?
             }
         };
