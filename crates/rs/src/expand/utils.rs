@@ -4,7 +4,12 @@ use quote::quote;
 use syn::{Ident, LitInt, LitStr, Type};
 
 pub fn str_to_ident(str_in: &str) -> Ident {
-    Ident::new(str_in, proc_macro2::Span::call_site())
+    if is_rust_keyword(str_in) {
+        // ie., r#ident
+        Ident::new_raw(str_in, proc_macro2::Span::call_site())
+    } else {
+        Ident::new(str_in, proc_macro2::Span::call_site())
+    }
 }
 
 pub fn str_to_type(str_in: &str) -> Type {
@@ -190,9 +195,31 @@ fn is_serde_hex_vec(ty: &str) -> SerdeHexType {
     SerdeHexType::None
 }
 
+fn is_rust_keyword(str_in: &str) -> bool {
+    match str_in {
+        // Based on https://doc.rust-lang.org/reference/keywords.html
+        "abstract" | "as" | "async" | "await" | "become" | "box" | "break" | "const"
+        | "continue" | "crate" | "do" | "dyn" | "else" | "enum" | "extern" | "false" | "final"
+        | "fn" | "for" | "if" | "impl" | "in" | "let" | "loop" | "macro" | "match" | "mod"
+        | "move" | "mut" | "override" | "priv" | "pub" | "ref" | "return" | "Self" | "self"
+        | "static" | "struct" | "super" | "trait" | "true" | "try" | "type" | "typeof"
+        | "unsafe" | "unsized" | "use" | "virtual" | "where" | "while" | "yield" => true,
+        _ => false,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_str_to_ident_keywords() {
+        let keywords = vec!["let", "match", "type", "impl", "fn", "struct", "move"];
+        for keyword in keywords {
+            let ident = str_to_ident(keyword);
+            assert_eq!(ident.to_string(), format!("r#{}", keyword));
+        }
+    }
 
     #[test]
     fn test_is_serde_hex_int() {
