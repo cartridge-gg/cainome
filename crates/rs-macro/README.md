@@ -7,7 +7,7 @@ This crates contains the compile-time rust macro `abigen` to generate rust bindi
 ```toml
 # Cargo.toml
 
-cainome = { git = "https://github.com/cartridge-gg/cainome", tag = "v0.2.9", features = ["abigen-rs"] }
+cainome = { version = "0.5.0", features = ["abigen-rs"] }
 ```
 
 ```rust
@@ -126,7 +126,7 @@ The expansion of the macros generates the following:
       .await
       .expect("Call to `get_my_struct` failed");
   ```
-- For each **external**, the contract type contains a function with the same arguments. Calling the function return a `starknet::accounts::ExecutionV1` type from `starknet-rs`, which allows you to completly customize the fees, doing only a simulation etc... To actually send the transaction, you use the `send()` method on the `ExecutionV1` struct. You can find the [associated methods with this struct on starknet-rs repo](https://github.com/xJonathanLEI/starknet-rs/blob/0df9ad3417a5f10d486348737fe75659ca4bcfdc/starknet-accounts/src/account/execution.rs#L118).
+- For each **external**, the contract type contains a function with the same arguments. Calling the function return a `starknet::accounts::ExecutionV1` type from `starknet-rs`, which allows you to completly customize the fees, doing only a simulation etc... To actually send the transaction, you use the `send()` method on the `ExecutionV3` struct. You can find the [associated methods with this struct on starknet-rs repo](https://github.com/xJonathanLEI/starknet-rs/blob/171b0c65cac407ee33972e0ab2c3f8744c083753/starknet-accounts/src/account/execution.rs#L403).
 
   ```rust
   let my_struct = MyStruct {
@@ -139,7 +139,6 @@ The expansion of the macros generates the following:
 
   let tx_res = contract
       .set_my_struct(&my_struct)
-      .max_fee(1000000000000000_u128.into())
       .send()
       .await
       .expect("Call to `set_my_struct` failed");

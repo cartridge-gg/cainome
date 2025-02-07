@@ -2,6 +2,17 @@
 name = "cainome-rs-macro"
 version = "0.1.0"
 edition = "2021"
+authors = ["glihm <dev@glihm.net>"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+documentation = "https://github.com/cartridge-gg/cainome"
+repository = "https://github.com/cartridge-gg/cainome"
+homepage = "https://github.com/cartridge-gg/cainome"
+description = """
+A compile-time library to generate rust bindings for cairo contracts.
+"""
+keywords = ["cairo", "starknet", "web3"]
+exclude = [".github/**", "images/**"]
 
 [lib]
 proc-macro = true
