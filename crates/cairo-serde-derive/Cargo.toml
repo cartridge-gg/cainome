@@ -2,6 +2,17 @@
 name = "cainome-cairo-serde-derive"
 version = "0.1.0"
 edition = "2021"
+authors = ["glihm <dev@glihm.net>"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+documentation = "https://github.com/cartridge-gg/cainome"
+repository = "https://github.com/cartridge-gg/cainome"
+homepage = "https://github.com/cartridge-gg/cainome"
+description = """
+A derive macro to implement the `CairoSerde` trait on structs or enums.
+"""
+keywords = ["cairo", "starknet", "web3"]
+exclude = [".github/**", "images/**"]
 
 [lib]
 proc-macro = true
