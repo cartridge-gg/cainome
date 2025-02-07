@@ -85,7 +85,6 @@ async fn main() {
     // fees without actually sending the transaction.
     let _tx_res = contract
         .set_a(&(a + Felt::ONE))
-        .max_fee(1000000000000000_u128.into())
         .send()
         .await
         .expect("Call to `set_a` failed");
@@ -111,7 +110,7 @@ async fn main() {
     // the full control from starknet-rs library.
     let _tx_res = contract
         .account
-        .execute_v1(vec![set_a_call, set_b_call])
+        .execute_v3(vec![set_a_call, set_b_call])
         .send()
         .await
         .expect("Multicall failed");
@@ -146,19 +145,7 @@ async fn main() {
 async fn other_func<A: ConnectedAccount + Sync + 'static>(contract: Arc<MyContract<A>>) {
     let set_b = contract.set_b(&U256 { low: 0xfe, high: 0 });
 
-    // Example of estimation of fees.
-    let estimated_fee = set_b
-        .estimate_fee()
-        .await
-        .expect("Fail to estimate")
-        .overall_fee;
-
-    // Use the estimated fees as a base.
-    let _tx_res = set_b
-        .max_fee(estimated_fee * Felt::TWO)
-        .send()
-        .await
-        .expect("invoke failed");
+    let _tx_res = set_b.send().await.expect("invoke failed");
 
     tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
 

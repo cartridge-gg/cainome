@@ -1,3 +1,4 @@
+#![allow(deprecated)]
 use cainome::rs::abigen_legacy;
 
 // From an extracted ABI.
