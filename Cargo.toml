@@ -25,9 +25,9 @@ members = [
 
 [workspace.dependencies]
 # workspace crates
-cainome-cairo-serde = { path = "crates/cairo-serde" }
-cainome-cairo-serde-derive = { path = "crates/cairo-serde-derive" }
-cainome-parser = { path = "crates/parser" }
+cainome-cairo-serde = { version = "0.1.0", path = "crates/cairo-serde" }
+cainome-cairo-serde-derive = { version = "0.1.0", path = "crates/cairo-serde-derive" }
+cainome-parser = { version = "0.1.0", path = "crates/parser" }
 cainome-rs = { path = "crates/rs" }
 
 anyhow = "1.0"
