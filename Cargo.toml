@@ -50,7 +50,7 @@ cainome-parser.workspace = true
 cainome-cairo-serde.workspace = true
 cainome-cairo-serde-derive.workspace = true
 cainome-rs.workspace = true
-cainome-rs-macro = { path = "crates/rs-macro", optional = true }
+cainome-rs-macro = { version = "0.1.0", path = "crates/rs-macro", optional = true }
 
 async-trait.workspace = true
 anyhow.workspace = true
