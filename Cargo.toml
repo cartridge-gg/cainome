@@ -1,7 +1,18 @@
 [package]
 name = "cainome"
-version = "0.4.11"
+version = "0.4.12"
 edition = "2021"
+authors = ["glihm <dev@glihm.net>"]
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+documentation = "https://github.com/cartridge-gg/cainome"
+repository = "https://github.com/cartridge-gg/cainome"
+homepage = "https://github.com/cartridge-gg/cainome"
+description = """
+Generate rust bindings for cairo contracts.
+"""
+keywords = ["cairo", "starknet", "web3"]
+exclude = [".github/**", "images/**"]
 
 [workspace]
 members = [

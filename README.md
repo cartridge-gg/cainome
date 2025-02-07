@@ -5,6 +5,33 @@ Cainome is a library to generate bindings from Cairo ABI.
 Cainome architecture provides a flexible way to work with Cairo ABI
 for different languages (backends).
 
+## When Cainome can be useful?
+
+When you have to interact with a Cairo contract from Rust, you can use Cainome to generate the bindings for you.
+
+Cainome will totally abstract the Cairo serialization and deserialization, and you can focus on the logic around your contract.
+
+Example of usage:
+
+```rust
+use cainome::rs::abigen;
+
+abigen!(MyContract, "/path/project.contract_class.json");
+
+fn main() -> Result<()> {
+   // starknet-rs provider + contract address.
+   let contract = MyContract::new(contract_address, provider);
+
+   // Send transactions.
+   let tx_result = contract.my_func(Felt::ONE).send().await?;
+
+   // Call functions.
+   let res = contract.my_view().call().await?;
+}
+```
+
+For more details, refer to the different READMEs in the [github repository](https://github.com/cartridge-gg/cainome).
+
 ## Project structure
 
 - **cli**: inside `src/bin/cli`, the cainome CLI binary can be built using `cargo build`: [README](./src/bin/cli/README.md).
