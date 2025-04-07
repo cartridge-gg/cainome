@@ -7,10 +7,10 @@
 //! The macro supports two forms:
 //!
 //! 1. Loading from a file with the ABI array:
-//! abigen!(ContractName, "path/to/abi.json")
+//!    abigen!(ContractName, "path/to/abi.json")
 //!
 //! 2. Direct JSON array input:
-//! abigen!(ContractName, [{"type": "function", ...}])
+//!    abigen!(ContractName, [{"type": "function", ...}])
 //!
 //! TODO: support the full artifact JSON to be able to
 //! deploy contracts from abigen.

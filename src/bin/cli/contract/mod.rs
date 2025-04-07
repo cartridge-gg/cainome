@@ -13,6 +13,7 @@ use starknet::{
 use crate::error::{CainomeCliResult, Error};
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum ContractOrigin {
     /// Contract's ABI was loaded from a local Sierra class file
     /// with the given file name.
@@ -22,6 +23,7 @@ pub enum ContractOrigin {
 }
 
 #[derive(Debug)]
+#[allow(dead_code)]
 pub struct ContractData {
     /// Contract's name.
     pub name: String,
