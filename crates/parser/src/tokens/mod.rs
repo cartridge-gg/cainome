@@ -171,8 +171,10 @@ impl Token {
                 type_path: tup.type_path,
             }),
             Token::Composite(comp) => {
+                let type_path = comp.type_path_no_generic();
+
                 if comp.r#type == CompositeType::Unknown && !comp.is_builtin() {
-                    if let Some(hydrated) = filtered.get(&comp.type_path) {
+                    if let Some(hydrated) = filtered.get(&type_path) {
                         return Token::hydrate(
                             hydrated.clone(),
                             filtered,
@@ -180,11 +182,11 @@ impl Token {
                             iteration_count + 1,
                         );
                     } else {
-                        panic!("Composite {} not found in filtered tokens", comp.type_path);
+                        panic!("Composite {} not found in filtered tokens", type_path);
                     }
                 }
                 Token::Composite(Composite {
-                    type_path: comp.type_path,
+                    type_path,
                     inners: comp
                         .inners
                         .into_iter()
