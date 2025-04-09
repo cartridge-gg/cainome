@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: "Checkout source code"
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@v4"
         with:
           fetch-depth: 0
 
@@ -55,7 +55,7 @@ jobs:
 
     steps:
       - name: "Checkout source code"
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@v4"
 
       - name: "Check against Cargo.toml"
         run: |
@@ -85,14 +85,12 @@ jobs:
 
     steps:
       - name: "Checkout source code"
-        uses: "actions/checkout@v3"
+        uses: "actions/checkout@v4"
 
       - name: "Setup stable toolchain"
-        uses: "actions-rs/toolchain@v1"
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: "stable"
-          profile: "minimal"
-          override: true
 
       - name: "Build crate"
         run: |
@@ -110,7 +108,7 @@ jobs:
 
   #   steps:
   #     - name: "Checkout source code"
-  #       uses: "actions/checkout@v3"
+  #       uses: "actions/checkout@v4"
 
   #     - name: "Login to crates.io"
   #       run: |

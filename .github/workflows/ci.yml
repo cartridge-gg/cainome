@@ -16,7 +16,7 @@ jobs:
 
     steps:
       - name: Checkout source code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Compile contracts
         uses: software-mansion/setup-scarb@v1
@@ -26,11 +26,9 @@ jobs:
           cd ./contracts && make generate_artifacts
 
       - name: Setup toolchain
-        uses: actions-rs/toolchain@v1
+        uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
-          profile: minimal
-          override: true
 
       - name: Run cargo tests
         uses: nick-fields/retry@v2
