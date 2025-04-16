@@ -1,6 +1,6 @@
 [package]
 name = "cainome-cairo-serde"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 authors = ["glihm <dev@glihm.net>"]
 license = "MIT OR Apache-2.0"
