@@ -17,6 +17,7 @@ use starknet::core::types::contract::legacy::{LegacyContractClass, RawLegacyAbiE
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::path::Path;
+use std::str::FromStr;
 use syn::{
     braced,
     ext::IdentExt,
@@ -26,6 +27,7 @@ use syn::{
 };
 
 use crate::spanned::Spanned;
+use cainome_rs::ExecutionVersion;
 
 const CARGO_MANIFEST_DIR: &str = "$CARGO_MANIFEST_DIR/";
 
@@ -35,6 +37,7 @@ pub(crate) struct ContractAbiLegacy {
     pub abi: Vec<RawLegacyAbiEntry>,
     pub output_path: Option<String>,
     pub type_aliases: HashMap<String, String>,
+    pub execution_version: ExecutionVersion,
     pub derives: Vec<String>,
     pub contract_derives: Vec<String>,
 }
@@ -88,6 +91,7 @@ impl Parse for ContractAbiLegacy {
         };
 
         let mut output_path: Option<String> = None;
+        let mut execution_version = ExecutionVersion::V3;
         let mut type_aliases = HashMap::new();
         let mut derives = Vec::new();
         let mut contract_derives = Vec::new();
@@ -130,6 +134,14 @@ impl Parse for ContractAbiLegacy {
                         type_aliases.insert(ta.abi, ta.alias);
                     }
                 }
+                "execution_version" => {
+                    let content;
+                    parenthesized!(content in input);
+                    let ev = content.parse::<LitStr>()?.value();
+                    execution_version = ExecutionVersion::from_str(&ev).map_err(|e| {
+                        syn::Error::new(content.span(), format!("Invalid execution version: {}", e))
+                    })?;
+                }
                 "output_path" => {
                     let content;
                     parenthesized!(content in input);
@@ -164,6 +176,7 @@ impl Parse for ContractAbiLegacy {
             type_aliases,
             derives,
             contract_derives,
+            execution_version,
         })
     }
 }
