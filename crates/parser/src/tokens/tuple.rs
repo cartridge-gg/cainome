@@ -1,3 +1,11 @@
+//! A tuple is a collection of types which can be of different types.
+//!
+//! An empty tuple is considered as a unit type `()`, and has its own management
+//! in the [`crate::tokens::CoreBasic`] module.
+//!
+//! A tuple can contain generic in cairo code, however in the ABI,
+//! generic types are actually always replaced by their concrete types.
+//! So a [`Tuple`] is not a generic type itself in the context of cainome.
 use syn::Type;
 
 use super::Token;
@@ -10,6 +18,28 @@ pub struct Tuple {
 }
 
 impl Tuple {
+    /// Parses a tuple from a type path.
+    ///
+    /// # Arguments
+    ///
+    /// * `type_path` - The type path to parse.
+    ///
+    /// # Returns
+    ///
+    /// Returns a [`Tuple`] token if the type path is a tuple.
+    /// Returns an error otherwise.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cainome_parser::tokens::{Token, Tuple, CoreBasic};
+    ///
+    /// let tuple = Tuple::parse("(core::felt252, core::integer::u64)").unwrap();
+    /// assert_eq!(tuple.type_path, "(core::felt252, core::integer::u64)");
+    /// assert_eq!(tuple.inners.len(), 2);
+    /// assert_eq!(tuple.inners[0], Token::CoreBasic(CoreBasic { type_path: "core::felt252".to_string() }));
+    /// assert_eq!(tuple.inners[1], Token::CoreBasic(CoreBasic { type_path: "core::integer::u64".to_string() }));
+    /// ```
     pub fn parse(type_path: &str) -> CainomeResult<Self> {
         let t: Type = syn::parse_str(type_path)?;
 

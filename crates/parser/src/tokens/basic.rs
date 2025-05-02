@@ -1,4 +1,8 @@
-use super::constants::CAIRO_CORE_BASIC;
+//! Core basic types are built-in types that are available in the core library
+//! and which are not a struct nor an enum, nor an array.
+//!
+//! This module provides a parser for core basic types.
+use super::constants::{CAIRO_CORE_BASIC, UNIT_TYPE};
 use crate::{CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -7,9 +11,19 @@ pub struct CoreBasic {
 }
 
 impl CoreBasic {
+    /// Parses a core basic type from a type path.
+    ///
+    /// # Arguments
+    ///
+    /// * `type_path` - The type path to parse.
+    ///
+    /// # Returns
+    ///
+    /// Returns a [`CoreBasic`] token if the type path is a core basic type.
+    /// Returns an error otherwise.
     pub fn parse(type_path: &str) -> CainomeResult<Self> {
         // Unit type is for now included in basic type.
-        if type_path == "()" {
+        if type_path == UNIT_TYPE {
             return Ok(Self {
                 type_path: type_path.to_string(),
             });
@@ -27,8 +41,25 @@ impl CoreBasic {
         })
     }
 
+    /// Returns the name of the core basic type.
+    ///
+    /// The type name is the last part of the type path, to remove any
+    /// module name.
+    /// The type name is also removing any generic parameters, if any.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use cainome_parser::tokens::CoreBasic;
+    ///
+    /// let core_basic = CoreBasic::parse("core::felt252").unwrap();
+    /// assert_eq!(core_basic.type_name(), "felt252");
+    /// ```
+    ///
+    /// # Returns
+    ///
+    /// Returns the name of the core basic type.
     pub fn type_name(&self) -> String {
-        // TODO: need to opti that with regex?
         let f = self
             .type_path
             .split('<')

@@ -1,3 +1,4 @@
+//! Function tokens.
 use convert_case::{Case, Casing};
 
 use super::Token;

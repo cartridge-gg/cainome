@@ -1,3 +1,8 @@
+//! This module provides a parser for array types.
+//!
+//! Technically, a `Span` is different than an `Array` in cairo.
+//! However, from a binding point of view, they are both collections,
+//! and we can safely consider them as the same type.
 use super::constants::CAIRO_CORE_SPAN_ARRAY;
 use super::genericity;
 

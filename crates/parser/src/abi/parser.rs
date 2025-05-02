@@ -215,17 +215,12 @@ impl AbiParser {
                     return Ok(());
                 };
 
-                // Some struct may be basics, we want to skip them.
-                if CoreBasic::parse(&s.name).is_ok() {
-                    return Ok(());
-                };
-
                 let token: Token = s.try_into()?;
                 let entry = tokens.entry(token.type_path()).or_default();
                 entry.push(token);
             }
             AbiEntry::Enum(e) => {
-                // Some enums may be basics, we want to skip them.
+                // `bool` is a core basic enum, we want to skip it.
                 if CoreBasic::parse(&e.name).is_ok() {
                     return Ok(());
                 };

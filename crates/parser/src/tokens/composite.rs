@@ -1,3 +1,63 @@
+//! A composite is a type that is composed of other types (struct or enum).
+//!
+//! A composite type can be generic, and even if in the ABI the generic types
+//! are replaced by their concrete types, the [`Composite`] token is still generic
+//! to retain the information about the generic types.
+//!
+//! A pitfall is that the ABI doesn't say which variant/field of the enum/struct
+//! is generic. This is an information that needs to be reconstructed by the parser.
+//!
+//! As an example, with the following cairo struct:
+//!
+//! ```rust,ignore
+//! struct MyStruct<A> {
+//!     field_1: A,
+//!     field_2: felt252,
+//! }
+//! ```
+//!
+//! The ABI will contains several entries for this struct, with the generic
+//! type `A` replaced by its concrete type as much as necessary.
+//!
+//! ```rust,ignore
+//! [
+//! {
+//!     "type": "struct",
+//!     "name": "MyStruct::<core::felt252>",
+//!     "members": [
+//!       {
+//!         "name": "field_1",
+//!         "type": "core::felt252"
+//!       },
+//!       {
+//!         "name": "field_2",
+//!         "type": "core::felt252"
+//!       }
+//!     ]
+//! },
+//! {
+//!     "type": "struct",
+//!     "name": "MyStruct::<core::integer::u64>",
+//!     "members": [
+//!       {
+//!         "name": "field_1",
+//!         "type": "core::integer::u64"
+//!       },
+//!       {
+//!         "name": "field_2",
+//!         "type": "core::felt252"
+//!       }
+//!     ]
+//! },
+//! ]
+//! ```
+//!
+//! As it can be seen, in this case, the ABI doesn't say which variant of the
+//! struct is generic since `field_2` is generic in the first case but not in
+//! the second one.
+//!
+//! A naive strategy would be to ensure all types are parsed a first time,
+//! and then a generic resolution is done.
 use super::constants::{CAIRO_COMPOSITE_BUILTINS, CAIRO_GENERIC_BUILTINS};
 use super::genericity;
 use super::Token;
@@ -39,6 +99,25 @@ pub struct Composite {
 }
 
 impl Composite {
+    /// Parses a composite type from a type path.
+    /// Since the composite can be named arbitrarily, by the user,
+    /// the parsing of the composite is not checking if the type path is
+    /// a core basic type, an array or something else.
+    ///
+    /// In cainome the type path is first parsed as any other token, and
+    /// [`Composite`] is the last token that is parsed (which accepts every path).
+    ///
+    /// You may use [`Composite::is_builtin`] to check if the type path is
+    /// a known Cairo builtin type.
+    ///
+    /// # Arguments
+    ///
+    /// * `type_path` - The type path to parse.
+    ///
+    /// # Returns
+    ///
+    /// Returns a [`Composite`] token if the type path is a composite.
+    /// Returns an error otherwise.
     pub fn parse(type_path: &str) -> CainomeResult<Self> {
         let type_path = escape_rust_keywords(type_path);
         let generic_args = genericity::extract_generics_args(&type_path)?;
