@@ -15,6 +15,10 @@ pub enum Error {
     IO(#[from] std::io::Error),
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
+    #[error("Invalid option type path: {0}")]
+    InvalidOptionTypePath(String),
+    #[error("Invalid result type path: {0}")]
+    InvalidResultTypePath(String),
 }
 
 pub type CainomeResult<T, E = Error> = Result<T, E>;

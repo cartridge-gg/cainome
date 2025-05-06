@@ -4,7 +4,9 @@ use starknet::core::types::contract::{
     StateMutability as StarknetStateMutability,
 };
 
-use crate::tokens::{CompositeInner, CompositeInnerKind, CompositeType, StateMutability, Token};
+use crate::tokens::{
+    self, CompositeInner, CompositeInnerKind, CompositeType, StateMutability, Token,
+};
 use crate::Error;
 
 impl From<StarknetStateMutability> for StateMutability {
@@ -45,15 +47,6 @@ impl TryFrom<&AbiStruct> for Token {
                 });
             }
 
-            if !c.generic_args.is_empty() {
-                let mut token = Token::Composite(c.clone());
-                for (g_name, g_token) in c.generic_args.iter() {
-                    token = token.resolve_generic(g_name, &g_token.type_path());
-                }
-
-                return Ok(token);
-            }
-
             Ok(t)
         } else {
             Err(Error::ParsingFailed(format!(
@@ -70,6 +63,14 @@ impl TryFrom<&AbiEnum> for Token {
     fn try_from(value: &AbiEnum) -> Result<Self, Self::Error> {
         let mut t = Token::parse(&value.name)?;
 
+        if t.type_name() == "option" {
+            return Ok(t);
+        }
+
+        if t.type_name() == "result" {
+            return Ok(t);
+        }
+
         if let Token::Composite(ref mut c) = t {
             c.r#type = CompositeType::Enum;
 
@@ -80,15 +81,6 @@ impl TryFrom<&AbiEnum> for Token {
                     token: Token::parse(&v.r#type).unwrap(),
                     kind: CompositeInnerKind::NotUsed,
                 });
-            }
-
-            if !c.generic_args.is_empty() {
-                let mut token = Token::Composite(c.clone());
-                for (g_name, g_token) in c.generic_args.iter() {
-                    token = token.resolve_generic(g_name, &g_token.type_path());
-                }
-
-                return Ok(token);
             }
 
             Ok(t)
@@ -120,15 +112,6 @@ impl TryFrom<&AbiEventStruct> for Token {
                 });
             }
 
-            if !c.generic_args.is_empty() {
-                let mut token = Token::Composite(c.clone());
-                for (g_name, g_token) in c.generic_args.iter() {
-                    token = token.resolve_generic(g_name, &g_token.type_path());
-                }
-
-                return Ok(token);
-            }
-
             Ok(t)
         } else {
             Err(Error::ParsingFailed(format!(
@@ -156,15 +139,6 @@ impl TryFrom<&AbiEventEnum> for Token {
                     token: Token::parse(&v.r#type).unwrap(),
                     kind: v.kind.clone().into(),
                 });
-            }
-
-            if !c.generic_args.is_empty() {
-                let mut token = Token::Composite(c.clone());
-                for (g_name, g_token) in c.generic_args.iter() {
-                    token = token.resolve_generic(g_name, &g_token.type_path());
-                }
-
-                return Ok(token);
             }
 
             Ok(t)

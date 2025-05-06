@@ -78,23 +78,6 @@ impl Tuple {
         })
     }
 
-    pub fn resolve_generic(&self, generic_name: &str, generic_type_path: &str) -> Token {
-        if self.type_path == generic_type_path {
-            Token::GenericArg(generic_name.to_string())
-        } else {
-            let mut inners = vec![];
-
-            for i in &self.inners {
-                inners.push(i.resolve_generic(generic_name, generic_type_path));
-            }
-
-            Token::Tuple(Self {
-                type_path: self.type_path.clone(),
-                inners,
-            })
-        }
-    }
-
     pub fn apply_alias(&mut self, type_path: &str, alias: &str) {
         for i in &mut self.inners {
             i.apply_alias(type_path, alias);

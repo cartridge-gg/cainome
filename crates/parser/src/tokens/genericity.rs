@@ -73,7 +73,10 @@ mod tests {
             type_path_no_generic("module::TypeName<core::integer::u64>"),
             "module::TypeName"
         );
-        assert_eq!(type_path_no_generic("TypeName<core::felt252, core::bool>"), "TypeName");
+        assert_eq!(
+            type_path_no_generic("TypeName<core::felt252, core::bool>"),
+            "TypeName"
+        );
     }
 
     #[test]
@@ -92,7 +95,8 @@ mod tests {
 
     #[test]
     fn test_extract_generics_args_multiple() {
-        let generics_args = extract_generics_args("module::TypeName::<core::felt252, core::bool>").unwrap();
+        let generics_args =
+            extract_generics_args("module::TypeName::<core::felt252, core::bool>").unwrap();
         assert_eq!(generics_args.len(), 2);
         assert_eq!(generics_args[0].0, "A");
         assert_eq!(generics_args[0].1, Token::parse("core::felt252").unwrap());
