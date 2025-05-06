@@ -28,6 +28,15 @@ enum ExampleEnum {
     Struct { x: ExampleTuple, y: ExampleSimple },
 }
 
+#[derive(Debug, CairoSerde)]
+struct SimpleTypes {
+    x: u32,
+    y: u64,
+    a: i32,
+    b: i64,
+    c: bool,
+}
+
 fn main() {
     let tuple = ExampleTuple(
         ExampleNested {
@@ -60,5 +69,19 @@ fn main() {
 
     assert_eq!(deserialized, example);
 
+    println!("deserialized = {:?}", deserialized);
+
+    let simple = SimpleTypes {
+        x: 1,
+        y: 2,
+        a: 3,
+        b: 4,
+        c: true,
+    };
+
+    let serialized = SimpleTypes::cairo_serialize(&simple);
+    println!("serialized = {:?}", serialized);
+
+    let deserialized = SimpleTypes::cairo_deserialize(&serialized, 0).unwrap();
     println!("deserialized = {:?}", deserialized);
 }
