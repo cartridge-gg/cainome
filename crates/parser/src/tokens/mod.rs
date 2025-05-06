@@ -8,6 +8,7 @@ mod composite;
 mod constants;
 mod function;
 mod genericity;
+mod non_zero;
 mod option;
 mod result;
 mod tuple;
@@ -18,6 +19,7 @@ pub use array::Array;
 pub use basic::CoreBasic;
 pub use composite::{Composite, CompositeInner, CompositeInnerKind, CompositeType};
 pub use function::{Function, FunctionOutputKind, StateMutability};
+pub use non_zero::NonZero;
 pub use option::Option;
 pub use result::Result;
 pub use tuple::Tuple;
@@ -33,6 +35,7 @@ pub enum Token {
     Function(Function),
     Option(Option),
     Result(Result),
+    NonZero(NonZero),
 }
 
 impl Token {
@@ -57,6 +60,10 @@ impl Token {
             return Ok(Token::Result(r));
         }
 
+        if let Ok(n) = NonZero::parse(type_path) {
+            return Ok(Token::NonZero(n));
+        }
+
         if let Ok(c) = Composite::parse(type_path) {
             return Ok(Token::Composite(c));
         }
@@ -76,6 +83,7 @@ impl Token {
             Token::Function(_) => "function".to_string(),
             Token::Option(_) => "option".to_string(),
             Token::Result(_) => "result".to_string(),
+            Token::NonZero(_) => "non_zero".to_string(),
         }
     }
 
@@ -88,6 +96,7 @@ impl Token {
             Token::Function(t) => t.name.clone(),
             Token::Option(t) => t.type_path.to_string(),
             Token::Result(t) => t.type_path.to_string(),
+            Token::NonZero(t) => t.type_path.to_string(),
         }
     }
 
@@ -174,6 +183,15 @@ impl Token {
                 type_path: opt.type_path,
                 inner: Box::new(Self::hydrate(
                     *opt.inner,
+                    filtered,
+                    recursion_max_depth,
+                    iteration_count + 1,
+                )),
+            }),
+            Token::NonZero(non_zero) => Token::NonZero(NonZero {
+                type_path: non_zero.type_path,
+                inner: Box::new(Self::hydrate(
+                    *non_zero.inner,
                     filtered,
                     recursion_max_depth,
                     iteration_count + 1,

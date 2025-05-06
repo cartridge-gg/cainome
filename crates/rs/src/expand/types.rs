@@ -50,6 +50,10 @@ impl CairoToRust for Token {
                 r.inner.to_rust_type(),
                 r.error.to_rust_type()
             ),
+            Token::NonZero(n) => {
+                let ccsp = utils::cainome_cairo_serde_path();
+                format!("{}::NonZero<{}>", ccsp, n.inner.to_rust_type())
+            }
             _ => "__FUNCTION_NOT_SUPPORTED__".to_string(),
         }
     }
@@ -97,6 +101,10 @@ impl CairoToRust for Token {
                 r.inner.to_rust_type_path(),
                 r.error.to_rust_type_path()
             ),
+            Token::NonZero(n) => {
+                let ccsp = utils::cainome_cairo_serde_path();
+                format!("{}::NonZero::<{}>", ccsp, n.inner.to_rust_type_path())
+            },
             _ => "__FUNCTION_NOT_SUPPORTED__".to_string(),
         }
     }

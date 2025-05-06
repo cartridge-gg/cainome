@@ -15,6 +15,7 @@ pub struct PluginInput {
     pub execution_version: ExecutionVersion,
     pub derives: Vec<String>,
     pub contract_derives: Vec<String>,
+    pub type_skips: Vec<String>,
 }
 
 #[derive(Debug)]

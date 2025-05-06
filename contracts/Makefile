@@ -20,6 +20,7 @@ generate_artifacts:
 	jq .abi ${scarb_build}structs${sierra} > ${artifacts}structs.abi.json
 	jq .abi ${scarb_build}byte_array${sierra} > ${artifacts}byte_array.abi.json
 	jq .abi ${scarb_build}gen${sierra} > ${artifacts}gen.abi.json
+	jq .abi ${scarb_build}builtins${sierra} > ${artifacts}builtins.abi.json
 
 generate_rust:
 	scarb build

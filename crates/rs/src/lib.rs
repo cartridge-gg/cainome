@@ -75,6 +75,10 @@ pub struct Abigen {
     pub derives: Vec<String>,
     /// Derives to be added to the generated contract.
     pub contract_derives: Vec<String>,
+    /// Types to be skipped from the generated types, usually combined with the `types_aliases` to
+    /// let the user specify the implementation of the types. If a type is generic, the generic arguments
+    /// are not part of the compared name.
+    pub type_skips: Vec<String>,
 }
 
 impl Abigen {
@@ -93,6 +97,7 @@ impl Abigen {
             execution_version: ExecutionVersion::V1,
             derives: vec![],
             contract_derives: vec![],
+            type_skips: vec![],
         }
     }
 
@@ -136,6 +141,15 @@ impl Abigen {
         self
     }
 
+    /// Sets the types to be skipped from the generated types.
+    ///
+    /// # Arguments
+    ///
+    /// * `type_skips` - Types to be skipped from the generated types.
+    pub fn with_type_skips(mut self, type_skips: Vec<String>) -> Self {
+        self.type_skips = type_skips;
+        self
+    }
     /// Generates the contract bindings.
     pub fn generate(&self) -> Result<ContractBindings> {
         let file_content = std::fs::read_to_string(&self.abi_source)?;
@@ -148,6 +162,7 @@ impl Abigen {
                     self.execution_version,
                     &self.derives,
                     &self.contract_derives,
+                    &self.type_skips,
                 );
 
                 Ok(ContractBindings {
@@ -174,13 +189,16 @@ impl Abigen {
 /// * `execution_version` - The version of transaction to be executed.
 /// * `derives` - Derives to be added to the generated types.
 /// * `contract_derives` - Derives to be added to the generated contract.
+/// * `type_skips` - Types to be skipped from the generated types.
 pub fn abi_to_tokenstream(
     contract_name: &str,
     abi_tokens: &TokenizedAbi,
     execution_version: ExecutionVersion,
     derives: &[String],
     contract_derives: &[String],
+    type_skips: &[String],
 ) -> TokenStream2 {
+    let type_skips = type_skips.iter().map(|s| s.replace(" ", "")).collect::<Vec<String>>();
     let contract_name = utils::str_to_ident(contract_name);
 
     let mut tokens: Vec<TokenStream2> = vec![];
@@ -218,6 +236,11 @@ pub fn abi_to_tokenstream(
 
     for s in &sorted_structs {
         let s_composite = s.to_composite().expect("composite expected");
+
+        if type_skips.contains(&s_composite.type_path_no_generic()) {
+            continue;
+        }
+
         tokens.push(CairoStruct::expand_decl(s_composite, derives));
         tokens.push(CairoStruct::expand_impl(s_composite));
     }
@@ -226,6 +249,10 @@ pub fn abi_to_tokenstream(
         let e_composite = e.to_composite().expect("composite expected");
         tokens.push(CairoEnum::expand_decl(e_composite, derives));
         tokens.push(CairoEnum::expand_impl(e_composite));
+
+        if type_skips.contains(&e_composite.type_path_no_generic()) {
+            continue;
+        }
 
         tokens.push(CairoEnumEvent::expand(
             e.to_composite().expect("composite expected"),

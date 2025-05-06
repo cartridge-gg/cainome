@@ -19,6 +19,8 @@ pub enum Error {
     InvalidOptionTypePath(String),
     #[error("Invalid result type path: {0}")]
     InvalidResultTypePath(String),
+    #[error("Invalid non-zero type path: {0}")]
+    InvalidNonZeroTypePath(String),
 }
 
 pub type CainomeResult<T, E = Error> = Result<T, E>;
