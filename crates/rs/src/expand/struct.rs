@@ -1,7 +1,6 @@
 use cainome_parser::tokens::{Composite, Token};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::Ident;
 
 use crate::expand::types::CairoToRust;
 use crate::expand::utils;

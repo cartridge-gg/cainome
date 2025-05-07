@@ -26,15 +26,15 @@ impl NonZero {
 
             let (_, generic_arg_token) = &generic_args[0];
 
-            return Ok(Self {
+            Ok(Self {
                 type_path: type_path.to_string(),
                 inner: Box::new(generic_arg_token.clone()),
-            });
+            })
         } else {
-            return Err(Error::TokenInitFailed(format!(
+            Err(Error::TokenInitFailed(format!(
                 "NonZero couldn't be initialized from `{}`.",
                 type_path,
-            )));
+            )))
         }
     }
 

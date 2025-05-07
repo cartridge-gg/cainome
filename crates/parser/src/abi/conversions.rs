@@ -4,9 +4,7 @@ use starknet::core::types::contract::{
     StateMutability as StarknetStateMutability,
 };
 
-use crate::tokens::{
-    self, CompositeInner, CompositeInnerKind, CompositeType, StateMutability, Token,
-};
+use crate::tokens::{CompositeInner, CompositeInnerKind, CompositeType, StateMutability, Token};
 use crate::Error;
 
 impl From<StarknetStateMutability> for StateMutability {

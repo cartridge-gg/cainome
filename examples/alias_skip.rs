@@ -51,7 +51,7 @@ async fn main() {
 
     // GenericOneBis, GenericTwoBis and MyDef not generated since they are skipped.
 
-/*  TODO: Katana runner not working with v3 yet.
+    /*  TODO: Katana runner not working with v3 yet.
     let katana_config = KatanaRunnerConfig {
         program_name: Some("/tmp/katana".to_string()),
         disable_fee: true,
@@ -74,7 +74,7 @@ async fn main() {
 
     println!("res: {:?}", res); */
 }
-/* 
+/*
 async fn declare_deploy_contract(katana: &KatanaRunner) -> Felt {
     let mut account = katana.account(1);
     account.set_block_id(BlockId::Tag(BlockTag::Pending));
@@ -88,7 +88,7 @@ async fn declare_deploy_contract(katana: &KatanaRunner) -> Felt {
     let class_hash = contract_artifact.class_hash().unwrap();
 
     let flattened_class = contract_artifact.flatten().unwrap();
- 
+
     let _ = account
         .declare_v3(Arc::new(flattened_class), class_hash)
         .send()

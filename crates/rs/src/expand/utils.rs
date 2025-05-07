@@ -54,40 +54,6 @@ pub fn starknet_rs_types_path() -> String {
     String::from("starknet::core::types")
 }
 
-/// Expands the implementation line with generic types.
-pub fn impl_with_gen_args(entity_name: &Ident, gen_args: &Vec<Ident>) -> TokenStream2 {
-    let gen_args_rust: Vec<Ident> = gen_args
-        .iter()
-        .map(|g| str_to_ident(format!("R{}", g).as_str()))
-        .collect();
-
-    let mut tokens = vec![];
-
-    let ccs = cainome_cairo_serde();
-
-    tokens.push(quote! {
-        impl<#(#gen_args),* , #(#gen_args_rust),*> #ccs::CairoSerde for #entity_name<#(#gen_args),*>
-        where
-    });
-
-    for (i, g) in gen_args.iter().enumerate() {
-        let gr = &gen_args_rust[i];
-        tokens.push(quote!(#g: #ccs::CairoSerde<RustType = #gr>,));
-    }
-
-    quote!(#(#tokens)*)
-}
-
-/// Expands the associated types lines for generic types.
-pub fn rust_associated_type_gen_args(entity_name: &Ident, gen_args: &[Ident]) -> TokenStream2 {
-    let gen_args_rust: Vec<Ident> = gen_args
-        .iter()
-        .map(|g| str_to_ident(format!("R{}", g).as_str()))
-        .collect();
-
-    quote!(type RustType = #entity_name<#(#gen_args_rust),*>;)
-}
-
 #[derive(Debug, PartialEq)]
 enum SerdeHexType {
     None,

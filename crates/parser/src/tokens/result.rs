@@ -28,16 +28,16 @@ impl Result {
             let (_, generic_arg_token) = &generic_args[0];
             let (_, error_token) = &generic_args[1];
 
-            return Ok(Self {
+            Ok(Self {
                 type_path: type_path.to_string(),
                 inner: Box::new(generic_arg_token.clone()),
                 error: Box::new(error_token.clone()),
-            });
+            })
         } else {
-            return Err(Error::TokenInitFailed(format!(
+            Err(Error::TokenInitFailed(format!(
                 "Result couldn't be initialized from `{}`.",
                 type_path,
-            )));
+            )))
         }
     }
 

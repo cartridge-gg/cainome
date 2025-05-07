@@ -267,36 +267,6 @@ mod tests {
         })
     }
 
-    fn array_felt252() -> Token {
-        Token::Array(Array {
-            type_path: "core::array::Array::<core::felt252>".to_string(),
-            inner: Box::new(basic_felt252()),
-            is_legacy: false,
-        })
-    }
-
-    fn composite_simple() -> Token {
-        Token::Composite(Composite {
-            type_path: "module::MyStruct".to_string(),
-            inners: vec![],
-            generic_args: vec![],
-            r#type: CompositeType::Unknown,
-            is_event: false,
-            alias: None,
-        })
-    }
-
-    fn composite_with_generic() -> Token {
-        Token::Composite(Composite {
-            type_path: "module::MyStruct::<core::felt252>".to_string(),
-            inners: vec![],
-            generic_args: vec![("A".to_string(), basic_felt252())],
-            r#type: CompositeType::Unknown,
-            is_event: false,
-            alias: None,
-        })
-    }
-
     #[test]
     fn test_snake_to_pascal_case() {
         assert_eq!(snake_to_pascal_case("my_type"), "MyType");
