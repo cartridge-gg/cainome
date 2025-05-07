@@ -18,6 +18,8 @@ struct StructWithStruct {
     simple: Simple,
 }
 
+// Generics are not directly supported by cainome.
+// However using the `type_aliases` and `type_skips` parameters, one can define the types as necessary with `CairoSerde`.
 #[derive(Serde, Drop)]
 struct GenericOne<T> {
     a: T,
@@ -26,29 +28,23 @@ struct GenericOne<T> {
 }
 
 #[derive(Serde, Drop)]
+struct ToAlias {
+    a: u32,
+}
+
+#[derive(Serde, Drop)]
 struct GenericTwo<T, U> {
     a: T,
     b: U,
     c: felt252,
+    d: ToAlias,
+    e: Span<ToAlias>,
+    f: GenericOne<ToAlias>,
 }
-
-// NOT SUPPORTED.
-// #[derive(Serde, Drop)]
-// struct GenericThree<T, U, V> {
-//     a: T,
-//     b: U,
-//     c: V,
-// }
-
-// NOT SUPPORTED.
-// #[derive(Serde, Drop)]
-// struct GenericOfGeneric<T> {
-//     a: GenericOne<T>,
-// }
 
 #[starknet::contract]
 mod structs {
-    use super::{Simple, StructWithStruct, GenericOne, GenericTwo};
+    use super::{Simple, StructWithStruct, GenericOne, GenericTwo, ToAlias};
 
     #[storage]
     struct Storage {}
@@ -113,9 +109,8 @@ mod structs {
 
     #[external(v0)]
     fn get_generic_two(self: @ContractState) -> GenericTwo<felt252, u256> {
-        GenericTwo { a: 1, b: 2_u256, c: 3, }
+        GenericTwo { a: 1, b: 2_u256, c: 3, d: ToAlias { a: 4 }, e: array![ToAlias { a: 5 }].span(), f: GenericOne { a: ToAlias { a: 6 }, b: 7, c: 8_u256, } }
     }
-
 
     #[external(v0)]
     fn set_tuple_generic(

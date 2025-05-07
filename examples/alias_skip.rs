@@ -1,7 +1,9 @@
 use cainome::rs::abigen;
 use cainome_cairo_serde_derive::CairoSerde;
+use katana_runner::{KatanaRunner, KatanaRunnerConfig};
 use serde::Serialize;
 use starknet::core::types::Felt;
+
 // This example uses an ABI where components introduce several enums with `Event` type name.
 // This showcase how the type_aliases parameter can be leveraged to avoid conflicts.
 #[derive(CairoSerde, Serialize)]
@@ -31,4 +33,11 @@ abigen!(
 async fn main() {
     let _one = GenericOneBis { f1: Felt::from(1) };
     let _two = GenericTwoBis { a: Felt::from(2) };
+
+    let katana_config = KatanaRunnerConfig {
+        program_name: Some("/tmp/katana".to_string()),
+        ..Default::default()
+    };
+
+    let katana = KatanaRunner::new_with_config(katana_config).unwrap();
 }
