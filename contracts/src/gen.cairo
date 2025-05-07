@@ -91,6 +91,5 @@ mod gen {
         self.v1.write(a.f2.f1);
         self.v2.write(a.f2.f2);
     }
-
 }
 

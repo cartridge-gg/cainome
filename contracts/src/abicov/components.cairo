@@ -40,7 +40,7 @@ pub mod simple_component {
 
     #[embeddable_as(Simple)]
     pub impl SimpleImpl<
-        TContractState, +HasComponent<TContractState>
+        TContractState, +HasComponent<TContractState>,
     > of super::ISimple<ComponentState<TContractState>> {
         fn read_data(self: @ComponentState<TContractState>) -> felt252 {
             self.data.read()
@@ -72,7 +72,7 @@ pub mod simple_component_other {
     #[event]
     #[derive(Drop, starknet::Event)]
     pub enum Event {
-        Written: Written
+        Written: Written,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -82,7 +82,7 @@ pub mod simple_component_other {
 
     #[embeddable_as(SimpleOther)]
     pub impl SimpleImpl<
-        TContractState, +HasComponent<TContractState>
+        TContractState, +HasComponent<TContractState>,
     > of super::ISimple<ComponentState<TContractState>> {
         fn read_data(self: @ComponentState<TContractState>) -> felt252 {
             self.data2.read()
@@ -151,18 +151,18 @@ mod components_contract {
 
     #[external(v0)]
     fn array_struct_simple_other(
-        ref self: ContractState
+        ref self: ContractState,
     ) -> Span<simple_component_other::MyStruct> {
         array![].span()
     }
 
     #[external(v0)]
     fn tuple_events(
-        ref self: ContractState
+        ref self: ContractState,
     ) -> (simple_component::MyStruct, simple_component_other::MyStruct) {
         (
-            simple_component::MyStruct { a: 1, b: 2, },
-            simple_component_other::MyStruct { data: 'other', },
+            simple_component::MyStruct { a: 1, b: 2 },
+            simple_component_other::MyStruct { data: 'other' },
         )
     }
 }

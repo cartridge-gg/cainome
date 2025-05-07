@@ -109,7 +109,7 @@ mod simple_types {
         let uint256 = self.uint256.read();
         let uint64 = self.uint64.read();
 
-        array![felt, uint256.low.into(), uint256.high.into(), uint64.into(),].span()
+        array![felt, uint256.low.into(), uint256.high.into(), uint64.into()].span()
     }
 
     #[external(v0)]
@@ -121,8 +121,8 @@ mod simple_types {
             .write(
                 u256 {
                     low: (*data[1]).try_into().expect('invalid u128'),
-                    high: (*data[2]).try_into().expect('invalid u128')
-                }
+                    high: (*data[2]).try_into().expect('invalid u128'),
+                },
             );
         self.uint64.write((*data[3]).try_into().expect('invalid u64'));
     }

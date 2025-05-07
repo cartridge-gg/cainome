@@ -42,16 +42,16 @@ mod event {
 
     #[external(v0)]
     fn emit_a(ref self: ContractState, header: felt252, value: Span<felt252>) {
-        self.emit(MyEventA { header, value, });
+        self.emit(MyEventA { header, value });
     }
 
     #[external(v0)]
     fn emit_b(ref self: ContractState, value: felt252) {
-        self.emit(MyEventB { value, });
+        self.emit(MyEventB { value });
     }
 
     #[external(v0)]
     fn emit_c(ref self: ContractState, v1: felt252, v2: felt252, v3: felt252, v4: ContractAddress) {
-        self.emit(MyEventC { v1, v2, v3, v4, });
+        self.emit(MyEventC { v1, v2, v3, v4 });
     }
 }

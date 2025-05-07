@@ -72,7 +72,7 @@ mod simple_events {
 
     #[external(v0)]
     fn emit_multiple(ref self: ContractState) {
-        self.emit(EventMultiple { key1: 1, key2: 2, data1: 3, data2: 4_u256, data3: (5, 6), });
+        self.emit(EventMultiple { key1: 1, key2: 2, data1: 3, data2: 4_u256, data3: (5, 6) });
     }
 
     #[external(v0)]
