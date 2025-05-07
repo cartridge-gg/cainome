@@ -4,6 +4,7 @@
 #[starknet::contract]
 mod simple_types {
     use starknet::{ClassHash, ContractAddress, EthAddress};
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     #[storage]
     struct Storage {

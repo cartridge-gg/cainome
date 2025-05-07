@@ -3,7 +3,6 @@
 
 #[starknet::contract]
 mod option_result {
-    use starknet::{ClassHash, ContractAddress, EthAddress};
 
     #[derive(Serde, Drop)]
     struct GenericOne<T> {

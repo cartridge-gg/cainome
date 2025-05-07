@@ -1,6 +1,6 @@
 #[starknet::contract]
 mod gen {
-    use starknet::ContractAddress;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     #[storage]
     struct Storage {

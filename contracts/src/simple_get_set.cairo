@@ -1,5 +1,7 @@
 #[starknet::contract]
 mod simple_get_set {
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+
     #[storage]
     struct Storage {
         a: felt252,

@@ -121,6 +121,12 @@ mod structs {
     fn get_tuple_of_array_generic(self: @ContractState) -> (Span<GenericOne<u64>>, Span<felt252>) {
         (array![GenericOne { a: 0x1, b: 0x2, c: 0x3_u256, },].span(), array![1, 2, 3].span(),)
     }
+
+    #[external(v0)]
+    fn set_from_alias(
+        ref self: ContractState, value: Span<ToAlias>
+    ) {}
+
 // #[external(v0)]
 // fn set_generic_three_1(ref self: ContractState, generic: GenericThree<u64, u64, u64>) {}
 

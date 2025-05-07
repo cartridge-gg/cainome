@@ -2,12 +2,14 @@
 
 #[derive(Serde, Drop, starknet::Store)]
 enum SimpleEnum {
+    #[default]
     Variant1,
     Variant2,
 }
 
 #[derive(Serde, Drop, starknet::Store)]
 enum TypedEnum {
+    #[default]
     Variant1: felt252,
     Variant2: u256,
     Variant3: (felt252, u256),
@@ -15,6 +17,7 @@ enum TypedEnum {
 
 #[derive(Serde, Drop, starknet::Store)]
 enum MixedEnum {
+    #[default]
     Variant1: felt252,
     Variant2,
 }
@@ -22,6 +25,7 @@ enum MixedEnum {
 #[starknet::contract]
 mod enums {
     use super::{SimpleEnum, TypedEnum, MixedEnum};
+    use starknet::storage::{StoragePointerReadAccess};
 
     #[storage]
     struct Storage {

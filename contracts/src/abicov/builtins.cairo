@@ -2,7 +2,6 @@
 
 #[starknet::contract]
 mod builtins {
-    use starknet::{ClassHash, ContractAddress, EthAddress};
     use core::zeroable::NonZero;
     //use core::integer::BoundedInt;
 

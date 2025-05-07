@@ -1,5 +1,7 @@
 #[starknet::contract]
 mod basic {
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+
     #[storage]
     struct Storage {
         v1: NonZero<felt252>,

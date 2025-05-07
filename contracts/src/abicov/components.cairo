@@ -6,38 +6,40 @@ trait ISimple<TContractState> {
 }
 
 #[starknet::component]
-mod simple_component {
+pub mod simple_component {
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+
     #[storage]
-    struct Storage {
+    pub struct Storage {
         data: felt252,
     }
 
     #[derive(Drop, Serde)]
-    struct MyStruct {
-        a: felt252,
-        b: felt252,
+    pub struct MyStruct {
+        pub a: felt252,
+        pub b: felt252,
     }
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         Written: Written,
         Written88: WrittenAB,
     }
 
     #[derive(Drop, starknet::Event)]
-    struct Written {
-        before: felt252,
-        after: felt252,
+    pub struct Written {
+        pub before: felt252,
+        pub after: felt252,
     }
 
     #[derive(Drop, starknet::Event)]
-    struct WrittenAB {
-        data: felt252,
+    pub struct WrittenAB {
+        pub data: felt252,
     }
 
     #[embeddable_as(Simple)]
-    impl SimpleImpl<
+    pub impl SimpleImpl<
         TContractState, +HasComponent<TContractState>
     > of super::ISimple<ComponentState<TContractState>> {
         fn read_data(self: @ComponentState<TContractState>) -> felt252 {
@@ -54,20 +56,22 @@ mod simple_component {
 }
 
 #[starknet::component]
-mod simple_component_other {
+pub mod simple_component_other {
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+
     #[storage]
-    struct Storage {
-        data: felt252,
+    pub struct Storage {
+        pub data2: felt252,
     }
 
     #[derive(Drop, Serde)]
-    struct MyStruct {
-        data: u256,
+    pub struct MyStruct {
+        pub data: u256,
     }
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         Written: Written
     }
 
@@ -77,15 +81,15 @@ mod simple_component_other {
     }
 
     #[embeddable_as(SimpleOther)]
-    impl SimpleImpl<
+    pub impl SimpleImpl<
         TContractState, +HasComponent<TContractState>
     > of super::ISimple<ComponentState<TContractState>> {
         fn read_data(self: @ComponentState<TContractState>) -> felt252 {
-            self.data.read()
+            self.data2.read()
         }
 
         fn write_data(ref self: ComponentState<TContractState>, data: felt252) {
-            self.data.write(data);
+            self.data2.write(data);
             self.emit(Written { data });
         }
     }
@@ -95,6 +99,7 @@ mod simple_component_other {
 mod components_contract {
     use super::simple_component;
     use super::simple_component_other;
+    use starknet::storage::StoragePointerWriteAccess;
 
     component!(path: simple_component, storage: simple, event: SimpleEvent);
     component!(path: simple_component_other, storage: simple_other, event: SimpleEventOther);
