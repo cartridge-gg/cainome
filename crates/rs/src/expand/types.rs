@@ -104,7 +104,7 @@ impl CairoToRust for Token {
             Token::NonZero(n) => {
                 let ccsp = utils::cainome_cairo_serde_path();
                 format!("{}::NonZero::<{}>", ccsp, n.inner.to_rust_type_path())
-            },
+            }
             _ => "__FUNCTION_NOT_SUPPORTED__".to_string(),
         }
     }

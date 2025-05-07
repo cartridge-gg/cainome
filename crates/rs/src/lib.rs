@@ -198,7 +198,10 @@ pub fn abi_to_tokenstream(
     contract_derives: &[String],
     type_skips: &[String],
 ) -> TokenStream2 {
-    let type_skips = type_skips.iter().map(|s| s.replace(" ", "")).collect::<Vec<String>>();
+    let type_skips = type_skips
+        .iter()
+        .map(|s| s.replace(" ", ""))
+        .collect::<Vec<String>>();
     let contract_name = utils::str_to_ident(contract_name);
 
     let mut tokens: Vec<TokenStream2> = vec![];
