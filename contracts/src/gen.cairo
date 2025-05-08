@@ -1,6 +1,6 @@
 #[starknet::contract]
 mod gen {
-    use starknet::ContractAddress;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     #[storage]
     struct Storage {
@@ -42,6 +42,13 @@ mod gen {
     }
 
     #[derive(Serde, Drop)]
+    struct MyStructInnerGeneric {
+        f1: felt252,
+        f2: MyStruct<felt252>,
+        f3: u32,
+    }
+
+    #[derive(Serde, Drop)]
     enum MyEnum {
         One: u8,
         Two: u16,
@@ -78,5 +85,11 @@ mod gen {
 
     #[external(v0)]
     fn func4(self: @ContractState, _a: MyEnum) {}
+
+    #[external(v0)]
+    fn func5(ref self: ContractState, a: MyStructInnerGeneric) {
+        self.v1.write(a.f2.f1);
+        self.v2.write(a.f2.f2);
+    }
 }
 

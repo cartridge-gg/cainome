@@ -42,20 +42,18 @@ impl CairoToRust for Token {
                     s = type_name;
                 }
 
-                if c.is_generic() {
-                    s.push('<');
-                    for (i, (_, g)) in c.generic_args.iter().enumerate() {
-                        s.push_str(&g.to_rust_type());
-                        if i < c.generic_args.len() - 1 {
-                            s.push(',');
-                        }
-                    }
-                    s.push('>');
-                }
-
                 s
             }
-            Token::GenericArg(s) => s.clone(),
+            Token::Option(o) => format!("Option<{}>", o.inner.to_rust_type()),
+            Token::Result(r) => format!(
+                "Result<{}, {}>",
+                r.inner.to_rust_type(),
+                r.error.to_rust_type()
+            ),
+            Token::NonZero(n) => {
+                let ccsp = utils::cainome_cairo_serde_path();
+                format!("{}::NonZero<{}>", ccsp, n.inner.to_rust_type())
+            }
             _ => "__FUNCTION_NOT_SUPPORTED__".to_string(),
         }
     }
@@ -95,20 +93,18 @@ impl CairoToRust for Token {
                     s = type_name;
                 }
 
-                if c.is_generic() {
-                    s.push_str("::<");
-                    for (i, (_, token)) in c.generic_args.iter().enumerate() {
-                        s.push_str(&token.to_rust_type_path());
-                        if i < c.generic_args.len() - 1 {
-                            s.push(',');
-                        }
-                    }
-                    s.push('>');
-                }
-
                 s
             }
-            Token::GenericArg(s) => s.clone(),
+            Token::Option(o) => format!("Option::<{}>", o.inner.to_rust_type_path()),
+            Token::Result(r) => format!(
+                "Result::<{}, {}>",
+                r.inner.to_rust_type_path(),
+                r.error.to_rust_type_path()
+            ),
+            Token::NonZero(n) => {
+                let ccsp = utils::cainome_cairo_serde_path();
+                format!("{}::NonZero::<{}>", ccsp, n.inner.to_rust_type_path())
+            }
             _ => "__FUNCTION_NOT_SUPPORTED__".to_string(),
         }
     }

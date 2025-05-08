@@ -9,6 +9,7 @@ trait MyInterface<T> {
 #[starknet::contract]
 mod simple_interface {
     use super::MyInterface;
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
 
     #[storage]
     struct Storage {

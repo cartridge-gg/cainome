@@ -38,6 +38,7 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
         contract_abi.execution_version,
         &contract_abi.derives,
         &contract_abi.contract_derives,
+        &contract_abi.type_skips,
     );
 
     if let Some(out_path) = contract_abi.output_path {
@@ -68,6 +69,7 @@ fn abigen_internal_legacy(input: TokenStream) -> TokenStream {
         contract_abi.execution_version,
         &contract_abi.derives,
         &contract_abi.contract_derives,
+        &contract_abi.type_skips,
     );
 
     if let Some(out_path) = contract_abi.output_path {

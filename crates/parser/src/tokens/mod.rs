@@ -8,6 +8,9 @@ mod composite;
 mod constants;
 mod function;
 mod genericity;
+mod non_zero;
+mod option;
+mod result;
 mod tuple;
 
 use std::collections::HashMap;
@@ -16,6 +19,9 @@ pub use array::Array;
 pub use basic::CoreBasic;
 pub use composite::{Composite, CompositeInner, CompositeInnerKind, CompositeType};
 pub use function::{Function, FunctionOutputKind, StateMutability};
+pub use non_zero::NonZero;
+pub use option::Option;
+pub use result::Result;
 pub use tuple::Tuple;
 
 use crate::{CainomeResult, Error};
@@ -26,8 +32,10 @@ pub enum Token {
     Array(Array),
     Tuple(Tuple),
     Composite(Composite),
-    GenericArg(String),
     Function(Function),
+    Option(Option),
+    Result(Result),
+    NonZero(NonZero),
 }
 
 impl Token {
@@ -42,6 +50,18 @@ impl Token {
 
         if let Ok(t) = Tuple::parse(type_path) {
             return Ok(Token::Tuple(t));
+        }
+
+        if let Ok(o) = Option::parse(type_path) {
+            return Ok(Token::Option(o));
+        }
+
+        if let Ok(r) = Result::parse(type_path) {
+            return Ok(Token::Result(r));
+        }
+
+        if let Ok(n) = NonZero::parse(type_path) {
+            return Ok(Token::NonZero(n));
         }
 
         if let Ok(c) = Composite::parse(type_path) {
@@ -60,8 +80,10 @@ impl Token {
             Token::Array(_) => "array".to_string(),
             Token::Tuple(_) => "tuple".to_string(),
             Token::Composite(t) => t.type_name(),
-            Token::GenericArg(_) => "generic_arg".to_string(),
             Token::Function(_) => "function".to_string(),
+            Token::Option(_) => "option".to_string(),
+            Token::Result(_) => "result".to_string(),
+            Token::NonZero(_) => "non_zero".to_string(),
         }
     }
 
@@ -71,8 +93,10 @@ impl Token {
             Token::Array(t) => t.type_path.to_string(),
             Token::Tuple(t) => t.type_path.to_string(),
             Token::Composite(t) => t.type_path_no_generic(),
-            Token::GenericArg(_) => "generic".to_string(),
             Token::Function(t) => t.name.clone(),
+            Token::Option(t) => t.type_path.to_string(),
+            Token::Result(t) => t.type_path.to_string(),
+            Token::NonZero(t) => t.type_path.to_string(),
         }
     }
 
@@ -97,29 +121,14 @@ impl Token {
         }
     }
 
-    pub fn resolve_generic(&self, generic_name: &str, generic_type_path: &str) -> Self {
-        match self {
-            Token::CoreBasic(t) => {
-                if t.type_path == generic_type_path {
-                    Token::GenericArg(generic_name.to_string())
-                } else {
-                    self.clone()
-                }
-            }
-            Token::Array(t) => t.resolve_generic(generic_name, generic_type_path),
-            Token::Tuple(t) => t.resolve_generic(generic_name, generic_type_path),
-            Token::Composite(t) => t.resolve_generic(generic_name, generic_type_path),
-            Token::GenericArg(_) => self.clone(),
-            Token::Function(_) => self.clone(),
-        }
-    }
-
     pub fn apply_alias(&mut self, type_path: &str, alias: &str) {
         match self {
             Token::Array(t) => t.apply_alias(type_path, alias),
             Token::Tuple(t) => t.apply_alias(type_path, alias),
             Token::Composite(t) => t.apply_alias(type_path, alias),
             Token::Function(t) => t.apply_alias(type_path, alias),
+            Token::Option(t) => t.apply_alias(type_path, alias),
+            Token::Result(t) => t.apply_alias(type_path, alias),
             _ => (),
         }
     }
@@ -149,7 +158,7 @@ impl Token {
             return token;
         }
         match token {
-            Token::CoreBasic(_) | Token::GenericArg(_) => token,
+            Token::CoreBasic(_) => token,
             Token::Array(arr) => Token::Array(Array {
                 inner: Box::new(Self::hydrate(
                     *arr.inner,
@@ -169,6 +178,39 @@ impl Token {
                     })
                     .collect(),
                 type_path: tup.type_path,
+            }),
+            Token::Option(opt) => Token::Option(Option {
+                type_path: opt.type_path,
+                inner: Box::new(Self::hydrate(
+                    *opt.inner,
+                    filtered,
+                    recursion_max_depth,
+                    iteration_count + 1,
+                )),
+            }),
+            Token::NonZero(non_zero) => Token::NonZero(NonZero {
+                type_path: non_zero.type_path,
+                inner: Box::new(Self::hydrate(
+                    *non_zero.inner,
+                    filtered,
+                    recursion_max_depth,
+                    iteration_count + 1,
+                )),
+            }),
+            Token::Result(res) => Token::Result(Result {
+                type_path: res.type_path,
+                inner: Box::new(Self::hydrate(
+                    *res.inner,
+                    filtered,
+                    recursion_max_depth,
+                    iteration_count + 1,
+                )),
+                error: Box::new(Self::hydrate(
+                    *res.error,
+                    filtered,
+                    recursion_max_depth,
+                    iteration_count + 1,
+                )),
             }),
             Token::Composite(comp) => {
                 let type_path = comp.type_path_no_generic();

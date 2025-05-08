@@ -1,7 +1,6 @@
 use cainome_parser::tokens::{Composite, Token};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::Ident;
 
 use crate::expand::types::CairoToRust;
 use crate::expand::utils;
@@ -43,31 +42,10 @@ impl CairoStruct {
             internal_derives.push(utils::str_to_type(d));
         }
 
-        if composite.is_generic() {
-            let gen_args: Vec<Ident> = composite
-                .generic_args
-                .iter()
-                .map(|(g, _)| utils::str_to_ident(g))
-                .collect();
-
-            // TODO: we may need Phantom fields here, in the case that
-            // several generic are present in the struct definition,
-            // but they are not all used.
-            // Add one phantom for each generic type.
-            // Those phantom fields are ignored by serde.
-
-            quote! {
-                #[derive(#(#internal_derives,)*)]
-                pub struct #struct_name<#(#gen_args),*> {
-                    #(#members),*
-                }
-            }
-        } else {
-            quote! {
-                #[derive(#(#internal_derives,)*)]
-                pub struct #struct_name {
-                    #(#members),*
-                }
+        quote! {
+            #[derive(#(#internal_derives,)*)]
+            pub struct #struct_name {
+                #(#members),*
             }
         }
     }
@@ -175,25 +153,12 @@ impl CairoStruct {
             quote!()
         };
 
-        let (impl_line, rust_type) = if composite.is_generic() {
-            let gen_args: Vec<Ident> = composite
-                .generic_args
-                .iter()
-                .map(|(g, _)| utils::str_to_ident(g))
-                .collect();
-
-            (
-                utils::impl_with_gen_args(&struct_name, &gen_args),
-                utils::rust_associated_type_gen_args(&struct_name, &gen_args),
-            )
-        } else {
-            (
-                quote!(impl #ccs::CairoSerde for #struct_name),
-                quote!(
-                    type RustType = Self;
-                ),
-            )
-        };
+        let (impl_line, rust_type) = (
+            quote!(impl #ccs::CairoSerde for #struct_name),
+            quote!(
+                type RustType = Self;
+            ),
+        );
 
         quote! {
             #impl_line {

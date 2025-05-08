@@ -1,3 +1,63 @@
+//! A composite is a type that is composed of other types (struct or enum).
+//!
+//! A composite type can be generic, and even if in the ABI the generic types
+//! are replaced by their concrete types, the [`Composite`] token is still generic
+//! to retain the information about the generic types.
+//!
+//! A pitfall is that the ABI doesn't say which variant/field of the enum/struct
+//! is generic. This is an information that needs to be reconstructed by the parser.
+//!
+//! As an example, with the following cairo struct:
+//!
+//! ```rust,ignore
+//! struct MyStruct<A> {
+//!     field_1: A,
+//!     field_2: felt252,
+//! }
+//! ```
+//!
+//! The ABI will contains several entries for this struct, with the generic
+//! type `A` replaced by its concrete type as much as necessary.
+//!
+//! ```rust,ignore
+//! [
+//! {
+//!     "type": "struct",
+//!     "name": "MyStruct::<core::felt252>",
+//!     "members": [
+//!       {
+//!         "name": "field_1",
+//!         "type": "core::felt252"
+//!       },
+//!       {
+//!         "name": "field_2",
+//!         "type": "core::felt252"
+//!       }
+//!     ]
+//! },
+//! {
+//!     "type": "struct",
+//!     "name": "MyStruct::<core::integer::u64>",
+//!     "members": [
+//!       {
+//!         "name": "field_1",
+//!         "type": "core::integer::u64"
+//!       },
+//!       {
+//!         "name": "field_2",
+//!         "type": "core::felt252"
+//!       }
+//!     ]
+//! },
+//! ]
+//! ```
+//!
+//! As it can be seen, in this case, the ABI doesn't say which variant of the
+//! struct is generic since `field_2` is generic in the first case but not in
+//! the second one.
+//!
+//! A naive strategy would be to ensure all types are parsed a first time,
+//! and then a generic resolution is done.
 use super::constants::{CAIRO_COMPOSITE_BUILTINS, CAIRO_GENERIC_BUILTINS};
 use super::genericity;
 use super::Token;
@@ -39,6 +99,25 @@ pub struct Composite {
 }
 
 impl Composite {
+    /// Parses a composite type from a type path.
+    /// Since the composite can be named arbitrarily, by the user,
+    /// the parsing of the composite is not checking if the type path is
+    /// a core basic type, an array or something else.
+    ///
+    /// In cainome the type path is first parsed as any other token, and
+    /// [`Composite`] is the last token that is parsed (which accepts every path).
+    ///
+    /// You may use [`Composite::is_builtin`] to check if the type path is
+    /// a known Cairo builtin type.
+    ///
+    /// # Arguments
+    ///
+    /// * `type_path` - The type path to parse.
+    ///
+    /// # Returns
+    ///
+    /// Returns a [`Composite`] token if the type path is a composite.
+    /// Returns an error otherwise.
     pub fn parse(type_path: &str) -> CainomeResult<Self> {
         let type_path = escape_rust_keywords(type_path);
         let generic_args = genericity::extract_generics_args(&type_path)?;
@@ -104,32 +183,6 @@ impl Composite {
             if let Token::Composite(ref mut c) = i.token {
                 c.apply_alias(type_path, alias);
             }
-        }
-    }
-
-    pub fn resolve_generic(&self, generic_name: &str, generic_type_path: &str) -> Token {
-        if self.type_path == generic_type_path {
-            Token::GenericArg(generic_name.to_string())
-        } else {
-            let mut inners = vec![];
-
-            for i in &self.inners {
-                inners.push(CompositeInner {
-                    index: i.index,
-                    name: i.name.clone(),
-                    token: i.token.resolve_generic(generic_name, generic_type_path),
-                    kind: i.kind,
-                })
-            }
-
-            Token::Composite(Self {
-                type_path: self.type_path.clone(),
-                generic_args: self.generic_args.clone(),
-                inners,
-                r#type: self.r#type,
-                is_event: self.is_event,
-                alias: None,
-            })
         }
     }
 }
@@ -211,36 +264,6 @@ mod tests {
     fn basic_u64() -> Token {
         Token::CoreBasic(CoreBasic {
             type_path: "core::integer::u64".to_string(),
-        })
-    }
-
-    fn array_felt252() -> Token {
-        Token::Array(Array {
-            type_path: "core::array::Array::<core::felt252>".to_string(),
-            inner: Box::new(basic_felt252()),
-            is_legacy: false,
-        })
-    }
-
-    fn composite_simple() -> Token {
-        Token::Composite(Composite {
-            type_path: "module::MyStruct".to_string(),
-            inners: vec![],
-            generic_args: vec![],
-            r#type: CompositeType::Unknown,
-            is_event: false,
-            alias: None,
-        })
-    }
-
-    fn composite_with_generic() -> Token {
-        Token::Composite(Composite {
-            type_path: "module::MyStruct::<core::felt252>".to_string(),
-            inners: vec![],
-            generic_args: vec![("A".to_string(), basic_felt252())],
-            r#type: CompositeType::Unknown,
-            is_event: false,
-            alias: None,
         })
     }
 
@@ -340,135 +363,6 @@ mod tests {
 
         c.type_path = "module::MyStruct::<core::felt252>".to_string();
         assert_eq!(c.type_name(), "MyStruct");
-    }
-
-    #[test]
-    fn test_resolve_generic() {
-        let c = Composite {
-            type_path: "module::MyStruct".to_string(),
-            inners: vec![CompositeInner {
-                index: 0,
-                name: "field_1".to_string(),
-                kind: CompositeInnerKind::NotUsed,
-                token: basic_felt252(),
-            }],
-            generic_args: vec![("A".to_string(), basic_felt252())],
-            r#type: CompositeType::Unknown,
-            is_event: false,
-            alias: None,
-        };
-
-        let t = c.resolve_generic("A", "core::felt252");
-        let c_generic = t.to_composite().unwrap();
-
-        assert_eq!(
-            c_generic.inners[0].token,
-            Token::GenericArg("A".to_string())
-        );
-    }
-
-    #[test]
-    fn test_resolve_generic_nested() {
-        let c = Composite {
-            type_path: "module::MyStruct".to_string(),
-            inners: vec![CompositeInner {
-                index: 0,
-                name: "field_1".to_string(),
-                kind: CompositeInnerKind::NotUsed,
-                token: array_felt252(),
-            }],
-            generic_args: vec![("A".to_string(), basic_felt252())],
-            r#type: CompositeType::Unknown,
-            is_event: false,
-            alias: None,
-        };
-
-        let t = c.resolve_generic("A", "core::felt252");
-        let c_generic = t.to_composite().unwrap();
-
-        assert_eq!(
-            c_generic.inners[0].token,
-            Token::Array(Array {
-                type_path: "core::array::Array::<core::felt252>".to_string(),
-                inner: Box::new(Token::GenericArg("A".to_string())),
-                is_legacy: false,
-            }),
-        );
-    }
-
-    #[test]
-    fn test_resolve_generic_array_generic() {
-        let c = Composite {
-            type_path: "module::MyStruct".to_string(),
-            inners: vec![CompositeInner {
-                index: 0,
-                name: "field_1".to_string(),
-                kind: CompositeInnerKind::NotUsed,
-                token: array_felt252(),
-            }],
-            generic_args: vec![("A".to_string(), array_felt252())],
-            r#type: CompositeType::Unknown,
-            is_event: false,
-            alias: None,
-        };
-
-        let t = c.resolve_generic("A", "core::array::Array::<core::felt252>");
-        let c_generic = t.to_composite().unwrap();
-
-        assert_eq!(
-            c_generic.inners[0].token,
-            Token::GenericArg("A".to_string()),
-        );
-    }
-
-    #[test]
-    fn test_resolve_generic_composite() {
-        let c = Composite {
-            type_path: "module::MyStructOutter".to_string(),
-            inners: vec![CompositeInner {
-                index: 0,
-                name: "field_1".to_string(),
-                kind: CompositeInnerKind::NotUsed,
-                token: composite_simple(),
-            }],
-            generic_args: vec![("A".to_string(), composite_with_generic())],
-            r#type: CompositeType::Unknown,
-            is_event: false,
-            alias: None,
-        };
-
-        let t = c.resolve_generic("A", "module::MyStruct");
-        let c_generic = t.to_composite().unwrap();
-
-        assert_eq!(
-            c_generic.inners[0].token,
-            Token::GenericArg("A".to_string()),
-        );
-    }
-
-    #[test]
-    fn test_resolve_generic_composite_generic() {
-        let c = Composite {
-            type_path: "module::MyStruct".to_string(),
-            inners: vec![CompositeInner {
-                index: 0,
-                name: "field_1".to_string(),
-                kind: CompositeInnerKind::NotUsed,
-                token: composite_with_generic(),
-            }],
-            generic_args: vec![("A".to_string(), composite_with_generic())],
-            r#type: CompositeType::Unknown,
-            is_event: false,
-            alias: None,
-        };
-
-        let t = c.resolve_generic("A", "module::MyStruct::<core::felt252>");
-        let c_generic = t.to_composite().unwrap();
-
-        assert_eq!(
-            c_generic.inners[0].token,
-            Token::GenericArg("A".to_string()),
-        );
     }
 
     #[test]

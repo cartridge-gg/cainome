@@ -21,7 +21,7 @@ jobs:
       - name: Compile contracts
         uses: software-mansion/setup-scarb@v1
         with:
-          scarb-version: "2.5.4"
+          scarb-version: "2.10.1"
       - run: |
           cd ./contracts && make generate_artifacts
 
@@ -37,5 +37,4 @@ jobs:
           max_attempts: 3
           retry_wait_seconds: 30
           command: |
-            cargo test --workspace --all-features
-            cargo run --example structs --all-features
+            bash ./scripts/test_all.sh

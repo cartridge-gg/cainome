@@ -1,7 +1,6 @@
 use cainome_parser::tokens::{Composite, Token};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::Ident;
 
 use crate::expand::types::CairoToRust;
 use crate::expand::utils;
@@ -37,31 +36,10 @@ impl CairoEnum {
             internal_derives.push(utils::str_to_type(d));
         }
 
-        if composite.is_generic() {
-            let gen_args: Vec<Ident> = composite
-                .generic_args
-                .iter()
-                .map(|(g, _)| utils::str_to_ident(g))
-                .collect();
-
-            // TODO: we may need Phantom fields here, in the case that
-            // several generic are present in the enum definition,
-            // but they are not all used.
-            // Add one phantom for each generic type.
-            // Those phantom fields are ignored by serde.
-
-            quote! {
-                #[derive(#(#internal_derives,)*)]
-                pub enum #enum_name<#(#gen_args),*> {
-                    #(#variants),*
-                }
-            }
-        } else {
-            quote! {
-                #[derive(#(#internal_derives,)*)]
-                pub enum #enum_name {
-                    #(#variants),*
-                }
+        quote! {
+            #[derive(#(#internal_derives,)*)]
+            pub enum #enum_name {
+                #(#variants),*
             }
         }
     }
@@ -133,25 +111,12 @@ impl CairoEnum {
             _ => return Err(#ccs::Error::Deserialize(format!("Index not handle for enum {}", #name_str)))
         });
 
-        let (impl_line, rust_type) = if composite.is_generic() {
-            let gen_args: Vec<Ident> = composite
-                .generic_args
-                .iter()
-                .map(|(g, _)| utils::str_to_ident(g))
-                .collect();
-
-            (
-                utils::impl_with_gen_args(&enum_name, &gen_args),
-                utils::rust_associated_type_gen_args(&enum_name, &gen_args),
-            )
-        } else {
-            (
-                quote!(impl #ccs::CairoSerde for #enum_name),
-                quote!(
-                    type RustType = Self;
-                ),
-            )
-        };
+        let (impl_line, rust_type) = (
+            quote!(impl #ccs::CairoSerde for #enum_name),
+            quote!(
+                type RustType = Self;
+            ),
+        );
 
         quote! {
             #impl_line {

@@ -1,5 +1,7 @@
 #[starknet::contract]
 mod simple_get_set {
+    use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+
     #[storage]
     struct Storage {
         a: felt252,
@@ -47,7 +49,7 @@ mod simple_get_set {
         self
             .b
             .write(
-                u256 { low: (*data[1]).try_into().unwrap(), high: (*data[2]).try_into().unwrap() }
+                u256 { low: (*data[1]).try_into().unwrap(), high: (*data[2]).try_into().unwrap() },
             );
     }
 
@@ -55,6 +57,6 @@ mod simple_get_set {
     fn get_array(self: @ContractState) -> Span<felt252> {
         let b = self.b.read();
 
-        array![self.a.read(), b.low.into(), b.high.into(),].span()
+        array![self.a.read(), b.low.into(), b.high.into()].span()
     }
 }

@@ -1,3 +1,8 @@
+//! This module provides a parser for array types.
+//!
+//! Technically, a `Span` is different than an `Array` in cairo.
+//! However, from a binding point of view, they are both collections,
+//! and we can safely consider them as the same type.
 use super::constants::CAIRO_CORE_SPAN_ARRAY;
 use super::genericity;
 
@@ -49,18 +54,6 @@ impl Array {
             "Array/Span couldn't be initialized from `{}`.",
             type_path,
         )))
-    }
-
-    pub fn resolve_generic(&self, generic_name: &str, generic_type_path: &str) -> Token {
-        if self.type_path == generic_type_path {
-            Token::GenericArg(generic_name.to_string())
-        } else {
-            Token::Array(Self {
-                type_path: self.type_path.clone(),
-                inner: Box::new(self.inner.resolve_generic(generic_name, generic_type_path)),
-                is_legacy: self.is_legacy,
-            })
-        }
     }
 
     pub fn apply_alias(&mut self, type_path: &str, alias: &str) {

@@ -3,8 +3,6 @@
 
 #[starknet::contract]
 mod option_result {
-    use starknet::{ClassHash, ContractAddress, EthAddress};
-
     #[derive(Serde, Drop)]
     struct GenericOne<T> {
         a: T,
@@ -25,14 +23,14 @@ mod option_result {
 
     #[external(v0)]
     fn result_ok_struct(
-        self: @ContractState, res: Result<GenericOne<felt252>, felt252>
+        self: @ContractState, res: Result<GenericOne<felt252>, felt252>,
     ) -> Result<u64, felt252> {
         Result::Ok(2_u64)
     }
 
     #[external(v0)]
     fn result_ok_tuple_struct(
-        self: @ContractState, res: Result<(GenericOne<felt252>, felt252), felt252>
+        self: @ContractState, res: Result<(GenericOne<felt252>, felt252), felt252>,
     ) -> Result<u64, felt252> {
         Result::Ok(2_u64)
     }

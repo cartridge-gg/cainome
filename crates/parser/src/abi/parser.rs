@@ -107,6 +107,7 @@ impl AbiParser {
                 &mut functions,
                 &mut interfaces,
                 None,
+                type_aliases,
             )?;
         }
 
@@ -133,6 +134,7 @@ impl AbiParser {
         functions: &mut Vec<Token>,
         interfaces: &mut HashMap<String, Vec<Token>>,
         interface_name: Option<String>,
+        type_aliases: &HashMap<String, String>,
     ) -> CainomeResult<()> {
         /// Gets the existing token into known composite, if any.
         /// Otherwise, return the parsed token.
@@ -162,12 +164,22 @@ impl AbiParser {
                 let mut func = Function::new(&f.name, f.state_mutability.clone().into());
 
                 for i in &f.inputs {
-                    let token = get_existing_token_or_parsed(&i.r#type, all_composites)?;
+                    let mut token = get_existing_token_or_parsed(&i.r#type, all_composites)?;
+
+                    for (alias_type_path, alias) in type_aliases {
+                        token.apply_alias(alias_type_path, alias);
+                    }
+
                     func.inputs.push((i.name.clone(), token));
                 }
 
                 for o in &f.outputs {
-                    let token = get_existing_token_or_parsed(&o.r#type, all_composites)?;
+                    let mut token = get_existing_token_or_parsed(&o.r#type, all_composites)?;
+
+                    for (alias_type_path, alias) in type_aliases {
+                        token.apply_alias(alias_type_path, alias);
+                    }
+
                     func.outputs.push(token);
                 }
 
@@ -188,6 +200,7 @@ impl AbiParser {
                         functions,
                         interfaces,
                         Some(interface.name.clone()),
+                        type_aliases,
                     )?;
                 }
             }
@@ -215,17 +228,12 @@ impl AbiParser {
                     return Ok(());
                 };
 
-                // Some struct may be basics, we want to skip them.
-                if CoreBasic::parse(&s.name).is_ok() {
-                    return Ok(());
-                };
-
                 let token: Token = s.try_into()?;
                 let entry = tokens.entry(token.type_path()).or_default();
                 entry.push(token);
             }
             AbiEntry::Enum(e) => {
-                // Some enums may be basics, we want to skip them.
+                // `bool` is a core basic enum, we want to skip it.
                 if CoreBasic::parse(&e.name).is_ok() {
                     return Ok(());
                 };

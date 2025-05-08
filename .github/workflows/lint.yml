@@ -33,7 +33,7 @@ jobs:
       - name: Compile contracts
         uses: software-mansion/setup-scarb@v1
         with:
-          scarb-version: "2.5.4"
+          scarb-version: "2.10.1"
       - run: |
           cd ./contracts && make generate_artifacts && scarb fmt --check
 
