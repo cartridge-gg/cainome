@@ -227,7 +227,7 @@ checksum = "428d9aa8fbc0670b7b8d6030a7fadd0f86151cae55e4dbbece15f3780a3dfaf3"
 
 [[package]]
 name = "cainome"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -275,7 +275,7 @@ dependencies = [
 
 [[package]]
 name = "cainome-parser"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "convert_case",
  "quote",
@@ -287,7 +287,7 @@ dependencies = [
 
 [[package]]
 name = "cainome-rs"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "cainome-cairo-serde",
@@ -304,7 +304,7 @@ dependencies = [
 
 [[package]]
 name = "cainome-rs-macro"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "cainome-cairo-serde",
