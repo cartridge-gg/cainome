@@ -1,4 +1,4 @@
-/// Execution version of Starknet transactions.
+//! # Execution version of Starknet transactions.
 
 /// The version of transaction to be executed.
 #[derive(Debug, Clone, Copy, Default)]

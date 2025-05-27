@@ -3,8 +3,8 @@
 
 #[starknet::contract]
 mod simple_types {
-    use starknet::{ClassHash, ContractAddress, EthAddress};
     use starknet::storage::{StoragePointerReadAccess, StoragePointerWriteAccess};
+    use starknet::{ClassHash, ContractAddress, EthAddress};
 
     #[storage]
     struct Storage {

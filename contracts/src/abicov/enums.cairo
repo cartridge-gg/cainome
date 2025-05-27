@@ -24,8 +24,8 @@ enum MixedEnum {
 
 #[starknet::contract]
 mod enums {
-    use super::{SimpleEnum, TypedEnum, MixedEnum};
-    use starknet::storage::{StoragePointerReadAccess};
+    use starknet::storage::StoragePointerReadAccess;
+    use super::{MixedEnum, SimpleEnum, TypedEnum};
 
     #[storage]
     struct Storage {

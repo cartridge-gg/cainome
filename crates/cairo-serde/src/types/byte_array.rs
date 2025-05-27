@@ -192,10 +192,10 @@ impl ByteArray {
 /// # Arguments
 ///
 /// * `felt` - The `Felt` to convert. In the context of `ByteArray` this
-///            felt always contains at most 31 bytes.
+///   felt always contains at most 31 bytes.
 /// * `len` - The number of bytes in the felt, at most 31. In the context
-///           of `ByteArray`, we don't need to check `len` as the `MAX_WORD_LEN`
-///           already protect against that.
+///   of `ByteArray`, we don't need to check `len` as the `MAX_WORD_LEN`
+///   already protect against that.
 fn felt_to_utf8(felt: &Felt, len: usize) -> Result<String, FromUtf8Error> {
     let mut buffer = Vec::new();
 
