@@ -48,7 +48,7 @@ jobs:
           scarb-version: "2.11.4"
 
       - run: make -C contracts generate_artifacts
-      - run: scarb check --help
+      - run: scarb fmt --check --help
       - run: scarb fmt --check contracts
 
       - name: Run Clippy lints
