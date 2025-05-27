@@ -31,7 +31,7 @@ jobs:
         uses: software-mansion/setup-scarb@v1
         with:
           scarb-lock: contracts
-          scarb-version: "2.10.1"
+          scarb-version: "2.11.4"
       - run: make -C contracts generate_artifacts
       - name: Run cargo tests
         uses: nick-fields/retry@v3
