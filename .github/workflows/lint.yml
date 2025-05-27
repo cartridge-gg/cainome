@@ -37,6 +37,15 @@ jobs:
         run: |
           cargo fmt --all -- --check
 
+      - name: Compile contracts
+        uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-lock: contracts
+          scarb-version: "2.10.1"
+
+      - run: make -C contracts generate artifacts
+      - run: scarb fmt --check contracts
+
       - name: Run Clippy lints
         run: |
           cargo clippy --all --all-targets --all-features -- -D warnings
@@ -45,18 +54,3 @@ jobs:
         run: |
           RUSTDOCFLAGS="-Dwarnings" cargo doc --document-private-items --no-deps --all-features --workspace
 
-  lint-scarb:
-    name: Scarb lints
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./contracts
-    steps:
-      - name: Checkout source code
-        uses: actions/checkout@v4
-      - name: Compile contracts
-        uses: software-mansion/setup-scarb@v1
-        with:
-          scarb-version: "2.10.1"
-      - run: |
-          make generate_artifacts && scarb fmt --check
