@@ -31,8 +31,6 @@ jobs:
       - name: Check Yaml format
         run: |
           prettier --check "**/*.{yaml,yml}"
-      - run: |
-          make generate_artifacts && scarb fmt --check
 
       - name: Check Rust format
         run: |
@@ -59,3 +57,5 @@ jobs:
         uses: software-mansion/setup-scarb@v1
         with:
           scarb-version: "2.10.1"
+      - run: |
+          make generate_artifacts && scarb fmt --check
