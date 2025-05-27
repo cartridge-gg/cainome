@@ -53,4 +53,3 @@ jobs:
       - name: check Rust docs
         run: |
           RUSTDOCFLAGS="-Dwarnings" cargo doc --document-private-items --no-deps --all-features --workspace
-
