@@ -34,10 +34,11 @@ jobs:
 
       - name: Compile contracts
         uses: software-mansion/setup-scarb@v1
+        working-directory: contracts
         with:
           scarb-version: "2.10.1"
       - run: |
-          cd ./contracts && make generate_artifacts && scarb fmt --check
+          make generate_artifacts && scarb fmt --check
 
       - name: Check Rust format
         run: |
