@@ -20,7 +20,7 @@ jobs:
       - name: "Setup stable toolchain"
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.82.0
+          toolchain: 1.81.0
           components: rustfmt, clippy
 
       - name: Use Rust cache
