@@ -97,9 +97,8 @@ pub mod simple_component_other {
 
 #[starknet::contract]
 mod components_contract {
-    use super::simple_component;
     use super::simple_component_other;
-    use starknet::storage::StoragePointerWriteAccess;
+    use super::{simple_component, simple_component_other};
 
     component!(path: simple_component, storage: simple, event: SimpleEvent);
     component!(path: simple_component_other, storage: simple_other, event: SimpleEventOther);

@@ -48,7 +48,6 @@ jobs:
           scarb-version: "2.11.4"
 
       - run: make -C contracts generate_artifacts
-      - run: scarb fmt --check --help
       - run: scarb fmt --check
         working-directory: contracts
 
