@@ -97,7 +97,6 @@ pub mod simple_component_other {
 
 #[starknet::contract]
 mod components_contract {
-    use super::simple_component_other;
     use super::{simple_component, simple_component_other};
 
     component!(path: simple_component, storage: simple, event: SimpleEvent);
