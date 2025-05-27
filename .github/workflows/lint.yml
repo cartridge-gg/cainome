@@ -19,7 +19,7 @@ jobs:
           components: rustfmt
 
       - name: Use Rust cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
       - name: Install prettier
