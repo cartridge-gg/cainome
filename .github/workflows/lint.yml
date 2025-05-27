@@ -6,7 +6,7 @@ on:
 
 name: Linting
 jobs:
-  lint:
+  lint-rust:
     name: Lints
     runs-on: ubuntu-latest
     steps:
@@ -31,12 +31,6 @@ jobs:
       - name: Check Yaml format
         run: |
           prettier --check "**/*.{yaml,yml}"
-
-      - name: Compile contracts
-        uses: software-mansion/setup-scarb@v1
-        with:
-          scarb-version: "2.10.1"
-        working-directory: contracts
       - run: |
           make generate_artifacts && scarb fmt --check
 
@@ -51,3 +45,17 @@ jobs:
       - name: check Rust docs
         run: |
           RUSTDOCFLAGS="-Dwarnings" cargo doc --document-private-items --no-deps --all-features --workspace
+
+  lint-scarb:
+    name: Scarb lints
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./contracts
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+      - name: Compile contracts
+        uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-version: "2.10.1"
