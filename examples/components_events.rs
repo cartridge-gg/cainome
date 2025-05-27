@@ -13,7 +13,7 @@ use cainome::rs::abigen;
 
 abigen!(
     MyContract,
-    "../contracts/abi/components.abi.json",
+    "./contracts/abi/components.abi.json",
     type_aliases {
         contracts::abicov::components::simple_component::Event as SimpleEvent;
         contracts::abicov::components::simple_component::Written as SimpleWritten;
