@@ -32,7 +32,7 @@ jobs:
         with:
           scarb-lock: contracts
           scarb-version: "2.10.1"
-      - run: make -C contracts generate artifacts
+      - run: make -C contracts generate_artifacts
       - name: Run cargo tests
         uses: nick-fields/retry@v3
         with:
