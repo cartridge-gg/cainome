@@ -18,18 +18,18 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Compile contracts
-        uses: software-mansion/setup-scarb@v1
-        with:
-          scarb-version: "2.10.1"
-      - run: |
-          cd ./contracts && make generate_artifacts
-
       - name: Setup toolchain
         uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ matrix.toolchain }}
 
+      - name: Compile contracts
+        uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-lock: contracts
+          scarb-version: "2.10.1"
+
+      - run: make -C contracts generate artifacts
       - name: Run cargo tests
         uses: nick-fields/retry@v3
         with:
