@@ -10,7 +10,7 @@ concurrency:
 
 name: Linting
 jobs:
-  lint-rust:
+  lint:
     name: Lints
     runs-on: ubuntu-latest
     steps:
