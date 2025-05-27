@@ -34,9 +34,9 @@ jobs:
 
       - name: Compile contracts
         uses: software-mansion/setup-scarb@v1
-        working-directory: contracts
         with:
           scarb-version: "2.10.1"
+        working-directory: contracts
       - run: |
           make generate_artifacts && scarb fmt --check
 
