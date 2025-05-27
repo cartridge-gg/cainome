@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest]
-        toolchain: [1.81.0, stable]
+        toolchain: [stable]
 
     steps:
       - name: Checkout source code
