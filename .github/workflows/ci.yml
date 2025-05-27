@@ -4,6 +4,10 @@ on:
       - main
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 name: CI
 jobs:
   unix-test:
@@ -28,7 +32,6 @@ jobs:
         with:
           scarb-lock: contracts
           scarb-version: "2.10.1"
-
       - run: make -C contracts generate artifacts
       - name: Run cargo tests
         uses: nick-fields/retry@v3
