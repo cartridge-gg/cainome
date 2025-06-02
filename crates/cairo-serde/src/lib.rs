@@ -38,7 +38,6 @@ pub trait CairoSerde {
     /// Calculates the serialized size of the data for a single felt
     /// it will always be 1.
     /// If the type is dynamic, SERIALIZED_SIZE is None, but this
-
     /// function is overriden to correctly compute the size.
     #[inline]
     fn cairo_serialized_size(_rust: &Self::RustType) -> usize {
@@ -48,8 +47,8 @@ pub trait CairoSerde {
     /// Serializes the given type into a Felt sequence.
     fn cairo_serialize(rust: &Self::RustType) -> Vec<Felt>;
 
-    /// TODO: add `serialize_to(rust: &Self::RustType, out: &mut Vec<Felt>)`.
-    /// for large buffers optimization.
+    // TODO: add `serialize_to(rust: &Self::RustType, out: &mut Vec<Felt>)`.
+    // for large buffers optimization.
 
     /// Deserializes an array of felts into the given type.
     fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType>;

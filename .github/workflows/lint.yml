@@ -4,6 +4,10 @@ on:
       - main
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 name: Linting
 jobs:
   lint:
@@ -15,9 +19,12 @@ jobs:
 
       - name: "Setup stable toolchain"
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.81.0
+          components: rustfmt, clippy
 
       - name: Use Rust cache
-        uses: Swatinem/rust-cache@v1
+        uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
       - name: Install prettier
@@ -30,16 +37,19 @@ jobs:
         run: |
           prettier --check "**/*.{yaml,yml}"
 
-      - name: Compile contracts
-        uses: software-mansion/setup-scarb@v1
-        with:
-          scarb-version: "2.10.1"
-      - run: |
-          cd ./contracts && make generate_artifacts && scarb fmt --check
-
       - name: Check Rust format
         run: |
           cargo fmt --all -- --check
+
+      - name: Compile contracts
+        uses: software-mansion/setup-scarb@v1
+        with:
+          scarb-lock: contracts
+          scarb-version: "2.11.4"
+
+      - run: make -C contracts generate_artifacts
+      - run: scarb fmt --check
+        working-directory: contracts
 
       - name: Run Clippy lints
         run: |

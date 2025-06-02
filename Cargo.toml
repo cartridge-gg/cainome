@@ -34,14 +34,14 @@ anyhow = "1.0"
 async-trait = "0.1"
 num-bigint = "0.4.6"
 camino = { version = "1.1", features = ["serde1"] }
-convert_case = "0.6"
+convert_case = "0.8"
 serde = { version = "1.0", default-features = false, features = ["alloc"] }
 serde_json = { version = "1.0", default-features = false, features = ["std"] }
-thiserror = "1.0"
+thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 url = "2.5"
-starknet = "0.14.0"
+starknet = "0.15.1"
 starknet-types-core = "0.1"
 
 [dependencies]

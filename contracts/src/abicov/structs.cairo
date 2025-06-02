@@ -45,7 +45,7 @@ struct GenericTwo<T, U> {
 
 #[starknet::contract]
 mod structs {
-    use super::{Simple, StructWithStruct, GenericOne, GenericTwo, ToAlias};
+    use super::{GenericOne, GenericTwo, Simple, StructWithStruct, ToAlias};
 
     #[storage]
     struct Storage {}
