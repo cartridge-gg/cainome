@@ -1,7 +1,9 @@
 use starknet::core::types::contract::{AbiEntry, AbiEvent, SierraClass, TypedAbiEvent};
 use std::collections::HashMap;
 
-use crate::tokens::{Array, Composite, CompositeType, CoreBasic, Function, Token};
+use crate::tokens::{
+    extract_type_path_with_depth, Array, Composite, CompositeType, CoreBasic, Function, Token,
+};
 use crate::{CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -85,7 +87,7 @@ impl AbiParser {
         let tokens = Self::filter_struct_enum_tokens(&token_candidates);
 
         let mut additional_aliases: HashMap<String, String> = HashMap::new();
-        for (_, mut t) in tokens.clone() {
+        for (_, t) in &tokens {
             let path = t.type_path();
             // Crotch to handle cases when type with the same typename are used
             // in same contract. For example:
@@ -98,16 +100,17 @@ impl AbiParser {
             // of example) AND we register a type alias (only if there is none) as the
             // composite tree does not store references to top level types repeting
             // their structure and deepening info is getting lost on lower level.
-            if token_name_occurence.get(&t.type_name()) > Some(&1) {
-                t.deepen(1);
-                if !type_aliases.contains_key(&path) {
-                    additional_aliases.insert(path.into(), t.type_name().clone());
-                }
+            if token_name_occurence.get(&t.type_name()) > Some(&1)
+                && !type_aliases.contains_key(&path)
+            {
+                let alias = extract_type_path_with_depth(&path, 1);
+                additional_aliases.insert(path.into(), alias);
             }
         }
 
         let mut structs = vec![];
         let mut enums = vec![];
+
         // This is not memory efficient, but
         // currently the focus is on search speed.
         // To be optimized.
@@ -128,11 +131,6 @@ impl AbiParser {
 
             // NOTE: it's important that user defined aliases were applied first
             for (type_path, alias) in &additional_aliases {
-                if path == *type_path {
-                    // If the type path is already aliased, we skip it.
-                    // This is to avoid aliasing an already aliased type.
-                    continue;
-                }
                 t.apply_alias(&type_path, &alias);
             }
 
@@ -499,7 +497,6 @@ mod tests {
                 r#type: CompositeType::Enum,
                 is_event: false,
                 alias: None,
-                depth: 0,
             })],
         );
         input.insert(
@@ -531,7 +528,6 @@ mod tests {
                                 r#type: CompositeType::Unknown,
                                 is_event: false,
                                 alias: None,
-                                depth: 0,
                             })),
                         }),
                     },
@@ -540,7 +536,6 @@ mod tests {
                 r#type: CompositeType::Struct,
                 is_event: false,
                 alias: None,
-                depth: 0,
             })],
         );
         let filtered = AbiParser::filter_token_candidates(&input);
@@ -581,7 +576,6 @@ mod tests {
                     r#type: CompositeType::Enum,
                     is_event: false,
                     alias: None,
-                    depth: 0,
                 }),
                 Token::Composite(Composite {
                     type_path: "game::models::ItemType".to_owned(),
@@ -607,7 +601,6 @@ mod tests {
                     r#type: CompositeType::Enum,
                     is_event: false,
                     alias: None,
-                    depth: 0,
                 }),
                 Token::Composite(Composite {
                     type_path: "game::models::ItemType".to_owned(),
@@ -633,7 +626,6 @@ mod tests {
                     r#type: CompositeType::Enum,
                     is_event: false,
                     alias: None,
-                    depth: 0,
                 }),
             ],
         );
@@ -666,7 +658,6 @@ mod tests {
                     r#type: CompositeType::Struct,
                     is_event: false,
                     alias: None,
-                    depth: 0,
                 }),
                 Token::Composite(Composite {
                     type_path: "game::models::Player".to_owned(),
@@ -692,7 +683,6 @@ mod tests {
                     r#type: CompositeType::Struct,
                     is_event: false,
                     alias: None,
-                    depth: 0,
                 }),
                 Token::Composite(Composite {
                     type_path: "game::models::Player".to_owned(),
@@ -718,7 +708,6 @@ mod tests {
                     r#type: CompositeType::Struct,
                     is_event: false,
                     alias: None,
-                    depth: 0,
                 }),
             ],
         );
@@ -882,7 +871,6 @@ mod tests {
                             r#type: CompositeType::Struct,
                             is_event: false,
                             alias: None,
-                            depth: 0,
                         }),
                     },
                     CompositeInner {
@@ -898,7 +886,6 @@ mod tests {
                 r#type: CompositeType::Enum,
                 is_event: false,
                 alias: None,
-                depth: 0,
             })],
         );
 
@@ -929,7 +916,6 @@ mod tests {
                             r#type: CompositeType::Unknown,
                             is_event: false,
                             alias: None,
-                            depth: 0,
                         }),
                     },
                 ],
@@ -937,7 +923,6 @@ mod tests {
                 r#type: CompositeType::Struct,
                 is_event: false,
                 alias: None,
-                depth: 0,
             })],
         );
         input.insert(
@@ -976,7 +961,6 @@ Composite {
                                     r#type: CompositeType::Unknown,
                                     is_event: false,
                                     alias: None,
-                                    depth: 0,
                                 },
                             ),
                         },
@@ -985,7 +969,6 @@ Composite {
                     r#type: CompositeType::Struct,
                     is_event: false,
                     alias: None,
-                    depth: 0,
                 },
             ),
         },
@@ -1028,7 +1011,6 @@ Composite {
     r#type: CompositeType::Enum,
     is_event: false,
     alias: None,
-    depth: 0,
 }            )],
         );
         input.insert(
@@ -1041,14 +1023,13 @@ Composite {
                     name: "gated_type".to_owned(),
                     kind: CompositeInnerKind::NotUsed,
                     token: Token::Composite(Composite { type_path: "core::option::Option::<tournament::ls15_components::models::tournament::GatedType>".to_owned(), inners: vec![], generic_args: vec![
-                ("A".to_owned(), Token::Composite(Composite { type_path: "tournament::ls15_components::models::tournament::GatedType".to_owned(), inners: vec![], generic_args: vec![], r#type: CompositeType::Unknown, is_event: false, alias: None, depth: 0, })),
-                    ], r#type: CompositeType::Unknown, is_event: false, alias: None, depth: 0, }),
+                ("A".to_owned(), Token::Composite(Composite { type_path: "tournament::ls15_components::models::tournament::GatedType".to_owned(), inners: vec![], generic_args: vec![], r#type: CompositeType::Unknown, is_event: false, alias: None, })),
+                    ], r#type: CompositeType::Unknown, is_event: false, alias: None, }),
                 }],
                 generic_args: vec![],
                 r#type: CompositeType::Struct,
                 is_event: false,
                 alias: None,
-                depth: 0,
             })],
         );
 
@@ -1099,7 +1080,6 @@ Composite {
                 r#type: CompositeType::Struct,
                 is_event: false,
                 alias: None,
-                depth: 0,
             })],
         );
         input.insert(
@@ -1120,7 +1100,6 @@ Composite {
                             r#type: CompositeType::Unknown,
                             is_event: false,
                             alias: None,
-                            depth: 0,
                         }),
                     },
                     CompositeInner {
@@ -1135,7 +1114,6 @@ Composite {
                             r#type: CompositeType::Unknown,
                             is_event: false,
                             alias: None,
-                            depth: 0,
                         }),
                     },
                 ],
@@ -1143,7 +1121,6 @@ Composite {
                 r#type: CompositeType::Struct,
                 is_event: false,
                 alias: None,
-                depth: 0,
             })],
         );
         input.insert(
@@ -1163,14 +1140,12 @@ Composite {
                         r#type: CompositeType::Unknown,
                         is_event: false,
                         alias: None,
-                        depth: 0,
                     }),
                 }],
                 generic_args: vec![],
                 r#type: CompositeType::Struct,
                 is_event: false,
                 alias: None,
-                depth: 0,
             })],
         );
         input.insert(
@@ -1200,7 +1175,6 @@ Composite {
                             r#type: CompositeType::Unknown,
                             is_event: false,
                             alias: None,
-                            depth: 0,
                         }),
                     },
                 ],
@@ -1208,7 +1182,6 @@ Composite {
                 r#type: CompositeType::Struct,
                 is_event: false,
                 alias: None,
-                depth: 0,
             })],
         );
 

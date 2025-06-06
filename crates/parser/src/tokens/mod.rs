@@ -17,7 +17,9 @@ use std::collections::HashMap;
 
 pub use array::Array;
 pub use basic::CoreBasic;
-pub use composite::{Composite, CompositeInner, CompositeInnerKind, CompositeType};
+pub use composite::{
+    extract_type_path_with_depth, Composite, CompositeInner, CompositeInnerKind, CompositeType,
+};
 pub use function::{Function, FunctionOutputKind, StateMutability};
 pub use non_zero::NonZero;
 pub use option::Option;
@@ -97,13 +99,6 @@ impl Token {
             Token::Option(t) => t.type_path.to_string(),
             Token::Result(t) => t.type_path.to_string(),
             Token::NonZero(t) => t.type_path.to_string(),
-        }
-    }
-
-    pub fn deepen(&mut self, depth: usize) {
-        match self {
-            Token::Composite(t) => t.depth += depth,
-            _ => (),
         }
     }
 
@@ -269,7 +264,6 @@ impl Token {
                     r#type: comp.r#type,
                     is_event: comp.is_event,
                     alias: comp.alias,
-                    depth: 0,
                 })
             }
             Token::Function(func) => Token::Function(Function {
