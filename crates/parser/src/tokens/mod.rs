@@ -100,6 +100,13 @@ impl Token {
         }
     }
 
+    pub fn deepen(&mut self, depth: usize) {
+        match self {
+            Token::Composite(t) => t.depth += depth,
+            _ => (),
+        }
+    }
+
     // TODO: we may remove these two functions...! And change types somewhere..
     pub fn to_composite(&self) -> CainomeResult<&Composite> {
         match self {
@@ -262,6 +269,7 @@ impl Token {
                     r#type: comp.r#type,
                     is_event: comp.is_event,
                     alias: comp.alias,
+                    depth: 0,
                 })
             }
             Token::Function(func) => Token::Function(Function {
