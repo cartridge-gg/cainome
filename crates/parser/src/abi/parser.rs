@@ -95,11 +95,8 @@ impl AbiParser {
             //   Event1(namespace1::Event),
             //   Event2(namespace2::Event)
             // }
-            // When name that occures several times is spotted we deepen it, making
-            // type_name to include additional namespace level (Namespace1Event in case
-            // of example) AND we register a type alias (only if there is none) as the
-            // composite tree does not store references to top level types repeting
-            // their structure and deepening info is getting lost on lower level.
+            // When name that occures several times is spotted we register a type alias
+            // (only if there is none). Will apply those later.
             if token_name_occurence.get(&t.type_name()) > Some(&1)
                 && !type_aliases.contains_key(&path)
             {
