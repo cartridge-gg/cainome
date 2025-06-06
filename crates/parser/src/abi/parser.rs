@@ -84,7 +84,7 @@ impl AbiParser {
             }
         }
 
-        let tokens = Self::filter_struct_enum_tokens(&token_candidates);
+        let tokens = Self::filter_struct_enum_tokens(token_candidates);
 
         let mut additional_aliases: HashMap<String, String> = HashMap::new();
         for (_, t) in &tokens {
