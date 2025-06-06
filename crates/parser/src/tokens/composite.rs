@@ -96,6 +96,7 @@ pub struct Composite {
     pub r#type: CompositeType,
     pub is_event: bool,
     pub alias: Option<String>,
+    pub depth: usize,
 }
 
 impl Composite {
@@ -120,6 +121,7 @@ impl Composite {
     /// Returns an error otherwise.
     pub fn parse(type_path: &str) -> CainomeResult<Self> {
         let type_path = escape_rust_keywords(type_path);
+
         let generic_args = genericity::extract_generics_args(&type_path)?;
 
         Ok(Self {
@@ -130,6 +132,7 @@ impl Composite {
             r#type: CompositeType::Unknown,
             is_event: false,
             alias: None,
+            depth: 0,
         })
     }
 
@@ -163,7 +166,7 @@ impl Composite {
 
     pub fn type_name(&self) -> String {
         // TODO: need to opti that with regex?
-        extract_type_path_with_depth(&self.type_path_no_generic(), 0)
+        extract_type_path_with_depth(&self.type_path_no_generic(), self.depth)
     }
 
     pub fn type_name_or_alias(&self) -> String {
@@ -304,6 +307,7 @@ mod tests {
             r#type: CompositeType::Unknown,
             is_event: false,
             alias: None,
+            depth: 0,
         };
 
         assert_eq!(Composite::parse("module::MyStruct").unwrap(), expected);
@@ -319,6 +323,7 @@ mod tests {
             r#type: CompositeType::Unknown,
             is_event: false,
             alias: None,
+            depth: 0,
         };
 
         assert_eq!(
@@ -340,6 +345,7 @@ mod tests {
             r#type: CompositeType::Unknown,
             is_event: false,
             alias: None,
+            depth: 0,
         };
 
         assert_eq!(
@@ -358,6 +364,7 @@ mod tests {
             r#type: CompositeType::Unknown,
             is_event: false,
             alias: None,
+            depth: 0,
         };
         assert_eq!(c.type_name(), "MyStruct");
 

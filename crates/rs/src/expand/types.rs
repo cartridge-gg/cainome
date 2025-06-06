@@ -36,7 +36,6 @@ impl CairoToRust for Token {
             }
             Token::Composite(c) => {
                 let mut s = c.type_name_or_alias();
-
                 let (type_name, is_builtin) = builtin_composite_to_rust(&s);
                 if is_builtin {
                     s = type_name;
