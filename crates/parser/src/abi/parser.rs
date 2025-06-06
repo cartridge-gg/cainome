@@ -339,7 +339,7 @@ impl AbiParser {
     }
 
     fn filter_struct_enum_tokens(
-        token_candidates: &HashMap<String, Vec<Token>>,
+        token_candidates: HashMap<String, Vec<Token>>,
     ) -> HashMap<String, Token> {
         let tokens_filtered = Self::filter_token_candidates(token_candidates);
 
@@ -357,7 +357,7 @@ impl AbiParser {
     /// * `token_candidates` - A map of type name to a list of tokens that can be a type.
     ///
     fn filter_token_candidates(
-        token_candidates: &HashMap<String, Vec<Token>>,
+        token_candidates: HashMap<String, Vec<Token>>,
     ) -> HashMap<String, Token> {
         token_candidates
             .into_iter()
@@ -368,7 +368,7 @@ impl AbiParser {
 
                 if tokens.len() == 1 {
                     // Only token with this type path -> we keep it without comparison.
-                    return Some((name.to_string(), tokens[0].clone()));
+                    return Some((name, tokens[0].clone()));
                 }
 
                 if let Token::Composite(composite_0) = &tokens[0] {
@@ -407,7 +407,7 @@ impl AbiParser {
                     let mut unique_composite = unique_composite;
                     unique_composite.inners = inners;
 
-                    return Some((name.to_string(), Token::Composite(unique_composite)));
+                    return Some((name, Token::Composite(unique_composite)));
                 }
 
                 None
@@ -527,7 +527,7 @@ mod tests {
                 alias: None,
             })],
         );
-        let filtered = AbiParser::filter_token_candidates(&input);
+        let filtered = AbiParser::filter_token_candidates(input);
         assert_eq!(2, filtered.len());
         assert!(filtered.contains_key("dojo_starter::models::Direction"));
         assert!(filtered.contains_key("dojo_starter::models::DirectionsAvailable"));
@@ -701,7 +701,7 @@ mod tests {
             ],
         );
 
-        let filtered = AbiParser::filter_token_candidates(&input);
+        let filtered = AbiParser::filter_token_candidates(input);
 
         assert_eq!(2, filtered.len());
         assert!(filtered.contains_key("game::models::ItemType"));
@@ -1012,8 +1012,8 @@ Composite {
                     name: "gated_type".to_owned(),
                     kind: CompositeInnerKind::NotUsed,
                     token: Token::Composite(Composite { type_path: "core::option::Option::<tournament::ls15_components::models::tournament::GatedType>".to_owned(), inners: vec![], generic_args: vec![
-                ("A".to_owned(), Token::Composite(Composite { type_path: "tournament::ls15_components::models::tournament::GatedType".to_owned(), inners: vec![], generic_args: vec![], r#type: CompositeType::Unknown, is_event: false, alias: None, })),
-                    ], r#type: CompositeType::Unknown, is_event: false, alias: None, }),
+                ("A".to_owned(), Token::Composite(Composite { type_path: "tournament::ls15_components::models::tournament::GatedType".to_owned(), inners: vec![], generic_args: vec![], r#type: CompositeType::Unknown, is_event: false, alias: None })),
+                    ], r#type: CompositeType::Unknown, is_event: false, alias: None }),
                 }],
                 generic_args: vec![],
                 r#type: CompositeType::Struct,
@@ -1022,7 +1022,7 @@ Composite {
             })],
         );
 
-        let filtered = AbiParser::filter_struct_enum_tokens(&input);
+        let filtered = AbiParser::filter_struct_enum_tokens(input);
         let tmv = filtered
             .get("tournament::ls15_components::models::tournament::TournamentModelValue")
             .unwrap()
@@ -1174,7 +1174,7 @@ Composite {
             })],
         );
 
-        let filtered = AbiParser::filter_struct_enum_tokens(&input);
+        let filtered = AbiParser::filter_struct_enum_tokens(input);
         fn check_token_inners(token: &Token) {
             // end of recursion, if token is composite and inners are empty, this means hydration
             // was not properly done.
