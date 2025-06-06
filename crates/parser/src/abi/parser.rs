@@ -107,7 +107,6 @@ impl AbiParser {
 
         let mut structs = vec![];
         let mut enums = vec![];
-
         // This is not memory efficient, but
         // currently the focus is on search speed.
         // To be optimized.
@@ -115,14 +114,7 @@ impl AbiParser {
 
         // Apply type aliases only on structs and enums.
         for (_, mut t) in tokens {
-            let path = t.type_path();
-
             for (type_path, alias) in type_aliases {
-                if path == *type_path {
-                    // If the type path is already aliased, we skip it.
-                    // This is to avoid aliasing an already aliased type.
-                    continue;
-                }
                 t.apply_alias(type_path, alias);
             }
 
