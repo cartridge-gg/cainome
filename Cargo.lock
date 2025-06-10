@@ -1887,8 +1887,7 @@ checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
 [[package]]
 name = "starknet"
 version = "0.15.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21ec983c56ce05b2d7679fa860b37b2ade21004c343ff49374a591b40ee8ee1d"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=ff4222e#ff4222e7d1a6e3127d864539938680030df77c75"
 dependencies = [
  "starknet-accounts",
  "starknet-contract",
@@ -1903,8 +1902,7 @@ dependencies = [
 [[package]]
 name = "starknet-accounts"
 version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7adf55fa08ffed413614df3171632e45dcba72cc53706b147ba08e5b7b4e4fb"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=ff4222e#ff4222e7d1a6e3127d864539938680030df77c75"
 dependencies = [
  "async-trait",
  "auto_impl",
@@ -1918,8 +1916,7 @@ dependencies = [
 [[package]]
 name = "starknet-contract"
 version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "72746fa496e352ef16b4a8fd11e415ada6b7b5a9107fc6e845eeb921b8bb2a69"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=ff4222e#ff4222e7d1a6e3127d864539938680030df77c75"
 dependencies = [
  "serde",
  "serde_json",
@@ -1933,8 +1930,7 @@ dependencies = [
 [[package]]
 name = "starknet-core"
 version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc2091a08ebfc65c5a6b8bd2c66e32780739854b813af0b4348b6dbf3a887865"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=ff4222e#ff4222e7d1a6e3127d864539938680030df77c75"
 dependencies = [
  "base64 0.21.7",
  "crypto-bigint",
@@ -1956,8 +1952,7 @@ dependencies = [
 [[package]]
 name = "starknet-core-derive"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b08520b7d80eda7bf1a223e8db4f9bb5779a12846f15ebf8f8d76667eca7f5ad"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=ff4222e#ff4222e7d1a6e3127d864539938680030df77c75"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1967,8 +1962,7 @@ dependencies = [
 [[package]]
 name = "starknet-crypto"
 version = "0.7.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "039a3bad70806b494c9e6b21c5238a6c8a373d66a26071859deb0ccca6f93634"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=ff4222e#ff4222e7d1a6e3127d864539938680030df77c75"
 dependencies = [
  "crypto-bigint",
  "hex",
@@ -1986,8 +1980,7 @@ dependencies = [
 [[package]]
 name = "starknet-curve"
 version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bcde6bd74269b8161948190ace6cf069ef20ac6e79cd2ba09b320efa7500b6de"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=ff4222e#ff4222e7d1a6e3127d864539938680030df77c75"
 dependencies = [
  "starknet-types-core",
 ]
@@ -1995,8 +1988,7 @@ dependencies = [
 [[package]]
 name = "starknet-macros"
 version = "0.2.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "00dd27bb42d53bd7948a32d4a88c04e799bfcc011b87448756bb0643e6ec0e6d"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=ff4222e#ff4222e7d1a6e3127d864539938680030df77c75"
 dependencies = [
  "starknet-core",
  "syn 2.0.101",
@@ -2005,8 +1997,7 @@ dependencies = [
 [[package]]
 name = "starknet-providers"
 version = "0.14.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1ce77bf215b70673264bc875d59c45fb7da500e7e6f71d2608ad25a1f7280671"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=ff4222e#ff4222e7d1a6e3127d864539938680030df77c75"
 dependencies = [
  "async-trait",
  "auto_impl",
@@ -2026,8 +2017,7 @@ dependencies = [
 [[package]]
 name = "starknet-signers"
 version = "0.12.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "defd831176f8a217694895fd69be17f985e5e28f00bc8044eb54b55656f3a7f1"
+source = "git+https://github.com/xJonathanLEI/starknet-rs?rev=ff4222e#ff4222e7d1a6e3127d864539938680030df77c75"
 dependencies = [
  "async-trait",
  "auto_impl",
