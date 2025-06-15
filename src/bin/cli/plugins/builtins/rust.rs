@@ -22,6 +22,7 @@ impl BuiltinPlugin for RustPlugin {
         for contract in &input.contracts {
             // The contract name contains the fully qualified path of the cairo module.
             // For now, let's only take the latest part of this path.
+            //
             // TODO: if a project has several contracts with the same name under different
             // namespaces, we should provide a solution to solve those conflicts.
             let contract_name = contract
