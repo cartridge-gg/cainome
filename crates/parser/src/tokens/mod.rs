@@ -17,7 +17,9 @@ use std::collections::HashMap;
 
 pub use array::Array;
 pub use basic::CoreBasic;
-pub use composite::{Composite, CompositeInner, CompositeInnerKind, CompositeType};
+pub use composite::{
+    extract_type_path_with_depth, Composite, CompositeInner, CompositeInnerKind, CompositeType,
+};
 pub use function::{Function, FunctionOutputKind, StateMutability};
 pub use non_zero::NonZero;
 pub use option::Option;
