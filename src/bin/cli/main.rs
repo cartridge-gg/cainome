@@ -52,8 +52,6 @@ async fn main() -> CainomeCliResult<()> {
         output_dir: args.output_dir,
         contracts,
         execution_version: args.execution_version,
-        derives: args.derives.unwrap_or_default(),
-        contract_derives: args.contract_derives.unwrap_or_default(),
         type_skips: args.type_skips.unwrap_or_default(),
     })
     .await?;

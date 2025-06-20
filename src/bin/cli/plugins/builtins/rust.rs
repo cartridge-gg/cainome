@@ -2,15 +2,18 @@ use async_trait::async_trait;
 use cainome_rs::{self};
 use convert_case::{Case, Casing};
 
+use crate::args::RustPluginOptions;
 use crate::error::CainomeCliResult;
 use crate::plugins::builtins::BuiltinPlugin;
 use crate::plugins::PluginInput;
 
-pub struct RustPlugin;
+pub struct RustPlugin {
+    options: RustPluginOptions,
+}
 
 impl RustPlugin {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(options: RustPluginOptions) -> Self {
+        Self { options }
     }
 }
 
@@ -32,12 +35,15 @@ impl BuiltinPlugin for RustPlugin {
                 .from_case(Case::Snake)
                 .to_case(Case::Pascal);
 
+            let derives = self.options.derives.as_deref().unwrap_or_default();
+            let contract_derives = self.options.contract_derives.as_deref().unwrap_or_default();
+
             let expanded = cainome_rs::abi_to_tokenstream(
                 &contract_name,
                 &contract.tokens,
                 input.execution_version,
-                &input.derives,
-                &input.contract_derives,
+                &derives,
+                &contract_derives,
                 &input.type_skips,
             );
             let filename = format!(

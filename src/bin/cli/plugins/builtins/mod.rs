@@ -6,11 +6,6 @@ use crate::plugins::PluginInput;
 mod rust;
 pub use rust::RustPlugin;
 
-#[derive(Debug)]
-pub enum BuiltinPlugins {
-    Rust,
-}
-
 #[async_trait]
 pub trait BuiltinPlugin {
     /// Generates code by executing the plugin.
