@@ -5,34 +5,32 @@ package abigen
 
 import (
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/starknet.go/rpc"
 )
 
-type BuiltinsMyStruct struct {
+type MyStructBuiltins struct {
 	A *felt.Felt `json:"a"`
 }
 
-type BuiltinsEvent struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
+// BuiltinsEvent represents a contract event
+type BuiltinsEvent interface {
+	IsBuiltinsEvent() bool
 }
-
-const (
-)
 
 
 type Builtins struct {
 	contractAddress *felt.Felt
-	provider Provider // Interface for StarkNet provider
+	provider *rpc.Provider
 }
 
-func NewBuiltins(contractAddress *felt.Felt, provider Provider) *Builtins {
+func NewBuiltins(contractAddress *felt.Felt, provider *rpc.Provider) *Builtins {
 	return &Builtins {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (builtins *Builtins) StructNonZero(res BuiltinsMyStruct) (*felt.Felt, error) {
+func (builtins *Builtins) StructNonZero(res MyStructBuiltins) (*felt.Felt, error) {
 	// TODO: Implement Call method for StructNonZero
 	panic("not implemented")
 }

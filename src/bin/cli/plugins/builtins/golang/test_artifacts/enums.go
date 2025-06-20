@@ -4,90 +4,87 @@
 package abigen
 
 import (
-	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/starknet.go/rpc"
 )
 
-type EnumsEvent struct {
+type MixedEnum struct {
 	Variant string `json:"variant"`
 	Value   interface{} `json:"value,omitempty"`
 }
 
 const (
+	MixedEnum_Variant1 = "Variant1"
+	MixedEnum_Variant2 = "Variant2"
 )
 
-
-type EnumsSimpleEnum struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
-}
-
-const (
-	EnumsSimpleEnum_Variant1 = "Variant1"
-	EnumsSimpleEnum_Variant2 = "Variant2"
-)
-
-func NewEnumsSimpleEnumVariant1() EnumsSimpleEnum {
-	return EnumsSimpleEnum {
+func NewMixedEnumVariant1() MixedEnum {
+	return MixedEnum {
 		Variant: "Variant1",
 	}
 }
 
-func NewEnumsSimpleEnumVariant2() EnumsSimpleEnum {
-	return EnumsSimpleEnum {
+func NewMixedEnumVariant2() MixedEnum {
+	return MixedEnum {
 		Variant: "Variant2",
 	}
 }
 
 
-type EnumsMixedEnum struct {
+// EnumsEvent represents a contract event
+type EnumsEvent interface {
+	IsEnumsEvent() bool
+}
+
+
+type SimpleEnum struct {
 	Variant string `json:"variant"`
 	Value   interface{} `json:"value,omitempty"`
 }
 
 const (
-	EnumsMixedEnum_Variant1 = "Variant1"
-	EnumsMixedEnum_Variant2 = "Variant2"
+	SimpleEnum_Variant1 = "Variant1"
+	SimpleEnum_Variant2 = "Variant2"
 )
 
-func NewEnumsMixedEnumVariant1() EnumsMixedEnum {
-	return EnumsMixedEnum {
+func NewSimpleEnumVariant1() SimpleEnum {
+	return SimpleEnum {
 		Variant: "Variant1",
 	}
 }
 
-func NewEnumsMixedEnumVariant2() EnumsMixedEnum {
-	return EnumsMixedEnum {
+func NewSimpleEnumVariant2() SimpleEnum {
+	return SimpleEnum {
 		Variant: "Variant2",
 	}
 }
 
 
-type EnumsTypedEnum struct {
+type TypedEnum struct {
 	Variant string `json:"variant"`
 	Value   interface{} `json:"value,omitempty"`
 }
 
 const (
-	EnumsTypedEnum_Variant1 = "Variant1"
-	EnumsTypedEnum_Variant2 = "Variant2"
-	EnumsTypedEnum_Variant3 = "Variant3"
+	TypedEnum_Variant1 = "Variant1"
+	TypedEnum_Variant2 = "Variant2"
+	TypedEnum_Variant3 = "Variant3"
 )
 
-func NewEnumsTypedEnumVariant1() EnumsTypedEnum {
-	return EnumsTypedEnum {
+func NewTypedEnumVariant1() TypedEnum {
+	return TypedEnum {
 		Variant: "Variant1",
 	}
 }
 
-func NewEnumsTypedEnumVariant2() EnumsTypedEnum {
-	return EnumsTypedEnum {
+func NewTypedEnumVariant2() TypedEnum {
+	return TypedEnum {
 		Variant: "Variant2",
 	}
 }
 
-func NewEnumsTypedEnumVariant3() EnumsTypedEnum {
-	return EnumsTypedEnum {
+func NewTypedEnumVariant3() TypedEnum {
+	return TypedEnum {
 		Variant: "Variant3",
 	}
 }
@@ -95,47 +92,47 @@ func NewEnumsTypedEnumVariant3() EnumsTypedEnum {
 
 type Enums struct {
 	contractAddress *felt.Felt
-	provider Provider // Interface for StarkNet provider
+	provider *rpc.Provider
 }
 
-func NewEnums(contractAddress *felt.Felt, provider Provider) *Enums {
+func NewEnums(contractAddress *felt.Felt, provider *rpc.Provider) *Enums {
 	return &Enums {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (enums *Enums) GetSimple1() (EnumsSimpleEnum, error) {
+func (enums *Enums) GetSimple1() (SimpleEnum, error) {
 	// TODO: Implement Call method for GetSimple1
 	panic("not implemented")
 }
 
-func (enums *Enums) GetSimple2() (EnumsSimpleEnum, error) {
+func (enums *Enums) GetSimple2() (SimpleEnum, error) {
 	// TODO: Implement Call method for GetSimple2
 	panic("not implemented")
 }
 
-func (enums *Enums) GetTyped1() (EnumsTypedEnum, error) {
+func (enums *Enums) GetTyped1() (TypedEnum, error) {
 	// TODO: Implement Call method for GetTyped1
 	panic("not implemented")
 }
 
-func (enums *Enums) GetTyped2() (EnumsTypedEnum, error) {
+func (enums *Enums) GetTyped2() (TypedEnum, error) {
 	// TODO: Implement Call method for GetTyped2
 	panic("not implemented")
 }
 
-func (enums *Enums) GetTyped3() (EnumsTypedEnum, error) {
+func (enums *Enums) GetTyped3() (TypedEnum, error) {
 	// TODO: Implement Call method for GetTyped3
 	panic("not implemented")
 }
 
-func (enums *Enums) GetMixed1() (EnumsMixedEnum, error) {
+func (enums *Enums) GetMixed1() (MixedEnum, error) {
 	// TODO: Implement Call method for GetMixed1
 	panic("not implemented")
 }
 
-func (enums *Enums) GetMixed2() (EnumsMixedEnum, error) {
+func (enums *Enums) GetMixed2() (MixedEnum, error) {
 	// TODO: Implement Call method for GetMixed2
 	panic("not implemented")
 }

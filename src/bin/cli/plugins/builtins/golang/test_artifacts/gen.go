@@ -6,112 +6,32 @@ package abigen
 import (
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/starknet.go/rpc"
 )
 
-type GenMyEnum struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
+// GenEvent represents a contract event
+type GenEvent interface {
+	IsGenEvent() bool
 }
 
 const (
-	GenMyEnum_One = "One"
-	GenMyEnum_Two = "Two"
-	GenMyEnum_Three = "Three"
-	GenMyEnum_Four = "Four"
-	GenMyEnum_Five = "Five"
-	GenMyEnum_Six = "Six"
-	GenMyEnum_Seven = "Seven"
-	GenMyEnum_Eight = "Eight"
-	GenMyEnum_Nine = "Nine"
-	GenMyEnum_Ten = "Ten"
-	GenMyEnum_Eleven = "Eleven"
+	GenEvent_E1 = "E1"
 )
 
-func NewGenMyEnumOne() GenMyEnum {
-	return GenMyEnum {
-		Variant: "One",
-	}
-}
 
-func NewGenMyEnumTwo() GenMyEnum {
-	return GenMyEnum {
-		Variant: "Two",
-	}
-}
-
-func NewGenMyEnumThree() GenMyEnum {
-	return GenMyEnum {
-		Variant: "Three",
-	}
-}
-
-func NewGenMyEnumFour() GenMyEnum {
-	return GenMyEnum {
-		Variant: "Four",
-	}
-}
-
-func NewGenMyEnumFive() GenMyEnum {
-	return GenMyEnum {
-		Variant: "Five",
-	}
-}
-
-func NewGenMyEnumSix() GenMyEnum {
-	return GenMyEnum {
-		Variant: "Six",
-	}
-}
-
-func NewGenMyEnumSeven() GenMyEnum {
-	return GenMyEnum {
-		Variant: "Seven",
-	}
-}
-
-func NewGenMyEnumEight() GenMyEnum {
-	return GenMyEnum {
-		Variant: "Eight",
-	}
-}
-
-func NewGenMyEnumNine() GenMyEnum {
-	return GenMyEnum {
-		Variant: "Nine",
-	}
-}
-
-func NewGenMyEnumTen() GenMyEnum {
-	return GenMyEnum {
-		Variant: "Ten",
-	}
-}
-
-func NewGenMyEnumEleven() GenMyEnum {
-	return GenMyEnum {
-		Variant: "Eleven",
-	}
-}
-
-
-type GenMyStructInnerGeneric struct {
-	F1 *felt.Felt `json:"f1"`
-	F2 GenMyStruct `json:"f2"`
-	F3 uint32 `json:"f3"`
-}
-
-type GenMyStruct struct {
+type MyStructGen struct {
 	F1 *felt.Felt `json:"f1"`
 	F2 *felt.Felt `json:"f2"`
 	F3 *felt.Felt `json:"f3"`
 }
 
-type GenE1 struct {
-	Key *felt.Felt `json:"key"`
-	Value []*felt.Felt `json:"value"`
+type MyStructInnerGeneric struct {
+	F1 *felt.Felt `json:"f1"`
+	F2 MyStructGen `json:"f2"`
+	F3 uint32 `json:"f3"`
 }
 
-type GenPlainStruct struct {
+type PlainStruct struct {
 	F1 uint8 `json:"f1"`
 	F2 uint16 `json:"f2"`
 	F3 uint32 `json:"f3"`
@@ -126,34 +46,120 @@ type GenPlainStruct struct {
 	F9 []*big.Int `json:"f9"`
 }
 
-type GenEvent struct {
+type E1 struct {
+	Key *felt.Felt `json:"key"`
+	Value []*felt.Felt `json:"value"`
+}
+// IsGenEvent implements the GenEvent interface
+func (e E1) IsGenEvent() bool {
+	return true
+}
+
+
+type MyEnum struct {
 	Variant string `json:"variant"`
 	Value   interface{} `json:"value,omitempty"`
 }
 
 const (
-	GenEvent_E1 = "E1"
+	MyEnum_One = "One"
+	MyEnum_Two = "Two"
+	MyEnum_Three = "Three"
+	MyEnum_Four = "Four"
+	MyEnum_Five = "Five"
+	MyEnum_Six = "Six"
+	MyEnum_Seven = "Seven"
+	MyEnum_Eight = "Eight"
+	MyEnum_Nine = "Nine"
+	MyEnum_Ten = "Ten"
+	MyEnum_Eleven = "Eleven"
 )
+
+func NewMyEnumOne() MyEnum {
+	return MyEnum {
+		Variant: "One",
+	}
+}
+
+func NewMyEnumTwo() MyEnum {
+	return MyEnum {
+		Variant: "Two",
+	}
+}
+
+func NewMyEnumThree() MyEnum {
+	return MyEnum {
+		Variant: "Three",
+	}
+}
+
+func NewMyEnumFour() MyEnum {
+	return MyEnum {
+		Variant: "Four",
+	}
+}
+
+func NewMyEnumFive() MyEnum {
+	return MyEnum {
+		Variant: "Five",
+	}
+}
+
+func NewMyEnumSix() MyEnum {
+	return MyEnum {
+		Variant: "Six",
+	}
+}
+
+func NewMyEnumSeven() MyEnum {
+	return MyEnum {
+		Variant: "Seven",
+	}
+}
+
+func NewMyEnumEight() MyEnum {
+	return MyEnum {
+		Variant: "Eight",
+	}
+}
+
+func NewMyEnumNine() MyEnum {
+	return MyEnum {
+		Variant: "Nine",
+	}
+}
+
+func NewMyEnumTen() MyEnum {
+	return MyEnum {
+		Variant: "Ten",
+	}
+}
+
+func NewMyEnumEleven() MyEnum {
+	return MyEnum {
+		Variant: "Eleven",
+	}
+}
 
 
 type Gen struct {
 	contractAddress *felt.Felt
-	provider Provider // Interface for StarkNet provider
+	provider *rpc.Provider
 }
 
-func NewGen(contractAddress *felt.Felt, provider Provider) *Gen {
+func NewGen(contractAddress *felt.Felt, provider *rpc.Provider) *Gen {
 	return &Gen {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (gen *Gen) Func1(a GenMyStruct) error {
+func (gen *Gen) Func1(a MyStructGen) error {
 	// TODO: Implement Invoke method for Func1
 	panic("not implemented")
 }
 
-func (gen *Gen) Func2(a GenMyStruct) error {
+func (gen *Gen) Func2(a MyStructGen) error {
 	// TODO: Implement Invoke method for Func2
 	panic("not implemented")
 }
@@ -166,17 +172,17 @@ func (gen *Gen) Read() (struct {
 	panic("not implemented")
 }
 
-func (gen *Gen) Func3(a GenPlainStruct) error {
+func (gen *Gen) Func3(a PlainStruct) error {
 	// TODO: Implement Call method for Func3
 	panic("not implemented")
 }
 
-func (gen *Gen) Func4(a GenMyEnum) error {
+func (gen *Gen) Func4(a MyEnum) error {
 	// TODO: Implement Call method for Func4
 	panic("not implemented")
 }
 
-func (gen *Gen) Func5(a GenMyStructInnerGeneric) error {
+func (gen *Gen) Func5(a MyStructInnerGeneric) error {
 	// TODO: Implement Invoke method for Func5
 	panic("not implemented")
 }

@@ -6,23 +6,21 @@ package abigen
 import (
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/starknet.go/rpc"
 )
 
-type BasicEvent struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
+// BasicEvent represents a contract event
+type BasicEvent interface {
+	IsBasicEvent() bool
 }
-
-const (
-)
 
 
 type Basic struct {
 	contractAddress *felt.Felt
-	provider Provider // Interface for StarkNet provider
+	provider *rpc.Provider
 }
 
-func NewBasic(contractAddress *felt.Felt, provider Provider) *Basic {
+func NewBasic(contractAddress *felt.Felt, provider *rpc.Provider) *Basic {
 	return &Basic {
 		contractAddress: contractAddress,
 		provider: provider,
