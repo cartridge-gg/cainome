@@ -6,7 +6,6 @@ use clap::{Args, Parser};
 use starknet::core::types::Felt;
 use url::Url;
 
-use crate::plugins::builtins::BuiltinPlugins;
 use crate::plugins::PluginManager;
 
 #[derive(Parser, Debug)]
@@ -54,29 +53,19 @@ pub struct CainomeArgs {
     #[arg(help = "The Starknet RPC provider to fetch the ABI from.")]
     pub rpc_url: Option<Url>,
 
-    #[command(flatten)]
-    #[command(next_help_heading = "Plugins options")]
-    pub plugins: PluginOptions,
-
     #[arg(long)]
     #[arg(value_name = "EXECUTION_VERSION")]
     #[arg(help = "The execution version to use. Supported values are 'v1', 'V1', 'v3', or 'V3'.")]
     pub execution_version: ExecutionVersion,
 
     #[arg(long)]
-    #[arg(value_name = "DERIVES")]
-    #[arg(help = "Derives to be added to the generated types.")]
-    pub derives: Option<Vec<String>>,
-
-    #[arg(long)]
-    #[arg(value_name = "CONTRACT_DERIVES")]
-    #[arg(help = "Derives to be added to the generated contract.")]
-    pub contract_derives: Option<Vec<String>>,
-
-    #[arg(long)]
     #[arg(value_name = "type_skips")]
     #[arg(help = "Types to be skipped from the generated types.")]
     pub type_skips: Option<Vec<String>>,
+
+    #[command(flatten)]
+    #[command(next_help_heading = "Plugins options")]
+    pub plugins: PluginOptions,
 }
 
 #[derive(Debug, Args, Clone)]
@@ -84,19 +73,38 @@ pub struct PluginOptions {
     #[arg(long)]
     #[arg(help = "Generate bindings for rust (built-in).")]
     pub rust: bool,
+
+    #[command(flatten)]
+    #[command(next_help_heading = "Rust plugin options")]
+    pub rust_options: RustPluginOptions,
     // TODO: For custom plugin, we can add a vector of strings,
     // where the user provides the name of the plugin.
     // Then cainome like protobuf will attempt to execute cainome_plugin_<NAME>.
 }
 
+#[derive(Debug, Args, Clone)]
+pub struct RustPluginOptions {
+    #[arg(long = "rust-derives")]
+    #[arg(value_name = "DERIVES")]
+    #[arg(help = "Derives to be added to the generated types (Rust plugin).")]
+    pub derives: Option<Vec<String>>,
+
+    #[arg(long = "rust-contract-derives")]
+    #[arg(value_name = "CONTRACT_DERIVES")]
+    #[arg(help = "Derives to be added to the generated contract (Rust plugin).")]
+    pub contract_derives: Option<Vec<String>>,
+}
+
 impl From<PluginOptions> for PluginManager {
     fn from(options: PluginOptions) -> Self {
-        let mut builtin_plugins = vec![];
+        let mut builtin_plugins: Vec<Box<dyn crate::plugins::builtins::BuiltinPlugin>> = vec![];
         // Ignored for now.
         let plugins = vec![];
 
         if options.rust {
-            builtin_plugins.push(BuiltinPlugins::Rust);
+            builtin_plugins.push(Box::new(crate::plugins::builtins::RustPlugin::new(
+                options.rust_options,
+            )));
         }
 
         Self {
