@@ -1,0 +1,119 @@
+name: claude
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  code:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          token: ${{ secrets.CLAUDE_GITHUB }}
+
+      - name: Setup environment
+        env:
+          GITHUB_TOKEN: ${{ secrets.CLAUDE_GITHUB }}
+        run: |
+          # Install jq for workspace.json parsing
+          sudo apt-get update && sudo apt-get install -y jq
+
+          # Configure git for Claude operations with authentication
+          git config --global user.name "Claude Code Bot"
+          git config --global user.email "claude-code@anthropic.com"
+          git config --global init.defaultBranch main
+          git config --global url."https://x-access-token:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install ast-grep
+        run: |
+          npm install -g @ast-grep/cli
+          ast-grep --version
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          components: rustfmt, clippy
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@beta
+        env:
+          GITHUB_TOKEN: ${{ secrets.CLAUDE_GITHUB }}
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.CLAUDE_GITHUB }}
+
+          # Optional: Specify model (defaults to Claude Sonnet 4, uncomment for Claude Opus 4)
+          # model: "claude-opus-4-20250514"
+
+          # Optional: Customize the trigger phrase (default: @claude)
+          # trigger_phrase: "/claude"
+
+          # Optional: Trigger when specific user is assigned to an issue
+          assignee_trigger: "claude-bot"
+
+          # Customize allowed tools and commands for your repository
+          allowed_tools: "mcp__github__create_pending_pull_request_review,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_pull_request_diff,mcp__github__create_issue,mcp__github__create_pull_request,mcp__github__list_repositories,mcp__github__get_repository,mcp__github__get_repository_content,mcp__github__create_or_update_file_contents,mcp__github__create_or_update_file,mcp__github__delete_file,mcp__github__create_or_update_file,mcp__github__push_files,mcp__github__create_branch,mcp__github__search_code,mcp__github__get_commit,mcp__github__get_file_contents,Bash,Glob,Grep,LS,Read,Edit,MultiEdit,Write"
+
+          # Add custom instructions specific to your codebase
+          custom_instructions: |
+            Always review the instructions in the CLAUDE.md file before proceeding.
+
+            This is a Rust workspace for generating Cairo ABI bindings. Key development guidelines:
+
+            **Development Commands:**
+            - Use `cargo build` for building the workspace
+            - Use `cargo test --workspace --all-features` for comprehensive testing  
+            - Use `./scripts/clippy.sh` for linting with all features
+            - Use `./scripts/fmt.sh` for format checking
+            - Use `./scripts/test_all.sh` for running complete test suite including examples
+
+            **Code Quality Requirements:**
+            - Always run clippy and format checks before committing
+            - Ensure all workspace crates build with all features
+            - Test changes with practical examples in `/examples/`
+            - Maintain compatibility with Cairo ABI formats
+
+            **Project Structure:**
+            - This is a cargo workspace with multiple crates in `/crates/`
+            - Core functionality in `parser`, `cairo-serde`, `rs` crates
+            - CLI tool in `src/bin/cli/`
+            - Examples for testing in `/examples/`
+
+            **Search & Structural Analysis:**
+            You run in an environment where `ast-grep` is available; whenever a search requires syntax-aware or structural matching, default to `ast-grep --lang rust -p '<pattern>'` and avoid falling back to text-only tools like `rg` or `grep` unless explicitly requesting a plain-text search.
+
+            IMPORTANT: When you make changes to files, you must create a Pull Request:
+            1. Use mcp__github__create_pull_request to create a PR
+            2. If responding to an issue, include "Closes #[ISSUE_NUMBER]" in the PR description
+            3. Provide a clear title and description explaining what was changed and why
+
+            Never commit directly to main branch. Always create PRs for changes.
