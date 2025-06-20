@@ -77,6 +77,10 @@ pub struct PluginOptions {
     #[command(flatten)]
     #[command(next_help_heading = "Rust plugin options")]
     pub rust_options: RustPluginOptions,
+
+    #[arg(long)]
+    #[arg(help = "Generate bindings for golang (built-in).")]
+    pub golang: bool,
     // TODO: For custom plugin, we can add a vector of strings,
     // where the user provides the name of the plugin.
     // Then cainome like protobuf will attempt to execute cainome_plugin_<NAME>.
@@ -105,6 +109,10 @@ impl From<PluginOptions> for PluginManager {
             builtin_plugins.push(Box::new(crate::plugins::builtins::RustPlugin::new(
                 options.rust_options,
             )));
+        }
+
+        if options.golang {
+            builtin_plugins.push(Box::new(crate::plugins::builtins::GolangPlugin::new()));
         }
 
         Self {

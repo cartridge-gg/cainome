@@ -6,6 +6,9 @@ use crate::plugins::PluginInput;
 mod rust;
 pub use rust::RustPlugin;
 
+mod golang;
+pub use golang::GolangPlugin;
+
 #[async_trait]
 pub trait BuiltinPlugin {
     /// Generates code by executing the plugin.
