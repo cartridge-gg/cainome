@@ -9,15 +9,18 @@ use cainome_parser::tokens::{
 #[cfg(test)]
 use cainome_rs;
 
+use crate::args::GolangPluginOptions;
 use crate::error::CainomeCliResult;
 use crate::plugins::builtins::BuiltinPlugin;
 use crate::plugins::PluginInput;
 
-pub struct GolangPlugin;
+pub struct GolangPlugin {
+    options: GolangPluginOptions,
+}
 
 impl GolangPlugin {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(options: GolangPluginOptions) -> Self {
+        Self { options }
     }
 
     /// Maps a Cairo core basic type to its Go equivalent
@@ -55,11 +58,11 @@ impl GolangPlugin {
     }
 
     /// Converts a token to its Go type representation
-    fn token_to_go_type(&self, token: &Token) -> String {
+    fn token_to_go_type(&self, token: &Token, contract_name: &str) -> String {
         match token {
             Token::CoreBasic(core_basic) => self.map_core_basic_type(&core_basic.type_path),
             Token::Array(array) => {
-                let inner_type = self.token_to_go_type(&array.inner);
+                let inner_type = self.token_to_go_type(&array.inner, contract_name);
                 format!("[]{}", inner_type)
             }
             Token::Tuple(tuple) => {
@@ -70,7 +73,7 @@ impl GolangPlugin {
                         .inners
                         .iter()
                         .enumerate()
-                        .map(|(i, token)| format!("Field{} {}", i, self.token_to_go_type(token)))
+                        .map(|(i, token)| format!("Field{} {}", i, self.token_to_go_type(token, contract_name)))
                         .collect();
                     format!("struct {{\n\t{}\n}}", field_types.join("\n\t"))
                 }
@@ -79,31 +82,36 @@ impl GolangPlugin {
                 if composite.is_builtin() {
                     self.map_composite_builtin_type(&composite.type_path_no_generic())
                 } else {
-                    composite.type_name().to_case(Case::Pascal)
+                    // Namespace user-defined types with contract name
+                    let type_name = composite.type_name().to_case(Case::Pascal);
+                    let contract_prefix = contract_name.to_case(Case::Pascal);
+                    format!("{}{}", contract_prefix, type_name)
                 }
             }
             Token::Option(option) => {
-                let inner_type = self.token_to_go_type(&option.inner);
+                let inner_type = self.token_to_go_type(&option.inner, contract_name);
                 format!("*{}", inner_type) // Use pointer for optional types
             }
             Token::Result(result) => {
-                let ok_type = self.token_to_go_type(&result.inner);
-                let err_type = self.token_to_go_type(&result.error);
+                let ok_type = self.token_to_go_type(&result.inner, contract_name);
+                let err_type = self.token_to_go_type(&result.error, contract_name);
                 format!("Result[{}, {}]", ok_type, err_type)
             }
-            Token::NonZero(non_zero) => self.token_to_go_type(&non_zero.inner),
+            Token::NonZero(non_zero) => self.token_to_go_type(&non_zero.inner, contract_name),
             Token::Function(_) => "func".to_string(),
         }
     }
 
     /// Generates Go struct definition for a Cairo composite type
-    fn generate_struct(&self, composite: &Composite) -> String {
-        let struct_name = composite.type_name().to_case(Case::Pascal);
+    fn generate_struct(&self, composite: &Composite, contract_name: &str) -> String {
+        let type_name = composite.type_name().to_case(Case::Pascal);
+        let contract_prefix = contract_name.to_case(Case::Pascal);
+        let struct_name = format!("{}{}", contract_prefix, type_name);
         let mut struct_def = format!("type {} struct {{\n", struct_name);
 
         for inner in &composite.inners {
             let field_name = inner.name.to_case(Case::Pascal);
-            let field_type = self.token_to_go_type(&inner.token);
+            let field_type = self.token_to_go_type(&inner.token, contract_name);
             let json_tag = format!("`json:\"{}\"`", inner.name);
             struct_def.push_str(&format!("\t{} {} {}\n", field_name, field_type, json_tag));
         }
@@ -113,8 +121,10 @@ impl GolangPlugin {
     }
 
     /// Generates Go enum definition for a Cairo enum type
-    fn generate_enum(&self, composite: &Composite) -> String {
-        let enum_name = composite.type_name().to_case(Case::Pascal);
+    fn generate_enum(&self, composite: &Composite, contract_name: &str) -> String {
+        let type_name = composite.type_name().to_case(Case::Pascal);
+        let contract_prefix = contract_name.to_case(Case::Pascal);
+        let enum_name = format!("{}{}", contract_prefix, type_name);
         let mut enum_def = String::new();
 
         // Generate the enum type
@@ -146,7 +156,7 @@ impl GolangPlugin {
                 }
                 CompositeInnerKind::Data => {
                     // Data variant
-                    let data_type = self.token_to_go_type(&inner.token);
+                    let data_type = self.token_to_go_type(&inner.token, contract_name);
                     enum_def.push_str(&format!(
                         "func {}(value {}) {} {{\n\treturn {} {{\n\t\tVariant: \"{}\",\n\t\tValue: value,\n\t}}\n}}\n\n",
                         constructor_name, data_type, enum_name, enum_name, inner.name
@@ -167,14 +177,14 @@ impl GolangPlugin {
         // Generate parameters
         let mut params = Vec::new();
         for (param_name, param_token) in &function.inputs {
-            let go_type = self.token_to_go_type(param_token);
+            let go_type = self.token_to_go_type(param_token, contract_name);
             params.push(format!("{} {}", param_name.to_case(Case::Snake), go_type));
         }
 
         // Generate return types
         let mut returns = Vec::new();
         for (i, output_token) in function.outputs.iter().enumerate() {
-            let go_type = self.token_to_go_type(output_token);
+            let go_type = self.token_to_go_type(output_token, contract_name);
             if function.outputs.len() == 1 {
                 returns.push(go_type);
             } else {
@@ -264,14 +274,27 @@ package {}
 
 {}
 
-// Provider interface for StarkNet interactions
-type Provider interface {{
-	Call(contractAddress *felt.Felt, selector *felt.Felt, calldata []*felt.Felt) ([]*felt.Felt, error)
-	Invoke(contractAddress *felt.Felt, selector *felt.Felt, calldata []*felt.Felt) (string, error)
-}}
-
 "#,
             package_name, imports
+        )
+    }
+
+    /// Generates common types that should be shared across all contracts
+    fn generate_common_types(&self, package_name: &str) -> String {
+        format!(
+            r#"// Code generated by Cainome. DO NOT EDIT.
+// Common types shared across all generated contracts.
+
+package {}
+
+import (
+	"github.com/NethermindEth/starknet.go/rpc"
+)
+
+// Provider type alias for StarkNet RPC provider
+type Provider = rpc.Provider
+"#,
+            package_name
         )
     }
 
@@ -305,7 +328,6 @@ type Provider interface {{
     }
 
     /// Checks if a specific token needs math/big import
-    #[allow(clippy::only_used_in_recursion)]
     fn token_needs_big_int(&self, token: &Token) -> bool {
         match token {
             Token::CoreBasic(core_basic) => {
@@ -352,6 +374,17 @@ impl BuiltinPlugin for GolangPlugin {
     async fn generate_code(&self, input: &PluginInput) -> CainomeCliResult<()> {
         tracing::trace!("Golang plugin requested");
 
+        let package_name = &self.options.package_name;
+
+        // Generate common.go file first (only once)
+        if !input.contracts.is_empty() {
+            let common_code = self.generate_common_types(package_name);
+            let mut common_path = input.output_dir.clone();
+            common_path.push("common.go");
+            tracing::trace!("Golang writing common file {}", common_path);
+            std::fs::write(&common_path, common_code)?;
+        }
+
         for contract in &input.contracts {
             let contract_name = contract
                 .name
@@ -361,12 +394,10 @@ impl BuiltinPlugin for GolangPlugin {
                 .from_case(Case::Snake)
                 .to_case(Case::Pascal);
 
-            let package_name = contract_name.to_case(Case::Snake);
-
             // Check if we need math/big import
             let needs_big_int = self.needs_big_int(&[contract]);
 
-            let mut generated_code = self.generate_package_header(&package_name, needs_big_int);
+            let mut generated_code = self.generate_package_header(package_name, needs_big_int);
 
             // Collect all composite types (structs and enums) and functions
             let mut composites = HashMap::new();
@@ -420,15 +451,15 @@ impl BuiltinPlugin for GolangPlugin {
                 }
             }
 
-            // Generate composite types (structs and enums)
+            // Generate composite types (structs and enums) with contract namespacing
             for composite in composites.values() {
                 match composite.r#type {
                     CompositeType::Struct => {
-                        generated_code.push_str(&self.generate_struct(composite));
+                        generated_code.push_str(&self.generate_struct(composite, &contract_name));
                         generated_code.push('\n');
                     }
                     CompositeType::Enum => {
-                        generated_code.push_str(&self.generate_enum(composite));
+                        generated_code.push_str(&self.generate_enum(composite, &contract_name));
                         generated_code.push('\n');
                     }
                     _ => {}
@@ -439,7 +470,7 @@ impl BuiltinPlugin for GolangPlugin {
             generated_code.push_str(&self.generate_contract(&contract_name, &functions));
 
             // Write to file
-            let filename = format!("{}.go", package_name);
+            let filename = format!("{}.go", contract_name.to_case(Case::Snake));
             let mut out_path = input.output_dir.clone();
             out_path.push(filename);
 
@@ -461,7 +492,7 @@ mod tests {
     use std::path::Path;
     use std::process::Command;
 
-    const TEST_ARTIFACTS_DIR: &str = "src/bin/cli/plugins/builtins/test_artifacts";
+    const TEST_ARTIFACTS_DIR: &str = "src/bin/cli/plugins/builtins/golang/test_artifacts";
     const CONTRACTS_ABI_DIR: &str = "contracts/abi";
 
     /// Test generating Go bindings from all available ABI files
@@ -483,7 +514,9 @@ mod tests {
         );
 
         // Generate Go bindings
-        let golang_plugin = GolangPlugin::new();
+        let golang_plugin = GolangPlugin::new(crate::args::GolangPluginOptions {
+            package_name: "abigen".to_string(),
+        });
 
         for contract in &contracts {
             let contract_name = contract.name.split("::").last().unwrap_or(&contract.name);
@@ -494,8 +527,6 @@ mod tests {
                 output_dir: test_output_dir.clone(),
                 contracts: vec![contract.clone()],
                 execution_version: cainome_rs::ExecutionVersion::V3,
-                derives: vec![],
-                contract_derives: vec![],
                 type_skips: vec![],
             };
 
@@ -642,12 +673,12 @@ mod tests {
             output_dir: output_dir.clone(),
             contracts: vec![contract],
             execution_version: cainome_rs::ExecutionVersion::V3,
-            derives: vec![],
-            contract_derives: vec![],
             type_skips: vec![],
         };
 
-        let golang_plugin = GolangPlugin::new();
+        let golang_plugin = GolangPlugin::new(crate::args::GolangPluginOptions {
+            package_name: "abigen".to_string(),
+        });
         golang_plugin
             .generate_code(&plugin_input)
             .await
@@ -730,15 +761,15 @@ mod tests {
 
         // Generate all Go bindings
         let contracts = parse_test_contracts().expect("Failed to parse test contracts");
-        let golang_plugin = GolangPlugin::new();
+        let golang_plugin = GolangPlugin::new(crate::args::GolangPluginOptions {
+            package_name: "abigen".to_string(),
+        });
 
         for contract in &contracts {
             let plugin_input = crate::plugins::PluginInput {
                 output_dir: test_output_dir.clone(),
                 contracts: vec![contract.clone()],
                 execution_version: cainome_rs::ExecutionVersion::V3,
-                derives: vec![],
-                contract_derives: vec![],
                 type_skips: vec![],
             };
 
@@ -806,7 +837,10 @@ mod tests {
 
 go 1.21
 
-require github.com/NethermindEth/juno v0.3.1
+require (
+    github.com/NethermindEth/juno v0.3.1
+    github.com/NethermindEth/starknet.go v0.7.0
+)
 "#;
 
         fs::write(dir.join("go.mod"), go_mod_content)?;

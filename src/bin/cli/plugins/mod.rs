@@ -7,7 +7,7 @@ pub mod builtins;
 
 use crate::contract::ContractData;
 use crate::error::CainomeCliResult;
-use crate::plugins::builtins::{BuiltinPlugin, GolangPlugin, RustPlugin};
+use crate::plugins::builtins::BuiltinPlugin;
 
 #[derive(Debug)]
 pub struct PluginInput {
