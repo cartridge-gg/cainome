@@ -1,0 +1,127 @@
+name: claude-code-review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    # Optional: Filter by PR author
+    # if: |
+    #   github.event.pull_request.user.login == 'external-contributor' ||
+    #   github.event.pull_request.user.login == 'new-developer' ||
+    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if commit is from Claude
+        id: check-author
+        run: |
+          AUTHOR_EMAIL=$(git log -1 --pretty=format:'%ae')
+          AUTHOR_NAME=$(git log -1 --pretty=format:'%an')
+          if [[ "$AUTHOR_EMAIL" == *"claude[bot]"* ]] || [[ "$AUTHOR_NAME" == *"claude[bot]"* ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Setup Rust
+        if: steps.check-author.outputs.skip != 'true'
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          components: rustfmt, clippy
+
+      - name: Run Claude Code Review
+        id: claude-review
+        if: steps.check-author.outputs.skip != 'true'
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+          # Optional: Specify model (defaults to Claude Sonnet 4, uncomment for Claude Opus 4)
+          # model: "claude-opus-4-20250514"
+
+          # Direct prompt for automated review (no @claude mention needed)
+          direct_prompt: |
+            Please review this Rust/Cairo ABI binding generation PR and provide inline feedback using the GitHub review system. Follow these steps:
+
+            1. **Check for existing reviews**: First, use `mcp__github__get_pull_request_reviews` to check if you have any existing pending or submitted reviews on this PR
+            2. **Check existing comments**: Use `mcp__github__get_pull_request_comments` to see what comments have already been made to avoid redundancy
+            3. **Start a fresh review**: Use `mcp__github__create_pending_pull_request_review` to begin a new pending review
+            4. **Get diff information**: Use `mcp__github__get_pull_request_diff` to understand the code changes
+            5. **Add unique inline comments**: Only add comments for issues that haven't been addressed in existing reviews
+            6. **Add inline comments**: Use `mcp__github__add_pull_request_review_comment_to_pending_review` for each specific piece of feedback on particular lines, including code change suggestions where appropriate using multiline comments and the suggestion syntax:
+
+            ```suggestion
+              // Your improved code here
+            ```
+
+            7. **Submit the review**: Use `mcp__github__submit_pending_pull_request_review` with event type "COMMENT" (not "REQUEST_CHANGES") to publish all comments as a non-blocking review
+
+            Only comment when something is off, wrong, or could be improved but don't be overly pedantic; if a given implementation is already good, do not comment on it.
+
+            Focus your review on:
+
+            **Rust Code Quality:**
+            - Memory safety and ownership patterns
+            - Error handling with Result types and proper error propagation
+            - Async/await usage and lifetime management
+            - Use of appropriate data structures and algorithms
+            - Rust idioms and best practices
+            - Cargo workspace organization and dependencies
+
+            **Cairo ABI Integration:**
+            - Proper handling of Cairo types and serialization
+            - ABI parsing accuracy and error handling
+            - Compatibility with different Cairo ABI formats
+            - Type mapping between Cairo and Rust
+            - Contract interaction patterns
+
+            **Code Generation:**
+            - Generated code quality and safety
+            - Macro hygiene and expansion correctness
+            - Template robustness and edge case handling
+            - Plugin architecture adherence
+            - Output organization and file structure
+
+            **Testing & Documentation:**
+            - Unit test coverage and quality
+            - Example usage and integration tests
+            - Documentation accuracy and completeness
+            - README and inline documentation clarity
+            - Test data validity and coverage
+
+            **Performance & Security:**
+            - Memory allocation patterns
+            - Parsing efficiency for large ABIs
+            - Security considerations for code generation
+            - Resource usage optimization
+            - Concurrent processing safety
+
+            **Cairo/StarkNet Integration:**
+            - StarkNet compatibility and standards adherence
+            - Felt type handling and conversion
+            - Contract call patterns and safety
+            - Event handling and subscription patterns
+            - Network interaction best practices
+
+            Provide specific, actionable feedback with inline comments and suggestions for line-specific issues. Include an concise overall summary when submitting the review.
+
+            **Important**: Submit as "COMMENT" type so the review doesn't block the PR.
+
+          # Add MCP GitHub tools for inline comments and project-specific testing
+          allowed_tools: "mcp__github__create_pending_pull_request_review,mcp__github__get_pull_request_comments,mcp__github__get_pull_request_reviews,mcp__github__add_pull_request_review_comment_to_pending_review,mcp__github__submit_pending_pull_request_review,mcp__github__get_pull_request_diff,Bash,Read,LS,Glob,Grep"
