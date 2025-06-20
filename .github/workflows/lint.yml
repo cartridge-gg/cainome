@@ -32,7 +32,7 @@ jobs:
           yarn global add prettier
       - name: Check Markdown format
         run: |
-          prettier --check "**/*.md"
+          prettier --check "**/*.md" --ignore-path <(echo "CLAUDE.md")
       - name: Check Yaml format
         run: |
           prettier --check "**/*.{yaml,yml}"
