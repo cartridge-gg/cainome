@@ -5,23 +5,21 @@ package abigen
 
 import (
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/starknet.go/rpc"
 )
 
-type SimpleInterfaceEvent struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
+// SimpleInterfaceEvent represents a contract event
+type SimpleInterfaceEvent interface {
+	IsSimpleInterfaceEvent() bool
 }
-
-const (
-)
 
 
 type SimpleInterface struct {
 	contractAddress *felt.Felt
-	provider Provider // Interface for StarkNet provider
+	provider *rpc.Provider
 }
 
-func NewSimpleInterface(contractAddress *felt.Felt, provider Provider) *SimpleInterface {
+func NewSimpleInterface(contractAddress *felt.Felt, provider *rpc.Provider) *SimpleInterface {
 	return &SimpleInterface {
 		contractAddress: contractAddress,
 		provider: provider,

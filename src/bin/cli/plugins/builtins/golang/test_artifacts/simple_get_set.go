@@ -6,35 +6,33 @@ package abigen
 import (
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/starknet.go/rpc"
 )
 
-type SimpleGetSetEvent struct {
+// SimpleGetSetEvent represents a contract event
+type SimpleGetSetEvent interface {
+	IsSimpleGetSetEvent() bool
+}
+
+
+type TestEnum struct {
 	Variant string `json:"variant"`
 	Value   interface{} `json:"value,omitempty"`
 }
 
 const (
+	TestEnum_V1 = "V1"
+	TestEnum_V2 = "V2"
 )
 
-
-type SimpleGetSetTestEnum struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
-}
-
-const (
-	SimpleGetSetTestEnum_V1 = "V1"
-	SimpleGetSetTestEnum_V2 = "V2"
-)
-
-func NewSimpleGetSetTestEnumV1() SimpleGetSetTestEnum {
-	return SimpleGetSetTestEnum {
+func NewTestEnumV1() TestEnum {
+	return TestEnum {
 		Variant: "V1",
 	}
 }
 
-func NewSimpleGetSetTestEnumV2() SimpleGetSetTestEnum {
-	return SimpleGetSetTestEnum {
+func NewTestEnumV2() TestEnum {
+	return TestEnum {
 		Variant: "V2",
 	}
 }
@@ -42,17 +40,17 @@ func NewSimpleGetSetTestEnumV2() SimpleGetSetTestEnum {
 
 type SimpleGetSet struct {
 	contractAddress *felt.Felt
-	provider Provider // Interface for StarkNet provider
+	provider *rpc.Provider
 }
 
-func NewSimpleGetSet(contractAddress *felt.Felt, provider Provider) *SimpleGetSet {
+func NewSimpleGetSet(contractAddress *felt.Felt, provider *rpc.Provider) *SimpleGetSet {
 	return &SimpleGetSet {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (simple_get_set *SimpleGetSet) GetSetEnum(v SimpleGetSetTestEnum) (SimpleGetSetTestEnum, error) {
+func (simple_get_set *SimpleGetSet) GetSetEnum(v TestEnum) (TestEnum, error) {
 	// TODO: Implement Call method for GetSetEnum
 	panic("not implemented")
 }

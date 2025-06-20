@@ -1,4 +1,4 @@
-module cainome_test_bindings
+module abigen
 
 go 1.24.1
 

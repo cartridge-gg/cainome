@@ -6,21 +6,26 @@ package abigen
 import (
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/starknet.go/rpc"
 )
 
-type EventsEventNothing struct {
-}
-
-type EventsEventAll struct {
+type EventAll struct {
 	Header *felt.Felt `json:"header"`
 	Value []*felt.Felt `json:"value"`
 }
 
-type EventsEventWithOtherName struct {
-	Value *felt.Felt `json:"value"`
+// EventName returns the name of this event type
+func (e EventAll) EventName() string {
+	return "all"
 }
 
-type EventsEventMultiple struct {
+// IsSimpleEventsEvent implements the SimpleEventsEvent interface
+func (e EventAll) IsSimpleEventsEvent() bool {
+	return true
+}
+
+
+type EventMultiple struct {
 	Key1 *felt.Felt `json:"key1"`
 	Key2 *felt.Felt `json:"key2"`
 	Data1 *felt.Felt `json:"data1"`
@@ -31,35 +36,97 @@ type EventsEventMultiple struct {
 } `json:"data3"`
 }
 
-type EventsEventOnlyData struct {
-	Value *felt.Felt `json:"value"`
+// EventName returns the name of this event type
+func (e EventMultiple) EventName() string {
+	return "multiple"
 }
 
-type EventsEventOnlyKey struct {
-	Value *felt.Felt `json:"value"`
+// IsSimpleEventsEvent implements the SimpleEventsEvent interface
+func (e EventMultiple) IsSimpleEventsEvent() bool {
+	return true
 }
 
-type EventsEvent struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
+
+// SimpleEventsEvent represents a contract event
+type SimpleEventsEvent interface {
+	IsSimpleEventsEvent() bool
 }
 
 const (
-	EventsEvent_EventOnlyKey = "EventOnlyKey"
-	EventsEvent_EventOnlyData = "EventOnlyData"
-	EventsEvent_EventAll = "EventAll"
-	EventsEvent_EventMultiple = "EventMultiple"
-	EventsEvent_EventNothing = "EventNothing"
-	EventsEvent_SuperEvent = "SuperEvent"
+	SimpleEventsEvent_EventOnlyKey = "EventOnlyKey"
+	SimpleEventsEvent_EventOnlyData = "EventOnlyData"
+	SimpleEventsEvent_EventAll = "EventAll"
+	SimpleEventsEvent_EventMultiple = "EventMultiple"
+	SimpleEventsEvent_EventNothing = "EventNothing"
+	SimpleEventsEvent_SuperEvent = "SuperEvent"
 )
+
+
+type EventOnlyKey struct {
+	Value *felt.Felt `json:"value"`
+}
+
+// EventName returns the name of this event type
+func (e EventOnlyKey) EventName() string {
+	return "only_key"
+}
+
+// IsSimpleEventsEvent implements the SimpleEventsEvent interface
+func (e EventOnlyKey) IsSimpleEventsEvent() bool {
+	return true
+}
+
+
+type EventOnlyData struct {
+	Value *felt.Felt `json:"value"`
+}
+
+// EventName returns the name of this event type
+func (e EventOnlyData) EventName() string {
+	return "only_data"
+}
+
+// IsSimpleEventsEvent implements the SimpleEventsEvent interface
+func (e EventOnlyData) IsSimpleEventsEvent() bool {
+	return true
+}
+
+
+type EventWithOtherName struct {
+	Value *felt.Felt `json:"value"`
+}
+
+// EventName returns the name of this event type
+func (e EventWithOtherName) EventName() string {
+	return "with_other_name"
+}
+
+// IsSimpleEventsEvent implements the SimpleEventsEvent interface
+func (e EventWithOtherName) IsSimpleEventsEvent() bool {
+	return true
+}
+
+
+type EventNothing struct {
+}
+
+// EventName returns the name of this event type
+func (e EventNothing) EventName() string {
+	return "nothing"
+}
+
+// IsSimpleEventsEvent implements the SimpleEventsEvent interface
+func (e EventNothing) IsSimpleEventsEvent() bool {
+	return true
+}
 
 
 type Events struct {
 	contractAddress *felt.Felt
-	provider Provider // Interface for StarkNet provider
+	provider *rpc.Provider
 }
 
-func NewEvents(contractAddress *felt.Felt, provider Provider) *Events {
+func NewEvents(contractAddress *felt.Felt, provider *rpc.Provider) *Events {
 	return &Events {
 		contractAddress: contractAddress,
 		provider: provider,

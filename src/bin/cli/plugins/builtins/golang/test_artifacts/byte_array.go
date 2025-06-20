@@ -5,23 +5,21 @@ package abigen
 
 import (
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/starknet.go/rpc"
 )
 
-type ByteArrayEvent struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
+// ByteArrayEvent represents a contract event
+type ByteArrayEvent interface {
+	IsByteArrayEvent() bool
 }
-
-const (
-)
 
 
 type ByteArray struct {
 	contractAddress *felt.Felt
-	provider Provider // Interface for StarkNet provider
+	provider *rpc.Provider
 }
 
-func NewByteArray(contractAddress *felt.Felt, provider Provider) *ByteArray {
+func NewByteArray(contractAddress *felt.Felt, provider *rpc.Provider) *ByteArray {
 	return &ByteArray {
 		contractAddress: contractAddress,
 		provider: provider,

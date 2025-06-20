@@ -6,13 +6,39 @@ package abigen
 import (
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/starknet.go/rpc"
 )
 
-type StructsToAlias struct {
+type StructWithStruct struct {
+	Simple Simple `json:"simple"`
+}
+
+type GenericTwo struct {
+	A uint64 `json:"a"`
+	B uint64 `json:"b"`
+	C *felt.Felt `json:"c"`
+	D ToAlias `json:"d"`
+	E []ToAlias `json:"e"`
+	F GenericOne `json:"f"`
+}
+
+type GenericOne struct {
+	A uint64 `json:"a"`
+	B *felt.Felt `json:"b"`
+	C *big.Int `json:"c"`
+}
+
+type ToAlias struct {
 	A uint32 `json:"a"`
 }
 
-type StructsSimple struct {
+// StructsEvent represents a contract event
+type StructsEvent interface {
+	IsStructsEvent() bool
+}
+
+
+type Simple struct {
 	Felt *felt.Felt `json:"felt"`
 	Uint256 *big.Int `json:"uint256"`
 	Uint64 uint64 `json:"uint64"`
@@ -26,118 +52,90 @@ type StructsSimple struct {
 	Span []*felt.Felt `json:"span"`
 }
 
-type StructsGenericOne struct {
-	A *big.Int `json:"a"`
-	B *felt.Felt `json:"b"`
-	C *big.Int `json:"c"`
-}
-
-type StructsGenericTwo struct {
-	A uint64 `json:"a"`
-	B uint64 `json:"b"`
-	C *felt.Felt `json:"c"`
-	D StructsToAlias `json:"d"`
-	E []StructsToAlias `json:"e"`
-	F StructsGenericOne `json:"f"`
-}
-
-type StructsStructWithStruct struct {
-	Simple StructsSimple `json:"simple"`
-}
-
-type StructsEvent struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
-}
-
-const (
-)
-
-
 type Structs struct {
 	contractAddress *felt.Felt
-	provider Provider // Interface for StarkNet provider
+	provider *rpc.Provider
 }
 
-func NewStructs(contractAddress *felt.Felt, provider Provider) *Structs {
+func NewStructs(contractAddress *felt.Felt, provider *rpc.Provider) *Structs {
 	return &Structs {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (structs *Structs) GetSimple() (StructsSimple, error) {
+func (structs *Structs) GetSimple() (Simple, error) {
 	// TODO: Implement Call method for GetSimple
 	panic("not implemented")
 }
 
-func (structs *Structs) SetSimple(simple StructsSimple) error {
+func (structs *Structs) SetSimple(simple Simple) error {
 	// TODO: Implement Invoke method for SetSimple
 	panic("not implemented")
 }
 
-func (structs *Structs) GetStructWStruct() (StructsStructWithStruct, error) {
+func (structs *Structs) GetStructWStruct() (StructWithStruct, error) {
 	// TODO: Implement Call method for GetStructWStruct
 	panic("not implemented")
 }
 
-func (structs *Structs) SetStructWStruct(sws StructsStructWithStruct) error {
+func (structs *Structs) SetStructWStruct(sws StructWithStruct) error {
 	// TODO: Implement Invoke method for SetStructWStruct
 	panic("not implemented")
 }
 
-func (structs *Structs) GetGenericOne() (StructsGenericOne, error) {
+func (structs *Structs) GetGenericOne() (GenericOne, error) {
 	// TODO: Implement Call method for GetGenericOne
 	panic("not implemented")
 }
 
-func (structs *Structs) GetGenericOneArray() (StructsGenericOne, error) {
+func (structs *Structs) GetGenericOneArray() (GenericOne, error) {
 	// TODO: Implement Call method for GetGenericOneArray
 	panic("not implemented")
 }
 
-func (structs *Structs) SetGenericOne(generic StructsGenericOne) error {
+func (structs *Structs) SetGenericOne(generic GenericOne) error {
 	// TODO: Implement Invoke method for SetGenericOne
 	panic("not implemented")
 }
 
-func (structs *Structs) SetGenericTwo2(generic StructsGenericTwo) error {
+func (structs *Structs) SetGenericTwo2(generic GenericTwo) error {
 	// TODO: Implement Invoke method for SetGenericTwo2
 	panic("not implemented")
 }
 
-func (structs *Structs) SetGenericTwo0(generic StructsGenericTwo) error {
+func (structs *Structs) SetGenericTwo0(generic GenericTwo) error {
 	// TODO: Implement Invoke method for SetGenericTwo0
 	panic("not implemented")
 }
 
-func (structs *Structs) SetGenericTwo(generic StructsGenericTwo) error {
+func (structs *Structs) SetGenericTwo(generic GenericTwo) error {
 	// TODO: Implement Invoke method for SetGenericTwo
 	panic("not implemented")
 }
 
-func (structs *Structs) GetGenericTwo() (StructsGenericTwo, error) {
+func (structs *Structs) GetGenericTwo() (GenericTwo, error) {
 	// TODO: Implement Call method for GetGenericTwo
 	panic("not implemented")
 }
 
 func (structs *Structs) SetTupleGeneric(value struct {
-	Field0 StructsGenericOne
-	Field1 StructsGenericTwo
+	Field0 GenericOne
+	Field1 GenericTwo
 }) error {
 	// TODO: Implement Invoke method for SetTupleGeneric
 	panic("not implemented")
 }
 
 func (structs *Structs) GetTupleOfArrayGeneric() (struct {
-	Field0 []StructsGenericOne
+	Field0 []GenericOne
 	Field1 []*felt.Felt
 }, error) {
 	// TODO: Implement Call method for GetTupleOfArrayGeneric
 	panic("not implemented")
 }
 
-func (structs *Structs) SetFromAlias(value []StructsToAlias) error {
+func (structs *Structs) SetFromAlias(value []ToAlias) error {
 	// TODO: Implement Invoke method for SetFromAlias
 	panic("not implemented")
 }

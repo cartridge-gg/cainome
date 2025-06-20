@@ -6,18 +6,16 @@ package abigen
 import (
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/starknet.go/rpc"
 )
 
-type OptionResultEvent struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
+// OptionResultEvent represents a contract event
+type OptionResultEvent interface {
+	IsOptionResultEvent() bool
 }
 
-const (
-)
 
-
-type OptionResultGenericOne struct {
+type GenericOneOptionResult struct {
 	A *felt.Felt `json:"a"`
 	B *felt.Felt `json:"b"`
 	C *big.Int `json:"c"`
@@ -25,10 +23,10 @@ type OptionResultGenericOne struct {
 
 type OptionResult struct {
 	contractAddress *felt.Felt
-	provider Provider // Interface for StarkNet provider
+	provider *rpc.Provider
 }
 
-func NewOptionResult(contractAddress *felt.Felt, provider Provider) *OptionResult {
+func NewOptionResult(contractAddress *felt.Felt, provider *rpc.Provider) *OptionResult {
 	return &OptionResult {
 		contractAddress: contractAddress,
 		provider: provider,
@@ -40,13 +38,13 @@ func (option_result *OptionResult) ResultOkUnit(res Result[struct{}, *felt.Felt]
 	panic("not implemented")
 }
 
-func (option_result *OptionResult) ResultOkStruct(res Result[OptionResultGenericOne, *felt.Felt]) (Result[uint64, *felt.Felt], error) {
+func (option_result *OptionResult) ResultOkStruct(res Result[GenericOneOptionResult, *felt.Felt]) (Result[uint64, *felt.Felt], error) {
 	// TODO: Implement Call method for ResultOkStruct
 	panic("not implemented")
 }
 
 func (option_result *OptionResult) ResultOkTupleStruct(res Result[struct {
-	Field0 OptionResultGenericOne
+	Field0 GenericOneOptionResult
 	Field1 *felt.Felt
 }, *felt.Felt]) (Result[uint64, *felt.Felt], error) {
 	// TODO: Implement Call method for ResultOkTupleStruct

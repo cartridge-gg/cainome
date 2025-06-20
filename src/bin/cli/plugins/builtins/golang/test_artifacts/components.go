@@ -6,72 +6,99 @@ package abigen
 import (
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/starknet.go/rpc"
 )
 
-type ComponentsOutterEvent struct {
-}
-
-type ComponentsWrittenAb struct {
-	Data *felt.Felt `json:"data"`
-}
-
-type ComponentsEvent struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
+// ComponentsContractEvent represents a contract event
+type ComponentsContractEvent interface {
+	IsComponentsContractEvent() bool
 }
 
 const (
-	ComponentsEvent_Written = "Written"
-	ComponentsEvent_Written88 = "Written88"
+	ComponentsContractEvent_OutterEvent = "OutterEvent"
+	ComponentsContractEvent_SimpleEvent = "SimpleEvent"
+	ComponentsContractEvent_SimpleEventOther = "SimpleEventOther"
 )
 
 
-type ComponentsEvent struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
-}
-
-const (
-	ComponentsEvent_OutterEvent = "OutterEvent"
-	ComponentsEvent_SimpleEvent = "SimpleEvent"
-	ComponentsEvent_SimpleEventOther = "SimpleEventOther"
-)
-
-
-type ComponentsWritten struct {
-	Data *felt.Felt `json:"data"`
-}
-
-type ComponentsEvent struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
-}
-
-const (
-	ComponentsEvent_Written = "Written"
-)
-
-
-type ComponentsMyStruct struct {
-	Data *big.Int `json:"data"`
-}
-
-type ComponentsWritten struct {
+type SimpleWritten struct {
 	Before *felt.Felt `json:"before"`
 	After *felt.Felt `json:"after"`
 }
+// IsSimpleEvent implements the SimpleEvent interface
+func (e SimpleWritten) IsSimpleEvent() bool {
+	return true
+}
 
-type ComponentsMyStruct struct {
+
+type MyStructOther struct {
+	Data *big.Int `json:"data"`
+}
+
+// OtherEvent represents a contract event
+type OtherEvent interface {
+	IsOtherEvent() bool
+}
+
+const (
+	OtherEvent_Written = "Written"
+)
+
+
+// SimpleEvent represents a contract event
+type SimpleEvent interface {
+	IsSimpleEvent() bool
+}
+
+const (
+	SimpleEvent_Written = "Written"
+	SimpleEvent_Written88 = "Written88"
+)
+
+
+type OtherWritten struct {
+	Data *felt.Felt `json:"data"`
+}
+// IsOtherEvent implements the OtherEvent interface
+func (e OtherWritten) IsOtherEvent() bool {
+	return true
+}
+
+
+type WrittenAb struct {
+	Data *felt.Felt `json:"data"`
+}
+// IsSimpleEvent implements the SimpleEvent interface
+func (e WrittenAb) IsSimpleEvent() bool {
+	return true
+}
+
+
+type MyStructSimple struct {
 	A *felt.Felt `json:"a"`
 	B *felt.Felt `json:"b"`
 }
 
-type Components struct {
-	contractAddress *felt.Felt
-	provider Provider // Interface for StarkNet provider
+type OutterEvent struct {
 }
 
-func NewComponents(contractAddress *felt.Felt, provider Provider) *Components {
+// EventName returns the name of this event type
+func (e OutterEvent) EventName() string {
+	return "outter"
+}
+
+// IsComponentsContractEvent implements the ComponentsContractEvent interface
+func (e OutterEvent) IsComponentsContractEvent() bool {
+	return true
+}
+
+
+type Components struct {
+	contractAddress *felt.Felt
+	provider *rpc.Provider
+}
+
+func NewComponents(contractAddress *felt.Felt, provider *rpc.Provider) *Components {
 	return &Components {
 		contractAddress: contractAddress,
 		provider: provider,
@@ -88,19 +115,19 @@ func (components *Components) SimpleOther() error {
 	panic("not implemented")
 }
 
-func (components *Components) ArrayStructSimple() ([]ComponentsMyStruct, error) {
+func (components *Components) ArrayStructSimple() ([]MyStructSimple, error) {
 	// TODO: Implement Invoke method for ArrayStructSimple
 	panic("not implemented")
 }
 
-func (components *Components) ArrayStructSimpleOther() ([]ComponentsMyStruct, error) {
+func (components *Components) ArrayStructSimpleOther() ([]MyStructOther, error) {
 	// TODO: Implement Invoke method for ArrayStructSimpleOther
 	panic("not implemented")
 }
 
 func (components *Components) TupleEvents() (struct {
-	Field0 ComponentsMyStruct
-	Field1 ComponentsMyStruct
+	Field0 MyStructSimple
+	Field1 MyStructOther
 }, error) {
 	// TODO: Implement Invoke method for TupleEvents
 	panic("not implemented")
