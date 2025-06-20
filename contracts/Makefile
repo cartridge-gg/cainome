@@ -10,6 +10,7 @@ generate_artifacts:
 	mkdir -p ${artifacts}
 
 	jq .abi ${scarb_build}basic${sierra} > ${artifacts}basic.abi.json
+	jq .abi ${scarb_build}conflicting_events${sierra} > ${artifacts}conflicting_events.abi.json
 	jq .abi ${scarb_build}simple_events${sierra} > ${artifacts}events.abi.json
 	jq .abi ${scarb_build}simple_get_set${sierra} > ${artifacts}simple_get_set.abi.json
 	jq .abi ${scarb_build}simple_types${sierra} > ${artifacts}simple_types.abi.json

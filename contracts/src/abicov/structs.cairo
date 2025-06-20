@@ -87,6 +87,9 @@ mod structs {
     fn set_struct_w_struct(ref self: ContractState, sws: StructWithStruct) {}
 
     #[external(v0)]
+    fn set_struct_w_optional_struct(ref self: ContractState, sws: Option<StructWithStruct>) {}
+
+    #[external(v0)]
     fn get_generic_one(self: @ContractState) -> GenericOne<felt252> {
         GenericOne { a: 1, b: 2, c: 3_u256 }
     }
