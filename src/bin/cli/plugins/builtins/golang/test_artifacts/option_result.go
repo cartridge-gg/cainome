@@ -18,6 +18,47 @@ type GenericOneOptionResult struct {
 	C *big.Int `json:"c"`
 }
 
+// MarshalCairo serializes GenericOneOptionResult to Cairo felt array
+func (s *GenericOneOptionResult) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.A)
+	result = append(result, s.B)
+	result = append(result, FeltFromBigInt(s.C))
+	return result, nil
+}
+
+// UnmarshalCairo deserializes GenericOneOptionResult from Cairo felt array
+func (s *GenericOneOptionResult) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field A")
+	}
+	s.A = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field B")
+	}
+	s.B = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field C")
+	}
+	s.C = BigIntFromFelt(data[offset])
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for GenericOneOptionResult
+func (s *GenericOneOptionResult) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
 // OptionResultEvent represents a contract event
 type OptionResultEvent interface {
 	IsOptionResultEvent() bool
@@ -49,11 +90,9 @@ func (option_result *OptionResult) ResultOkUnit(ctx context.Context, res Result[
 	}
 
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize res to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = res
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type res to felt
+	_ = res // TODO: add to calldata
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -67,17 +106,17 @@ func (option_result *OptionResult) ResultOkUnit(ctx context.Context, res Result[
 		return Result[uint64, *felt.Felt]{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result Result[uint64, *felt.Felt]
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
 
-func (option_result *OptionResult) ResultOkStruct(ctx context.Context, res Result[GenericOneOptionResult, *felt.Felt], opts *CallOpts) (Result[uint64, *felt.Felt], error) {
+func (option_result *OptionResult) ResultOkStruct(ctx context.Context, res Result[*GenericOneOptionResult, *felt.Felt], opts *CallOpts) (Result[uint64, *felt.Felt], error) {
 	// Setup call options
 	if opts == nil {
 		opts = &CallOpts{}
@@ -90,11 +129,9 @@ func (option_result *OptionResult) ResultOkStruct(ctx context.Context, res Resul
 	}
 
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize res to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = res
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type res to felt
+	_ = res // TODO: add to calldata
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -108,18 +145,18 @@ func (option_result *OptionResult) ResultOkStruct(ctx context.Context, res Resul
 		return Result[uint64, *felt.Felt]{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result Result[uint64, *felt.Felt]
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
 
 func (option_result *OptionResult) ResultOkTupleStruct(ctx context.Context, res Result[struct {
-	Field0 GenericOneOptionResult
+	Field0 *GenericOneOptionResult
 	Field1 *felt.Felt
 }, *felt.Felt], opts *CallOpts) (Result[uint64, *felt.Felt], error) {
 	// Setup call options
@@ -134,11 +171,9 @@ func (option_result *OptionResult) ResultOkTupleStruct(ctx context.Context, res 
 	}
 
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize res to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = res
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type res to felt
+	_ = res // TODO: add to calldata
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -152,12 +187,12 @@ func (option_result *OptionResult) ResultOkTupleStruct(ctx context.Context, res 
 		return Result[uint64, *felt.Felt]{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result Result[uint64, *felt.Felt]
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
@@ -175,11 +210,9 @@ func (option_result *OptionResult) ResultOk(ctx context.Context, res Result[*fel
 	}
 
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize res to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = res
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type res to felt
+	_ = res // TODO: add to calldata
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -193,12 +226,12 @@ func (option_result *OptionResult) ResultOk(ctx context.Context, res Result[*fel
 		return Result[uint64, *felt.Felt]{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result Result[uint64, *felt.Felt]
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
@@ -216,11 +249,9 @@ func (option_result *OptionResult) ResultErr(ctx context.Context, res Result[*fe
 	}
 
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize res to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = res
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type res to felt
+	_ = res // TODO: add to calldata
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -234,12 +265,12 @@ func (option_result *OptionResult) ResultErr(ctx context.Context, res Result[*fe
 		return Result[*felt.Felt, *big.Int]{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return Result[*felt.Felt, *big.Int]{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result Result[*felt.Felt, *big.Int]
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
@@ -257,11 +288,9 @@ func (option_result *OptionResult) OptionSome(ctx context.Context, opt **felt.Fe
 	}
 
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize opt to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = opt
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type opt to felt
+	_ = opt // TODO: add to calldata
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -275,12 +304,12 @@ func (option_result *OptionResult) OptionSome(ctx context.Context, opt **felt.Fe
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result *[]*felt.Felt
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
@@ -298,11 +327,9 @@ func (option_result *OptionResult) OptionNone(ctx context.Context, opt **felt.Fe
 	}
 
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize opt to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = opt
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type opt to felt
+	_ = opt // TODO: add to calldata
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -316,12 +343,12 @@ func (option_result *OptionResult) OptionNone(ctx context.Context, opt **felt.Fe
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result *uint64
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }

@@ -12,16 +12,246 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
-type MyStructInnerGeneric struct {
-	F1 *felt.Felt `json:"f1"`
-	F2 MyStructGen `json:"f2"`
+type PlainStruct struct {
+	F1 uint8 `json:"f1"`
+	F2 uint16 `json:"f2"`
 	F3 uint32 `json:"f3"`
+	F4 uint64 `json:"f4"`
+	F5 *big.Int `json:"f5"`
+	F6 *felt.Felt `json:"f6"`
+	F7 struct {
+	Field0 *felt.Felt
+	Field1 uint64
+} `json:"f7"`
+	F8 []uint8 `json:"f8"`
+	F9 []*big.Int `json:"f9"`
 }
+
+// MarshalCairo serializes PlainStruct to Cairo felt array
+func (s *PlainStruct) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, FeltFromUint(uint64(s.F1)))
+	result = append(result, FeltFromUint(uint64(s.F2)))
+	result = append(result, FeltFromUint(uint64(s.F3)))
+	result = append(result, FeltFromUint(uint64(s.F4)))
+	result = append(result, FeltFromBigInt(s.F5))
+	result = append(result, s.F6)
+	// Tuple field F7: marshal each sub-field
+	result = append(result, s.F7.Field0)
+	result = append(result, FeltFromUint(uint64(s.F7.Field1)))
+	// Array field F8: serialize length then elements
+	result = append(result, FeltFromUint(uint64(len(s.F8))))
+	for _, item := range s.F8 {
+		result = append(result, FeltFromUint(uint64(item)))
+	}
+	// Array field F9: serialize length then elements
+	result = append(result, FeltFromUint(uint64(len(s.F9))))
+	for _, item := range s.F9 {
+		result = append(result, FeltFromBigInt(item))
+	}
+	return result, nil
+}
+
+// UnmarshalCairo deserializes PlainStruct from Cairo felt array
+func (s *PlainStruct) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F1")
+	}
+	s.F1 = uint8(UintFromFelt(data[offset]))
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F2")
+	}
+	s.F2 = uint16(UintFromFelt(data[offset]))
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F3")
+	}
+	s.F3 = uint32(UintFromFelt(data[offset]))
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F4")
+	}
+	s.F4 = UintFromFelt(data[offset])
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F5")
+	}
+	s.F5 = BigIntFromFelt(data[offset])
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F6")
+	}
+	s.F6 = data[offset]
+	offset++
+
+	// Tuple field F7: unmarshal each sub-field
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for tuple field F7 element 0")
+	}
+	s.F7.Field0 = data[offset]
+	offset++
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for tuple field F7 element 1")
+	}
+	s.F7.Field1 = UintFromFelt(data[offset])
+	offset++
+
+	// Array field F8: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of F8")
+	}
+	lengthF8 := UintFromFelt(data[offset])
+	offset++
+	s.F8 = make([]uint8, lengthF8)
+	for i := uint64(0); i < lengthF8; i++ {
+		if offset >= len(data) {
+			return fmt.Errorf("insufficient data for array element %d of F8", i)
+		}
+		s.F8[i] = uint8(UintFromFelt(data[offset]))
+		offset++
+	}
+
+	// Array field F9: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of F9")
+	}
+	lengthF9 := UintFromFelt(data[offset])
+	offset++
+	s.F9 = make([]*big.Int, lengthF9)
+	for i := uint64(0); i < lengthF9; i++ {
+		if offset >= len(data) {
+			return fmt.Errorf("insufficient data for array element %d of F9", i)
+		}
+		s.F9[i] = BigIntFromFelt(data[offset])
+		offset++
+	}
+
+	return nil
+}
+
+// CairoSize returns the serialized size for PlainStruct
+func (s *PlainStruct) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+// GenEvent represents a contract event
+type GenEvent interface {
+	IsGenEvent() bool
+}
+
+const (
+	GenEvent_E1 = "E1"
+)
+
+
+type MyStructGen struct {
+	F1 *felt.Felt `json:"f1"`
+	F2 *felt.Felt `json:"f2"`
+	F3 *felt.Felt `json:"f3"`
+}
+
+// MarshalCairo serializes MyStructGen to Cairo felt array
+func (s *MyStructGen) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.F1)
+	result = append(result, s.F2)
+	result = append(result, s.F3)
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyStructGen from Cairo felt array
+func (s *MyStructGen) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F1")
+	}
+	s.F1 = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F2")
+	}
+	s.F2 = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F3")
+	}
+	s.F3 = data[offset]
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for MyStructGen
+func (s *MyStructGen) CairoSize() int {
+	return -1 // Dynamic size
+}
+
 
 type E1 struct {
 	Key *felt.Felt `json:"key"`
 	Value []*felt.Felt `json:"value"`
 }
+
+// MarshalCairo serializes E1 to Cairo felt array
+func (s *E1) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Key)
+	// Array field Value: serialize length then elements
+	result = append(result, FeltFromUint(uint64(len(s.Value))))
+	for _, item := range s.Value {
+		result = append(result, item)
+	}
+	return result, nil
+}
+
+// UnmarshalCairo deserializes E1 from Cairo felt array
+func (s *E1) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Key")
+	}
+	s.Key = data[offset]
+	offset++
+
+	// Array field Value: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of Value")
+	}
+	lengthValue := UintFromFelt(data[offset])
+	offset++
+	s.Value = make([]*felt.Felt, lengthValue)
+	for i := uint64(0); i < lengthValue; i++ {
+		if offset >= len(data) {
+			return fmt.Errorf("insufficient data for array element %d of Value", i)
+		}
+		s.Value[i] = data[offset]
+		offset++
+	}
+
+	return nil
+}
+
+// CairoSize returns the serialized size for E1
+func (s *E1) CairoSize() int {
+	return -1 // Dynamic size
+}
+
 // IsGenEvent implements the GenEvent interface
 func (e E1) IsGenEvent() bool {
 	return true
@@ -113,37 +343,170 @@ func NewMyEnumEleven() MyEnum {
 	}
 }
 
+// MarshalCairo serializes MyEnum to Cairo felt array
+func (e *MyEnum) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
 
-type MyStructGen struct {
+	switch e.Variant {
+	case "One":
+		// Discriminant for variant One
+		result = append(result, FeltFromUint(0))
+		// Unit variant - no additional data
+	case "Two":
+		// Discriminant for variant Two
+		result = append(result, FeltFromUint(1))
+		// Unit variant - no additional data
+	case "Three":
+		// Discriminant for variant Three
+		result = append(result, FeltFromUint(2))
+		// Unit variant - no additional data
+	case "Four":
+		// Discriminant for variant Four
+		result = append(result, FeltFromUint(3))
+		// Unit variant - no additional data
+	case "Five":
+		// Discriminant for variant Five
+		result = append(result, FeltFromUint(4))
+		// Unit variant - no additional data
+	case "Six":
+		// Discriminant for variant Six
+		result = append(result, FeltFromUint(5))
+		// Unit variant - no additional data
+	case "Seven":
+		// Discriminant for variant Seven
+		result = append(result, FeltFromUint(6))
+		// Unit variant - no additional data
+	case "Eight":
+		// Discriminant for variant Eight
+		result = append(result, FeltFromUint(7))
+		// Unit variant - no additional data
+	case "Nine":
+		// Discriminant for variant Nine
+		result = append(result, FeltFromUint(8))
+		// Unit variant - no additional data
+	case "Ten":
+		// Discriminant for variant Ten
+		result = append(result, FeltFromUint(9))
+		// Unit variant - no additional data
+	case "Eleven":
+		// Discriminant for variant Eleven
+		result = append(result, FeltFromUint(10))
+		// Unit variant - no additional data
+	default:
+		return nil, fmt.Errorf("unknown variant: %s", e.Variant)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyEnum from Cairo felt array
+func (e *MyEnum) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := UintFromFelt(data[0])
+	offset := 1
+
+	switch discriminant {
+	case 0:
+		e.Variant = "One"
+		e.Value = nil
+	case 1:
+		e.Variant = "Two"
+		e.Value = nil
+	case 2:
+		e.Variant = "Three"
+		e.Value = nil
+	case 3:
+		e.Variant = "Four"
+		e.Value = nil
+	case 4:
+		e.Variant = "Five"
+		e.Value = nil
+	case 5:
+		e.Variant = "Six"
+		e.Value = nil
+	case 6:
+		e.Variant = "Seven"
+		e.Value = nil
+	case 7:
+		e.Variant = "Eight"
+		e.Value = nil
+	case 8:
+		e.Variant = "Nine"
+		e.Value = nil
+	case 9:
+		e.Variant = "Ten"
+		e.Value = nil
+	case 10:
+		e.Variant = "Eleven"
+		e.Value = nil
+	default:
+		return fmt.Errorf("unknown discriminant: %d", discriminant)
+	}
+
+	_ = offset // Suppress unused variable warning for unit-only enums
+	return nil
+}
+
+// CairoSize returns the serialized size for MyEnum
+func (e *MyEnum) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+type MyStructInnerGeneric struct {
 	F1 *felt.Felt `json:"f1"`
-	F2 *felt.Felt `json:"f2"`
-	F3 *felt.Felt `json:"f3"`
-}
-
-// GenEvent represents a contract event
-type GenEvent interface {
-	IsGenEvent() bool
-}
-
-const (
-	GenEvent_E1 = "E1"
-)
-
-
-type PlainStruct struct {
-	F1 uint8 `json:"f1"`
-	F2 uint16 `json:"f2"`
+	F2 MyStructGen `json:"f2"`
 	F3 uint32 `json:"f3"`
-	F4 uint64 `json:"f4"`
-	F5 *big.Int `json:"f5"`
-	F6 *felt.Felt `json:"f6"`
-	F7 struct {
-	Field0 *felt.Felt
-	Field1 uint64
-} `json:"f7"`
-	F8 []uint8 `json:"f8"`
-	F9 []*big.Int `json:"f9"`
 }
+
+// MarshalCairo serializes MyStructInnerGeneric to Cairo felt array
+func (s *MyStructInnerGeneric) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.F1)
+	// Struct field F2: marshal using CairoMarshaler
+	if fieldData, err := s.F2.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
+	result = append(result, FeltFromUint(uint64(s.F3)))
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyStructInnerGeneric from Cairo felt array
+func (s *MyStructInnerGeneric) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F1")
+	}
+	s.F1 = data[offset]
+	offset++
+
+	// Struct field F2: unmarshal using CairoMarshaler
+	if err := s.F2.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F3")
+	}
+	s.F3 = uint32(UintFromFelt(data[offset]))
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for MyStructInnerGeneric
+func (s *MyStructInnerGeneric) CairoSize() int {
+	return -1 // Dynamic size
+}
+
 
 type Gen struct {
 	contractAddress *felt.Felt
@@ -157,13 +520,16 @@ func NewGen(contractAddress *felt.Felt, provider *rpc.Provider) *Gen {
 	}
 }
 
-func (gen *Gen) Func1(ctx context.Context, a MyStructGen) error {
+func (gen *Gen) Func1(ctx context.Context, a *MyStructGen) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize a to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = a
+	calldata := []*felt.Felt{}
+	// TODO: Serialize complex type a using MarshalCairo()
+	// if a_data, err := a.MarshalCairo(); err != nil {
+	//     return fmt.Errorf("failed to marshal a: %w", err)
+	// } else {
+	//     calldata = append(calldata, a_data...)
+	// }
+	_ = a // TODO: implement MarshalCairo and add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -171,13 +537,16 @@ func (gen *Gen) Func1(ctx context.Context, a MyStructGen) error {
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (gen *Gen) Func2(ctx context.Context, a MyStructGen) error {
+func (gen *Gen) Func2(ctx context.Context, a *MyStructGen) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize a to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = a
+	calldata := []*felt.Felt{}
+	// TODO: Serialize complex type a using MarshalCairo()
+	// if a_data, err := a.MarshalCairo(); err != nil {
+	//     return fmt.Errorf("failed to marshal a: %w", err)
+	// } else {
+	//     calldata = append(calldata, a_data...)
+	// }
+	_ = a // TODO: implement MarshalCairo and add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -218,37 +587,40 @@ func (gen *Gen) Read(ctx context.Context, opts *CallOpts) (struct {
 }{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return struct {
 	Field0 *felt.Felt
 	Field1 *felt.Felt
 }{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result struct {
 	Field0 *felt.Felt
 	Field1 *felt.Felt
 }
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
 
-func (gen *Gen) Func3(ctx context.Context, a PlainStruct, opts *CallOpts) error {
+func (gen *Gen) Func3(ctx context.Context, a *PlainStruct, opts *CallOpts) error {
 	return nil
 }
 
-func (gen *Gen) Func4(ctx context.Context, a MyEnum, opts *CallOpts) error {
+func (gen *Gen) Func4(ctx context.Context, a *MyEnum, opts *CallOpts) error {
 	return nil
 }
 
-func (gen *Gen) Func5(ctx context.Context, a MyStructInnerGeneric) error {
+func (gen *Gen) Func5(ctx context.Context, a *MyStructInnerGeneric) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize a to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = a
+	calldata := []*felt.Felt{}
+	// TODO: Serialize complex type a using MarshalCairo()
+	// if a_data, err := a.MarshalCairo(); err != nil {
+	//     return fmt.Errorf("failed to marshal a: %w", err)
+	// } else {
+	//     calldata = append(calldata, a_data...)
+	// }
+	_ = a // TODO: implement MarshalCairo and add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission

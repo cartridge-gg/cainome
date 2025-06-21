@@ -57,23 +57,21 @@ func (simple_types *SimpleTypes) GetBool(ctx context.Context, opts *CallOpts) (b
 		return false, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return false, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result bool
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
 
 func (simple_types *SimpleTypes) SetBool(ctx context.Context, v bool) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize v to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = v
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type v to felt
+	_ = v // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -108,21 +106,18 @@ func (simple_types *SimpleTypes) GetFelt(ctx context.Context, opts *CallOpts) (*
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	return response[0], nil
 }
 
 func (simple_types *SimpleTypes) SetFelt(ctx context.Context, feltValue *felt.Felt) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize feltValue to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = feltValue
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type feltValue to felt
+	_ = feltValue // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -157,23 +152,21 @@ func (simple_types *SimpleTypes) GetU256(ctx context.Context, opts *CallOpts) (*
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result *big.Int
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
 
 func (simple_types *SimpleTypes) SetU256(ctx context.Context, uint_256 *big.Int) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize uint_256 to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = uint_256
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type uint_256 to felt
+	_ = uint_256 // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -208,23 +201,21 @@ func (simple_types *SimpleTypes) GetU64(ctx context.Context, opts *CallOpts) (ui
 		return 0, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return 0, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result uint64
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
 
 func (simple_types *SimpleTypes) SetU64(ctx context.Context, uint_64 uint64) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize uint_64 to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = uint_64
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type uint_64 to felt
+	_ = uint_64 // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -259,21 +250,18 @@ func (simple_types *SimpleTypes) GetAddress(ctx context.Context, opts *CallOpts)
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	return response[0], nil
 }
 
 func (simple_types *SimpleTypes) SetAddress(ctx context.Context, address *felt.Felt) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize address to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = address
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type address to felt
+	_ = address // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -308,21 +296,18 @@ func (simple_types *SimpleTypes) GetClassHash(ctx context.Context, opts *CallOpt
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	return response[0], nil
 }
 
 func (simple_types *SimpleTypes) SetClassHash(ctx context.Context, class_hash *felt.Felt) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize class_hash to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = class_hash
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type class_hash to felt
+	_ = class_hash // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -357,23 +342,21 @@ func (simple_types *SimpleTypes) GetEthAddress(ctx context.Context, opts *CallOp
 		return [20]byte{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return [20]byte{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result [20]byte
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
 
 func (simple_types *SimpleTypes) SetEthAddress(ctx context.Context, eth_address [20]byte) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize eth_address to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = eth_address
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type eth_address to felt
+	_ = eth_address // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -414,18 +397,18 @@ func (simple_types *SimpleTypes) GetTuple(ctx context.Context, opts *CallOpts) (
 }{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
 }{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
 }
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
@@ -435,11 +418,9 @@ func (simple_types *SimpleTypes) SetTuple(ctx context.Context, tuple struct {
 	Field1 *big.Int
 }) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize tuple to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = tuple
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type tuple to felt
+	_ = tuple // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -474,23 +455,21 @@ func (simple_types *SimpleTypes) GetArray(ctx context.Context, opts *CallOpts) (
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result []*felt.Felt
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
 
 func (simple_types *SimpleTypes) SetArray(ctx context.Context, data []*felt.Felt) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize data to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = data
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type data to felt
+	_ = data // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission

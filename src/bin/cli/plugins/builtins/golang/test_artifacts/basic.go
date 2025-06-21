@@ -32,13 +32,11 @@ func NewBasic(contractAddress *felt.Felt, provider *rpc.Provider) *Basic {
 
 func (basic *Basic) SetStorage(ctx context.Context, v_1 *felt.Felt, v_2 *big.Int) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize v_1 to felt
-		// TODO: Serialize v_2 to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = v_1
-	_ = v_2
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type v_1 to felt
+	_ = v_1 // TODO: add to calldata
+	// TODO: Serialize basic type v_2 to felt
+	_ = v_2 // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -79,18 +77,18 @@ func (basic *Basic) ReadStorageTuple(ctx context.Context, opts *CallOpts) (struc
 }{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
 }{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
 }
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }

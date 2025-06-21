@@ -12,6 +12,12 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
+// SimpleGetSetEvent represents a contract event
+type SimpleGetSetEvent interface {
+	IsSimpleGetSetEvent() bool
+}
+
+
 type TestEnum struct {
 	Variant string `json:"variant"`
 	Value   interface{} `json:"value,omitempty"`
@@ -34,10 +40,53 @@ func NewTestEnumV2() TestEnum {
 	}
 }
 
+// MarshalCairo serializes TestEnum to Cairo felt array
+func (e *TestEnum) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
 
-// SimpleGetSetEvent represents a contract event
-type SimpleGetSetEvent interface {
-	IsSimpleGetSetEvent() bool
+	switch e.Variant {
+	case "V1":
+		// Discriminant for variant V1
+		result = append(result, FeltFromUint(0))
+		// Unit variant - no additional data
+	case "V2":
+		// Discriminant for variant V2
+		result = append(result, FeltFromUint(1))
+		// Unit variant - no additional data
+	default:
+		return nil, fmt.Errorf("unknown variant: %s", e.Variant)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes TestEnum from Cairo felt array
+func (e *TestEnum) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := UintFromFelt(data[0])
+	offset := 1
+
+	switch discriminant {
+	case 0:
+		e.Variant = "V1"
+		e.Value = nil
+	case 1:
+		e.Variant = "V2"
+		e.Value = nil
+	default:
+		return fmt.Errorf("unknown discriminant: %d", discriminant)
+	}
+
+	_ = offset // Suppress unused variable warning for unit-only enums
+	return nil
+}
+
+// CairoSize returns the serialized size for TestEnum
+func (e *TestEnum) CairoSize() int {
+	return -1 // Dynamic size
 }
 
 
@@ -53,7 +102,7 @@ func NewSimpleGetSet(contractAddress *felt.Felt, provider *rpc.Provider) *Simple
 	}
 }
 
-func (simple_get_set *SimpleGetSet) GetSetEnum(ctx context.Context, v TestEnum, opts *CallOpts) (TestEnum, error) {
+func (simple_get_set *SimpleGetSet) GetSetEnum(ctx context.Context, v *TestEnum, opts *CallOpts) (TestEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &CallOpts{}
@@ -66,11 +115,14 @@ func (simple_get_set *SimpleGetSet) GetSetEnum(ctx context.Context, v TestEnum, 
 	}
 
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize v to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = v
+	calldata := []*felt.Felt{}
+	// TODO: Serialize complex type v using MarshalCairo()
+	// if v_data, err := v.MarshalCairo(); err != nil {
+	//     return TestEnum{}, fmt.Errorf("failed to marshal v: %w", err)
+	// } else {
+	//     calldata = append(calldata, v_data...)
+	// }
+	_ = v // TODO: implement MarshalCairo and add to calldata
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -84,13 +136,16 @@ func (simple_get_set *SimpleGetSet) GetSetEnum(ctx context.Context, v TestEnum, 
 		return TestEnum{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return TestEnum{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result TestEnum
-	_ = response // TODO: deserialize response into result
+	// TODO: Deserialize using UnmarshalCairo()
+	// if err := result.UnmarshalCairo(response); err != nil {
+	//     return TestEnum{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	// }
+	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
 	return result, nil
 }
 
@@ -121,21 +176,18 @@ func (simple_get_set *SimpleGetSet) GetA(ctx context.Context, opts *CallOpts) (*
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	return response[0], nil
 }
 
 func (simple_get_set *SimpleGetSet) SetA(ctx context.Context, a *felt.Felt) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize a to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = a
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type a to felt
+	_ = a // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -170,23 +222,21 @@ func (simple_get_set *SimpleGetSet) GetB(ctx context.Context, opts *CallOpts) (*
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result *big.Int
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
 
 func (simple_get_set *SimpleGetSet) SetB(ctx context.Context, b *big.Int) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize b to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = b
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type b to felt
+	_ = b // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -196,11 +246,9 @@ func (simple_get_set *SimpleGetSet) SetB(ctx context.Context, b *big.Int) error 
 
 func (simple_get_set *SimpleGetSet) SetArray(ctx context.Context, data []*felt.Felt) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize data to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = data
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type data to felt
+	_ = data // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -235,12 +283,12 @@ func (simple_get_set *SimpleGetSet) GetArray(ctx context.Context, opts *CallOpts
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result []*felt.Felt
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }

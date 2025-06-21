@@ -56,12 +56,12 @@ func (byte_array *ByteArray) GetByteArray(ctx context.Context, opts *CallOpts) (
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result []byte
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
@@ -93,23 +93,21 @@ func (byte_array *ByteArray) GetByteArrayStorage(ctx context.Context, opts *Call
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result []byte
+	// TODO: Convert felt to basic type
 	_ = response // TODO: deserialize response into result
 	return result, nil
 }
 
 func (byte_array *ByteArray) SetByteArray(ctx context.Context, v []byte) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize v to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = v
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type v to felt
+	_ = v // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission

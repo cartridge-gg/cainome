@@ -33,6 +33,61 @@ func NewMixedEnumVariant2() MixedEnum {
 	}
 }
 
+// MarshalCairo serializes MixedEnum to Cairo felt array
+func (e *MixedEnum) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	switch e.Variant {
+	case "Variant1":
+		// Discriminant for variant Variant1
+		result = append(result, FeltFromUint(0))
+		// Unit variant - no additional data
+	case "Variant2":
+		// Discriminant for variant Variant2
+		result = append(result, FeltFromUint(1))
+		// Unit variant - no additional data
+	default:
+		return nil, fmt.Errorf("unknown variant: %s", e.Variant)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MixedEnum from Cairo felt array
+func (e *MixedEnum) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := UintFromFelt(data[0])
+	offset := 1
+
+	switch discriminant {
+	case 0:
+		e.Variant = "Variant1"
+		e.Value = nil
+	case 1:
+		e.Variant = "Variant2"
+		e.Value = nil
+	default:
+		return fmt.Errorf("unknown discriminant: %d", discriminant)
+	}
+
+	_ = offset // Suppress unused variable warning for unit-only enums
+	return nil
+}
+
+// CairoSize returns the serialized size for MixedEnum
+func (e *MixedEnum) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+// EnumsEvent represents a contract event
+type EnumsEvent interface {
+	IsEnumsEvent() bool
+}
+
 
 type SimpleEnum struct {
 	Variant string `json:"variant"`
@@ -54,6 +109,55 @@ func NewSimpleEnumVariant2() SimpleEnum {
 	return SimpleEnum {
 		Variant: "Variant2",
 	}
+}
+
+// MarshalCairo serializes SimpleEnum to Cairo felt array
+func (e *SimpleEnum) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	switch e.Variant {
+	case "Variant1":
+		// Discriminant for variant Variant1
+		result = append(result, FeltFromUint(0))
+		// Unit variant - no additional data
+	case "Variant2":
+		// Discriminant for variant Variant2
+		result = append(result, FeltFromUint(1))
+		// Unit variant - no additional data
+	default:
+		return nil, fmt.Errorf("unknown variant: %s", e.Variant)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleEnum from Cairo felt array
+func (e *SimpleEnum) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := UintFromFelt(data[0])
+	offset := 1
+
+	switch discriminant {
+	case 0:
+		e.Variant = "Variant1"
+		e.Value = nil
+	case 1:
+		e.Variant = "Variant2"
+		e.Value = nil
+	default:
+		return fmt.Errorf("unknown discriminant: %d", discriminant)
+	}
+
+	_ = offset // Suppress unused variable warning for unit-only enums
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleEnum
+func (e *SimpleEnum) CairoSize() int {
+	return -1 // Dynamic size
 }
 
 
@@ -86,10 +190,60 @@ func NewTypedEnumVariant3() TypedEnum {
 	}
 }
 
+// MarshalCairo serializes TypedEnum to Cairo felt array
+func (e *TypedEnum) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
 
-// EnumsEvent represents a contract event
-type EnumsEvent interface {
-	IsEnumsEvent() bool
+	switch e.Variant {
+	case "Variant1":
+		// Discriminant for variant Variant1
+		result = append(result, FeltFromUint(0))
+		// Unit variant - no additional data
+	case "Variant2":
+		// Discriminant for variant Variant2
+		result = append(result, FeltFromUint(1))
+		// Unit variant - no additional data
+	case "Variant3":
+		// Discriminant for variant Variant3
+		result = append(result, FeltFromUint(2))
+		// Unit variant - no additional data
+	default:
+		return nil, fmt.Errorf("unknown variant: %s", e.Variant)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes TypedEnum from Cairo felt array
+func (e *TypedEnum) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := UintFromFelt(data[0])
+	offset := 1
+
+	switch discriminant {
+	case 0:
+		e.Variant = "Variant1"
+		e.Value = nil
+	case 1:
+		e.Variant = "Variant2"
+		e.Value = nil
+	case 2:
+		e.Variant = "Variant3"
+		e.Value = nil
+	default:
+		return fmt.Errorf("unknown discriminant: %d", discriminant)
+	}
+
+	_ = offset // Suppress unused variable warning for unit-only enums
+	return nil
+}
+
+// CairoSize returns the serialized size for TypedEnum
+func (e *TypedEnum) CairoSize() int {
+	return -1 // Dynamic size
 }
 
 
@@ -132,13 +286,16 @@ func (enums *Enums) GetSimple1(ctx context.Context, opts *CallOpts) (SimpleEnum,
 		return SimpleEnum{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return SimpleEnum{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result SimpleEnum
-	_ = response // TODO: deserialize response into result
+	// TODO: Deserialize using UnmarshalCairo()
+	// if err := result.UnmarshalCairo(response); err != nil {
+	//     return SimpleEnum{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	// }
+	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
 	return result, nil
 }
 
@@ -169,13 +326,16 @@ func (enums *Enums) GetSimple2(ctx context.Context, opts *CallOpts) (SimpleEnum,
 		return SimpleEnum{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return SimpleEnum{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result SimpleEnum
-	_ = response // TODO: deserialize response into result
+	// TODO: Deserialize using UnmarshalCairo()
+	// if err := result.UnmarshalCairo(response); err != nil {
+	//     return SimpleEnum{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	// }
+	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
 	return result, nil
 }
 
@@ -206,13 +366,16 @@ func (enums *Enums) GetTyped1(ctx context.Context, opts *CallOpts) (TypedEnum, e
 		return TypedEnum{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return TypedEnum{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result TypedEnum
-	_ = response // TODO: deserialize response into result
+	// TODO: Deserialize using UnmarshalCairo()
+	// if err := result.UnmarshalCairo(response); err != nil {
+	//     return TypedEnum{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	// }
+	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
 	return result, nil
 }
 
@@ -243,13 +406,16 @@ func (enums *Enums) GetTyped2(ctx context.Context, opts *CallOpts) (TypedEnum, e
 		return TypedEnum{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return TypedEnum{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result TypedEnum
-	_ = response // TODO: deserialize response into result
+	// TODO: Deserialize using UnmarshalCairo()
+	// if err := result.UnmarshalCairo(response); err != nil {
+	//     return TypedEnum{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	// }
+	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
 	return result, nil
 }
 
@@ -280,13 +446,16 @@ func (enums *Enums) GetTyped3(ctx context.Context, opts *CallOpts) (TypedEnum, e
 		return TypedEnum{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return TypedEnum{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result TypedEnum
-	_ = response // TODO: deserialize response into result
+	// TODO: Deserialize using UnmarshalCairo()
+	// if err := result.UnmarshalCairo(response); err != nil {
+	//     return TypedEnum{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	// }
+	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
 	return result, nil
 }
 
@@ -317,13 +486,16 @@ func (enums *Enums) GetMixed1(ctx context.Context, opts *CallOpts) (MixedEnum, e
 		return MixedEnum{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return MixedEnum{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result MixedEnum
-	_ = response // TODO: deserialize response into result
+	// TODO: Deserialize using UnmarshalCairo()
+	// if err := result.UnmarshalCairo(response); err != nil {
+	//     return MixedEnum{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	// }
+	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
 	return result, nil
 }
 
@@ -354,13 +526,16 @@ func (enums *Enums) GetMixed2(ctx context.Context, opts *CallOpts) (MixedEnum, e
 		return MixedEnum{}, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return MixedEnum{}, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	var result MixedEnum
-	_ = response // TODO: deserialize response into result
+	// TODO: Deserialize using UnmarshalCairo()
+	// if err := result.UnmarshalCairo(response); err != nil {
+	//     return MixedEnum{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	// }
+	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
 	return result, nil
 }
 
