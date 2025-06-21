@@ -6,10 +6,11 @@ package abigen
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/account"
 	"github.com/cartridge-gg/cainome"
+	"math/big"
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
@@ -19,31 +20,63 @@ type BasicEvent interface {
 }
 
 
-type Basic struct {
+type BasicReader struct {
 	contractAddress *felt.Felt
-	provider *rpc.Provider
+	provider rpc.RpcProvider
 }
 
-func NewBasic(contractAddress *felt.Felt, provider *rpc.Provider) *Basic {
-	return &Basic {
+type BasicWriter struct {
+	contractAddress *felt.Felt
+	account *account.Account
+}
+
+type Basic struct {
+	*BasicReader
+	*BasicWriter
+}
+
+func NewBasicReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *BasicReader {
+	return &BasicReader {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (basic *Basic) SetStorage(ctx context.Context, v_1 *felt.Felt, v_2 *big.Int) error {
+func NewBasicWriter(contractAddress *felt.Felt, account *account.Account) *BasicWriter {
+	return &BasicWriter {
+		contractAddress: contractAddress,
+		account: account,
+	}
+}
+
+func NewBasic(contractAddress *felt.Felt, account *account.Account) *Basic {
+	return &Basic {
+		BasicReader: NewBasicReader(contractAddress, account.Provider),
+		BasicWriter: NewBasicWriter(contractAddress, account),
+	}
+}
+
+func (basic_writer *BasicWriter) SetStorage(ctx context.Context, v_1 *felt.Felt, v_2 *big.Int, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	calldata = append(calldata, v_1)
 	calldata = append(calldata, cainome.FeltFromBigInt(v_2))
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, basic_writer.account, basic_writer.contractAddress, utils.GetSelectorFromNameFelt("set_storage"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (basic *Basic) ReadStorageTuple(ctx context.Context, opts *cainome.CallOpts) (struct {
+func (basic_reader *BasicReader) ReadStorageTuple(ctx context.Context, opts *cainome.CallOpts) (struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
 }, error) {
@@ -63,12 +96,12 @@ func (basic *Basic) ReadStorageTuple(ctx context.Context, opts *cainome.CallOpts
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    basic.contractAddress,
+		ContractAddress:    basic_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("read_storage_tuple"),
 		Calldata:           calldata,
 	}
 
-	response, err := basic.provider.Call(ctx, functionCall, blockID)
+	response, err := basic_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return struct {
 	Field0 *felt.Felt

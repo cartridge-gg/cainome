@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/account"
 	"github.com/cartridge-gg/cainome"
 	"github.com/NethermindEth/starknet.go/utils"
 )
@@ -18,19 +19,43 @@ type SimpleInterfaceEvent interface {
 }
 
 
-type SimpleInterface struct {
+type SimpleInterfaceReader struct {
 	contractAddress *felt.Felt
-	provider *rpc.Provider
+	provider rpc.RpcProvider
 }
 
-func NewSimpleInterface(contractAddress *felt.Felt, provider *rpc.Provider) *SimpleInterface {
-	return &SimpleInterface {
+type SimpleInterfaceWriter struct {
+	contractAddress *felt.Felt
+	account *account.Account
+}
+
+type SimpleInterface struct {
+	*SimpleInterfaceReader
+	*SimpleInterfaceWriter
+}
+
+func NewSimpleInterfaceReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *SimpleInterfaceReader {
+	return &SimpleInterfaceReader {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (simple_interface *SimpleInterface) GetValue(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
+func NewSimpleInterfaceWriter(contractAddress *felt.Felt, account *account.Account) *SimpleInterfaceWriter {
+	return &SimpleInterfaceWriter {
+		contractAddress: contractAddress,
+		account: account,
+	}
+}
+
+func NewSimpleInterface(contractAddress *felt.Felt, account *account.Account) *SimpleInterface {
+	return &SimpleInterface {
+		SimpleInterfaceReader: NewSimpleInterfaceReader(contractAddress, account.Provider),
+		SimpleInterfaceWriter: NewSimpleInterfaceWriter(contractAddress, account),
+	}
+}
+
+func (simple_interface_reader *SimpleInterfaceReader) GetValue(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -47,12 +72,12 @@ func (simple_interface *SimpleInterface) GetValue(ctx context.Context, opts *cai
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_interface.contractAddress,
+		ContractAddress:    simple_interface_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_value"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_interface.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_interface_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -64,14 +89,22 @@ func (simple_interface *SimpleInterface) GetValue(ctx context.Context, opts *cai
 	return response[0], nil
 }
 
-func (simple_interface *SimpleInterface) SetValue(ctx context.Context, value *felt.Felt) error {
+func (simple_interface_writer *SimpleInterfaceWriter) SetValue(ctx context.Context, value *felt.Felt, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	calldata = append(calldata, value)
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_interface_writer.account, simple_interface_writer.contractAddress, utils.GetSelectorFromNameFelt("set_value"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 

@@ -6,12 +6,80 @@ package abigen
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/account"
 	"github.com/cartridge-gg/cainome"
+	"math/big"
 	"github.com/NethermindEth/starknet.go/utils"
 )
+
+// GenEvent represents a contract event
+type GenEvent interface {
+	IsGenEvent() bool
+}
+
+const (
+	GenEvent_E1 = "E1"
+)
+
+
+type E1 struct {
+	Key *felt.Felt `json:"key"`
+	Value []*felt.Felt `json:"value"`
+}
+
+// MarshalCairo serializes E1 to Cairo felt array
+func (s *E1) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Key)
+	// Array field Value: serialize length then elements
+	result = append(result, cainome.FeltFromUint(uint64(len(s.Value))))
+	for _, item := range s.Value {
+		result = append(result, item)
+	}
+	return result, nil
+}
+
+// UnmarshalCairo deserializes E1 from Cairo felt array
+func (s *E1) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Key")
+	}
+	s.Key = data[offset]
+	offset++
+
+	// Array field Value: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of Value")
+	}
+	lengthValue := cainome.UintFromFelt(data[offset])
+	offset++
+	s.Value = make([]*felt.Felt, lengthValue)
+	for i := uint64(0); i < lengthValue; i++ {
+		if offset >= len(data) {
+			return fmt.Errorf("insufficient data for array element %d of Value", i)
+		}
+		s.Value[i] = data[offset]
+		offset++
+	}
+
+	return nil
+}
+
+// CairoSize returns the serialized size for E1
+func (s *E1) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+// IsGenEvent implements the GenEvent interface
+func (e E1) IsGenEvent() bool {
+	return true
+}
+
 
 type PlainStruct struct {
 	F1 uint8 `json:"f1"`
@@ -142,115 +210,6 @@ func (s *PlainStruct) UnmarshalCairo(data []*felt.Felt) error {
 // CairoSize returns the serialized size for PlainStruct
 func (s *PlainStruct) CairoSize() int {
 	return -1 // Dynamic size
-}
-
-
-type MyStructInnerGeneric struct {
-	F1 *felt.Felt `json:"f1"`
-	F2 MyStructGen `json:"f2"`
-	F3 uint32 `json:"f3"`
-}
-
-// MarshalCairo serializes MyStructInnerGeneric to Cairo felt array
-func (s *MyStructInnerGeneric) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, s.F1)
-	// Struct field F2: marshal using CairoMarshaler
-	if fieldData, err := s.F2.MarshalCairo(); err != nil {
-		return nil, err
-	} else {
-		result = append(result, fieldData...)
-	}
-	result = append(result, cainome.FeltFromUint(uint64(s.F3)))
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MyStructInnerGeneric from Cairo felt array
-func (s *MyStructInnerGeneric) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field F1")
-	}
-	s.F1 = data[offset]
-	offset++
-
-	// Struct field F2: unmarshal using CairoMarshaler
-	if err := s.F2.UnmarshalCairo(data[offset:]); err != nil {
-		return err
-	}
-	// TODO: Update offset based on consumed data
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field F3")
-	}
-	s.F3 = uint32(cainome.UintFromFelt(data[offset]))
-	offset++
-
-	return nil
-}
-
-// CairoSize returns the serialized size for MyStructInnerGeneric
-func (s *MyStructInnerGeneric) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
-type E1 struct {
-	Key *felt.Felt `json:"key"`
-	Value []*felt.Felt `json:"value"`
-}
-
-// MarshalCairo serializes E1 to Cairo felt array
-func (s *E1) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, s.Key)
-	// Array field Value: serialize length then elements
-	result = append(result, cainome.FeltFromUint(uint64(len(s.Value))))
-	for _, item := range s.Value {
-		result = append(result, item)
-	}
-	return result, nil
-}
-
-// UnmarshalCairo deserializes E1 from Cairo felt array
-func (s *E1) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Key")
-	}
-	s.Key = data[offset]
-	offset++
-
-	// Array field Value: read length then elements
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for array length of Value")
-	}
-	lengthValue := cainome.UintFromFelt(data[offset])
-	offset++
-	s.Value = make([]*felt.Felt, lengthValue)
-	for i := uint64(0); i < lengthValue; i++ {
-		if offset >= len(data) {
-			return fmt.Errorf("insufficient data for array element %d of Value", i)
-		}
-		s.Value[i] = data[offset]
-		offset++
-	}
-
-	return nil
-}
-
-// CairoSize returns the serialized size for E1
-func (s *E1) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-// IsGenEvent implements the GenEvent interface
-func (e E1) IsGenEvent() bool {
-	return true
 }
 
 
@@ -846,19 +805,9 @@ func (m *MyEnumEleven) CairoSize() int {
 }
 
 
-// GenEvent represents a contract event
-type GenEvent interface {
-	IsGenEvent() bool
-}
-
-const (
-	GenEvent_E1 = "E1"
-)
-
-
 type MyStructGen struct {
 	F1 *felt.Felt `json:"f1"`
-	F2 *felt.Felt `json:"f2"`
+	F2 *big.Int `json:"f2"`
 	F3 *felt.Felt `json:"f3"`
 }
 
@@ -867,7 +816,7 @@ func (s *MyStructGen) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, s.F1)
-	result = append(result, s.F2)
+	result = append(result, cainome.FeltFromBigInt(s.F2))
 	result = append(result, s.F3)
 	return result, nil
 }
@@ -885,7 +834,7 @@ func (s *MyStructGen) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field F2")
 	}
-	s.F2 = data[offset]
+	s.F2 = cainome.BigIntFromFelt(data[offset])
 	offset++
 
 	if offset >= len(data) {
@@ -903,49 +852,141 @@ func (s *MyStructGen) CairoSize() int {
 }
 
 
-type Gen struct {
-	contractAddress *felt.Felt
-	provider *rpc.Provider
+type MyStructInnerGeneric struct {
+	F1 *felt.Felt `json:"f1"`
+	F2 MyStructGen `json:"f2"`
+	F3 uint32 `json:"f3"`
 }
 
-func NewGen(contractAddress *felt.Felt, provider *rpc.Provider) *Gen {
-	return &Gen {
+// MarshalCairo serializes MyStructInnerGeneric to Cairo felt array
+func (s *MyStructInnerGeneric) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.F1)
+	// Struct field F2: marshal using CairoMarshaler
+	if fieldData, err := s.F2.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
+	result = append(result, cainome.FeltFromUint(uint64(s.F3)))
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyStructInnerGeneric from Cairo felt array
+func (s *MyStructInnerGeneric) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F1")
+	}
+	s.F1 = data[offset]
+	offset++
+
+	// Struct field F2: unmarshal using CairoMarshaler
+	if err := s.F2.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F3")
+	}
+	s.F3 = uint32(cainome.UintFromFelt(data[offset]))
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for MyStructInnerGeneric
+func (s *MyStructInnerGeneric) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+type GenReader struct {
+	contractAddress *felt.Felt
+	provider rpc.RpcProvider
+}
+
+type GenWriter struct {
+	contractAddress *felt.Felt
+	account *account.Account
+}
+
+type Gen struct {
+	*GenReader
+	*GenWriter
+}
+
+func NewGenReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *GenReader {
+	return &GenReader {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (gen *Gen) Func1(ctx context.Context, a *MyStructGen) error {
+func NewGenWriter(contractAddress *felt.Felt, account *account.Account) *GenWriter {
+	return &GenWriter {
+		contractAddress: contractAddress,
+		account: account,
+	}
+}
+
+func NewGen(contractAddress *felt.Felt, account *account.Account) *Gen {
+	return &Gen {
+		GenReader: NewGenReader(contractAddress, account.Provider),
+		GenWriter: NewGenWriter(contractAddress, account),
+	}
+}
+
+func (gen_writer *GenWriter) Func1(ctx context.Context, a *MyStructGen, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	if a_data, err := a.MarshalCairo(); err != nil {
-		return err
+		return nil, fmt.Errorf("failed to marshal a: %w", err)
 	} else {
 		calldata = append(calldata, a_data...)
 	}
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, gen_writer.account, gen_writer.contractAddress, utils.GetSelectorFromNameFelt("func1"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (gen *Gen) Func2(ctx context.Context, a *MyStructGen) error {
+func (gen_writer *GenWriter) Func2(ctx context.Context, a *MyStructGen, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	if a_data, err := a.MarshalCairo(); err != nil {
-		return err
+		return nil, fmt.Errorf("failed to marshal a: %w", err)
 	} else {
 		calldata = append(calldata, a_data...)
 	}
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, gen_writer.account, gen_writer.contractAddress, utils.GetSelectorFromNameFelt("func2"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (gen *Gen) Read(ctx context.Context, opts *cainome.CallOpts) (struct {
+func (gen_reader *GenReader) Read(ctx context.Context, opts *cainome.CallOpts) (struct {
 	Field0 *felt.Felt
 	Field1 *felt.Felt
 }, error) {
@@ -965,12 +1006,12 @@ func (gen *Gen) Read(ctx context.Context, opts *cainome.CallOpts) (struct {
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    gen.contractAddress,
+		ContractAddress:    gen_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("read"),
 		Calldata:           calldata,
 	}
 
-	response, err := gen.provider.Call(ctx, functionCall, blockID)
+	response, err := gen_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return struct {
 	Field0 *felt.Felt
@@ -994,26 +1035,34 @@ func (gen *Gen) Read(ctx context.Context, opts *cainome.CallOpts) (struct {
 	return result, nil
 }
 
-func (gen *Gen) Func3(ctx context.Context, a *PlainStruct, opts *cainome.CallOpts) error {
+func (gen_reader *GenReader) Func3(ctx context.Context, a *PlainStruct, opts *cainome.CallOpts) error {
 	return nil
 }
 
-func (gen *Gen) Func4(ctx context.Context, a *MyEnum, opts *cainome.CallOpts) error {
+func (gen_reader *GenReader) Func4(ctx context.Context, a *MyEnum, opts *cainome.CallOpts) error {
 	return nil
 }
 
-func (gen *Gen) Func5(ctx context.Context, a *MyStructInnerGeneric) error {
+func (gen_writer *GenWriter) Func5(ctx context.Context, a *MyStructInnerGeneric, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	if a_data, err := a.MarshalCairo(); err != nil {
-		return err
+		return nil, fmt.Errorf("failed to marshal a: %w", err)
 	} else {
 		calldata = append(calldata, a_data...)
 	}
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, gen_writer.account, gen_writer.contractAddress, utils.GetSelectorFromNameFelt("func5"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 

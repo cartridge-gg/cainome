@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/account"
 	"github.com/cartridge-gg/cainome"
 	"github.com/NethermindEth/starknet.go/utils"
 )
@@ -18,19 +19,43 @@ type ByteArrayEvent interface {
 }
 
 
-type ByteArray struct {
+type ByteArrayReader struct {
 	contractAddress *felt.Felt
-	provider *rpc.Provider
+	provider rpc.RpcProvider
 }
 
-func NewByteArray(contractAddress *felt.Felt, provider *rpc.Provider) *ByteArray {
-	return &ByteArray {
+type ByteArrayWriter struct {
+	contractAddress *felt.Felt
+	account *account.Account
+}
+
+type ByteArray struct {
+	*ByteArrayReader
+	*ByteArrayWriter
+}
+
+func NewByteArrayReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *ByteArrayReader {
+	return &ByteArrayReader {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (byte_array *ByteArray) GetByteArray(ctx context.Context, opts *cainome.CallOpts) ([]byte, error) {
+func NewByteArrayWriter(contractAddress *felt.Felt, account *account.Account) *ByteArrayWriter {
+	return &ByteArrayWriter {
+		contractAddress: contractAddress,
+		account: account,
+	}
+}
+
+func NewByteArray(contractAddress *felt.Felt, account *account.Account) *ByteArray {
+	return &ByteArray {
+		ByteArrayReader: NewByteArrayReader(contractAddress, account.Provider),
+		ByteArrayWriter: NewByteArrayWriter(contractAddress, account),
+	}
+}
+
+func (byte_array_reader *ByteArrayReader) GetByteArray(ctx context.Context, opts *cainome.CallOpts) ([]byte, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -47,12 +72,12 @@ func (byte_array *ByteArray) GetByteArray(ctx context.Context, opts *cainome.Cal
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    byte_array.contractAddress,
+		ContractAddress:    byte_array_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_byte_array"),
 		Calldata:           calldata,
 	}
 
-	response, err := byte_array.provider.Call(ctx, functionCall, blockID)
+	response, err := byte_array_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +92,7 @@ func (byte_array *ByteArray) GetByteArray(ctx context.Context, opts *cainome.Cal
 	return result, nil
 }
 
-func (byte_array *ByteArray) GetByteArrayStorage(ctx context.Context, opts *cainome.CallOpts) ([]byte, error) {
+func (byte_array_reader *ByteArrayReader) GetByteArrayStorage(ctx context.Context, opts *cainome.CallOpts) ([]byte, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -84,12 +109,12 @@ func (byte_array *ByteArray) GetByteArrayStorage(ctx context.Context, opts *cain
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    byte_array.contractAddress,
+		ContractAddress:    byte_array_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_byte_array_storage"),
 		Calldata:           calldata,
 	}
 
-	response, err := byte_array.provider.Call(ctx, functionCall, blockID)
+	response, err := byte_array_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -104,18 +129,26 @@ func (byte_array *ByteArray) GetByteArrayStorage(ctx context.Context, opts *cain
 	return result, nil
 }
 
-func (byte_array *ByteArray) SetByteArray(ctx context.Context, v []byte) error {
+func (byte_array_writer *ByteArrayWriter) SetByteArray(ctx context.Context, v []byte, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	if v_data, err := cainome.NewCairoByteArray(v).MarshalCairo(); err != nil {
-		return fmt.Errorf("failed to marshal v: %w", err)
+		return nil, fmt.Errorf("failed to marshal v: %w", err)
 	} else {
 		calldata = append(calldata, v_data...)
 	}
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, byte_array_writer.account, byte_array_writer.contractAddress, utils.GetSelectorFromNameFelt("set_byte_array"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
