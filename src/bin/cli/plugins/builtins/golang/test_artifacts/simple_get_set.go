@@ -13,12 +13,6 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
-// SimpleGetSetEvent represents a contract event
-type SimpleGetSetEvent interface {
-	IsSimpleGetSetEvent() bool
-}
-
-
 // TestEnum represents a Cairo enum type
 type TestEnum interface {
 	IsTestEnum() bool
@@ -30,10 +24,12 @@ const (
 	TestEnum_V2 = "V2"
 )
 
-type TestEnumV1 struct {}
+type TestEnumV1 struct {
+	Data *felt.Felt `json:"data"`
+}
 
-func NewTestEnumV1() TestEnumV1 {
-	return TestEnumV1{}
+func NewTestEnumV1(data *felt.Felt) TestEnumV1 {
+	return TestEnumV1 {Data: data}
 }
 
 // IsTestEnum implements the TestEnum interface
@@ -47,7 +43,7 @@ func (t *TestEnumV1) MarshalCairo() ([]*felt.Felt, error) {
 
 	// Discriminant for variant
 	result = append(result, cainome.FeltFromUint(0))
-	// Unit variant - no additional data
+	result = append(result, t.Data)
 
 	return result, nil
 }
@@ -64,8 +60,11 @@ func (t *TestEnumV1) UnmarshalCairo(data []*felt.Felt) error {
 	}
 	offset := 1
 
-	// Unit variant - no additional data to unmarshal
-	_ = offset // Suppress unused variable warning
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for variant data")
+	}
+	t.Data = data[offset]
+	offset++
 	return nil
 }
 
@@ -116,6 +115,12 @@ func (t *TestEnumV2) UnmarshalCairo(data []*felt.Felt) error {
 // CairoSize returns the serialized size for TestEnumV2
 func (t *TestEnumV2) CairoSize() int {
 	return -1 // Dynamic size
+}
+
+
+// SimpleGetSetEvent represents a contract event
+type SimpleGetSetEvent interface {
+	IsSimpleGetSetEvent() bool
 }
 
 
