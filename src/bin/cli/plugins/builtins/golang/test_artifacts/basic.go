@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/cartridge-gg/cainome"
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
@@ -33,10 +34,8 @@ func NewBasic(contractAddress *felt.Felt, provider *rpc.Provider) *Basic {
 func (basic *Basic) SetStorage(ctx context.Context, v_1 *felt.Felt, v_2 *big.Int) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type v_1 to felt
-	_ = v_1 // TODO: add to calldata
-	// TODO: Serialize basic type v_2 to felt
-	_ = v_2 // TODO: add to calldata
+	calldata = append(calldata, v_1)
+	calldata = append(calldata, cainome.FeltFromBigInt(v_2))
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -44,13 +43,13 @@ func (basic *Basic) SetStorage(ctx context.Context, v_1 *felt.Felt, v_2 *big.Int
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (basic *Basic) ReadStorageTuple(ctx context.Context, opts *CallOpts) (struct {
+func (basic *Basic) ReadStorageTuple(ctx context.Context, opts *cainome.CallOpts) (struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
 }, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -88,8 +87,8 @@ func (basic *Basic) ReadStorageTuple(ctx context.Context, opts *CallOpts) (struc
 	Field0 *felt.Felt
 	Field1 *big.Int
 }
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	// TODO: Convert felt to Tuple(Tuple { type_path: "(core::zeroable::NonZero::<core::felt252>, core::integer::u256)", inners: [NonZero(NonZero { type_path: "core::zeroable::NonZero::<core::felt252>", inner: CoreBasic(CoreBasic { type_path: "core::felt252" }) }), Composite(Composite { type_path: "core::integer::u256", inners: [], generic_args: [], type: Unknown, is_event: false, alias: None })] })
+	_ = response
 	return result, nil
 }
 

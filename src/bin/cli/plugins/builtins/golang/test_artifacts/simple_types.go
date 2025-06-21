@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/cartridge-gg/cainome"
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
@@ -30,10 +31,10 @@ func NewSimpleTypes(contractAddress *felt.Felt, provider *rpc.Provider) *SimpleT
 	}
 }
 
-func (simple_types *SimpleTypes) GetBool(ctx context.Context, opts *CallOpts) (bool, error) {
+func (simple_types *SimpleTypes) GetBool(ctx context.Context, opts *cainome.CallOpts) (bool, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -61,17 +62,18 @@ func (simple_types *SimpleTypes) GetBool(ctx context.Context, opts *CallOpts) (b
 	if len(response) == 0 {
 		return false, fmt.Errorf("empty response")
 	}
-	var result bool
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	result := cainome.UintFromFelt(response[0]) != 0
 	return result, nil
 }
 
 func (simple_types *SimpleTypes) SetBool(ctx context.Context, v bool) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type v to felt
-	_ = v // TODO: add to calldata
+	if v {
+		calldata = append(calldata, cainome.FeltFromUint(1))
+	} else {
+		calldata = append(calldata, cainome.FeltFromUint(0))
+	}
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -79,10 +81,10 @@ func (simple_types *SimpleTypes) SetBool(ctx context.Context, v bool) error {
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetFelt(ctx context.Context, opts *CallOpts) (*felt.Felt, error) {
+func (simple_types *SimpleTypes) GetFelt(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -116,8 +118,7 @@ func (simple_types *SimpleTypes) GetFelt(ctx context.Context, opts *CallOpts) (*
 func (simple_types *SimpleTypes) SetFelt(ctx context.Context, feltValue *felt.Felt) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type feltValue to felt
-	_ = feltValue // TODO: add to calldata
+	calldata = append(calldata, feltValue)
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -125,10 +126,10 @@ func (simple_types *SimpleTypes) SetFelt(ctx context.Context, feltValue *felt.Fe
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetU256(ctx context.Context, opts *CallOpts) (*big.Int, error) {
+func (simple_types *SimpleTypes) GetU256(ctx context.Context, opts *cainome.CallOpts) (*big.Int, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -157,16 +158,15 @@ func (simple_types *SimpleTypes) GetU256(ctx context.Context, opts *CallOpts) (*
 		return nil, fmt.Errorf("empty response")
 	}
 	var result *big.Int
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	// TODO: Convert felt to Composite(Composite { type_path: "core::integer::u256", inners: [CompositeInner { index: 0, name: "low", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u128" }) }, CompositeInner { index: 1, name: "high", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u128" }) }], generic_args: [], type: Struct, is_event: false, alias: None })
+	_ = response
 	return result, nil
 }
 
 func (simple_types *SimpleTypes) SetU256(ctx context.Context, uint_256 *big.Int) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type uint_256 to felt
-	_ = uint_256 // TODO: add to calldata
+	calldata = append(calldata, cainome.FeltFromBigInt(uint_256))
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -174,10 +174,10 @@ func (simple_types *SimpleTypes) SetU256(ctx context.Context, uint_256 *big.Int)
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetU64(ctx context.Context, opts *CallOpts) (uint64, error) {
+func (simple_types *SimpleTypes) GetU64(ctx context.Context, opts *cainome.CallOpts) (uint64, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -205,17 +205,14 @@ func (simple_types *SimpleTypes) GetU64(ctx context.Context, opts *CallOpts) (ui
 	if len(response) == 0 {
 		return 0, fmt.Errorf("empty response")
 	}
-	var result uint64
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	result := uint64(cainome.UintFromFelt(response[0]))
 	return result, nil
 }
 
 func (simple_types *SimpleTypes) SetU64(ctx context.Context, uint_64 uint64) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type uint_64 to felt
-	_ = uint_64 // TODO: add to calldata
+	calldata = append(calldata, cainome.FeltFromUint(uint64(uint_64)))
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -223,10 +220,10 @@ func (simple_types *SimpleTypes) SetU64(ctx context.Context, uint_64 uint64) err
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetAddress(ctx context.Context, opts *CallOpts) (*felt.Felt, error) {
+func (simple_types *SimpleTypes) GetAddress(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -260,8 +257,7 @@ func (simple_types *SimpleTypes) GetAddress(ctx context.Context, opts *CallOpts)
 func (simple_types *SimpleTypes) SetAddress(ctx context.Context, address *felt.Felt) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type address to felt
-	_ = address // TODO: add to calldata
+	calldata = append(calldata, address)
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -269,10 +265,10 @@ func (simple_types *SimpleTypes) SetAddress(ctx context.Context, address *felt.F
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetClassHash(ctx context.Context, opts *CallOpts) (*felt.Felt, error) {
+func (simple_types *SimpleTypes) GetClassHash(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -306,8 +302,7 @@ func (simple_types *SimpleTypes) GetClassHash(ctx context.Context, opts *CallOpt
 func (simple_types *SimpleTypes) SetClassHash(ctx context.Context, class_hash *felt.Felt) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type class_hash to felt
-	_ = class_hash // TODO: add to calldata
+	calldata = append(calldata, class_hash)
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -315,10 +310,10 @@ func (simple_types *SimpleTypes) SetClassHash(ctx context.Context, class_hash *f
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetEthAddress(ctx context.Context, opts *CallOpts) ([20]byte, error) {
+func (simple_types *SimpleTypes) GetEthAddress(ctx context.Context, opts *cainome.CallOpts) ([20]byte, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -347,16 +342,15 @@ func (simple_types *SimpleTypes) GetEthAddress(ctx context.Context, opts *CallOp
 		return [20]byte{}, fmt.Errorf("empty response")
 	}
 	var result [20]byte
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	// TODO: Convert felt to Composite(Composite { type_path: "core::starknet::eth_address::EthAddress", inners: [CompositeInner { index: 0, name: "address", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::felt252" }) }], generic_args: [], type: Struct, is_event: false, alias: None })
+	_ = response
 	return result, nil
 }
 
 func (simple_types *SimpleTypes) SetEthAddress(ctx context.Context, eth_address [20]byte) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type eth_address to felt
-	_ = eth_address // TODO: add to calldata
+	calldata = append(calldata, cainome.FeltFromBytes(eth_address[:]))
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -364,13 +358,13 @@ func (simple_types *SimpleTypes) SetEthAddress(ctx context.Context, eth_address 
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetTuple(ctx context.Context, opts *CallOpts) (struct {
+func (simple_types *SimpleTypes) GetTuple(ctx context.Context, opts *cainome.CallOpts) (struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
 }, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -408,8 +402,8 @@ func (simple_types *SimpleTypes) GetTuple(ctx context.Context, opts *CallOpts) (
 	Field0 *felt.Felt
 	Field1 *big.Int
 }
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	// TODO: Convert felt to Tuple(Tuple { type_path: "(core::felt252, core::integer::u256)", inners: [CoreBasic(CoreBasic { type_path: "core::felt252" }), Composite(Composite { type_path: "core::integer::u256", inners: [], generic_args: [], type: Unknown, is_event: false, alias: None })] })
+	_ = response
 	return result, nil
 }
 
@@ -419,8 +413,9 @@ func (simple_types *SimpleTypes) SetTuple(ctx context.Context, tuple struct {
 }) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type tuple to felt
-	_ = tuple // TODO: add to calldata
+	// Tuple field tuple: marshal each sub-field
+	calldata = append(calldata, tuple.Field0)
+	calldata = append(calldata, cainome.FeltFromBigInt(tuple.Field1))
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -428,10 +423,10 @@ func (simple_types *SimpleTypes) SetTuple(ctx context.Context, tuple struct {
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetArray(ctx context.Context, opts *CallOpts) ([]*felt.Felt, error) {
+func (simple_types *SimpleTypes) GetArray(ctx context.Context, opts *cainome.CallOpts) ([]*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -460,16 +455,19 @@ func (simple_types *SimpleTypes) GetArray(ctx context.Context, opts *CallOpts) (
 		return nil, fmt.Errorf("empty response")
 	}
 	var result []*felt.Felt
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	// TODO: Convert felt to Array(Array { type_path: "core::array::Span::<core::felt252>", inner: CoreBasic(CoreBasic { type_path: "core::felt252" }), is_legacy: false })
+	_ = response
 	return result, nil
 }
 
 func (simple_types *SimpleTypes) SetArray(ctx context.Context, data []*felt.Felt) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type data to felt
-	_ = data // TODO: add to calldata
+	if data_data, err := cainome.NewCairoFeltArray(data).MarshalCairo(); err != nil {
+		return fmt.Errorf("failed to marshal data: %w", err)
+	} else {
+		calldata = append(calldata, data_data...)
+	}
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission

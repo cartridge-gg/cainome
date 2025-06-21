@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/cartridge-gg/cainome"
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
@@ -29,10 +30,10 @@ func NewByteArray(contractAddress *felt.Felt, provider *rpc.Provider) *ByteArray
 	}
 }
 
-func (byte_array *ByteArray) GetByteArray(ctx context.Context, opts *CallOpts) ([]byte, error) {
+func (byte_array *ByteArray) GetByteArray(ctx context.Context, opts *cainome.CallOpts) ([]byte, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -61,15 +62,15 @@ func (byte_array *ByteArray) GetByteArray(ctx context.Context, opts *CallOpts) (
 		return nil, fmt.Errorf("empty response")
 	}
 	var result []byte
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	// TODO: Convert felt to Composite(Composite { type_path: "core::byte_array::ByteArray", inners: [CompositeInner { index: 0, name: "data", kind: NotUsed, token: Array(Array { type_path: "core::array::Array::<core::bytes_31::bytes31>", inner: CoreBasic(CoreBasic { type_path: "core::bytes_31::bytes31" }), is_legacy: false }) }, CompositeInner { index: 1, name: "pending_word", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::felt252" }) }, CompositeInner { index: 2, name: "pending_word_len", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u32" }) }], generic_args: [], type: Struct, is_event: false, alias: None })
+	_ = response
 	return result, nil
 }
 
-func (byte_array *ByteArray) GetByteArrayStorage(ctx context.Context, opts *CallOpts) ([]byte, error) {
+func (byte_array *ByteArray) GetByteArrayStorage(ctx context.Context, opts *cainome.CallOpts) ([]byte, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -98,16 +99,19 @@ func (byte_array *ByteArray) GetByteArrayStorage(ctx context.Context, opts *Call
 		return nil, fmt.Errorf("empty response")
 	}
 	var result []byte
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	// TODO: Convert felt to Composite(Composite { type_path: "core::byte_array::ByteArray", inners: [CompositeInner { index: 0, name: "data", kind: NotUsed, token: Array(Array { type_path: "core::array::Array::<core::bytes_31::bytes31>", inner: CoreBasic(CoreBasic { type_path: "core::bytes_31::bytes31" }), is_legacy: false }) }, CompositeInner { index: 1, name: "pending_word", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::felt252" }) }, CompositeInner { index: 2, name: "pending_word_len", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u32" }) }], generic_args: [], type: Struct, is_event: false, alias: None })
+	_ = response
 	return result, nil
 }
 
 func (byte_array *ByteArray) SetByteArray(ctx context.Context, v []byte) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type v to felt
-	_ = v // TODO: add to calldata
+	if v_data, err := cainome.NewCairoByteArray(v).MarshalCairo(); err != nil {
+		return fmt.Errorf("failed to marshal v: %w", err)
+	} else {
+		calldata = append(calldata, v_data...)
+	}
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission

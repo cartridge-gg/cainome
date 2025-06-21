@@ -9,173 +9,9 @@ import (
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/cartridge-gg/cainome"
 	"github.com/NethermindEth/starknet.go/utils"
 )
-
-type GenericOne struct {
-	A ToAlias `json:"a"`
-	B *felt.Felt `json:"b"`
-	C *big.Int `json:"c"`
-}
-
-// MarshalCairo serializes GenericOne to Cairo felt array
-func (s *GenericOne) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Struct field A: marshal using CairoMarshaler
-	if fieldData, err := s.A.MarshalCairo(); err != nil {
-		return nil, err
-	} else {
-		result = append(result, fieldData...)
-	}
-	result = append(result, s.B)
-	result = append(result, FeltFromBigInt(s.C))
-	return result, nil
-}
-
-// UnmarshalCairo deserializes GenericOne from Cairo felt array
-func (s *GenericOne) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	// Struct field A: unmarshal using CairoMarshaler
-	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
-		return err
-	}
-	// TODO: Update offset based on consumed data
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field B")
-	}
-	s.B = data[offset]
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field C")
-	}
-	s.C = BigIntFromFelt(data[offset])
-	offset++
-
-	return nil
-}
-
-// CairoSize returns the serialized size for GenericOne
-func (s *GenericOne) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
-// StructsEvent represents a contract event
-type StructsEvent interface {
-	IsStructsEvent() bool
-}
-
-
-type Simple struct {
-	Felt *felt.Felt `json:"felt"`
-	Uint256 *big.Int `json:"uint256"`
-	Uint64 uint64 `json:"uint64"`
-	Address *felt.Felt `json:"address"`
-	ClassHash *felt.Felt `json:"class_hash"`
-	EthAddress [20]byte `json:"eth_address"`
-	Tuple struct {
-	Field0 *felt.Felt
-	Field1 *big.Int
-} `json:"tuple"`
-	Span []*felt.Felt `json:"span"`
-}
-
-// MarshalCairo serializes Simple to Cairo felt array
-func (s *Simple) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, s.Felt)
-	result = append(result, FeltFromBigInt(s.Uint256))
-	result = append(result, FeltFromUint(uint64(s.Uint64)))
-	result = append(result, s.Address)
-	result = append(result, s.ClassHash)
-	// TODO: Handle builtin composite core::starknet::eth_address::EthAddress for field EthAddress
-	// Tuple field Tuple: marshal each sub-field
-	result = append(result, s.Tuple.Field0)
-	result = append(result, FeltFromBigInt(s.Tuple.Field1))
-	// Array field Span: serialize length then elements
-	result = append(result, FeltFromUint(uint64(len(s.Span))))
-	for _, item := range s.Span {
-		result = append(result, item)
-	}
-	return result, nil
-}
-
-// UnmarshalCairo deserializes Simple from Cairo felt array
-func (s *Simple) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Felt")
-	}
-	s.Felt = data[offset]
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Uint256")
-	}
-	s.Uint256 = BigIntFromFelt(data[offset])
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Uint64")
-	}
-	s.Uint64 = UintFromFelt(data[offset])
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Address")
-	}
-	s.Address = data[offset]
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field ClassHash")
-	}
-	s.ClassHash = data[offset]
-	offset++
-
-	// TODO: Handle builtin composite core::starknet::eth_address::EthAddress for field EthAddress unmarshal
-	_ = offset // Suppress unused variable warning
-	// Tuple field Tuple: unmarshal each sub-field
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for tuple field Tuple element 0")
-	}
-	s.Tuple.Field0 = data[offset]
-	offset++
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for tuple field Tuple element 1")
-	}
-	s.Tuple.Field1 = BigIntFromFelt(data[offset])
-	offset++
-
-	// Array field Span: read length then elements
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for array length of Span")
-	}
-	lengthSpan := UintFromFelt(data[offset])
-	offset++
-	s.Span = make([]*felt.Felt, lengthSpan)
-	for i := uint64(0); i < lengthSpan; i++ {
-		if offset >= len(data) {
-			return fmt.Errorf("insufficient data for array element %d of Span", i)
-		}
-		s.Span[i] = data[offset]
-		offset++
-	}
-
-	return nil
-}
-
-// CairoSize returns the serialized size for Simple
-func (s *Simple) CairoSize() int {
-	return -1 // Dynamic size
-}
-
 
 type StructWithStruct struct {
 	Simple Simple `json:"simple"`
@@ -213,34 +49,168 @@ func (s *StructWithStruct) CairoSize() int {
 }
 
 
-type ToAlias struct {
-	A uint32 `json:"a"`
+type Simple struct {
+	Felt *felt.Felt `json:"felt"`
+	Uint256 *big.Int `json:"uint256"`
+	Uint64 uint64 `json:"uint64"`
+	Address *felt.Felt `json:"address"`
+	ClassHash *felt.Felt `json:"class_hash"`
+	EthAddress [20]byte `json:"eth_address"`
+	Tuple struct {
+	Field0 *felt.Felt
+	Field1 *big.Int
+} `json:"tuple"`
+	Span []*felt.Felt `json:"span"`
 }
 
-// MarshalCairo serializes ToAlias to Cairo felt array
-func (s *ToAlias) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes Simple to Cairo felt array
+func (s *Simple) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	result = append(result, FeltFromUint(uint64(s.A)))
+	result = append(result, s.Felt)
+	result = append(result, cainome.FeltFromBigInt(s.Uint256))
+	result = append(result, cainome.FeltFromUint(uint64(s.Uint64)))
+	result = append(result, s.Address)
+	result = append(result, s.ClassHash)
+	// TODO: Handle builtin composite core::starknet::eth_address::EthAddress for field EthAddress
+	// Tuple field Tuple: marshal each sub-field
+	result = append(result, s.Tuple.Field0)
+	result = append(result, cainome.FeltFromBigInt(s.Tuple.Field1))
+	// Array field Span: serialize length then elements
+	result = append(result, cainome.FeltFromUint(uint64(len(s.Span))))
+	for _, item := range s.Span {
+		result = append(result, item)
+	}
 	return result, nil
 }
 
-// UnmarshalCairo deserializes ToAlias from Cairo felt array
-func (s *ToAlias) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes Simple from Cairo felt array
+func (s *Simple) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field A")
+		return fmt.Errorf("insufficient data for field Felt")
 	}
-	s.A = uint32(UintFromFelt(data[offset]))
+	s.Felt = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Uint256")
+	}
+	s.Uint256 = cainome.BigIntFromFelt(data[offset])
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Uint64")
+	}
+	s.Uint64 = cainome.UintFromFelt(data[offset])
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Address")
+	}
+	s.Address = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field ClassHash")
+	}
+	s.ClassHash = data[offset]
+	offset++
+
+	// TODO: Handle builtin composite core::starknet::eth_address::EthAddress for field EthAddress unmarshal
+	_ = offset // Suppress unused variable warning
+	// Tuple field Tuple: unmarshal each sub-field
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for tuple field Tuple element 0")
+	}
+	s.Tuple.Field0 = data[offset]
+	offset++
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for tuple field Tuple element 1")
+	}
+	s.Tuple.Field1 = cainome.BigIntFromFelt(data[offset])
+	offset++
+
+	// Array field Span: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of Span")
+	}
+	lengthSpan := cainome.UintFromFelt(data[offset])
+	offset++
+	s.Span = make([]*felt.Felt, lengthSpan)
+	for i := uint64(0); i < lengthSpan; i++ {
+		if offset >= len(data) {
+			return fmt.Errorf("insufficient data for array element %d of Span", i)
+		}
+		s.Span[i] = data[offset]
+		offset++
+	}
+
+	return nil
+}
+
+// CairoSize returns the serialized size for Simple
+func (s *Simple) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+type GenericOne struct {
+	A ToAlias `json:"a"`
+	B *felt.Felt `json:"b"`
+	C *big.Int `json:"c"`
+}
+
+// MarshalCairo serializes GenericOne to Cairo felt array
+func (s *GenericOne) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Struct field A: marshal using CairoMarshaler
+	if fieldData, err := s.A.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
+	result = append(result, s.B)
+	result = append(result, cainome.FeltFromBigInt(s.C))
+	return result, nil
+}
+
+// UnmarshalCairo deserializes GenericOne from Cairo felt array
+func (s *GenericOne) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Struct field A: unmarshal using CairoMarshaler
+	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field B")
+	}
+	s.B = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field C")
+	}
+	s.C = cainome.BigIntFromFelt(data[offset])
 	offset++
 
 	return nil
 }
 
-// CairoSize returns the serialized size for ToAlias
-func (s *ToAlias) CairoSize() int {
+// CairoSize returns the serialized size for GenericOne
+func (s *GenericOne) CairoSize() int {
 	return -1 // Dynamic size
+}
+
+
+// StructsEvent represents a contract event
+type StructsEvent interface {
+	IsStructsEvent() bool
 }
 
 
@@ -258,7 +228,7 @@ func (s *GenericTwo) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, s.A)
-	result = append(result, FeltFromUint(uint64(s.B)))
+	result = append(result, cainome.FeltFromUint(uint64(s.B)))
 	result = append(result, s.C)
 	// Struct field D: marshal using CairoMarshaler
 	if fieldData, err := s.D.MarshalCairo(); err != nil {
@@ -267,7 +237,7 @@ func (s *GenericTwo) MarshalCairo() ([]*felt.Felt, error) {
 		result = append(result, fieldData...)
 	}
 	// Array field E: serialize length then elements
-	result = append(result, FeltFromUint(uint64(len(s.E))))
+	result = append(result, cainome.FeltFromUint(uint64(len(s.E))))
 	for _, item := range s.E {
 		if itemData, err := item.MarshalCairo(); err != nil {
 			return nil, err
@@ -297,7 +267,7 @@ func (s *GenericTwo) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field B")
 	}
-	s.B = UintFromFelt(data[offset])
+	s.B = cainome.UintFromFelt(data[offset])
 	offset++
 
 	if offset >= len(data) {
@@ -316,7 +286,7 @@ func (s *GenericTwo) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for array length of E")
 	}
-	lengthE := UintFromFelt(data[offset])
+	lengthE := cainome.UintFromFelt(data[offset])
 	offset++
 	s.E = make([]ToAlias, lengthE)
 	for i := uint64(0); i < lengthE; i++ {
@@ -348,6 +318,37 @@ func (s *GenericTwo) CairoSize() int {
 }
 
 
+type ToAlias struct {
+	A uint32 `json:"a"`
+}
+
+// MarshalCairo serializes ToAlias to Cairo felt array
+func (s *ToAlias) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, cainome.FeltFromUint(uint64(s.A)))
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ToAlias from Cairo felt array
+func (s *ToAlias) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field A")
+	}
+	s.A = uint32(cainome.UintFromFelt(data[offset]))
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ToAlias
+func (s *ToAlias) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
 type Structs struct {
 	contractAddress *felt.Felt
 	provider *rpc.Provider
@@ -360,10 +361,10 @@ func NewStructs(contractAddress *felt.Felt, provider *rpc.Provider) *Structs {
 	}
 }
 
-func (structs *Structs) GetSimple(ctx context.Context, opts *CallOpts) (Simple, error) {
+func (structs *Structs) GetSimple(ctx context.Context, opts *cainome.CallOpts) (Simple, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -392,24 +393,20 @@ func (structs *Structs) GetSimple(ctx context.Context, opts *CallOpts) (Simple, 
 		return Simple{}, fmt.Errorf("empty response")
 	}
 	var result Simple
-	// TODO: Deserialize using UnmarshalCairo()
-	// if err := result.UnmarshalCairo(response); err != nil {
-	//     return Simple{}, fmt.Errorf("failed to unmarshal response: %w", err)
-	// }
-	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
+	if err := result.UnmarshalCairo(response); err != nil {
+		return Simple{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
 	return result, nil
 }
 
 func (structs *Structs) SetSimple(ctx context.Context, simple *Simple) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize complex type simple using MarshalCairo()
-	// if simple_data, err := simple.MarshalCairo(); err != nil {
-	//     return fmt.Errorf("failed to marshal simple: %w", err)
-	// } else {
-	//     calldata = append(calldata, simple_data...)
-	// }
-	_ = simple // TODO: implement MarshalCairo and add to calldata
+	if simple_data, err := simple.MarshalCairo(); err != nil {
+		return err
+	} else {
+		calldata = append(calldata, simple_data...)
+	}
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -417,10 +414,10 @@ func (structs *Structs) SetSimple(ctx context.Context, simple *Simple) error {
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (structs *Structs) GetStructWStruct(ctx context.Context, opts *CallOpts) (StructWithStruct, error) {
+func (structs *Structs) GetStructWStruct(ctx context.Context, opts *cainome.CallOpts) (StructWithStruct, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -449,24 +446,20 @@ func (structs *Structs) GetStructWStruct(ctx context.Context, opts *CallOpts) (S
 		return StructWithStruct{}, fmt.Errorf("empty response")
 	}
 	var result StructWithStruct
-	// TODO: Deserialize using UnmarshalCairo()
-	// if err := result.UnmarshalCairo(response); err != nil {
-	//     return StructWithStruct{}, fmt.Errorf("failed to unmarshal response: %w", err)
-	// }
-	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
+	if err := result.UnmarshalCairo(response); err != nil {
+		return StructWithStruct{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
 	return result, nil
 }
 
 func (structs *Structs) SetStructWStruct(ctx context.Context, sws *StructWithStruct) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize complex type sws using MarshalCairo()
-	// if sws_data, err := sws.MarshalCairo(); err != nil {
-	//     return fmt.Errorf("failed to marshal sws: %w", err)
-	// } else {
-	//     calldata = append(calldata, sws_data...)
-	// }
-	_ = sws // TODO: implement MarshalCairo and add to calldata
+	if sws_data, err := sws.MarshalCairo(); err != nil {
+		return err
+	} else {
+		calldata = append(calldata, sws_data...)
+	}
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -474,10 +467,10 @@ func (structs *Structs) SetStructWStruct(ctx context.Context, sws *StructWithStr
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (structs *Structs) GetGenericOne(ctx context.Context, opts *CallOpts) (GenericOne, error) {
+func (structs *Structs) GetGenericOne(ctx context.Context, opts *cainome.CallOpts) (GenericOne, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -506,18 +499,16 @@ func (structs *Structs) GetGenericOne(ctx context.Context, opts *CallOpts) (Gene
 		return GenericOne{}, fmt.Errorf("empty response")
 	}
 	var result GenericOne
-	// TODO: Deserialize using UnmarshalCairo()
-	// if err := result.UnmarshalCairo(response); err != nil {
-	//     return GenericOne{}, fmt.Errorf("failed to unmarshal response: %w", err)
-	// }
-	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
+	if err := result.UnmarshalCairo(response); err != nil {
+		return GenericOne{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
 	return result, nil
 }
 
-func (structs *Structs) GetGenericOneArray(ctx context.Context, opts *CallOpts) (GenericOne, error) {
+func (structs *Structs) GetGenericOneArray(ctx context.Context, opts *cainome.CallOpts) (GenericOne, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -546,24 +537,20 @@ func (structs *Structs) GetGenericOneArray(ctx context.Context, opts *CallOpts) 
 		return GenericOne{}, fmt.Errorf("empty response")
 	}
 	var result GenericOne
-	// TODO: Deserialize using UnmarshalCairo()
-	// if err := result.UnmarshalCairo(response); err != nil {
-	//     return GenericOne{}, fmt.Errorf("failed to unmarshal response: %w", err)
-	// }
-	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
+	if err := result.UnmarshalCairo(response); err != nil {
+		return GenericOne{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
 	return result, nil
 }
 
 func (structs *Structs) SetGenericOne(ctx context.Context, generic *GenericOne) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize complex type generic using MarshalCairo()
-	// if generic_data, err := generic.MarshalCairo(); err != nil {
-	//     return fmt.Errorf("failed to marshal generic: %w", err)
-	// } else {
-	//     calldata = append(calldata, generic_data...)
-	// }
-	_ = generic // TODO: implement MarshalCairo and add to calldata
+	if generic_data, err := generic.MarshalCairo(); err != nil {
+		return err
+	} else {
+		calldata = append(calldata, generic_data...)
+	}
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -574,13 +561,11 @@ func (structs *Structs) SetGenericOne(ctx context.Context, generic *GenericOne) 
 func (structs *Structs) SetGenericTwo2(ctx context.Context, generic *GenericTwo) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize complex type generic using MarshalCairo()
-	// if generic_data, err := generic.MarshalCairo(); err != nil {
-	//     return fmt.Errorf("failed to marshal generic: %w", err)
-	// } else {
-	//     calldata = append(calldata, generic_data...)
-	// }
-	_ = generic // TODO: implement MarshalCairo and add to calldata
+	if generic_data, err := generic.MarshalCairo(); err != nil {
+		return err
+	} else {
+		calldata = append(calldata, generic_data...)
+	}
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -591,13 +576,11 @@ func (structs *Structs) SetGenericTwo2(ctx context.Context, generic *GenericTwo)
 func (structs *Structs) SetGenericTwo0(ctx context.Context, generic *GenericTwo) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize complex type generic using MarshalCairo()
-	// if generic_data, err := generic.MarshalCairo(); err != nil {
-	//     return fmt.Errorf("failed to marshal generic: %w", err)
-	// } else {
-	//     calldata = append(calldata, generic_data...)
-	// }
-	_ = generic // TODO: implement MarshalCairo and add to calldata
+	if generic_data, err := generic.MarshalCairo(); err != nil {
+		return err
+	} else {
+		calldata = append(calldata, generic_data...)
+	}
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -608,13 +591,11 @@ func (structs *Structs) SetGenericTwo0(ctx context.Context, generic *GenericTwo)
 func (structs *Structs) SetGenericTwo(ctx context.Context, generic *GenericTwo) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize complex type generic using MarshalCairo()
-	// if generic_data, err := generic.MarshalCairo(); err != nil {
-	//     return fmt.Errorf("failed to marshal generic: %w", err)
-	// } else {
-	//     calldata = append(calldata, generic_data...)
-	// }
-	_ = generic // TODO: implement MarshalCairo and add to calldata
+	if generic_data, err := generic.MarshalCairo(); err != nil {
+		return err
+	} else {
+		calldata = append(calldata, generic_data...)
+	}
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -622,10 +603,10 @@ func (structs *Structs) SetGenericTwo(ctx context.Context, generic *GenericTwo) 
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (structs *Structs) GetGenericTwo(ctx context.Context, opts *CallOpts) (GenericTwo, error) {
+func (structs *Structs) GetGenericTwo(ctx context.Context, opts *cainome.CallOpts) (GenericTwo, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -654,11 +635,9 @@ func (structs *Structs) GetGenericTwo(ctx context.Context, opts *CallOpts) (Gene
 		return GenericTwo{}, fmt.Errorf("empty response")
 	}
 	var result GenericTwo
-	// TODO: Deserialize using UnmarshalCairo()
-	// if err := result.UnmarshalCairo(response); err != nil {
-	//     return GenericTwo{}, fmt.Errorf("failed to unmarshal response: %w", err)
-	// }
-	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
+	if err := result.UnmarshalCairo(response); err != nil {
+		return GenericTwo{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
 	return result, nil
 }
 
@@ -668,8 +647,17 @@ func (structs *Structs) SetTupleGeneric(ctx context.Context, value struct {
 }) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type value to felt
-	_ = value // TODO: add to calldata
+	// Tuple field value: marshal each sub-field
+	if value_Field0_data, err := value.Field0.MarshalCairo(); err != nil {
+		return err
+	} else {
+		calldata = append(calldata, value_Field0_data...)
+	}
+	if value_Field1_data, err := value.Field1.MarshalCairo(); err != nil {
+		return err
+	} else {
+		calldata = append(calldata, value_Field1_data...)
+	}
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -677,13 +665,13 @@ func (structs *Structs) SetTupleGeneric(ctx context.Context, value struct {
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (structs *Structs) GetTupleOfArrayGeneric(ctx context.Context, opts *CallOpts) (struct {
+func (structs *Structs) GetTupleOfArrayGeneric(ctx context.Context, opts *cainome.CallOpts) (struct {
 	Field0 []GenericOne
 	Field1 []*felt.Felt
 }, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -721,16 +709,23 @@ func (structs *Structs) GetTupleOfArrayGeneric(ctx context.Context, opts *CallOp
 	Field0 []GenericOne
 	Field1 []*felt.Felt
 }
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	// TODO: Convert felt to Tuple(Tuple { type_path: "(core::array::Span::<contracts::abicov::structs::GenericOne::<core::integer::u64>>, core::array::Span::<core::felt252>)", inners: [Array(Array { type_path: "core::array::Span::<contracts::abicov::structs::GenericOne::<core::integer::u64>>", inner: Composite(Composite { type_path: "contracts::abicov::structs::GenericOne::<core::integer::u64>", inners: [], generic_args: [("A", CoreBasic(CoreBasic { type_path: "core::integer::u64" }))], type: Unknown, is_event: false, alias: None }), is_legacy: false }), Array(Array { type_path: "core::array::Span::<core::felt252>", inner: CoreBasic(CoreBasic { type_path: "core::felt252" }), is_legacy: false })] })
+	_ = response
 	return result, nil
 }
 
 func (structs *Structs) SetFromAlias(ctx context.Context, value []*ToAlias) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type value to felt
-	_ = value // TODO: add to calldata
+	// Array field value: serialize length then elements
+	calldata = append(calldata, cainome.FeltFromUint(uint64(len(value))))
+	for _, item := range value {
+		if item_data, err := item.MarshalCairo(); err != nil {
+			return fmt.Errorf("failed to marshal array item: %w", err)
+		} else {
+			calldata = append(calldata, item_data...)
+		}
+	}
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission

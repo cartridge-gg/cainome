@@ -9,8 +9,15 @@ import (
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/cartridge-gg/cainome"
 	"github.com/NethermindEth/starknet.go/utils"
 )
+
+// OptionResultEvent represents a contract event
+type OptionResultEvent interface {
+	IsOptionResultEvent() bool
+}
+
 
 type GenericOneOptionResult struct {
 	A *felt.Felt `json:"a"`
@@ -24,7 +31,7 @@ func (s *GenericOneOptionResult) MarshalCairo() ([]*felt.Felt, error) {
 
 	result = append(result, s.A)
 	result = append(result, s.B)
-	result = append(result, FeltFromBigInt(s.C))
+	result = append(result, cainome.FeltFromBigInt(s.C))
 	return result, nil
 }
 
@@ -47,7 +54,7 @@ func (s *GenericOneOptionResult) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field C")
 	}
-	s.C = BigIntFromFelt(data[offset])
+	s.C = cainome.BigIntFromFelt(data[offset])
 	offset++
 
 	return nil
@@ -56,12 +63,6 @@ func (s *GenericOneOptionResult) UnmarshalCairo(data []*felt.Felt) error {
 // CairoSize returns the serialized size for GenericOneOptionResult
 func (s *GenericOneOptionResult) CairoSize() int {
 	return -1 // Dynamic size
-}
-
-
-// OptionResultEvent represents a contract event
-type OptionResultEvent interface {
-	IsOptionResultEvent() bool
 }
 
 
@@ -77,10 +78,10 @@ func NewOptionResult(contractAddress *felt.Felt, provider *rpc.Provider) *Option
 	}
 }
 
-func (option_result *OptionResult) ResultOkUnit(ctx context.Context, res Result[struct{}, *felt.Felt], opts *CallOpts) (Result[uint64, *felt.Felt], error) {
+func (option_result *OptionResult) ResultOkUnit(ctx context.Context, res cainome.Result[struct{}, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -91,8 +92,11 @@ func (option_result *OptionResult) ResultOkUnit(ctx context.Context, res Result[
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type res to felt
-	_ = res // TODO: add to calldata
+	if res_data, err := res.MarshalCairo(); err != nil {
+		return cainome.Result[uint64, *felt.Felt]{}, err
+	} else {
+		calldata = append(calldata, res_data...)
+	}
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -103,23 +107,24 @@ func (option_result *OptionResult) ResultOkUnit(ctx context.Context, res Result[
 
 	response, err := option_result.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
-		return Result[uint64, *felt.Felt]{}, err
+		return cainome.Result[uint64, *felt.Felt]{}, err
 	}
 
 	// Deserialize response to proper type
 	if len(response) == 0 {
-		return Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
+		return cainome.Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
 	}
-	var result Result[uint64, *felt.Felt]
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	var result cainome.Result[uint64, *felt.Felt]
+	if err := result.UnmarshalCairo(response); err != nil {
+		return cainome.Result[uint64, *felt.Felt]{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
 	return result, nil
 }
 
-func (option_result *OptionResult) ResultOkStruct(ctx context.Context, res Result[*GenericOneOptionResult, *felt.Felt], opts *CallOpts) (Result[uint64, *felt.Felt], error) {
+func (option_result *OptionResult) ResultOkStruct(ctx context.Context, res cainome.Result[*GenericOneOptionResult, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -130,8 +135,11 @@ func (option_result *OptionResult) ResultOkStruct(ctx context.Context, res Resul
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type res to felt
-	_ = res // TODO: add to calldata
+	if res_data, err := res.MarshalCairo(); err != nil {
+		return cainome.Result[uint64, *felt.Felt]{}, err
+	} else {
+		calldata = append(calldata, res_data...)
+	}
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -142,26 +150,27 @@ func (option_result *OptionResult) ResultOkStruct(ctx context.Context, res Resul
 
 	response, err := option_result.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
-		return Result[uint64, *felt.Felt]{}, err
+		return cainome.Result[uint64, *felt.Felt]{}, err
 	}
 
 	// Deserialize response to proper type
 	if len(response) == 0 {
-		return Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
+		return cainome.Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
 	}
-	var result Result[uint64, *felt.Felt]
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	var result cainome.Result[uint64, *felt.Felt]
+	if err := result.UnmarshalCairo(response); err != nil {
+		return cainome.Result[uint64, *felt.Felt]{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
 	return result, nil
 }
 
-func (option_result *OptionResult) ResultOkTupleStruct(ctx context.Context, res Result[struct {
+func (option_result *OptionResult) ResultOkTupleStruct(ctx context.Context, res cainome.Result[struct {
 	Field0 *GenericOneOptionResult
 	Field1 *felt.Felt
-}, *felt.Felt], opts *CallOpts) (Result[uint64, *felt.Felt], error) {
+}, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -172,8 +181,11 @@ func (option_result *OptionResult) ResultOkTupleStruct(ctx context.Context, res 
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type res to felt
-	_ = res // TODO: add to calldata
+	if res_data, err := res.MarshalCairo(); err != nil {
+		return cainome.Result[uint64, *felt.Felt]{}, err
+	} else {
+		calldata = append(calldata, res_data...)
+	}
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -184,23 +196,24 @@ func (option_result *OptionResult) ResultOkTupleStruct(ctx context.Context, res 
 
 	response, err := option_result.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
-		return Result[uint64, *felt.Felt]{}, err
+		return cainome.Result[uint64, *felt.Felt]{}, err
 	}
 
 	// Deserialize response to proper type
 	if len(response) == 0 {
-		return Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
+		return cainome.Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
 	}
-	var result Result[uint64, *felt.Felt]
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	var result cainome.Result[uint64, *felt.Felt]
+	if err := result.UnmarshalCairo(response); err != nil {
+		return cainome.Result[uint64, *felt.Felt]{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
 	return result, nil
 }
 
-func (option_result *OptionResult) ResultOk(ctx context.Context, res Result[*felt.Felt, *big.Int], opts *CallOpts) (Result[uint64, *felt.Felt], error) {
+func (option_result *OptionResult) ResultOk(ctx context.Context, res cainome.Result[*felt.Felt, *big.Int], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -211,8 +224,11 @@ func (option_result *OptionResult) ResultOk(ctx context.Context, res Result[*fel
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type res to felt
-	_ = res // TODO: add to calldata
+	if res_data, err := res.MarshalCairo(); err != nil {
+		return cainome.Result[uint64, *felt.Felt]{}, err
+	} else {
+		calldata = append(calldata, res_data...)
+	}
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -223,23 +239,24 @@ func (option_result *OptionResult) ResultOk(ctx context.Context, res Result[*fel
 
 	response, err := option_result.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
-		return Result[uint64, *felt.Felt]{}, err
+		return cainome.Result[uint64, *felt.Felt]{}, err
 	}
 
 	// Deserialize response to proper type
 	if len(response) == 0 {
-		return Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
+		return cainome.Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
 	}
-	var result Result[uint64, *felt.Felt]
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	var result cainome.Result[uint64, *felt.Felt]
+	if err := result.UnmarshalCairo(response); err != nil {
+		return cainome.Result[uint64, *felt.Felt]{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
 	return result, nil
 }
 
-func (option_result *OptionResult) ResultErr(ctx context.Context, res Result[*felt.Felt, *felt.Felt], opts *CallOpts) (Result[*felt.Felt, *big.Int], error) {
+func (option_result *OptionResult) ResultErr(ctx context.Context, res cainome.Result[*felt.Felt, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[*felt.Felt, *big.Int], error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -250,8 +267,11 @@ func (option_result *OptionResult) ResultErr(ctx context.Context, res Result[*fe
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type res to felt
-	_ = res // TODO: add to calldata
+	if res_data, err := res.MarshalCairo(); err != nil {
+		return cainome.Result[*felt.Felt, *big.Int]{}, err
+	} else {
+		calldata = append(calldata, res_data...)
+	}
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -262,23 +282,24 @@ func (option_result *OptionResult) ResultErr(ctx context.Context, res Result[*fe
 
 	response, err := option_result.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
-		return Result[*felt.Felt, *big.Int]{}, err
+		return cainome.Result[*felt.Felt, *big.Int]{}, err
 	}
 
 	// Deserialize response to proper type
 	if len(response) == 0 {
-		return Result[*felt.Felt, *big.Int]{}, fmt.Errorf("empty response")
+		return cainome.Result[*felt.Felt, *big.Int]{}, fmt.Errorf("empty response")
 	}
-	var result Result[*felt.Felt, *big.Int]
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	var result cainome.Result[*felt.Felt, *big.Int]
+	if err := result.UnmarshalCairo(response); err != nil {
+		return cainome.Result[*felt.Felt, *big.Int]{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
 	return result, nil
 }
 
-func (option_result *OptionResult) OptionSome(ctx context.Context, opt **felt.Felt, opts *CallOpts) (*[]*felt.Felt, error) {
+func (option_result *OptionResult) OptionSome(ctx context.Context, opt **felt.Felt, opts *cainome.CallOpts) (*[]*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -289,8 +310,12 @@ func (option_result *OptionResult) OptionSome(ctx context.Context, opt **felt.Fe
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type opt to felt
-	_ = opt // TODO: add to calldata
+	if opt != nil {
+		calldata = append(calldata, cainome.FeltFromUint(1)) // Some variant
+		calldata = append(calldata, *opt)
+	} else {
+		calldata = append(calldata, cainome.FeltFromUint(0)) // None variant
+	}
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -308,16 +333,34 @@ func (option_result *OptionResult) OptionSome(ctx context.Context, opt **felt.Fe
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	var result *[]*felt.Felt
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
-	return result, nil
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// Check Option discriminant
+	if cainome.UintFromFelt(response[0]) == 0 {
+		// None variant
+		return nil, nil
+	} else {
+		// Some variant - deserialize array
+		if len(response) < 2 {
+			return nil, fmt.Errorf("insufficient data for Some variant")
+		}
+		arrayLength := cainome.UintFromFelt(response[1])
+		if len(response) < int(2 + arrayLength) {
+			return nil, fmt.Errorf("insufficient data for array elements")
+		}
+		result := make([]*felt.Felt, arrayLength)
+		for i := uint64(0); i < arrayLength; i++ {
+			result[i] = response[2+i]
+		}
+		return &result, nil
+	}
 }
 
-func (option_result *OptionResult) OptionNone(ctx context.Context, opt **felt.Felt, opts *CallOpts) (*uint64, error) {
+func (option_result *OptionResult) OptionNone(ctx context.Context, opt **felt.Felt, opts *cainome.CallOpts) (*uint64, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -328,8 +371,12 @@ func (option_result *OptionResult) OptionNone(ctx context.Context, opt **felt.Fe
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type opt to felt
-	_ = opt // TODO: add to calldata
+	if opt != nil {
+		calldata = append(calldata, cainome.FeltFromUint(1)) // Some variant
+		calldata = append(calldata, *opt)
+	} else {
+		calldata = append(calldata, cainome.FeltFromUint(0)) // None variant
+	}
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -347,9 +394,22 @@ func (option_result *OptionResult) OptionNone(ctx context.Context, opt **felt.Fe
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	var result *uint64
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
-	return result, nil
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// Check Option discriminant
+	if cainome.UintFromFelt(response[0]) == 0 {
+		// None variant
+		return nil, nil
+	} else {
+		// Some variant - extract value
+		if len(response) < 2 {
+			return nil, fmt.Errorf("insufficient data for Some variant")
+		}
+		var result uint64
+		// TODO: Convert response[1:] to inner type
+		_ = response
+		return &result, nil
+	}
 }
 
