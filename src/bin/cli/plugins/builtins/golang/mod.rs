@@ -311,7 +311,8 @@ impl GolangPlugin {
             }
             CompositeInnerKind::Data => {
                 // Add data serialization
-                marshaler.push_str(&self.generate_enum_variant_marshal_code_new(token, variant_type_name));
+                let receiver_var = variant_type_name.to_lowercase().chars().next().unwrap_or('v');
+                marshaler.push_str(&self.generate_enum_variant_marshal_code_new(token, &receiver_var.to_string()));
             }
             _ => {}
         }
@@ -345,7 +346,8 @@ impl GolangPlugin {
             }
             CompositeInnerKind::Data => {
                 // Add data deserialization
-                marshaler.push_str(&self.generate_enum_variant_unmarshal_code_new(token, variant_type_name));
+                let receiver_var = variant_type_name.to_lowercase().chars().next().unwrap_or('v');
+                marshaler.push_str(&self.generate_enum_variant_unmarshal_code_new(token, &receiver_var.to_string()));
             }
             _ => {}
         }
@@ -408,20 +410,23 @@ impl GolangPlugin {
     }
 
     /// Generate marshal code for enum variant with new interface approach
-    fn generate_enum_variant_marshal_code_new(&self, token: &Token, _variant_type_name: &str) -> String {
+    fn generate_enum_variant_marshal_code_new(&self, token: &Token, receiver_var: &str) -> String {
         match token {
             Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
                 "felt" | "core::felt252" => {
-                    "\tresult = append(result, v.Data)\n".to_string()
+                    format!("\tresult = append(result, {}.Data)\n", receiver_var)
                 }
                 "core::bool" => {
-                    "\tresult = append(result, cainome.FeltFromBool(v.Data))\n".to_string()
+                    format!("\tresult = append(result, cainome.FeltFromBool({}.Data))\n", receiver_var)
                 }
                 "core::integer::u8" | "core::integer::u16" | "core::integer::u32" | "core::integer::u64" | "core::integer::usize" => {
-                    "\tresult = append(result, cainome.FeltFromUint(uint64(v.Data)))\n".to_string()
+                    format!("\tresult = append(result, cainome.FeltFromUint(uint64({}.Data)))\n", receiver_var)
                 }
                 "core::integer::u128" | "core::integer::i128" => {
-                    "\tresult = append(result, cainome.FeltFromBigInt(v.Data))\n".to_string()
+                    format!("\tresult = append(result, cainome.FeltFromBigInt({}.Data))\n", receiver_var)
+                }
+                "core::integer::i8" | "core::integer::i16" | "core::integer::i32" | "core::integer::i64" => {
+                    format!("\tresult = append(result, cainome.FeltFromInt(int64({}.Data)))\n", receiver_var)
                 }
                 _ => "\t// TODO: Handle unknown core basic type for enum variant\n".to_string(),
             },
@@ -429,13 +434,58 @@ impl GolangPlugin {
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
                         "core::integer::u256" => {
-                            "\tresult = append(result, cainome.FeltFromBigInt(v.Data))\n".to_string()
+                            format!("\tresult = append(result, cainome.FeltFromBigInt({}.Data))\n", receiver_var)
                         }
                         _ => "\t// TODO: Handle unknown builtin composite type for enum variant\n".to_string(),
                     }
                 } else {
-                    "\tif valueData, err := v.Data.MarshalCairo(); err != nil {\n\t\treturn nil, err\n\t} else {\n\t\tresult = append(result, valueData...)\n\t}\n".to_string()
+                    format!("\tif valueData, err := {}.Data.MarshalCairo(); err != nil {{\n\t\treturn nil, err\n\t}} else {{\n\t\tresult = append(result, valueData...)\n\t}}\n", receiver_var)
                 }
+            }
+            Token::Tuple(tuple) => {
+                // Handle tuple variant data marshalling
+                let mut marshal_code = String::new();
+                for (i, inner_token) in tuple.inners.iter().enumerate() {
+                    match inner_token {
+                        Token::CoreBasic(core_basic) => {
+                            match core_basic.type_path.as_str() {
+                                "felt" | "core::felt252" => {
+                                    marshal_code.push_str(&format!("\tresult = append(result, {}.Data.Field{})\n", receiver_var, i));
+                                }
+                                "core::integer::u8" | "core::integer::u16" | "core::integer::u32" | "core::integer::u64" | "core::integer::usize" => {
+                                    marshal_code.push_str(&format!("\tresult = append(result, cainome.FeltFromUint(uint64({}.Data.Field{})))\n", receiver_var, i));
+                                }
+                                "core::integer::u128" | "core::integer::i128" => {
+                                    marshal_code.push_str(&format!("\tresult = append(result, cainome.FeltFromBigInt({}.Data.Field{}))\n", receiver_var, i));
+                                }
+                                "core::integer::i8" | "core::integer::i16" | "core::integer::i32" | "core::integer::i64" => {
+                                    marshal_code.push_str(&format!("\tresult = append(result, cainome.FeltFromInt(int64({}.Data.Field{})))\n", receiver_var, i));
+                                }
+                                _ => {
+                                    marshal_code.push_str(&format!("\t// TODO: Handle unknown core basic type {} in tuple\n", core_basic.type_path));
+                                }
+                            }
+                        }
+                        Token::Composite(composite) => {
+                            if composite.is_builtin() {
+                                match composite.type_path_no_generic().as_str() {
+                                    "core::integer::u256" => {
+                                        marshal_code.push_str(&format!("\tresult = append(result, cainome.FeltFromBigInt({}.Data.Field{}))\n", receiver_var, i));
+                                    }
+                                    _ => {
+                                        marshal_code.push_str(&format!("\t// TODO: Handle unknown builtin {} in tuple\n", composite.type_path));
+                                    }
+                                }
+                            } else {
+                                marshal_code.push_str(&format!("\tif field{}_data, err := {}.Data.Field{}.MarshalCairo(); err != nil {{\n\t\treturn nil, err\n\t}} else {{\n\t\tresult = append(result, field{}_data...)\n\t}}\n", i, receiver_var, i, i));
+                            }
+                        }
+                        _ => {
+                            marshal_code.push_str(&format!("\t// TODO: Handle unknown token type in tuple field {}\n", i));
+                        }
+                    }
+                }
+                marshal_code
             }
             Token::Array(_) => {
                 "\t// TODO: Handle array type for enum variant\n".to_string()
@@ -445,21 +495,25 @@ impl GolangPlugin {
     }
 
     /// Generate unmarshal code for enum variant with new interface approach
-    fn generate_enum_variant_unmarshal_code_new(&self, token: &Token, _variant_type_name: &str) -> String {
+    fn generate_enum_variant_unmarshal_code_new(&self, token: &Token, receiver_var: &str) -> String {
         match token {
             Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
                 "felt" | "core::felt252" => {
-                    "\tif offset >= len(data) {\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}\n\tv.Data = data[offset]\n\toffset++\n".to_string()
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\t{}.Data = data[offset]\n\toffset++\n", receiver_var)
                 }
                 "core::bool" => {
-                    "\tif offset >= len(data) {\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}\n\tv.Data = cainome.UintFromFelt(data[offset]) != 0\n\toffset++\n".to_string()
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\t{}.Data = cainome.UintFromFelt(data[offset]) != 0\n\toffset++\n", receiver_var)
                 }
                 "core::integer::u8" | "core::integer::u16" | "core::integer::u32" | "core::integer::u64" | "core::integer::usize" => {
                     let go_type = self.token_to_go_type(token);
-                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\tv.Data = {}(cainome.UintFromFelt(data[offset]))\n\toffset++\n", go_type)
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\t{}.Data = {}(cainome.UintFromFelt(data[offset]))\n\toffset++\n", receiver_var, go_type)
                 }
                 "core::integer::u128" | "core::integer::i128" => {
-                    "\tif offset >= len(data) {\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}\n\tv.Data = cainome.BigIntFromFelt(data[offset])\n\toffset++\n".to_string()
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\t{}.Data = cainome.BigIntFromFelt(data[offset])\n\toffset++\n", receiver_var)
+                }
+                "core::integer::i8" | "core::integer::i16" | "core::integer::i32" | "core::integer::i64" => {
+                    let go_type = self.token_to_go_type(token);
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\t{}.Data = {}(cainome.IntFromFelt(data[offset]))\n\toffset++\n", receiver_var, go_type)
                 }
                 _ => "\t// TODO: Handle unknown core basic type for enum variant unmarshal\n".to_string(),
             },
@@ -467,13 +521,61 @@ impl GolangPlugin {
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
                         "core::integer::u256" => {
-                            "\tif offset >= len(data) {\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}\n\tv.Data = cainome.BigIntFromFelt(data[offset])\n\toffset++\n".to_string()
+                            format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\t{}.Data = cainome.BigIntFromFelt(data[offset])\n\toffset++\n", receiver_var)
                         }
                         _ => "\t// TODO: Handle unknown builtin composite type for enum variant unmarshal\n".to_string(),
                     }
                 } else {
-                    "\tif err := v.Data.UnmarshalCairo(data[offset:]); err != nil {\n\t\treturn err\n\t}\n\t// TODO: Update offset based on consumed data\n".to_string()
+                    format!("\tif err := {}.Data.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data\n", receiver_var)
                 }
+            }
+            Token::Tuple(tuple) => {
+                // Handle tuple variant data unmarshalling
+                let mut unmarshal_code = String::new();
+                for (i, inner_token) in tuple.inners.iter().enumerate() {
+                    unmarshal_code.push_str(&format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for tuple field {}\")\n\t}}\n", i));
+                    match inner_token {
+                        Token::CoreBasic(core_basic) => {
+                            match core_basic.type_path.as_str() {
+                                "felt" | "core::felt252" => {
+                                    unmarshal_code.push_str(&format!("\t{}.Data.Field{} = data[offset]\n\toffset++\n", receiver_var, i));
+                                }
+                                "core::integer::u8" | "core::integer::u16" | "core::integer::u32" | "core::integer::u64" | "core::integer::usize" => {
+                                    let go_type = self.token_to_go_type(inner_token);
+                                    unmarshal_code.push_str(&format!("\t{}.Data.Field{} = {}(cainome.UintFromFelt(data[offset]))\n\toffset++\n", receiver_var, i, go_type));
+                                }
+                                "core::integer::u128" | "core::integer::i128" => {
+                                    unmarshal_code.push_str(&format!("\t{}.Data.Field{} = cainome.BigIntFromFelt(data[offset])\n\toffset++\n", receiver_var, i));
+                                }
+                                "core::integer::i8" | "core::integer::i16" | "core::integer::i32" | "core::integer::i64" => {
+                                    let go_type = self.token_to_go_type(inner_token);
+                                    unmarshal_code.push_str(&format!("\t{}.Data.Field{} = {}(cainome.IntFromFelt(data[offset]))\n\toffset++\n", receiver_var, i, go_type));
+                                }
+                                _ => {
+                                    unmarshal_code.push_str(&format!("\t// TODO: Handle unknown core basic type {} in tuple unmarshal\n", core_basic.type_path));
+                                }
+                            }
+                        }
+                        Token::Composite(composite) => {
+                            if composite.is_builtin() {
+                                match composite.type_path_no_generic().as_str() {
+                                    "core::integer::u256" => {
+                                        unmarshal_code.push_str(&format!("\t{}.Data.Field{} = cainome.BigIntFromFelt(data[offset])\n\toffset++\n", receiver_var, i));
+                                    }
+                                    _ => {
+                                        unmarshal_code.push_str(&format!("\t// TODO: Handle unknown builtin {} in tuple unmarshal\n", composite.type_path));
+                                    }
+                                }
+                            } else {
+                                unmarshal_code.push_str(&format!("\tif err := {}.Data.Field{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data for field {}\n", receiver_var, i, i));
+                            }
+                        }
+                        _ => {
+                            unmarshal_code.push_str(&format!("\t// TODO: Handle unknown token type in tuple field {} unmarshal\n", i));
+                        }
+                    }
+                }
+                unmarshal_code
             }
             Token::Array(_) => {
                 "\t// TODO: Handle array type for enum variant unmarshal\n".to_string()

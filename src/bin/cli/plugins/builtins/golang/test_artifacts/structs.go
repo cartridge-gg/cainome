@@ -13,38 +13,33 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
-type StructWithStruct struct {
-	Simple Simple `json:"simple"`
+type ToAlias struct {
+	A uint32 `json:"a"`
 }
 
-// MarshalCairo serializes StructWithStruct to Cairo felt array
-func (s *StructWithStruct) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes ToAlias to Cairo felt array
+func (s *ToAlias) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	// Struct field Simple: marshal using CairoMarshaler
-	if fieldData, err := s.Simple.MarshalCairo(); err != nil {
-		return nil, err
-	} else {
-		result = append(result, fieldData...)
-	}
+	result = append(result, cainome.FeltFromUint(uint64(s.A)))
 	return result, nil
 }
 
-// UnmarshalCairo deserializes StructWithStruct from Cairo felt array
-func (s *StructWithStruct) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes ToAlias from Cairo felt array
+func (s *ToAlias) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Struct field Simple: unmarshal using CairoMarshaler
-	if err := s.Simple.UnmarshalCairo(data[offset:]); err != nil {
-		return err
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field A")
 	}
-	// TODO: Update offset based on consumed data
+	s.A = uint32(cainome.UintFromFelt(data[offset]))
+	offset++
 
 	return nil
 }
 
-// CairoSize returns the serialized size for StructWithStruct
-func (s *StructWithStruct) CairoSize() int {
+// CairoSize returns the serialized size for ToAlias
+func (s *ToAlias) CairoSize() int {
 	return -1 // Dynamic size
 }
 
@@ -157,7 +152,7 @@ func (s *Simple) CairoSize() int {
 
 
 type GenericOne struct {
-	A ToAlias `json:"a"`
+	A []*felt.Felt `json:"a"`
 	B *felt.Felt `json:"b"`
 	C *big.Int `json:"c"`
 }
@@ -166,11 +161,10 @@ type GenericOne struct {
 func (s *GenericOne) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	// Struct field A: marshal using CairoMarshaler
-	if fieldData, err := s.A.MarshalCairo(); err != nil {
-		return nil, err
-	} else {
-		result = append(result, fieldData...)
+	// Array field A: serialize length then elements
+	result = append(result, cainome.FeltFromUint(uint64(len(s.A))))
+	for _, item := range s.A {
+		result = append(result, item)
 	}
 	result = append(result, s.B)
 	result = append(result, cainome.FeltFromBigInt(s.C))
@@ -181,11 +175,20 @@ func (s *GenericOne) MarshalCairo() ([]*felt.Felt, error) {
 func (s *GenericOne) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Struct field A: unmarshal using CairoMarshaler
-	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
-		return err
+	// Array field A: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of A")
 	}
-	// TODO: Update offset based on consumed data
+	lengthA := cainome.UintFromFelt(data[offset])
+	offset++
+	s.A = make([]*felt.Felt, lengthA)
+	for i := uint64(0); i < lengthA; i++ {
+		if offset >= len(data) {
+			return fmt.Errorf("insufficient data for array element %d of A", i)
+		}
+		s.A[i] = data[offset]
+		offset++
+	}
 
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field B")
@@ -208,14 +211,8 @@ func (s *GenericOne) CairoSize() int {
 }
 
 
-// StructsEvent represents a contract event
-type StructsEvent interface {
-	IsStructsEvent() bool
-}
-
-
 type GenericTwo struct {
-	A *felt.Felt `json:"a"`
+	A uint64 `json:"a"`
 	B uint64 `json:"b"`
 	C *felt.Felt `json:"c"`
 	D ToAlias `json:"d"`
@@ -227,7 +224,7 @@ type GenericTwo struct {
 func (s *GenericTwo) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	result = append(result, s.A)
+	result = append(result, cainome.FeltFromUint(uint64(s.A)))
 	result = append(result, cainome.FeltFromUint(uint64(s.B)))
 	result = append(result, s.C)
 	// Struct field D: marshal using CairoMarshaler
@@ -261,7 +258,7 @@ func (s *GenericTwo) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field A")
 	}
-	s.A = data[offset]
+	s.A = cainome.UintFromFelt(data[offset])
 	offset++
 
 	if offset >= len(data) {
@@ -318,34 +315,45 @@ func (s *GenericTwo) CairoSize() int {
 }
 
 
-type ToAlias struct {
-	A uint32 `json:"a"`
+type StructWithStruct struct {
+	Simple Simple `json:"simple"`
 }
 
-// MarshalCairo serializes ToAlias to Cairo felt array
-func (s *ToAlias) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes StructWithStruct to Cairo felt array
+func (s *StructWithStruct) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	result = append(result, cainome.FeltFromUint(uint64(s.A)))
+	// Struct field Simple: marshal using CairoMarshaler
+	if fieldData, err := s.Simple.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
 	return result, nil
 }
 
-// UnmarshalCairo deserializes ToAlias from Cairo felt array
-func (s *ToAlias) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes StructWithStruct from Cairo felt array
+func (s *StructWithStruct) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field A")
+	// Struct field Simple: unmarshal using CairoMarshaler
+	if err := s.Simple.UnmarshalCairo(data[offset:]); err != nil {
+		return err
 	}
-	s.A = uint32(cainome.UintFromFelt(data[offset]))
-	offset++
+	// TODO: Update offset based on consumed data
 
 	return nil
 }
 
-// CairoSize returns the serialized size for ToAlias
-func (s *ToAlias) CairoSize() int {
+// CairoSize returns the serialized size for StructWithStruct
+func (s *StructWithStruct) CairoSize() int {
 	return -1 // Dynamic size
+}
+
+
+// StructsEvent represents a contract event
+type StructsEvent interface {
+	IsStructsEvent() bool
 }
 
 
