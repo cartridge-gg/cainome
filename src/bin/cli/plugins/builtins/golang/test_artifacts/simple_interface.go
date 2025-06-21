@@ -56,21 +56,18 @@ func (simple_interface *SimpleInterface) GetValue(ctx context.Context, opts *Cal
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	return response[0], nil
 }
 
 func (simple_interface *SimpleInterface) SetValue(ctx context.Context, value *felt.Felt) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize value to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = value
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type value to felt
+	_ = value // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission

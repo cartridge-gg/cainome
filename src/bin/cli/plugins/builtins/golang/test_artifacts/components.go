@@ -12,25 +12,48 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
-type WrittenAb struct {
-	Data *felt.Felt `json:"data"`
+type SimpleWritten struct {
+	Before *felt.Felt `json:"before"`
+	After *felt.Felt `json:"after"`
 }
+
+// MarshalCairo serializes SimpleWritten to Cairo felt array
+func (s *SimpleWritten) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Before)
+	result = append(result, s.After)
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleWritten from Cairo felt array
+func (s *SimpleWritten) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Before")
+	}
+	s.Before = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field After")
+	}
+	s.After = data[offset]
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleWritten
+func (s *SimpleWritten) CairoSize() int {
+	return -1 // Dynamic size
+}
+
 // IsSimpleEvent implements the SimpleEvent interface
-func (e WrittenAb) IsSimpleEvent() bool {
+func (e SimpleWritten) IsSimpleEvent() bool {
 	return true
 }
-
-
-// ComponentsContractEvent represents a contract event
-type ComponentsContractEvent interface {
-	IsComponentsContractEvent() bool
-}
-
-const (
-	ComponentsContractEvent_OutterEvent = "OutterEvent"
-	ComponentsContractEvent_SimpleEvent = "SimpleEvent"
-	ComponentsContractEvent_SimpleEventOther = "SimpleEventOther"
-)
 
 
 // SimpleEvent represents a contract event
@@ -44,8 +67,93 @@ const (
 )
 
 
+type WrittenAb struct {
+	Data *felt.Felt `json:"data"`
+}
+
+// MarshalCairo serializes WrittenAb to Cairo felt array
+func (s *WrittenAb) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Data)
+	return result, nil
+}
+
+// UnmarshalCairo deserializes WrittenAb from Cairo felt array
+func (s *WrittenAb) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Data")
+	}
+	s.Data = data[offset]
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for WrittenAb
+func (s *WrittenAb) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+// IsSimpleEvent implements the SimpleEvent interface
+func (e WrittenAb) IsSimpleEvent() bool {
+	return true
+}
+
+
+type MyStructOther struct {
+	Data *big.Int `json:"data"`
+}
+
+// MarshalCairo serializes MyStructOther to Cairo felt array
+func (s *MyStructOther) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, FeltFromBigInt(s.Data))
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyStructOther from Cairo felt array
+func (s *MyStructOther) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Data")
+	}
+	s.Data = BigIntFromFelt(data[offset])
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for MyStructOther
+func (s *MyStructOther) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
 type OutterEvent struct {
 }
+
+// MarshalCairo serializes OutterEvent to Cairo felt array
+func (s *OutterEvent) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OutterEvent from Cairo felt array
+func (s *OutterEvent) UnmarshalCairo(data []*felt.Felt) error {
+	return nil
+}
+
+// CairoSize returns the serialized size for OutterEvent
+func (s *OutterEvent) CairoSize() int {
+	return -1 // Dynamic size
+}
+
 
 // EventName returns the name of this event type
 func (e OutterEvent) EventName() string {
@@ -68,28 +176,87 @@ const (
 )
 
 
-type SimpleWritten struct {
-	Before *felt.Felt `json:"before"`
-	After *felt.Felt `json:"after"`
-}
-// IsSimpleEvent implements the SimpleEvent interface
-func (e SimpleWritten) IsSimpleEvent() bool {
-	return true
-}
-
-
 type MyStructSimple struct {
 	A *felt.Felt `json:"a"`
 	B *felt.Felt `json:"b"`
 }
 
-type MyStructOther struct {
-	Data *big.Int `json:"data"`
+// MarshalCairo serializes MyStructSimple to Cairo felt array
+func (s *MyStructSimple) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.A)
+	result = append(result, s.B)
+	return result, nil
 }
+
+// UnmarshalCairo deserializes MyStructSimple from Cairo felt array
+func (s *MyStructSimple) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field A")
+	}
+	s.A = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field B")
+	}
+	s.B = data[offset]
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for MyStructSimple
+func (s *MyStructSimple) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+// ComponentsContractEvent represents a contract event
+type ComponentsContractEvent interface {
+	IsComponentsContractEvent() bool
+}
+
+const (
+	ComponentsContractEvent_OutterEvent = "OutterEvent"
+	ComponentsContractEvent_SimpleEvent = "SimpleEvent"
+	ComponentsContractEvent_SimpleEventOther = "SimpleEventOther"
+)
+
 
 type OtherWritten struct {
 	Data *felt.Felt `json:"data"`
 }
+
+// MarshalCairo serializes OtherWritten to Cairo felt array
+func (s *OtherWritten) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Data)
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OtherWritten from Cairo felt array
+func (s *OtherWritten) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Data")
+	}
+	s.Data = data[offset]
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OtherWritten
+func (s *OtherWritten) CairoSize() int {
+	return -1 // Dynamic size
+}
+
 // IsOtherEvent implements the OtherEvent interface
 func (e OtherWritten) IsOtherEvent() bool {
 	return true
@@ -191,21 +358,18 @@ func (components *Components) ReadData(ctx context.Context, opts *CallOpts) (*fe
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	return response[0], nil
 }
 
 func (components *Components) WriteData(ctx context.Context, data *felt.Felt) error {
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize data to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = data
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type data to felt
+	_ = data // TODO: add to calldata
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission

@@ -11,15 +11,38 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
+type MyStructBuiltins struct {
+	A *felt.Felt `json:"a"`
+}
+
+// MarshalCairo serializes MyStructBuiltins to Cairo felt array
+func (s *MyStructBuiltins) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// TODO: Handle unknown token type for field A
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyStructBuiltins from Cairo felt array
+func (s *MyStructBuiltins) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// TODO: Handle unknown token type for field A unmarshal
+	_ = offset // Suppress unused variable warning
+	return nil
+}
+
+// CairoSize returns the serialized size for MyStructBuiltins
+func (s *MyStructBuiltins) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
 // BuiltinsEvent represents a contract event
 type BuiltinsEvent interface {
 	IsBuiltinsEvent() bool
 }
 
-
-type MyStructBuiltins struct {
-	A *felt.Felt `json:"a"`
-}
 
 type Builtins struct {
 	contractAddress *felt.Felt
@@ -33,7 +56,7 @@ func NewBuiltins(contractAddress *felt.Felt, provider *rpc.Provider) *Builtins {
 	}
 }
 
-func (builtins *Builtins) StructNonZero(ctx context.Context, res MyStructBuiltins, opts *CallOpts) (*felt.Felt, error) {
+func (builtins *Builtins) StructNonZero(ctx context.Context, res *MyStructBuiltins, opts *CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &CallOpts{}
@@ -46,11 +69,14 @@ func (builtins *Builtins) StructNonZero(ctx context.Context, res MyStructBuiltin
 	}
 
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize res to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = res
+	calldata := []*felt.Felt{}
+	// TODO: Serialize complex type res using MarshalCairo()
+	// if res_data, err := res.MarshalCairo(); err != nil {
+	//     return nil, fmt.Errorf("failed to marshal res: %w", err)
+	// } else {
+	//     calldata = append(calldata, res_data...)
+	// }
+	_ = res // TODO: implement MarshalCairo and add to calldata
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -64,11 +90,10 @@ func (builtins *Builtins) StructNonZero(ctx context.Context, res MyStructBuiltin
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	return response[0], nil
 }
 
@@ -85,11 +110,9 @@ func (builtins *Builtins) NonZero(ctx context.Context, res *felt.Felt, opts *Cal
 	}
 
 	// Serialize parameters to calldata
-	calldata := []*felt.Felt{
-		// TODO: Serialize res to felt
-	}
-	_ = calldata // TODO: populate from parameters
-	_ = res
+	calldata := []*felt.Felt{}
+	// TODO: Serialize basic type res to felt
+	_ = res // TODO: add to calldata
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -103,11 +126,10 @@ func (builtins *Builtins) NonZero(ctx context.Context, res *felt.Felt, opts *Cal
 		return nil, err
 	}
 
-	// TODO: Deserialize response to proper type
+	// Deserialize response to proper type
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	// For now, return zero value - proper deserialization needed
 	return response[0], nil
 }
 
