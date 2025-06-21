@@ -8,9 +8,16 @@ import (
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/account"
 	"github.com/cartridge-gg/cainome"
 	"github.com/NethermindEth/starknet.go/utils"
 )
+
+// BuiltinsEvent represents a contract event
+type BuiltinsEvent interface {
+	IsBuiltinsEvent() bool
+}
+
 
 type MyStructBuiltins struct {
 	A *felt.Felt `json:"a"`
@@ -43,25 +50,43 @@ func (s *MyStructBuiltins) CairoSize() int {
 }
 
 
-// BuiltinsEvent represents a contract event
-type BuiltinsEvent interface {
-	IsBuiltinsEvent() bool
+type BuiltinsReader struct {
+	contractAddress *felt.Felt
+	provider rpc.RpcProvider
 }
 
+type BuiltinsWriter struct {
+	contractAddress *felt.Felt
+	account *account.Account
+}
 
 type Builtins struct {
-	contractAddress *felt.Felt
-	provider *rpc.Provider
+	*BuiltinsReader
+	*BuiltinsWriter
 }
 
-func NewBuiltins(contractAddress *felt.Felt, provider *rpc.Provider) *Builtins {
-	return &Builtins {
+func NewBuiltinsReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *BuiltinsReader {
+	return &BuiltinsReader {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (builtins *Builtins) StructNonZero(ctx context.Context, res *MyStructBuiltins, opts *cainome.CallOpts) (*felt.Felt, error) {
+func NewBuiltinsWriter(contractAddress *felt.Felt, account *account.Account) *BuiltinsWriter {
+	return &BuiltinsWriter {
+		contractAddress: contractAddress,
+		account: account,
+	}
+}
+
+func NewBuiltins(contractAddress *felt.Felt, account *account.Account) *Builtins {
+	return &Builtins {
+		BuiltinsReader: NewBuiltinsReader(contractAddress, account.Provider),
+		BuiltinsWriter: NewBuiltinsWriter(contractAddress, account),
+	}
+}
+
+func (builtins_reader *BuiltinsReader) StructNonZero(ctx context.Context, res *MyStructBuiltins, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -83,12 +108,12 @@ func (builtins *Builtins) StructNonZero(ctx context.Context, res *MyStructBuilti
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    builtins.contractAddress,
+		ContractAddress:    builtins_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("struct_non_zero"),
 		Calldata:           calldata,
 	}
 
-	response, err := builtins.provider.Call(ctx, functionCall, blockID)
+	response, err := builtins_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +125,7 @@ func (builtins *Builtins) StructNonZero(ctx context.Context, res *MyStructBuilti
 	return response[0], nil
 }
 
-func (builtins *Builtins) NonZero(ctx context.Context, res *felt.Felt, opts *cainome.CallOpts) (*felt.Felt, error) {
+func (builtins_reader *BuiltinsReader) NonZero(ctx context.Context, res *felt.Felt, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -118,12 +143,12 @@ func (builtins *Builtins) NonZero(ctx context.Context, res *felt.Felt, opts *cai
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    builtins.contractAddress,
+		ContractAddress:    builtins_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("non_zero"),
 		Calldata:           calldata,
 	}
 
-	response, err := builtins.provider.Call(ctx, functionCall, blockID)
+	response, err := builtins_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}

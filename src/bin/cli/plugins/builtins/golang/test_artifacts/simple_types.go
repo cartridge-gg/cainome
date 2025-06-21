@@ -6,10 +6,11 @@ package abigen
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/account"
 	"github.com/cartridge-gg/cainome"
+	"math/big"
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
@@ -19,19 +20,43 @@ type SimpleTypesEvent interface {
 }
 
 
-type SimpleTypes struct {
+type SimpleTypesReader struct {
 	contractAddress *felt.Felt
-	provider *rpc.Provider
+	provider rpc.RpcProvider
 }
 
-func NewSimpleTypes(contractAddress *felt.Felt, provider *rpc.Provider) *SimpleTypes {
-	return &SimpleTypes {
+type SimpleTypesWriter struct {
+	contractAddress *felt.Felt
+	account *account.Account
+}
+
+type SimpleTypes struct {
+	*SimpleTypesReader
+	*SimpleTypesWriter
+}
+
+func NewSimpleTypesReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *SimpleTypesReader {
+	return &SimpleTypesReader {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (simple_types *SimpleTypes) GetBool(ctx context.Context, opts *cainome.CallOpts) (bool, error) {
+func NewSimpleTypesWriter(contractAddress *felt.Felt, account *account.Account) *SimpleTypesWriter {
+	return &SimpleTypesWriter {
+		contractAddress: contractAddress,
+		account: account,
+	}
+}
+
+func NewSimpleTypes(contractAddress *felt.Felt, account *account.Account) *SimpleTypes {
+	return &SimpleTypes {
+		SimpleTypesReader: NewSimpleTypesReader(contractAddress, account.Provider),
+		SimpleTypesWriter: NewSimpleTypesWriter(contractAddress, account),
+	}
+}
+
+func (simple_types_reader *SimpleTypesReader) GetBool(ctx context.Context, opts *cainome.CallOpts) (bool, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -48,12 +73,12 @@ func (simple_types *SimpleTypes) GetBool(ctx context.Context, opts *cainome.Call
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_types.contractAddress,
+		ContractAddress:    simple_types_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_bool"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_types_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return false, err
 	}
@@ -66,7 +91,12 @@ func (simple_types *SimpleTypes) GetBool(ctx context.Context, opts *cainome.Call
 	return result, nil
 }
 
-func (simple_types *SimpleTypes) SetBool(ctx context.Context, v bool) error {
+func (simple_types_writer *SimpleTypesWriter) SetBool(ctx context.Context, v bool, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	if v {
@@ -75,13 +105,16 @@ func (simple_types *SimpleTypes) SetBool(ctx context.Context, v bool) error {
 		calldata = append(calldata, cainome.FeltFromUint(0))
 	}
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_types_writer.account, simple_types_writer.contractAddress, utils.GetSelectorFromNameFelt("set_bool"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (simple_types *SimpleTypes) GetFelt(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
+func (simple_types_reader *SimpleTypesReader) GetFelt(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -98,12 +131,12 @@ func (simple_types *SimpleTypes) GetFelt(ctx context.Context, opts *cainome.Call
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_types.contractAddress,
+		ContractAddress:    simple_types_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_felt"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_types_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -115,18 +148,26 @@ func (simple_types *SimpleTypes) GetFelt(ctx context.Context, opts *cainome.Call
 	return response[0], nil
 }
 
-func (simple_types *SimpleTypes) SetFelt(ctx context.Context, feltValue *felt.Felt) error {
+func (simple_types_writer *SimpleTypesWriter) SetFelt(ctx context.Context, feltValue *felt.Felt, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	calldata = append(calldata, feltValue)
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_types_writer.account, simple_types_writer.contractAddress, utils.GetSelectorFromNameFelt("set_felt"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (simple_types *SimpleTypes) GetU256(ctx context.Context, opts *cainome.CallOpts) (*big.Int, error) {
+func (simple_types_reader *SimpleTypesReader) GetU256(ctx context.Context, opts *cainome.CallOpts) (*big.Int, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -143,12 +184,12 @@ func (simple_types *SimpleTypes) GetU256(ctx context.Context, opts *cainome.Call
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_types.contractAddress,
+		ContractAddress:    simple_types_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_u256"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_types_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -163,18 +204,26 @@ func (simple_types *SimpleTypes) GetU256(ctx context.Context, opts *cainome.Call
 	return result, nil
 }
 
-func (simple_types *SimpleTypes) SetU256(ctx context.Context, uint_256 *big.Int) error {
+func (simple_types_writer *SimpleTypesWriter) SetU256(ctx context.Context, uint_256 *big.Int, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	calldata = append(calldata, cainome.FeltFromBigInt(uint_256))
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_types_writer.account, simple_types_writer.contractAddress, utils.GetSelectorFromNameFelt("set_u256"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (simple_types *SimpleTypes) GetU64(ctx context.Context, opts *cainome.CallOpts) (uint64, error) {
+func (simple_types_reader *SimpleTypesReader) GetU64(ctx context.Context, opts *cainome.CallOpts) (uint64, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -191,12 +240,12 @@ func (simple_types *SimpleTypes) GetU64(ctx context.Context, opts *cainome.CallO
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_types.contractAddress,
+		ContractAddress:    simple_types_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_u64"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_types_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return 0, err
 	}
@@ -209,18 +258,26 @@ func (simple_types *SimpleTypes) GetU64(ctx context.Context, opts *cainome.CallO
 	return result, nil
 }
 
-func (simple_types *SimpleTypes) SetU64(ctx context.Context, uint_64 uint64) error {
+func (simple_types_writer *SimpleTypesWriter) SetU64(ctx context.Context, uint_64 uint64, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	calldata = append(calldata, cainome.FeltFromUint(uint64(uint_64)))
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_types_writer.account, simple_types_writer.contractAddress, utils.GetSelectorFromNameFelt("set_u64"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (simple_types *SimpleTypes) GetAddress(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
+func (simple_types_reader *SimpleTypesReader) GetAddress(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -237,12 +294,12 @@ func (simple_types *SimpleTypes) GetAddress(ctx context.Context, opts *cainome.C
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_types.contractAddress,
+		ContractAddress:    simple_types_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_address"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_types_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -254,18 +311,26 @@ func (simple_types *SimpleTypes) GetAddress(ctx context.Context, opts *cainome.C
 	return response[0], nil
 }
 
-func (simple_types *SimpleTypes) SetAddress(ctx context.Context, address *felt.Felt) error {
+func (simple_types_writer *SimpleTypesWriter) SetAddress(ctx context.Context, address *felt.Felt, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	calldata = append(calldata, address)
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_types_writer.account, simple_types_writer.contractAddress, utils.GetSelectorFromNameFelt("set_address"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (simple_types *SimpleTypes) GetClassHash(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
+func (simple_types_reader *SimpleTypesReader) GetClassHash(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -282,12 +347,12 @@ func (simple_types *SimpleTypes) GetClassHash(ctx context.Context, opts *cainome
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_types.contractAddress,
+		ContractAddress:    simple_types_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_class_hash"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_types_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -299,18 +364,26 @@ func (simple_types *SimpleTypes) GetClassHash(ctx context.Context, opts *cainome
 	return response[0], nil
 }
 
-func (simple_types *SimpleTypes) SetClassHash(ctx context.Context, class_hash *felt.Felt) error {
+func (simple_types_writer *SimpleTypesWriter) SetClassHash(ctx context.Context, class_hash *felt.Felt, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	calldata = append(calldata, class_hash)
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_types_writer.account, simple_types_writer.contractAddress, utils.GetSelectorFromNameFelt("set_class_hash"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (simple_types *SimpleTypes) GetEthAddress(ctx context.Context, opts *cainome.CallOpts) ([20]byte, error) {
+func (simple_types_reader *SimpleTypesReader) GetEthAddress(ctx context.Context, opts *cainome.CallOpts) ([20]byte, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -327,12 +400,12 @@ func (simple_types *SimpleTypes) GetEthAddress(ctx context.Context, opts *cainom
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_types.contractAddress,
+		ContractAddress:    simple_types_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_eth_address"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_types_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return [20]byte{}, err
 	}
@@ -347,18 +420,26 @@ func (simple_types *SimpleTypes) GetEthAddress(ctx context.Context, opts *cainom
 	return result, nil
 }
 
-func (simple_types *SimpleTypes) SetEthAddress(ctx context.Context, eth_address [20]byte) error {
+func (simple_types_writer *SimpleTypesWriter) SetEthAddress(ctx context.Context, eth_address [20]byte, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	calldata = append(calldata, cainome.FeltFromBytes(eth_address[:]))
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_types_writer.account, simple_types_writer.contractAddress, utils.GetSelectorFromNameFelt("set_eth_address"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (simple_types *SimpleTypes) GetTuple(ctx context.Context, opts *cainome.CallOpts) (struct {
+func (simple_types_reader *SimpleTypesReader) GetTuple(ctx context.Context, opts *cainome.CallOpts) (struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
 }, error) {
@@ -378,12 +459,12 @@ func (simple_types *SimpleTypes) GetTuple(ctx context.Context, opts *cainome.Cal
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_types.contractAddress,
+		ContractAddress:    simple_types_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_tuple"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_types_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return struct {
 	Field0 *felt.Felt
@@ -402,28 +483,54 @@ func (simple_types *SimpleTypes) GetTuple(ctx context.Context, opts *cainome.Cal
 	Field0 *felt.Felt
 	Field1 *big.Int
 }
-	// TODO: Convert felt to Tuple(Tuple { type_path: "(core::felt252, core::integer::u256)", inners: [CoreBasic(CoreBasic { type_path: "core::felt252" }), Composite(Composite { type_path: "core::integer::u256", inners: [], generic_args: [], type: Unknown, is_event: false, alias: None })] })
-	_ = response
+	offset := 0
+
+	if offset >= len(response) {
+		return struct {
+	Field0 *felt.Felt
+	Field1 *big.Int
+}{}, fmt.Errorf("insufficient data for tuple field 0")
+	}
+	result.Field0 = response[offset]
+	offset++
+
+	if offset >= len(response) {
+		return struct {
+	Field0 *felt.Felt
+	Field1 *big.Int
+}{}, fmt.Errorf("insufficient data for tuple field 1")
+	}
+	result.Field1 = cainome.BigIntFromFelt(response[offset])
+	offset++
+
 	return result, nil
 }
 
-func (simple_types *SimpleTypes) SetTuple(ctx context.Context, tuple struct {
+func (simple_types_writer *SimpleTypesWriter) SetTuple(ctx context.Context, tuple struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
-}) error {
+}, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	// Tuple field tuple: marshal each sub-field
 	calldata = append(calldata, tuple.Field0)
 	calldata = append(calldata, cainome.FeltFromBigInt(tuple.Field1))
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_types_writer.account, simple_types_writer.contractAddress, utils.GetSelectorFromNameFelt("set_tuple"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (simple_types *SimpleTypes) GetArray(ctx context.Context, opts *cainome.CallOpts) ([]*felt.Felt, error) {
+func (simple_types_reader *SimpleTypesReader) GetArray(ctx context.Context, opts *cainome.CallOpts) ([]*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -440,12 +547,12 @@ func (simple_types *SimpleTypes) GetArray(ctx context.Context, opts *cainome.Cal
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_types.contractAddress,
+		ContractAddress:    simple_types_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_array"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_types_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -460,18 +567,26 @@ func (simple_types *SimpleTypes) GetArray(ctx context.Context, opts *cainome.Cal
 	return result, nil
 }
 
-func (simple_types *SimpleTypes) SetArray(ctx context.Context, data []*felt.Felt) error {
+func (simple_types_writer *SimpleTypesWriter) SetArray(ctx context.Context, data []*felt.Felt, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	if data_data, err := cainome.NewCairoFeltArray(data).MarshalCairo(); err != nil {
-		return fmt.Errorf("failed to marshal data: %w", err)
+		return nil, fmt.Errorf("failed to marshal data: %w", err)
 	} else {
 		calldata = append(calldata, data_data...)
 	}
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_types_writer.account, simple_types_writer.contractAddress, utils.GetSelectorFromNameFelt("set_array"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 

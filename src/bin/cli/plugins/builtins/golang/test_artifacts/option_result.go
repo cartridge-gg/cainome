@@ -6,10 +6,11 @@ package abigen
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/account"
 	"github.com/cartridge-gg/cainome"
+	"math/big"
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
@@ -66,19 +67,43 @@ type OptionResultEvent interface {
 }
 
 
-type OptionResult struct {
+type OptionResultReader struct {
 	contractAddress *felt.Felt
-	provider *rpc.Provider
+	provider rpc.RpcProvider
 }
 
-func NewOptionResult(contractAddress *felt.Felt, provider *rpc.Provider) *OptionResult {
-	return &OptionResult {
+type OptionResultWriter struct {
+	contractAddress *felt.Felt
+	account *account.Account
+}
+
+type OptionResult struct {
+	*OptionResultReader
+	*OptionResultWriter
+}
+
+func NewOptionResultReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *OptionResultReader {
+	return &OptionResultReader {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (option_result *OptionResult) ResultOkUnit(ctx context.Context, res cainome.Result[struct{}, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
+func NewOptionResultWriter(contractAddress *felt.Felt, account *account.Account) *OptionResultWriter {
+	return &OptionResultWriter {
+		contractAddress: contractAddress,
+		account: account,
+	}
+}
+
+func NewOptionResult(contractAddress *felt.Felt, account *account.Account) *OptionResult {
+	return &OptionResult {
+		OptionResultReader: NewOptionResultReader(contractAddress, account.Provider),
+		OptionResultWriter: NewOptionResultWriter(contractAddress, account),
+	}
+}
+
+func (option_result_reader *OptionResultReader) ResultOkUnit(ctx context.Context, res cainome.Result[struct{}, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -100,12 +125,12 @@ func (option_result *OptionResult) ResultOkUnit(ctx context.Context, res cainome
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    option_result.contractAddress,
+		ContractAddress:    option_result_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_unit"),
 		Calldata:           calldata,
 	}
 
-	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	response, err := option_result_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return cainome.Result[uint64, *felt.Felt]{}, err
 	}
@@ -121,7 +146,7 @@ func (option_result *OptionResult) ResultOkUnit(ctx context.Context, res cainome
 	return result, nil
 }
 
-func (option_result *OptionResult) ResultOkStruct(ctx context.Context, res cainome.Result[*GenericOneOptionResult, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
+func (option_result_reader *OptionResultReader) ResultOkStruct(ctx context.Context, res cainome.Result[*GenericOneOptionResult, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -143,12 +168,12 @@ func (option_result *OptionResult) ResultOkStruct(ctx context.Context, res caino
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    option_result.contractAddress,
+		ContractAddress:    option_result_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_struct"),
 		Calldata:           calldata,
 	}
 
-	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	response, err := option_result_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return cainome.Result[uint64, *felt.Felt]{}, err
 	}
@@ -164,7 +189,7 @@ func (option_result *OptionResult) ResultOkStruct(ctx context.Context, res caino
 	return result, nil
 }
 
-func (option_result *OptionResult) ResultOkTupleStruct(ctx context.Context, res cainome.Result[struct {
+func (option_result_reader *OptionResultReader) ResultOkTupleStruct(ctx context.Context, res cainome.Result[struct {
 	Field0 *GenericOneOptionResult
 	Field1 *felt.Felt
 }, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
@@ -189,12 +214,12 @@ func (option_result *OptionResult) ResultOkTupleStruct(ctx context.Context, res 
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    option_result.contractAddress,
+		ContractAddress:    option_result_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_tuple_struct"),
 		Calldata:           calldata,
 	}
 
-	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	response, err := option_result_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return cainome.Result[uint64, *felt.Felt]{}, err
 	}
@@ -210,7 +235,7 @@ func (option_result *OptionResult) ResultOkTupleStruct(ctx context.Context, res 
 	return result, nil
 }
 
-func (option_result *OptionResult) ResultOk(ctx context.Context, res cainome.Result[*felt.Felt, *big.Int], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
+func (option_result_reader *OptionResultReader) ResultOk(ctx context.Context, res cainome.Result[*felt.Felt, *big.Int], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -232,12 +257,12 @@ func (option_result *OptionResult) ResultOk(ctx context.Context, res cainome.Res
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    option_result.contractAddress,
+		ContractAddress:    option_result_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok"),
 		Calldata:           calldata,
 	}
 
-	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	response, err := option_result_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return cainome.Result[uint64, *felt.Felt]{}, err
 	}
@@ -253,7 +278,7 @@ func (option_result *OptionResult) ResultOk(ctx context.Context, res cainome.Res
 	return result, nil
 }
 
-func (option_result *OptionResult) ResultErr(ctx context.Context, res cainome.Result[*felt.Felt, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[*felt.Felt, *big.Int], error) {
+func (option_result_reader *OptionResultReader) ResultErr(ctx context.Context, res cainome.Result[*felt.Felt, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[*felt.Felt, *big.Int], error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -275,12 +300,12 @@ func (option_result *OptionResult) ResultErr(ctx context.Context, res cainome.Re
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    option_result.contractAddress,
+		ContractAddress:    option_result_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("result_err"),
 		Calldata:           calldata,
 	}
 
-	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	response, err := option_result_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return cainome.Result[*felt.Felt, *big.Int]{}, err
 	}
@@ -296,7 +321,7 @@ func (option_result *OptionResult) ResultErr(ctx context.Context, res cainome.Re
 	return result, nil
 }
 
-func (option_result *OptionResult) OptionSome(ctx context.Context, opt **felt.Felt, opts *cainome.CallOpts) (*[]*felt.Felt, error) {
+func (option_result_reader *OptionResultReader) OptionSome(ctx context.Context, opt **felt.Felt, opts *cainome.CallOpts) (*[]*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -319,12 +344,12 @@ func (option_result *OptionResult) OptionSome(ctx context.Context, opt **felt.Fe
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    option_result.contractAddress,
+		ContractAddress:    option_result_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("option_some"),
 		Calldata:           calldata,
 	}
 
-	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	response, err := option_result_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +382,7 @@ func (option_result *OptionResult) OptionSome(ctx context.Context, opt **felt.Fe
 	}
 }
 
-func (option_result *OptionResult) OptionNone(ctx context.Context, opt **felt.Felt, opts *cainome.CallOpts) (*uint64, error) {
+func (option_result_reader *OptionResultReader) OptionNone(ctx context.Context, opt **felt.Felt, opts *cainome.CallOpts) (*uint64, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -380,12 +405,12 @@ func (option_result *OptionResult) OptionNone(ctx context.Context, opt **felt.Fe
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    option_result.contractAddress,
+		ContractAddress:    option_result_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("option_none"),
 		Calldata:           calldata,
 	}
 
-	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	response, err := option_result_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}

@@ -6,10 +6,11 @@ package abigen
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/account"
 	"github.com/cartridge-gg/cainome"
+	"math/big"
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
@@ -124,19 +125,43 @@ type SimpleGetSetEvent interface {
 }
 
 
-type SimpleGetSet struct {
+type SimpleGetSetReader struct {
 	contractAddress *felt.Felt
-	provider *rpc.Provider
+	provider rpc.RpcProvider
 }
 
-func NewSimpleGetSet(contractAddress *felt.Felt, provider *rpc.Provider) *SimpleGetSet {
-	return &SimpleGetSet {
+type SimpleGetSetWriter struct {
+	contractAddress *felt.Felt
+	account *account.Account
+}
+
+type SimpleGetSet struct {
+	*SimpleGetSetReader
+	*SimpleGetSetWriter
+}
+
+func NewSimpleGetSetReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *SimpleGetSetReader {
+	return &SimpleGetSetReader {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (simple_get_set *SimpleGetSet) GetSetEnum(ctx context.Context, v *TestEnum, opts *cainome.CallOpts) (TestEnum, error) {
+func NewSimpleGetSetWriter(contractAddress *felt.Felt, account *account.Account) *SimpleGetSetWriter {
+	return &SimpleGetSetWriter {
+		contractAddress: contractAddress,
+		account: account,
+	}
+}
+
+func NewSimpleGetSet(contractAddress *felt.Felt, account *account.Account) *SimpleGetSet {
+	return &SimpleGetSet {
+		SimpleGetSetReader: NewSimpleGetSetReader(contractAddress, account.Provider),
+		SimpleGetSetWriter: NewSimpleGetSetWriter(contractAddress, account),
+	}
+}
+
+func (simple_get_set_reader *SimpleGetSetReader) GetSetEnum(ctx context.Context, v *TestEnum, opts *cainome.CallOpts) (TestEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -158,12 +183,12 @@ func (simple_get_set *SimpleGetSet) GetSetEnum(ctx context.Context, v *TestEnum,
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_get_set.contractAddress,
+		ContractAddress:    simple_get_set_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_set_enum"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_get_set.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_get_set_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -197,7 +222,7 @@ func (simple_get_set *SimpleGetSet) GetSetEnum(ctx context.Context, v *TestEnum,
 	}
 }
 
-func (simple_get_set *SimpleGetSet) GetA(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
+func (simple_get_set_reader *SimpleGetSetReader) GetA(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -214,12 +239,12 @@ func (simple_get_set *SimpleGetSet) GetA(ctx context.Context, opts *cainome.Call
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_get_set.contractAddress,
+		ContractAddress:    simple_get_set_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_a"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_get_set.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_get_set_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -231,18 +256,26 @@ func (simple_get_set *SimpleGetSet) GetA(ctx context.Context, opts *cainome.Call
 	return response[0], nil
 }
 
-func (simple_get_set *SimpleGetSet) SetA(ctx context.Context, a *felt.Felt) error {
+func (simple_get_set_writer *SimpleGetSetWriter) SetA(ctx context.Context, a *felt.Felt, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	calldata = append(calldata, a)
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_get_set_writer.account, simple_get_set_writer.contractAddress, utils.GetSelectorFromNameFelt("set_a"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (simple_get_set *SimpleGetSet) GetB(ctx context.Context, opts *cainome.CallOpts) (*big.Int, error) {
+func (simple_get_set_reader *SimpleGetSetReader) GetB(ctx context.Context, opts *cainome.CallOpts) (*big.Int, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -259,12 +292,12 @@ func (simple_get_set *SimpleGetSet) GetB(ctx context.Context, opts *cainome.Call
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_get_set.contractAddress,
+		ContractAddress:    simple_get_set_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_b"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_get_set.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_get_set_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -279,33 +312,49 @@ func (simple_get_set *SimpleGetSet) GetB(ctx context.Context, opts *cainome.Call
 	return result, nil
 }
 
-func (simple_get_set *SimpleGetSet) SetB(ctx context.Context, b *big.Int) error {
+func (simple_get_set_writer *SimpleGetSetWriter) SetB(ctx context.Context, b *big.Int, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	calldata = append(calldata, cainome.FeltFromBigInt(b))
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_get_set_writer.account, simple_get_set_writer.contractAddress, utils.GetSelectorFromNameFelt("set_b"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (simple_get_set *SimpleGetSet) SetArray(ctx context.Context, data []*felt.Felt) error {
+func (simple_get_set_writer *SimpleGetSetWriter) SetArray(ctx context.Context, data []*felt.Felt, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	if data_data, err := cainome.NewCairoFeltArray(data).MarshalCairo(); err != nil {
-		return fmt.Errorf("failed to marshal data: %w", err)
+		return nil, fmt.Errorf("failed to marshal data: %w", err)
 	} else {
 		calldata = append(calldata, data_data...)
 	}
 
-	// TODO: Implement invoke transaction
-	// This requires account/signer setup for transaction submission
-	_ = calldata
-	return fmt.Errorf("invoke methods require account setup - not yet implemented")
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_get_set_writer.account, simple_get_set_writer.contractAddress, utils.GetSelectorFromNameFelt("set_array"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 
-func (simple_get_set *SimpleGetSet) GetArray(ctx context.Context, opts *cainome.CallOpts) ([]*felt.Felt, error) {
+func (simple_get_set_reader *SimpleGetSetReader) GetArray(ctx context.Context, opts *cainome.CallOpts) ([]*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -322,12 +371,12 @@ func (simple_get_set *SimpleGetSet) GetArray(ctx context.Context, opts *cainome.
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_get_set.contractAddress,
+		ContractAddress:    simple_get_set_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_array"),
 		Calldata:           calldata,
 	}
 
-	response, err := simple_get_set.provider.Call(ctx, functionCall, blockID)
+	response, err := simple_get_set_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}

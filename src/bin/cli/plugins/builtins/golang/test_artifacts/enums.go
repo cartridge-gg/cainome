@@ -6,118 +6,13 @@ package abigen
 import (
 	"context"
 	"fmt"
-	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/account"
 	"github.com/cartridge-gg/cainome"
+	"math/big"
 	"github.com/NethermindEth/starknet.go/utils"
 )
-
-// SimpleEnum represents a Cairo enum type
-type SimpleEnum interface {
-	IsSimpleEnum() bool
-	MarshalCairo() ([]*felt.Felt, error)
-}
-
-const (
-	SimpleEnum_Variant1 = "Variant1"
-	SimpleEnum_Variant2 = "Variant2"
-)
-
-type SimpleEnumVariant1 struct {}
-
-func NewSimpleEnumVariant1() SimpleEnumVariant1 {
-	return SimpleEnumVariant1{}
-}
-
-// IsSimpleEnum implements the SimpleEnum interface
-func (v SimpleEnumVariant1) IsSimpleEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes SimpleEnumVariant1 to Cairo felt array
-func (s *SimpleEnumVariant1) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(0))
-	// Unit variant - no additional data
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes SimpleEnumVariant1 from Cairo felt array
-func (s *SimpleEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 0 {
-		return fmt.Errorf("expected discriminant 0, got %d", discriminant)
-	}
-	offset := 1
-
-	// Unit variant - no additional data to unmarshal
-	_ = offset // Suppress unused variable warning
-	return nil
-}
-
-// CairoSize returns the serialized size for SimpleEnumVariant1
-func (s *SimpleEnumVariant1) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-type SimpleEnumVariant2 struct {}
-
-func NewSimpleEnumVariant2() SimpleEnumVariant2 {
-	return SimpleEnumVariant2{}
-}
-
-// IsSimpleEnum implements the SimpleEnum interface
-func (v SimpleEnumVariant2) IsSimpleEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes SimpleEnumVariant2 to Cairo felt array
-func (s *SimpleEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(1))
-	// Unit variant - no additional data
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes SimpleEnumVariant2 from Cairo felt array
-func (s *SimpleEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 1 {
-		return fmt.Errorf("expected discriminant 1, got %d", discriminant)
-	}
-	offset := 1
-
-	// Unit variant - no additional data to unmarshal
-	_ = offset // Suppress unused variable warning
-	return nil
-}
-
-// CairoSize returns the serialized size for SimpleEnumVariant2
-func (s *SimpleEnumVariant2) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
-// EnumsEvent represents a contract event
-type EnumsEvent interface {
-	IsEnumsEvent() bool
-}
-
 
 // TypedEnum represents a Cairo enum type
 type TypedEnum interface {
@@ -291,6 +186,12 @@ func (t *TypedEnumVariant3) CairoSize() int {
 }
 
 
+// EnumsEvent represents a contract event
+type EnumsEvent interface {
+	IsEnumsEvent() bool
+}
+
+
 // MixedEnum represents a Cairo enum type
 type MixedEnum interface {
 	IsMixedEnum() bool
@@ -396,19 +297,143 @@ func (m *MixedEnumVariant2) CairoSize() int {
 }
 
 
-type Enums struct {
-	contractAddress *felt.Felt
-	provider *rpc.Provider
+// SimpleEnum represents a Cairo enum type
+type SimpleEnum interface {
+	IsSimpleEnum() bool
+	MarshalCairo() ([]*felt.Felt, error)
 }
 
-func NewEnums(contractAddress *felt.Felt, provider *rpc.Provider) *Enums {
-	return &Enums {
+const (
+	SimpleEnum_Variant1 = "Variant1"
+	SimpleEnum_Variant2 = "Variant2"
+)
+
+type SimpleEnumVariant1 struct {}
+
+func NewSimpleEnumVariant1() SimpleEnumVariant1 {
+	return SimpleEnumVariant1{}
+}
+
+// IsSimpleEnum implements the SimpleEnum interface
+func (v SimpleEnumVariant1) IsSimpleEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes SimpleEnumVariant1 to Cairo felt array
+func (s *SimpleEnumVariant1) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(0))
+	// Unit variant - no additional data
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleEnumVariant1 from Cairo felt array
+func (s *SimpleEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 0 {
+		return fmt.Errorf("expected discriminant 0, got %d", discriminant)
+	}
+	offset := 1
+
+	// Unit variant - no additional data to unmarshal
+	_ = offset // Suppress unused variable warning
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleEnumVariant1
+func (s *SimpleEnumVariant1) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleEnumVariant2 struct {}
+
+func NewSimpleEnumVariant2() SimpleEnumVariant2 {
+	return SimpleEnumVariant2{}
+}
+
+// IsSimpleEnum implements the SimpleEnum interface
+func (v SimpleEnumVariant2) IsSimpleEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes SimpleEnumVariant2 to Cairo felt array
+func (s *SimpleEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(1))
+	// Unit variant - no additional data
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleEnumVariant2 from Cairo felt array
+func (s *SimpleEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 1 {
+		return fmt.Errorf("expected discriminant 1, got %d", discriminant)
+	}
+	offset := 1
+
+	// Unit variant - no additional data to unmarshal
+	_ = offset // Suppress unused variable warning
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleEnumVariant2
+func (s *SimpleEnumVariant2) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+type EnumsReader struct {
+	contractAddress *felt.Felt
+	provider rpc.RpcProvider
+}
+
+type EnumsWriter struct {
+	contractAddress *felt.Felt
+	account *account.Account
+}
+
+type Enums struct {
+	*EnumsReader
+	*EnumsWriter
+}
+
+func NewEnumsReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *EnumsReader {
+	return &EnumsReader {
 		contractAddress: contractAddress,
 		provider: provider,
 	}
 }
 
-func (enums *Enums) GetSimple1(ctx context.Context, opts *cainome.CallOpts) (SimpleEnum, error) {
+func NewEnumsWriter(contractAddress *felt.Felt, account *account.Account) *EnumsWriter {
+	return &EnumsWriter {
+		contractAddress: contractAddress,
+		account: account,
+	}
+}
+
+func NewEnums(contractAddress *felt.Felt, account *account.Account) *Enums {
+	return &Enums {
+		EnumsReader: NewEnumsReader(contractAddress, account.Provider),
+		EnumsWriter: NewEnumsWriter(contractAddress, account),
+	}
+}
+
+func (enums_reader *EnumsReader) GetSimple1(ctx context.Context, opts *cainome.CallOpts) (SimpleEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -425,12 +450,12 @@ func (enums *Enums) GetSimple1(ctx context.Context, opts *cainome.CallOpts) (Sim
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    enums.contractAddress,
+		ContractAddress:    enums_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_simple_1"),
 		Calldata:           calldata,
 	}
 
-	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	response, err := enums_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -464,7 +489,7 @@ func (enums *Enums) GetSimple1(ctx context.Context, opts *cainome.CallOpts) (Sim
 	}
 }
 
-func (enums *Enums) GetSimple2(ctx context.Context, opts *cainome.CallOpts) (SimpleEnum, error) {
+func (enums_reader *EnumsReader) GetSimple2(ctx context.Context, opts *cainome.CallOpts) (SimpleEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -481,12 +506,12 @@ func (enums *Enums) GetSimple2(ctx context.Context, opts *cainome.CallOpts) (Sim
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    enums.contractAddress,
+		ContractAddress:    enums_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_simple_2"),
 		Calldata:           calldata,
 	}
 
-	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	response, err := enums_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -520,7 +545,7 @@ func (enums *Enums) GetSimple2(ctx context.Context, opts *cainome.CallOpts) (Sim
 	}
 }
 
-func (enums *Enums) GetTyped1(ctx context.Context, opts *cainome.CallOpts) (TypedEnum, error) {
+func (enums_reader *EnumsReader) GetTyped1(ctx context.Context, opts *cainome.CallOpts) (TypedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -537,12 +562,12 @@ func (enums *Enums) GetTyped1(ctx context.Context, opts *cainome.CallOpts) (Type
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    enums.contractAddress,
+		ContractAddress:    enums_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_1"),
 		Calldata:           calldata,
 	}
 
-	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	response, err := enums_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -582,7 +607,7 @@ func (enums *Enums) GetTyped1(ctx context.Context, opts *cainome.CallOpts) (Type
 	}
 }
 
-func (enums *Enums) GetTyped2(ctx context.Context, opts *cainome.CallOpts) (TypedEnum, error) {
+func (enums_reader *EnumsReader) GetTyped2(ctx context.Context, opts *cainome.CallOpts) (TypedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -599,12 +624,12 @@ func (enums *Enums) GetTyped2(ctx context.Context, opts *cainome.CallOpts) (Type
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    enums.contractAddress,
+		ContractAddress:    enums_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_2"),
 		Calldata:           calldata,
 	}
 
-	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	response, err := enums_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -644,7 +669,7 @@ func (enums *Enums) GetTyped2(ctx context.Context, opts *cainome.CallOpts) (Type
 	}
 }
 
-func (enums *Enums) GetTyped3(ctx context.Context, opts *cainome.CallOpts) (TypedEnum, error) {
+func (enums_reader *EnumsReader) GetTyped3(ctx context.Context, opts *cainome.CallOpts) (TypedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -661,12 +686,12 @@ func (enums *Enums) GetTyped3(ctx context.Context, opts *cainome.CallOpts) (Type
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    enums.contractAddress,
+		ContractAddress:    enums_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_3"),
 		Calldata:           calldata,
 	}
 
-	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	response, err := enums_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -706,7 +731,7 @@ func (enums *Enums) GetTyped3(ctx context.Context, opts *cainome.CallOpts) (Type
 	}
 }
 
-func (enums *Enums) GetMixed1(ctx context.Context, opts *cainome.CallOpts) (MixedEnum, error) {
+func (enums_reader *EnumsReader) GetMixed1(ctx context.Context, opts *cainome.CallOpts) (MixedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -723,12 +748,12 @@ func (enums *Enums) GetMixed1(ctx context.Context, opts *cainome.CallOpts) (Mixe
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    enums.contractAddress,
+		ContractAddress:    enums_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_mixed_1"),
 		Calldata:           calldata,
 	}
 
-	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	response, err := enums_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}
@@ -762,7 +787,7 @@ func (enums *Enums) GetMixed1(ctx context.Context, opts *cainome.CallOpts) (Mixe
 	}
 }
 
-func (enums *Enums) GetMixed2(ctx context.Context, opts *cainome.CallOpts) (MixedEnum, error) {
+func (enums_reader *EnumsReader) GetMixed2(ctx context.Context, opts *cainome.CallOpts) (MixedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -779,12 +804,12 @@ func (enums *Enums) GetMixed2(ctx context.Context, opts *cainome.CallOpts) (Mixe
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
-		ContractAddress:    enums.contractAddress,
+		ContractAddress:    enums_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("get_mixed_2"),
 		Calldata:           calldata,
 	}
 
-	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	response, err := enums_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return nil, err
 	}

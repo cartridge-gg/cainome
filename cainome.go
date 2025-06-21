@@ -9,25 +9,29 @@
 // - Helper functions for type conversion
 //
 // Example usage:
-//   import "github.com/cartridge-gg/cainome"
 //
-//   // Create a Cairo-compatible felt value
-//   value := cainome.NewCairoFelt(new(felt.Felt).SetUint64(123))
-//   data, err := value.MarshalCairo()
+//	import "github.com/cartridge-gg/cainome"
 //
-//   // Create Result types
-//   result := cainome.NewResultOk[uint64, string](42)
+//	// Create a Cairo-compatible felt value
+//	value := cainome.NewCairoFelt(new(felt.Felt).SetUint64(123))
+//	data, err := value.MarshalCairo()
 //
-//   // Create StarkNet addresses
-//   addr := cainome.NewContractAddress(new(felt.Felt).SetUint64(123))
+//	// Create Result types
+//	result := cainome.NewResultOk[uint64, string](42)
+//
+//	// Create StarkNet addresses
+//	addr := cainome.NewContractAddress(new(felt.Felt).SetUint64(123))
 package cainome
 
 import (
+	"context"
 	"fmt"
 	"math/big"
 
 	"github.com/NethermindEth/juno/core/felt"
+	"github.com/NethermindEth/starknet.go/account"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 )
 
 // CairoMarshaler is the interface for types that can be serialized to/from Cairo format
@@ -844,6 +848,133 @@ func tryConvertFromFelt(f *felt.Felt, target any) error {
 }
 
 // ============================================================================
+// Invoke transaction support for write operations
+// ============================================================================
+
+// InvokeOpts contains options for contract invoke transactions
+type InvokeOpts struct {
+	Nonce              *felt.Felt                 // Optional nonce (auto-calculated if nil)
+	ResourceBounds     *rpc.ResourceBoundsMapping // Optional resource bounds (auto-estimated if nil)
+	EstimateMultiplier *float64                   // Optional fee estimate multiplier (defaults to 1.5 if nil)
+	SimulationFlags    []rpc.SimulationFlag       // Optional simulation flags for fee estimation (defaults to empty slice)
+}
+
+// makeResourceBoundsMapWithZeroValues creates a resource bounds map with zero values for initial transaction building
+func makeResourceBoundsMapWithZeroValues() *rpc.ResourceBoundsMapping {
+	return &rpc.ResourceBoundsMapping{
+		L1Gas: rpc.ResourceBounds{
+			MaxAmount:       "0x0",
+			MaxPricePerUnit: "0x0",
+		},
+		L1DataGas: rpc.ResourceBounds{
+			MaxAmount:       "0x0",
+			MaxPricePerUnit: "0x0",
+		},
+		L2Gas: rpc.ResourceBounds{
+			MaxAmount:       "0x0",
+			MaxPricePerUnit: "0x0",
+		},
+	}
+}
+
+// BuildAndSendInvokeTxn builds and sends an invoke transaction with custom fee estimation and nonce management
+func BuildAndSendInvokeTxn(ctx context.Context, acc *account.Account, contractAddress *felt.Felt, selector *felt.Felt, calldata []*felt.Felt, opts *InvokeOpts) (*felt.Felt, error) {
+	if opts == nil {
+		opts = &InvokeOpts{}
+	}
+
+	// Set default estimate multiplier if not provided
+	multiplier := 1.5
+	if opts.EstimateMultiplier != nil {
+		multiplier = *opts.EstimateMultiplier
+	}
+
+	// Get nonce (either from opts or fetch from network)
+	var nonce *felt.Felt
+	var err error
+	if opts.Nonce != nil {
+		nonce = opts.Nonce
+	} else {
+		nonce, err = acc.Nonce(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get account nonce: %w", err)
+		}
+	}
+
+	// Build the function call with our selector and calldata
+	functionCalls := []rpc.FunctionCall{
+		{
+			ContractAddress:    contractAddress,
+			EntryPointSelector: selector,
+			Calldata:           calldata,
+		},
+	}
+
+	// Format calldata using account's formatter
+	formattedCalldata, err := acc.FmtCalldata(functionCalls)
+	if err != nil {
+		return nil, fmt.Errorf("failed to format calldata: %w", err)
+	}
+
+	resourceBounds := makeResourceBoundsMapWithZeroValues()
+
+	// Build initial transaction with zero resource bounds for fee estimation
+	broadcastInvokeTxnV3 := utils.BuildInvokeTxn(acc.Address, nonce, formattedCalldata, resourceBounds)
+
+	// Use query bit version for fee estimation (custom validation logic from wallets/accounts)
+	broadcastInvokeTxnV3.Version = rpc.TransactionV3WithQueryBit
+
+	// Sign the transaction for fee estimation
+	err = acc.SignInvokeTransaction(ctx, broadcastInvokeTxnV3)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign transaction for fee estimation: %w", err)
+	}
+
+	if opts.ResourceBounds != nil {
+		resourceBounds = opts.ResourceBounds
+	} else {
+		// Use provided simulation flags, or default to empty slice
+		simulationFlags := opts.SimulationFlags
+		if simulationFlags == nil {
+			simulationFlags = []rpc.SimulationFlag{}
+		}
+
+		// Estimate fee from network
+		estimateFee, err := acc.Provider.EstimateFee(
+			ctx,
+			[]rpc.BroadcastTxn{broadcastInvokeTxnV3},
+			simulationFlags,
+			rpc.WithBlockTag("pending"),
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to estimate fee: %w", err)
+		}
+
+		resourceBounds = utils.FeeEstToResBoundsMap(estimateFee[0], multiplier)
+	}
+
+	// Update transaction with estimated resource bounds
+	broadcastInvokeTxnV3.ResourceBounds = resourceBounds
+
+	// Set the final transaction version (remove query bit)
+	broadcastInvokeTxnV3.Version = rpc.TransactionV3
+
+	// Sign the transaction again with the final fee values (fee is part of hash calculation)
+	err = acc.SignInvokeTransaction(ctx, broadcastInvokeTxnV3)
+	if err != nil {
+		return nil, fmt.Errorf("failed to sign final transaction: %w", err)
+	}
+
+	// Submit the transaction
+	txnResponse, err := acc.Provider.AddInvokeTransaction(ctx, broadcastInvokeTxnV3)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txnResponse.Hash, nil
+}
+
+// ============================================================================
 // ByteArray support for core::byte_array::ByteArray
 // ============================================================================
 
@@ -861,23 +992,23 @@ func (b *CairoByteArray) MarshalCairo() ([]*felt.Felt, error) {
 	// 1. Array of bytes31 chunks (each chunk is 31 bytes max)
 	// 2. Pending word (felt)
 	// 3. Pending word length (u32)
-	
+
 	var result []*felt.Felt
-	
+
 	// Calculate number of full 31-byte chunks
 	fullChunks := len(b.Value) / 31
 	remainder := len(b.Value) % 31
-	
+
 	// Serialize the array length (number of full chunks)
 	result = append(result, FeltFromUint(uint64(fullChunks)))
-	
+
 	// Serialize each full 31-byte chunk
 	for i := 0; i < fullChunks; i++ {
 		chunk := b.Value[i*31 : (i+1)*31]
 		// Convert 31 bytes to felt (big-endian)
 		result = append(result, FeltFromBytes(chunk))
 	}
-	
+
 	// Serialize pending word (remaining bytes < 31)
 	var pendingWord *felt.Felt
 	if remainder > 0 {
@@ -887,10 +1018,10 @@ func (b *CairoByteArray) MarshalCairo() ([]*felt.Felt, error) {
 		pendingWord = FeltFromUint(0)
 	}
 	result = append(result, pendingWord)
-	
+
 	// Serialize pending word length
 	result = append(result, FeltFromUint(uint64(remainder)))
-	
+
 	return result, nil
 }
 
@@ -898,20 +1029,20 @@ func (b *CairoByteArray) UnmarshalCairo(data []*felt.Felt) error {
 	if len(data) < 3 {
 		return fmt.Errorf("insufficient data for ByteArray: need at least 3 felts")
 	}
-	
+
 	offset := 0
-	
+
 	// Read array length (number of full chunks)
 	numChunks := UintFromFelt(data[offset])
 	offset++
-	
+
 	// Check we have enough data
 	if len(data) < int(1+numChunks+2) {
 		return fmt.Errorf("insufficient data for ByteArray: expected %d felts, got %d", 1+numChunks+2, len(data))
 	}
-	
+
 	var result []byte
-	
+
 	// Read each 31-byte chunk
 	for i := uint64(0); i < numChunks; i++ {
 		chunkBytes := BytesFromFelt(data[offset])
@@ -921,15 +1052,15 @@ func (b *CairoByteArray) UnmarshalCairo(data []*felt.Felt) error {
 		result = append(result, chunkBytes...)
 		offset++
 	}
-	
+
 	// Read pending word
 	pendingWord := data[offset]
 	offset++
-	
+
 	// Read pending word length
 	pendingLen := UintFromFelt(data[offset])
 	offset++
-	
+
 	// Add pending bytes if any
 	if pendingLen > 0 {
 		pendingBytes := BytesFromFelt(pendingWord)
@@ -938,7 +1069,7 @@ func (b *CairoByteArray) UnmarshalCairo(data []*felt.Felt) error {
 		}
 		result = append(result, pendingBytes...)
 	}
-	
+
 	b.Value = result
 	return nil
 }
