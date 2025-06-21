@@ -4,10 +4,27 @@
 package abigen
 
 import (
+	"context"
+	"fmt"
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
 )
+
+type EventOnlyKey struct {
+	Value *felt.Felt `json:"value"`
+}
+
+// EventName returns the name of this event type
+func (e EventOnlyKey) EventName() string {
+	return "only_key"
+}
+
+// IsSimpleEventsEvent implements the SimpleEventsEvent interface
+func (e EventOnlyKey) IsSimpleEventsEvent() bool {
+	return true
+}
+
 
 type EventAll struct {
 	Header *felt.Felt `json:"header"`
@@ -21,6 +38,21 @@ func (e EventAll) EventName() string {
 
 // IsSimpleEventsEvent implements the SimpleEventsEvent interface
 func (e EventAll) IsSimpleEventsEvent() bool {
+	return true
+}
+
+
+type EventOnlyData struct {
+	Value *felt.Felt `json:"value"`
+}
+
+// EventName returns the name of this event type
+func (e EventOnlyData) EventName() string {
+	return "only_data"
+}
+
+// IsSimpleEventsEvent implements the SimpleEventsEvent interface
+func (e EventOnlyData) IsSimpleEventsEvent() bool {
 	return true
 }
 
@@ -47,47 +79,16 @@ func (e EventMultiple) IsSimpleEventsEvent() bool {
 }
 
 
-// SimpleEventsEvent represents a contract event
-type SimpleEventsEvent interface {
-	IsSimpleEventsEvent() bool
-}
-
-const (
-	SimpleEventsEvent_EventOnlyKey = "EventOnlyKey"
-	SimpleEventsEvent_EventOnlyData = "EventOnlyData"
-	SimpleEventsEvent_EventAll = "EventAll"
-	SimpleEventsEvent_EventMultiple = "EventMultiple"
-	SimpleEventsEvent_EventNothing = "EventNothing"
-	SimpleEventsEvent_SuperEvent = "SuperEvent"
-)
-
-
-type EventOnlyKey struct {
-	Value *felt.Felt `json:"value"`
+type EventNothing struct {
 }
 
 // EventName returns the name of this event type
-func (e EventOnlyKey) EventName() string {
-	return "only_key"
+func (e EventNothing) EventName() string {
+	return "nothing"
 }
 
 // IsSimpleEventsEvent implements the SimpleEventsEvent interface
-func (e EventOnlyKey) IsSimpleEventsEvent() bool {
-	return true
-}
-
-
-type EventOnlyData struct {
-	Value *felt.Felt `json:"value"`
-}
-
-// EventName returns the name of this event type
-func (e EventOnlyData) EventName() string {
-	return "only_data"
-}
-
-// IsSimpleEventsEvent implements the SimpleEventsEvent interface
-func (e EventOnlyData) IsSimpleEventsEvent() bool {
+func (e EventNothing) IsSimpleEventsEvent() bool {
 	return true
 }
 
@@ -107,18 +108,19 @@ func (e EventWithOtherName) IsSimpleEventsEvent() bool {
 }
 
 
-type EventNothing struct {
+// SimpleEventsEvent represents a contract event
+type SimpleEventsEvent interface {
+	IsSimpleEventsEvent() bool
 }
 
-// EventName returns the name of this event type
-func (e EventNothing) EventName() string {
-	return "nothing"
-}
-
-// IsSimpleEventsEvent implements the SimpleEventsEvent interface
-func (e EventNothing) IsSimpleEventsEvent() bool {
-	return true
-}
+const (
+	SimpleEventsEvent_EventOnlyKey = "EventOnlyKey"
+	SimpleEventsEvent_EventOnlyData = "EventOnlyData"
+	SimpleEventsEvent_EventAll = "EventAll"
+	SimpleEventsEvent_EventMultiple = "EventMultiple"
+	SimpleEventsEvent_EventNothing = "EventNothing"
+	SimpleEventsEvent_SuperEvent = "SuperEvent"
+)
 
 
 type Events struct {
@@ -133,33 +135,63 @@ func NewEvents(contractAddress *felt.Felt, provider *rpc.Provider) *Events {
 	}
 }
 
-func (events *Events) EmitOnlyKey() error {
-	// TODO: Implement Invoke method for EmitOnlyKey
-	panic("not implemented")
+func (events *Events) EmitOnlyKey(ctx context.Context) error {
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (events *Events) EmitOnlyData() error {
-	// TODO: Implement Invoke method for EmitOnlyData
-	panic("not implemented")
+func (events *Events) EmitOnlyData(ctx context.Context) error {
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (events *Events) EmitAll() error {
-	// TODO: Implement Invoke method for EmitAll
-	panic("not implemented")
+func (events *Events) EmitAll(ctx context.Context) error {
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (events *Events) EmitMultiple() error {
-	// TODO: Implement Invoke method for EmitMultiple
-	panic("not implemented")
+func (events *Events) EmitMultiple(ctx context.Context) error {
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (events *Events) EmitNothing() error {
-	// TODO: Implement Invoke method for EmitNothing
-	panic("not implemented")
+func (events *Events) EmitNothing(ctx context.Context) error {
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (events *Events) EmitSuper() error {
-	// TODO: Implement Invoke method for EmitSuper
-	panic("not implemented")
+func (events *Events) EmitSuper(ctx context.Context) error {
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 

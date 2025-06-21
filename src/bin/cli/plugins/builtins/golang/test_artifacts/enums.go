@@ -4,8 +4,11 @@
 package abigen
 
 import (
+	"context"
+	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 )
 
 type MixedEnum struct {
@@ -28,12 +31,6 @@ func NewMixedEnumVariant2() MixedEnum {
 	return MixedEnum {
 		Variant: "Variant2",
 	}
-}
-
-
-// EnumsEvent represents a contract event
-type EnumsEvent interface {
-	IsEnumsEvent() bool
 }
 
 
@@ -90,6 +87,12 @@ func NewTypedEnumVariant3() TypedEnum {
 }
 
 
+// EnumsEvent represents a contract event
+type EnumsEvent interface {
+	IsEnumsEvent() bool
+}
+
+
 type Enums struct {
 	contractAddress *felt.Felt
 	provider *rpc.Provider
@@ -102,38 +105,262 @@ func NewEnums(contractAddress *felt.Felt, provider *rpc.Provider) *Enums {
 	}
 }
 
-func (enums *Enums) GetSimple1() (SimpleEnum, error) {
-	// TODO: Implement Call method for GetSimple1
-	panic("not implemented")
+func (enums *Enums) GetSimple1(ctx context.Context, opts *CallOpts) (SimpleEnum, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    enums.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_simple_1"),
+		Calldata:           calldata,
+	}
+
+	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return SimpleEnum{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return SimpleEnum{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result SimpleEnum
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (enums *Enums) GetSimple2() (SimpleEnum, error) {
-	// TODO: Implement Call method for GetSimple2
-	panic("not implemented")
+func (enums *Enums) GetSimple2(ctx context.Context, opts *CallOpts) (SimpleEnum, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    enums.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_simple_2"),
+		Calldata:           calldata,
+	}
+
+	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return SimpleEnum{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return SimpleEnum{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result SimpleEnum
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (enums *Enums) GetTyped1() (TypedEnum, error) {
-	// TODO: Implement Call method for GetTyped1
-	panic("not implemented")
+func (enums *Enums) GetTyped1(ctx context.Context, opts *CallOpts) (TypedEnum, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    enums.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_1"),
+		Calldata:           calldata,
+	}
+
+	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return TypedEnum{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return TypedEnum{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result TypedEnum
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (enums *Enums) GetTyped2() (TypedEnum, error) {
-	// TODO: Implement Call method for GetTyped2
-	panic("not implemented")
+func (enums *Enums) GetTyped2(ctx context.Context, opts *CallOpts) (TypedEnum, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    enums.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_2"),
+		Calldata:           calldata,
+	}
+
+	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return TypedEnum{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return TypedEnum{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result TypedEnum
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (enums *Enums) GetTyped3() (TypedEnum, error) {
-	// TODO: Implement Call method for GetTyped3
-	panic("not implemented")
+func (enums *Enums) GetTyped3(ctx context.Context, opts *CallOpts) (TypedEnum, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    enums.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_3"),
+		Calldata:           calldata,
+	}
+
+	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return TypedEnum{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return TypedEnum{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result TypedEnum
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (enums *Enums) GetMixed1() (MixedEnum, error) {
-	// TODO: Implement Call method for GetMixed1
-	panic("not implemented")
+func (enums *Enums) GetMixed1(ctx context.Context, opts *CallOpts) (MixedEnum, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    enums.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_mixed_1"),
+		Calldata:           calldata,
+	}
+
+	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return MixedEnum{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return MixedEnum{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result MixedEnum
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (enums *Enums) GetMixed2() (MixedEnum, error) {
-	// TODO: Implement Call method for GetMixed2
-	panic("not implemented")
+func (enums *Enums) GetMixed2(ctx context.Context, opts *CallOpts) (MixedEnum, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    enums.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_mixed_2"),
+		Calldata:           calldata,
+	}
+
+	response, err := enums.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return MixedEnum{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return MixedEnum{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result MixedEnum
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 

@@ -4,8 +4,11 @@
 package abigen
 
 import (
+	"context"
+	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 )
 
 // SimpleInterfaceEvent represents a contract event
@@ -26,13 +29,52 @@ func NewSimpleInterface(contractAddress *felt.Felt, provider *rpc.Provider) *Sim
 	}
 }
 
-func (simple_interface *SimpleInterface) GetValue() (*felt.Felt, error) {
-	// TODO: Implement Call method for GetValue
-	panic("not implemented")
+func (simple_interface *SimpleInterface) GetValue(ctx context.Context, opts *CallOpts) (*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_interface.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_value"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_interface.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	return response[0], nil
 }
 
-func (simple_interface *SimpleInterface) SetValue(value *felt.Felt) error {
-	// TODO: Implement Invoke method for SetValue
-	panic("not implemented")
+func (simple_interface *SimpleInterface) SetValue(ctx context.Context, value *felt.Felt) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize value to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = value
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 

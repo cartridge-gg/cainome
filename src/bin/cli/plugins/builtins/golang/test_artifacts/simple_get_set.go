@@ -4,16 +4,13 @@
 package abigen
 
 import (
+	"context"
+	"fmt"
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 )
-
-// SimpleGetSetEvent represents a contract event
-type SimpleGetSetEvent interface {
-	IsSimpleGetSetEvent() bool
-}
-
 
 type TestEnum struct {
 	Variant string `json:"variant"`
@@ -38,6 +35,12 @@ func NewTestEnumV2() TestEnum {
 }
 
 
+// SimpleGetSetEvent represents a contract event
+type SimpleGetSetEvent interface {
+	IsSimpleGetSetEvent() bool
+}
+
+
 type SimpleGetSet struct {
 	contractAddress *felt.Felt
 	provider *rpc.Provider
@@ -50,38 +53,195 @@ func NewSimpleGetSet(contractAddress *felt.Felt, provider *rpc.Provider) *Simple
 	}
 }
 
-func (simple_get_set *SimpleGetSet) GetSetEnum(v TestEnum) (TestEnum, error) {
-	// TODO: Implement Call method for GetSetEnum
-	panic("not implemented")
+func (simple_get_set *SimpleGetSet) GetSetEnum(ctx context.Context, v TestEnum, opts *CallOpts) (TestEnum, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize v to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = v
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_get_set.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_set_enum"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_get_set.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return TestEnum{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return TestEnum{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result TestEnum
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (simple_get_set *SimpleGetSet) GetA() (*felt.Felt, error) {
-	// TODO: Implement Call method for GetA
-	panic("not implemented")
+func (simple_get_set *SimpleGetSet) GetA(ctx context.Context, opts *CallOpts) (*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_get_set.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_a"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_get_set.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	return response[0], nil
 }
 
-func (simple_get_set *SimpleGetSet) SetA(a *felt.Felt) error {
-	// TODO: Implement Invoke method for SetA
-	panic("not implemented")
+func (simple_get_set *SimpleGetSet) SetA(ctx context.Context, a *felt.Felt) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize a to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = a
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_get_set *SimpleGetSet) GetB() (*big.Int, error) {
-	// TODO: Implement Call method for GetB
-	panic("not implemented")
+func (simple_get_set *SimpleGetSet) GetB(ctx context.Context, opts *CallOpts) (*big.Int, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_get_set.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_b"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_get_set.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result *big.Int
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (simple_get_set *SimpleGetSet) SetB(b *big.Int) error {
-	// TODO: Implement Invoke method for SetB
-	panic("not implemented")
+func (simple_get_set *SimpleGetSet) SetB(ctx context.Context, b *big.Int) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize b to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = b
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_get_set *SimpleGetSet) SetArray(data []*felt.Felt) error {
-	// TODO: Implement Invoke method for SetArray
-	panic("not implemented")
+func (simple_get_set *SimpleGetSet) SetArray(ctx context.Context, data []*felt.Felt) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize data to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = data
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_get_set *SimpleGetSet) GetArray() ([]*felt.Felt, error) {
-	// TODO: Implement Call method for GetArray
-	panic("not implemented")
+func (simple_get_set *SimpleGetSet) GetArray(ctx context.Context, opts *CallOpts) ([]*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_get_set.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_array"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_get_set.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result []*felt.Felt
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 

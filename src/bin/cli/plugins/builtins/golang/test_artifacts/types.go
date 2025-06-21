@@ -5,7 +5,32 @@ package abigen
 
 import (
 	"fmt"
+	"github.com/NethermindEth/starknet.go/rpc"
 )
+
+// CallOpts contains options for contract view calls
+type CallOpts struct {
+	BlockID *rpc.BlockID // Optional block ID (defaults to "latest" if nil)
+}
+
+// CallOption defines a function type for setting call options
+type CallOption func(*CallOpts)
+
+// WithBlockID sets the block ID for the call
+func WithBlockID(blockID rpc.BlockID) CallOption {
+	return func(opts *CallOpts) {
+		opts.BlockID = &blockID
+	}
+}
+
+// NewCallOpts creates a new CallOpts with optional configurations
+func NewCallOpts(options ...CallOption) *CallOpts {
+	opts := &CallOpts{}
+	for _, option := range options {
+		option(opts)
+	}
+	return opts
+}
 
 // Result type for handling Cairo Result types with idiomatic Go error handling
 type Result[T, E any] struct {

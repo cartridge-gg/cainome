@@ -4,19 +4,22 @@
 package abigen
 
 import (
+	"context"
+	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 )
-
-type MyStructBuiltins struct {
-	A *felt.Felt `json:"a"`
-}
 
 // BuiltinsEvent represents a contract event
 type BuiltinsEvent interface {
 	IsBuiltinsEvent() bool
 }
 
+
+type MyStructBuiltins struct {
+	A *felt.Felt `json:"a"`
+}
 
 type Builtins struct {
 	contractAddress *felt.Felt
@@ -30,13 +33,81 @@ func NewBuiltins(contractAddress *felt.Felt, provider *rpc.Provider) *Builtins {
 	}
 }
 
-func (builtins *Builtins) StructNonZero(res MyStructBuiltins) (*felt.Felt, error) {
-	// TODO: Implement Call method for StructNonZero
-	panic("not implemented")
+func (builtins *Builtins) StructNonZero(ctx context.Context, res MyStructBuiltins, opts *CallOpts) (*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize res to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = res
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    builtins.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("struct_non_zero"),
+		Calldata:           calldata,
+	}
+
+	response, err := builtins.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	return response[0], nil
 }
 
-func (builtins *Builtins) NonZero(res *felt.Felt) (*felt.Felt, error) {
-	// TODO: Implement Call method for NonZero
-	panic("not implemented")
+func (builtins *Builtins) NonZero(ctx context.Context, res *felt.Felt, opts *CallOpts) (*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize res to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = res
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    builtins.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("non_zero"),
+		Calldata:           calldata,
+	}
+
+	response, err := builtins.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	return response[0], nil
 }
 

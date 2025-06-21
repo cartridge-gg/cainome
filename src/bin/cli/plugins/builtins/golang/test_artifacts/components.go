@@ -4,10 +4,22 @@
 package abigen
 
 import (
+	"context"
+	"fmt"
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 )
+
+type WrittenAb struct {
+	Data *felt.Felt `json:"data"`
+}
+// IsSimpleEvent implements the SimpleEvent interface
+func (e WrittenAb) IsSimpleEvent() bool {
+	return true
+}
+
 
 // ComponentsContractEvent represents a contract event
 type ComponentsContractEvent interface {
@@ -18,30 +30,6 @@ const (
 	ComponentsContractEvent_OutterEvent = "OutterEvent"
 	ComponentsContractEvent_SimpleEvent = "SimpleEvent"
 	ComponentsContractEvent_SimpleEventOther = "SimpleEventOther"
-)
-
-
-type SimpleWritten struct {
-	Before *felt.Felt `json:"before"`
-	After *felt.Felt `json:"after"`
-}
-// IsSimpleEvent implements the SimpleEvent interface
-func (e SimpleWritten) IsSimpleEvent() bool {
-	return true
-}
-
-
-type MyStructOther struct {
-	Data *big.Int `json:"data"`
-}
-
-// OtherEvent represents a contract event
-type OtherEvent interface {
-	IsOtherEvent() bool
-}
-
-const (
-	OtherEvent_Written = "Written"
 )
 
 
@@ -56,29 +44,6 @@ const (
 )
 
 
-type OtherWritten struct {
-	Data *felt.Felt `json:"data"`
-}
-// IsOtherEvent implements the OtherEvent interface
-func (e OtherWritten) IsOtherEvent() bool {
-	return true
-}
-
-
-type WrittenAb struct {
-	Data *felt.Felt `json:"data"`
-}
-// IsSimpleEvent implements the SimpleEvent interface
-func (e WrittenAb) IsSimpleEvent() bool {
-	return true
-}
-
-
-type MyStructSimple struct {
-	A *felt.Felt `json:"a"`
-	B *felt.Felt `json:"b"`
-}
-
 type OutterEvent struct {
 }
 
@@ -89,6 +54,44 @@ func (e OutterEvent) EventName() string {
 
 // IsComponentsContractEvent implements the ComponentsContractEvent interface
 func (e OutterEvent) IsComponentsContractEvent() bool {
+	return true
+}
+
+
+// OtherEvent represents a contract event
+type OtherEvent interface {
+	IsOtherEvent() bool
+}
+
+const (
+	OtherEvent_Written = "Written"
+)
+
+
+type SimpleWritten struct {
+	Before *felt.Felt `json:"before"`
+	After *felt.Felt `json:"after"`
+}
+// IsSimpleEvent implements the SimpleEvent interface
+func (e SimpleWritten) IsSimpleEvent() bool {
+	return true
+}
+
+
+type MyStructSimple struct {
+	A *felt.Felt `json:"a"`
+	B *felt.Felt `json:"b"`
+}
+
+type MyStructOther struct {
+	Data *big.Int `json:"data"`
+}
+
+type OtherWritten struct {
+	Data *felt.Felt `json:"data"`
+}
+// IsOtherEvent implements the OtherEvent interface
+func (e OtherWritten) IsOtherEvent() bool {
 	return true
 }
 
@@ -105,41 +108,108 @@ func NewComponents(contractAddress *felt.Felt, provider *rpc.Provider) *Componen
 	}
 }
 
-func (components *Components) Simple() error {
-	// TODO: Implement Invoke method for Simple
-	panic("not implemented")
+func (components *Components) Simple(ctx context.Context) error {
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (components *Components) SimpleOther() error {
-	// TODO: Implement Invoke method for SimpleOther
-	panic("not implemented")
+func (components *Components) SimpleOther(ctx context.Context) error {
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (components *Components) ArrayStructSimple() ([]MyStructSimple, error) {
-	// TODO: Implement Invoke method for ArrayStructSimple
-	panic("not implemented")
+func (components *Components) ArrayStructSimple(ctx context.Context) ([]MyStructSimple, error) {
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return nil, fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (components *Components) ArrayStructSimpleOther() ([]MyStructOther, error) {
-	// TODO: Implement Invoke method for ArrayStructSimpleOther
-	panic("not implemented")
+func (components *Components) ArrayStructSimpleOther(ctx context.Context) ([]MyStructOther, error) {
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return nil, fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (components *Components) TupleEvents() (struct {
+func (components *Components) TupleEvents(ctx context.Context) (struct {
 	Field0 MyStructSimple
 	Field1 MyStructOther
 }, error) {
-	// TODO: Implement Invoke method for TupleEvents
-	panic("not implemented")
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return struct {
+	Field0 MyStructSimple
+	Field1 MyStructOther
+}{}, fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (components *Components) ReadData() (*felt.Felt, error) {
-	// TODO: Implement Call method for ReadData
-	panic("not implemented")
+func (components *Components) ReadData(ctx context.Context, opts *CallOpts) (*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    components.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("read_data"),
+		Calldata:           calldata,
+	}
+
+	response, err := components.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	return response[0], nil
 }
 
-func (components *Components) WriteData(data *felt.Felt) error {
-	// TODO: Implement Invoke method for WriteData
-	panic("not implemented")
+func (components *Components) WriteData(ctx context.Context, data *felt.Felt) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize data to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = data
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
