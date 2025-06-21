@@ -4,14 +4,13 @@
 package abigen
 
 import (
+	"context"
+	"fmt"
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 )
-
-type StructWithStruct struct {
-	Simple Simple `json:"simple"`
-}
 
 type GenericTwo struct {
 	A uint64 `json:"a"`
@@ -23,7 +22,7 @@ type GenericTwo struct {
 }
 
 type GenericOne struct {
-	A uint64 `json:"a"`
+	A ToAlias `json:"a"`
 	B *felt.Felt `json:"b"`
 	C *big.Int `json:"c"`
 }
@@ -37,6 +36,10 @@ type StructsEvent interface {
 	IsStructsEvent() bool
 }
 
+
+type StructWithStruct struct {
+	Simple Simple `json:"simple"`
+}
 
 type Simple struct {
 	Felt *felt.Felt `json:"felt"`
@@ -64,79 +67,352 @@ func NewStructs(contractAddress *felt.Felt, provider *rpc.Provider) *Structs {
 	}
 }
 
-func (structs *Structs) GetSimple() (Simple, error) {
-	// TODO: Implement Call method for GetSimple
-	panic("not implemented")
+func (structs *Structs) GetSimple(ctx context.Context, opts *CallOpts) (Simple, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    structs.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_simple"),
+		Calldata:           calldata,
+	}
+
+	response, err := structs.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return Simple{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return Simple{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result Simple
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (structs *Structs) SetSimple(simple Simple) error {
-	// TODO: Implement Invoke method for SetSimple
-	panic("not implemented")
+func (structs *Structs) SetSimple(ctx context.Context, simple Simple) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize simple to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = simple
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (structs *Structs) GetStructWStruct() (StructWithStruct, error) {
-	// TODO: Implement Call method for GetStructWStruct
-	panic("not implemented")
+func (structs *Structs) GetStructWStruct(ctx context.Context, opts *CallOpts) (StructWithStruct, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    structs.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_struct_w_struct"),
+		Calldata:           calldata,
+	}
+
+	response, err := structs.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return StructWithStruct{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return StructWithStruct{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result StructWithStruct
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (structs *Structs) SetStructWStruct(sws StructWithStruct) error {
-	// TODO: Implement Invoke method for SetStructWStruct
-	panic("not implemented")
+func (structs *Structs) SetStructWStruct(ctx context.Context, sws StructWithStruct) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize sws to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = sws
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (structs *Structs) GetGenericOne() (GenericOne, error) {
-	// TODO: Implement Call method for GetGenericOne
-	panic("not implemented")
+func (structs *Structs) GetGenericOne(ctx context.Context, opts *CallOpts) (GenericOne, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    structs.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_generic_one"),
+		Calldata:           calldata,
+	}
+
+	response, err := structs.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return GenericOne{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return GenericOne{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result GenericOne
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (structs *Structs) GetGenericOneArray() (GenericOne, error) {
-	// TODO: Implement Call method for GetGenericOneArray
-	panic("not implemented")
+func (structs *Structs) GetGenericOneArray(ctx context.Context, opts *CallOpts) (GenericOne, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    structs.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_generic_one_array"),
+		Calldata:           calldata,
+	}
+
+	response, err := structs.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return GenericOne{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return GenericOne{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result GenericOne
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (structs *Structs) SetGenericOne(generic GenericOne) error {
-	// TODO: Implement Invoke method for SetGenericOne
-	panic("not implemented")
+func (structs *Structs) SetGenericOne(ctx context.Context, generic GenericOne) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize generic to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = generic
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (structs *Structs) SetGenericTwo2(generic GenericTwo) error {
-	// TODO: Implement Invoke method for SetGenericTwo2
-	panic("not implemented")
+func (structs *Structs) SetGenericTwo2(ctx context.Context, generic GenericTwo) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize generic to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = generic
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (structs *Structs) SetGenericTwo0(generic GenericTwo) error {
-	// TODO: Implement Invoke method for SetGenericTwo0
-	panic("not implemented")
+func (structs *Structs) SetGenericTwo0(ctx context.Context, generic GenericTwo) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize generic to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = generic
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (structs *Structs) SetGenericTwo(generic GenericTwo) error {
-	// TODO: Implement Invoke method for SetGenericTwo
-	panic("not implemented")
+func (structs *Structs) SetGenericTwo(ctx context.Context, generic GenericTwo) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize generic to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = generic
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (structs *Structs) GetGenericTwo() (GenericTwo, error) {
-	// TODO: Implement Call method for GetGenericTwo
-	panic("not implemented")
+func (structs *Structs) GetGenericTwo(ctx context.Context, opts *CallOpts) (GenericTwo, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    structs.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_generic_two"),
+		Calldata:           calldata,
+	}
+
+	response, err := structs.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return GenericTwo{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return GenericTwo{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result GenericTwo
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (structs *Structs) SetTupleGeneric(value struct {
+func (structs *Structs) SetTupleGeneric(ctx context.Context, value struct {
 	Field0 GenericOne
 	Field1 GenericTwo
 }) error {
-	// TODO: Implement Invoke method for SetTupleGeneric
-	panic("not implemented")
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize value to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = value
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (structs *Structs) GetTupleOfArrayGeneric() (struct {
+func (structs *Structs) GetTupleOfArrayGeneric(ctx context.Context, opts *CallOpts) (struct {
 	Field0 []GenericOne
 	Field1 []*felt.Felt
 }, error) {
-	// TODO: Implement Call method for GetTupleOfArrayGeneric
-	panic("not implemented")
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    structs.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_tuple_of_array_generic"),
+		Calldata:           calldata,
+	}
+
+	response, err := structs.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return struct {
+	Field0 []GenericOne
+	Field1 []*felt.Felt
+}{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return struct {
+	Field0 []GenericOne
+	Field1 []*felt.Felt
+}{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result struct {
+	Field0 []GenericOne
+	Field1 []*felt.Felt
+}
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (structs *Structs) SetFromAlias(value []ToAlias) error {
-	// TODO: Implement Invoke method for SetFromAlias
-	panic("not implemented")
+func (structs *Structs) SetFromAlias(ctx context.Context, value []ToAlias) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize value to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = value
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 

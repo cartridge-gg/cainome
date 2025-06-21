@@ -4,46 +4,18 @@
 package abigen
 
 import (
+	"context"
+	"fmt"
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 )
-
-// GenEvent represents a contract event
-type GenEvent interface {
-	IsGenEvent() bool
-}
-
-const (
-	GenEvent_E1 = "E1"
-)
-
-
-type MyStructGen struct {
-	F1 *felt.Felt `json:"f1"`
-	F2 *felt.Felt `json:"f2"`
-	F3 *felt.Felt `json:"f3"`
-}
 
 type MyStructInnerGeneric struct {
 	F1 *felt.Felt `json:"f1"`
 	F2 MyStructGen `json:"f2"`
 	F3 uint32 `json:"f3"`
-}
-
-type PlainStruct struct {
-	F1 uint8 `json:"f1"`
-	F2 uint16 `json:"f2"`
-	F3 uint32 `json:"f3"`
-	F4 uint64 `json:"f4"`
-	F5 *big.Int `json:"f5"`
-	F6 *felt.Felt `json:"f6"`
-	F7 struct {
-	Field0 *felt.Felt
-	Field1 uint64
-} `json:"f7"`
-	F8 []uint8 `json:"f8"`
-	F9 []*big.Int `json:"f9"`
 }
 
 type E1 struct {
@@ -142,6 +114,37 @@ func NewMyEnumEleven() MyEnum {
 }
 
 
+type MyStructGen struct {
+	F1 *felt.Felt `json:"f1"`
+	F2 *felt.Felt `json:"f2"`
+	F3 *felt.Felt `json:"f3"`
+}
+
+// GenEvent represents a contract event
+type GenEvent interface {
+	IsGenEvent() bool
+}
+
+const (
+	GenEvent_E1 = "E1"
+)
+
+
+type PlainStruct struct {
+	F1 uint8 `json:"f1"`
+	F2 uint16 `json:"f2"`
+	F3 uint32 `json:"f3"`
+	F4 uint64 `json:"f4"`
+	F5 *big.Int `json:"f5"`
+	F6 *felt.Felt `json:"f6"`
+	F7 struct {
+	Field0 *felt.Felt
+	Field1 uint64
+} `json:"f7"`
+	F8 []uint8 `json:"f8"`
+	F9 []*big.Int `json:"f9"`
+}
+
 type Gen struct {
 	contractAddress *felt.Felt
 	provider *rpc.Provider
@@ -154,36 +157,102 @@ func NewGen(contractAddress *felt.Felt, provider *rpc.Provider) *Gen {
 	}
 }
 
-func (gen *Gen) Func1(a MyStructGen) error {
-	// TODO: Implement Invoke method for Func1
-	panic("not implemented")
+func (gen *Gen) Func1(ctx context.Context, a MyStructGen) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize a to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = a
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (gen *Gen) Func2(a MyStructGen) error {
-	// TODO: Implement Invoke method for Func2
-	panic("not implemented")
+func (gen *Gen) Func2(ctx context.Context, a MyStructGen) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize a to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = a
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (gen *Gen) Read() (struct {
+func (gen *Gen) Read(ctx context.Context, opts *CallOpts) (struct {
 	Field0 *felt.Felt
 	Field1 *felt.Felt
 }, error) {
-	// TODO: Implement Call method for Read
-	panic("not implemented")
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    gen.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("read"),
+		Calldata:           calldata,
+	}
+
+	response, err := gen.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return struct {
+	Field0 *felt.Felt
+	Field1 *felt.Felt
+}{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return struct {
+	Field0 *felt.Felt
+	Field1 *felt.Felt
+}{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result struct {
+	Field0 *felt.Felt
+	Field1 *felt.Felt
+}
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (gen *Gen) Func3(a PlainStruct) error {
-	// TODO: Implement Call method for Func3
-	panic("not implemented")
+func (gen *Gen) Func3(ctx context.Context, a PlainStruct, opts *CallOpts) error {
+	return nil
 }
 
-func (gen *Gen) Func4(a MyEnum) error {
-	// TODO: Implement Call method for Func4
-	panic("not implemented")
+func (gen *Gen) Func4(ctx context.Context, a MyEnum, opts *CallOpts) error {
+	return nil
 }
 
-func (gen *Gen) Func5(a MyStructInnerGeneric) error {
-	// TODO: Implement Invoke method for Func5
-	panic("not implemented")
+func (gen *Gen) Func5(ctx context.Context, a MyStructInnerGeneric) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize a to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = a
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 

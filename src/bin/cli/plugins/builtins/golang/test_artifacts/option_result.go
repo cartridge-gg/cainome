@@ -4,22 +4,25 @@
 package abigen
 
 import (
+	"context"
+	"fmt"
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 )
-
-// OptionResultEvent represents a contract event
-type OptionResultEvent interface {
-	IsOptionResultEvent() bool
-}
-
 
 type GenericOneOptionResult struct {
 	A *felt.Felt `json:"a"`
 	B *felt.Felt `json:"b"`
 	C *big.Int `json:"c"`
 }
+
+// OptionResultEvent represents a contract event
+type OptionResultEvent interface {
+	IsOptionResultEvent() bool
+}
+
 
 type OptionResult struct {
 	contractAddress *felt.Felt
@@ -33,41 +36,293 @@ func NewOptionResult(contractAddress *felt.Felt, provider *rpc.Provider) *Option
 	}
 }
 
-func (option_result *OptionResult) ResultOkUnit(res Result[struct{}, *felt.Felt]) (Result[uint64, *felt.Felt], error) {
-	// TODO: Implement Call method for ResultOkUnit
-	panic("not implemented")
+func (option_result *OptionResult) ResultOkUnit(ctx context.Context, res Result[struct{}, *felt.Felt], opts *CallOpts) (Result[uint64, *felt.Felt], error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize res to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = res
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    option_result.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_unit"),
+		Calldata:           calldata,
+	}
+
+	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return Result[uint64, *felt.Felt]{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result Result[uint64, *felt.Felt]
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (option_result *OptionResult) ResultOkStruct(res Result[GenericOneOptionResult, *felt.Felt]) (Result[uint64, *felt.Felt], error) {
-	// TODO: Implement Call method for ResultOkStruct
-	panic("not implemented")
+func (option_result *OptionResult) ResultOkStruct(ctx context.Context, res Result[GenericOneOptionResult, *felt.Felt], opts *CallOpts) (Result[uint64, *felt.Felt], error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize res to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = res
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    option_result.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_struct"),
+		Calldata:           calldata,
+	}
+
+	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return Result[uint64, *felt.Felt]{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result Result[uint64, *felt.Felt]
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (option_result *OptionResult) ResultOkTupleStruct(res Result[struct {
+func (option_result *OptionResult) ResultOkTupleStruct(ctx context.Context, res Result[struct {
 	Field0 GenericOneOptionResult
 	Field1 *felt.Felt
-}, *felt.Felt]) (Result[uint64, *felt.Felt], error) {
-	// TODO: Implement Call method for ResultOkTupleStruct
-	panic("not implemented")
+}, *felt.Felt], opts *CallOpts) (Result[uint64, *felt.Felt], error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize res to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = res
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    option_result.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_tuple_struct"),
+		Calldata:           calldata,
+	}
+
+	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return Result[uint64, *felt.Felt]{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result Result[uint64, *felt.Felt]
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (option_result *OptionResult) ResultOk(res Result[*felt.Felt, *big.Int]) (Result[uint64, *felt.Felt], error) {
-	// TODO: Implement Call method for ResultOk
-	panic("not implemented")
+func (option_result *OptionResult) ResultOk(ctx context.Context, res Result[*felt.Felt, *big.Int], opts *CallOpts) (Result[uint64, *felt.Felt], error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize res to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = res
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    option_result.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok"),
+		Calldata:           calldata,
+	}
+
+	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return Result[uint64, *felt.Felt]{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return Result[uint64, *felt.Felt]{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result Result[uint64, *felt.Felt]
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (option_result *OptionResult) ResultErr(res Result[*felt.Felt, *felt.Felt]) (Result[*felt.Felt, *big.Int], error) {
-	// TODO: Implement Call method for ResultErr
-	panic("not implemented")
+func (option_result *OptionResult) ResultErr(ctx context.Context, res Result[*felt.Felt, *felt.Felt], opts *CallOpts) (Result[*felt.Felt, *big.Int], error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize res to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = res
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    option_result.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_err"),
+		Calldata:           calldata,
+	}
+
+	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return Result[*felt.Felt, *big.Int]{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return Result[*felt.Felt, *big.Int]{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result Result[*felt.Felt, *big.Int]
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (option_result *OptionResult) OptionSome(opt **felt.Felt) (*[]*felt.Felt, error) {
-	// TODO: Implement Call method for OptionSome
-	panic("not implemented")
+func (option_result *OptionResult) OptionSome(ctx context.Context, opt **felt.Felt, opts *CallOpts) (*[]*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize opt to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = opt
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    option_result.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("option_some"),
+		Calldata:           calldata,
+	}
+
+	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result *[]*felt.Felt
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (option_result *OptionResult) OptionNone(opt **felt.Felt) (*uint64, error) {
-	// TODO: Implement Call method for OptionNone
-	panic("not implemented")
+func (option_result *OptionResult) OptionNone(ctx context.Context, opt **felt.Felt, opts *CallOpts) (*uint64, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize opt to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = opt
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    option_result.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("option_none"),
+		Calldata:           calldata,
+	}
+
+	response, err := option_result.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result *uint64
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 

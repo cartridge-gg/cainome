@@ -58,11 +58,11 @@ impl GolangPlugin {
     }
 
     /// Converts a token to its Go type representation
-    fn token_to_go_type(&self, token: &Token, contract_name: &str) -> String {
+    fn token_to_go_type(&self, token: &Token) -> String {
         match token {
             Token::CoreBasic(core_basic) => self.map_core_basic_type(&core_basic.type_path),
             Token::Array(array) => {
-                let inner_type = self.token_to_go_type(&array.inner, contract_name);
+                let inner_type = self.token_to_go_type(&array.inner);
                 format!("[]{}", inner_type)
             }
             Token::Tuple(tuple) => {
@@ -73,9 +73,7 @@ impl GolangPlugin {
                         .inners
                         .iter()
                         .enumerate()
-                        .map(|(i, token)| {
-                            format!("Field{} {}", i, self.token_to_go_type(token, contract_name))
-                        })
+                        .map(|(i, token)| format!("Field{} {}", i, self.token_to_go_type(token)))
                         .collect();
                     format!("struct {{\n\t{}\n}}", field_types.join("\n\t"))
                 }
@@ -89,28 +87,28 @@ impl GolangPlugin {
                 }
             }
             Token::Option(option) => {
-                let inner_type = self.token_to_go_type(&option.inner, contract_name);
+                let inner_type = self.token_to_go_type(&option.inner);
                 format!("*{}", inner_type) // Use pointer for optional types
             }
             Token::Result(result) => {
                 // Generate a Result type that can be unpacked into (value, error) pattern
-                let ok_type = self.token_to_go_type(&result.inner, contract_name);
-                let err_type = self.token_to_go_type(&result.error, contract_name);
+                let ok_type = self.token_to_go_type(&result.inner);
+                let err_type = self.token_to_go_type(&result.error);
                 format!("Result[{}, {}]", ok_type, err_type)
             }
-            Token::NonZero(non_zero) => self.token_to_go_type(&non_zero.inner, contract_name),
+            Token::NonZero(non_zero) => self.token_to_go_type(&non_zero.inner),
             Token::Function(_) => "func".to_string(),
         }
     }
 
     /// Generates Go struct definition for a Cairo composite type
-    fn generate_struct(&self, composite: &Composite, contract_name: &str) -> String {
+    fn generate_struct(&self, composite: &Composite) -> String {
         let struct_name = composite.type_name_or_alias().to_case(Case::Pascal);
         let mut struct_def = format!("type {} struct {{\n", struct_name);
 
         for inner in &composite.inners {
             let field_name = inner.name.to_case(Case::Pascal);
-            let field_type = self.token_to_go_type(&inner.token, contract_name);
+            let field_type = self.token_to_go_type(&inner.token);
             let json_tag = format!("`json:\"{}\"`", inner.name);
             struct_def.push_str(&format!("\t{} {} {}\n", field_name, field_type, json_tag));
         }
@@ -143,9 +141,7 @@ impl GolangPlugin {
         methods.push('\n');
 
         // Generate EventName method for identification
-        methods.push_str(&format!(
-            "// EventName returns the name of this event type\n"
-        ));
+        methods.push_str("// EventName returns the name of this event type\n");
         methods.push_str(&format!(
             "func (e {}) EventName() string {{\n\treturn \"{}\"\n}}\n\n",
             struct_name,
@@ -156,12 +152,12 @@ impl GolangPlugin {
     }
 
     /// Generates Go enum definition for a Cairo enum type
-    fn generate_enum(&self, composite: &Composite, contract_name: &str) -> String {
+    fn generate_enum(&self, composite: &Composite) -> String {
         let enum_name = composite.type_name_or_alias().to_case(Case::Pascal);
 
         // Check if this is an event enum (ends with "Event")
         if enum_name.ends_with("Event") {
-            return self.generate_event_enum(composite, contract_name);
+            return self.generate_event_enum(composite);
         }
 
         let mut enum_def = String::new();
@@ -197,7 +193,7 @@ impl GolangPlugin {
                 }
                 CompositeInnerKind::Data => {
                     // Data variant
-                    let data_type = self.token_to_go_type(&inner.token, contract_name);
+                    let data_type = self.token_to_go_type(&inner.token);
                     enum_def.push_str(&format!(
                         "func {}(value {}) {} {{\n\treturn {} {{\n\t\tVariant: \"{}\",\n\t\tValue: value,\n\t}}\n}}\n\n",
                         constructor_name, data_type, enum_name, enum_name, inner.name
@@ -211,7 +207,7 @@ impl GolangPlugin {
     }
 
     /// Generates Go event interface for Cairo event enum types (idiomatic Go approach)
-    fn generate_event_enum(&self, composite: &Composite, _contract_name: &str) -> String {
+    fn generate_event_enum(&self, composite: &Composite) -> String {
         let enum_name = composite.type_name_or_alias().to_case(Case::Pascal);
         let interface_name = enum_name.clone();
         let mut event_def = String::new();
@@ -270,17 +266,31 @@ impl GolangPlugin {
         let func_name = function.name.to_case(Case::Pascal);
         let receiver_name = contract_name.to_case(Case::Snake);
 
+        let is_view = function.state_mutability == StateMutability::View;
+
         // Generate parameters
         let mut params = Vec::new();
+
+        // Add context as first parameter
+        params.push("ctx context.Context".to_string());
+
+        // Add contract function parameters
         for (param_name, param_token) in &function.inputs {
-            let go_type = self.token_to_go_type(param_token, contract_name);
-            params.push(format!("{} {}", param_name.to_case(Case::Snake), go_type));
+            let go_type = self.token_to_go_type(param_token);
+            let param_snake = param_name.to_case(Case::Snake);
+            let safe_param_name = self.generate_safe_param_name(&param_snake);
+            params.push(format!("{} {}", safe_param_name, go_type));
+        }
+
+        // Add opts parameter for view functions
+        if is_view {
+            params.push("opts *CallOpts".to_string());
         }
 
         // Generate return types
         let mut returns = Vec::new();
         for (i, output_token) in function.outputs.iter().enumerate() {
-            let go_type = self.token_to_go_type(output_token, contract_name);
+            let go_type = self.token_to_go_type(output_token);
             if function.outputs.len() == 1 {
                 returns.push(go_type);
             } else {
@@ -297,9 +307,6 @@ impl GolangPlugin {
             format!("({})", returns.join(", "))
         };
 
-        let is_view = function.state_mutability == StateMutability::View;
-        let method_type = if is_view { "Call" } else { "Invoke" };
-
         let mut func_def = format!(
             "func ({} *{}) {}({}) {} {{\n",
             receiver_name,
@@ -309,14 +316,260 @@ impl GolangPlugin {
             return_str
         );
 
-        func_def.push_str(&format!(
-            "\t// TODO: Implement {} method for {}\n",
-            method_type, func_name
-        ));
-        func_def.push_str("\tpanic(\"not implemented\")\n");
+        if is_view {
+            // Generate call method for view functions
+            func_def.push_str(&self.generate_call_method(function, &receiver_name));
+        } else {
+            // Generate invoke method for state-changing functions
+            func_def.push_str(&self.generate_invoke_method(function, &receiver_name));
+        }
+
         func_def.push_str("}\n\n");
 
         func_def
+    }
+
+    /// Generate the body for a view function call
+    fn generate_call_method(&self, function: &Function, receiver_name: &str) -> String {
+        let mut method_body = String::new();
+
+        // Special case: if function has no outputs, just return nil immediately
+        if function.outputs.is_empty() {
+            method_body.push_str("\treturn nil\n");
+            return method_body;
+        }
+
+        // Handle call options
+        method_body.push_str("\t// Setup call options\n");
+        method_body.push_str("\tif opts == nil {\n");
+        method_body.push_str("\t\topts = &CallOpts{}\n");
+        method_body.push_str("\t}\n");
+        method_body.push_str("\tvar blockID rpc.BlockID\n");
+        method_body.push_str("\tif opts.BlockID != nil {\n");
+        method_body.push_str("\t\tblockID = *opts.BlockID\n");
+        method_body.push_str("\t} else {\n");
+        method_body.push_str("\t\tblockID = rpc.BlockID{Tag: \"latest\"}\n");
+        method_body.push_str("\t}\n\n");
+
+        // Build calldata array
+        if function.inputs.is_empty() {
+            method_body.push_str("\t// No parameters required\n");
+            method_body.push_str("\tcalldata := []*felt.Felt{}\n\n");
+        } else {
+            method_body.push_str("\t// Serialize parameters to calldata\n");
+            method_body.push_str("\tcalldata := []*felt.Felt{\n");
+            for (param_name, _) in &function.inputs {
+                let param_snake = param_name.to_case(Case::Snake);
+                let safe_param_name = self.generate_safe_param_name(&param_snake);
+                method_body.push_str(&format!(
+                    "\t\t// TODO: Serialize {} to felt\n",
+                    safe_param_name
+                ));
+            }
+            method_body.push_str("\t}\n");
+            method_body.push_str("\t_ = calldata // TODO: populate from parameters\n");
+            for (param_name, _) in &function.inputs {
+                let param_snake = param_name.to_case(Case::Snake);
+                let safe_param_name = self.generate_safe_param_name(&param_snake);
+                method_body.push_str(&format!("\t_ = {}\n", safe_param_name));
+            }
+            method_body.push('\n');
+        }
+
+        // Generate RPC call
+        method_body.push_str("\t// Make the contract call\n");
+        method_body.push_str("\tfunctionCall := rpc.FunctionCall{\n");
+        method_body.push_str(&format!(
+            "\t\tContractAddress:    {}.contractAddress,\n",
+            receiver_name
+        ));
+        method_body.push_str(&format!(
+            "\t\tEntryPointSelector: utils.GetSelectorFromNameFelt(\"{}\"),\n",
+            function.name
+        ));
+        method_body.push_str("\t\tCalldata:           calldata,\n");
+        method_body.push_str("\t}\n\n");
+
+        method_body.push_str(&format!(
+            "\tresponse, err := {}.provider.Call(ctx, functionCall, blockID)\n",
+            receiver_name
+        ));
+        method_body.push_str("\tif err != nil {\n");
+        if function.outputs.is_empty() {
+            method_body.push_str("\t\treturn err\n");
+        } else if function.outputs.len() == 1 {
+            let return_type = self.token_to_go_type(&function.outputs[0]);
+            let zero_value = self.generate_zero_value(&return_type);
+            method_body.push_str(&format!("\t\treturn {}, err\n", zero_value));
+        } else {
+            // Multiple return values - return zero values for each plus error
+            let zero_returns: Vec<String> = function
+                .outputs
+                .iter()
+                .map(|output| {
+                    let return_type = self.token_to_go_type(output);
+                    self.generate_zero_value(&return_type)
+                })
+                .collect();
+            method_body.push_str(&format!("\t\treturn {}, err\n", zero_returns.join(", ")));
+        }
+        method_body.push_str("\t}\n\n");
+
+        // Handle response deserialization
+        if function.outputs.is_empty() {
+            method_body.push_str("\treturn nil\n");
+        } else if function.outputs.len() == 1 {
+            method_body.push_str("\t// TODO: Deserialize response to proper type\n");
+            method_body.push_str("\tif len(response) == 0 {\n");
+            let return_type = self.token_to_go_type(&function.outputs[0]);
+            let zero_value = self.generate_zero_value(&return_type);
+            method_body.push_str(&format!(
+                "\t\treturn {}, fmt.Errorf(\"empty response\")\n",
+                zero_value
+            ));
+            method_body.push_str("\t}\n");
+            method_body
+                .push_str("\t// For now, return zero value - proper deserialization needed\n");
+            if return_type == "*felt.Felt" {
+                method_body.push_str("\treturn response[0], nil\n");
+            } else {
+                method_body.push_str(&format!("\tvar result {}\n", return_type));
+                method_body.push_str("\t_ = response // TODO: deserialize response into result\n");
+                method_body.push_str("\treturn result, nil\n");
+            }
+        } else {
+            method_body.push_str("\t// TODO: Deserialize response to proper types\n");
+            method_body.push_str("\tif len(response) == 0 {\n");
+            // Return proper zero values for multiple returns
+            let zero_returns: Vec<String> = function
+                .outputs
+                .iter()
+                .map(|output| {
+                    let return_type = self.token_to_go_type(output);
+                    self.generate_zero_value(&return_type)
+                })
+                .collect();
+            method_body.push_str(&format!(
+                "\t\treturn {}, fmt.Errorf(\"empty response\")\n",
+                zero_returns.join(", ")
+            ));
+            method_body.push_str("\t}\n");
+            method_body
+                .push_str("\t// For now, return zero values - proper deserialization needed\n");
+            let return_values: Vec<String> = function
+                .outputs
+                .iter()
+                .enumerate()
+                .map(|(i, output)| {
+                    let return_type = self.token_to_go_type(output);
+                    if return_type == "*felt.Felt" && i < 1 {
+                        "response[0]".to_string()
+                    } else {
+                        self.generate_zero_value(&return_type)
+                    }
+                })
+                .collect();
+            method_body.push_str("\t_ = response // TODO: deserialize response\n");
+            method_body.push_str(&format!("\treturn {}, nil\n", return_values.join(", ")));
+        }
+
+        method_body
+    }
+
+    /// Generate safe parameter name that doesn't conflict with package names
+    fn generate_safe_param_name(&self, param_name: &str) -> String {
+        match param_name {
+            "felt" => "feltValue".to_string(),
+            "rpc" => "rpcValue".to_string(),
+            "big" => "bigValue".to_string(),
+            "fmt" => "fmtValue".to_string(),
+            "context" => "ctxValue".to_string(),
+            _ => param_name.to_string(),
+        }
+    }
+
+    /// Generate a zero value for a given Go type
+    fn generate_zero_value(&self, go_type: &str) -> String {
+        match go_type {
+            "*felt.Felt" | "*big.Int" => "nil".to_string(),
+            "bool" => "false".to_string(),
+            "uint8" | "uint16" | "uint32" | "uint64" | "int8" | "int16" | "int32" | "int64" => {
+                "0".to_string()
+            }
+            "float32" | "float64" => "0.0".to_string(),
+            "string" => "\"\"".to_string(),
+            s if s.starts_with("*") => "nil".to_string(),
+            s if s.starts_with("[]") => "nil".to_string(),
+            s if s.starts_with("[") && s.contains("]byte") => {
+                // For fixed-size byte arrays like [20]byte
+                format!("{}{{}}", s)
+            }
+            s if s.starts_with("struct {") => {
+                // For inline struct types, return the struct literal with the full type
+                format!("{}{{}}", s)
+            }
+            _ => {
+                // For named types (structs, enums, etc.), just use the type name as zero value
+                format!("{}{{}}", go_type)
+            }
+        }
+    }
+
+    /// Generate the body for a state-changing function invoke
+    fn generate_invoke_method(&self, function: &Function, _receiver_name: &str) -> String {
+        let mut method_body = String::new();
+
+        // Build calldata array
+        if function.inputs.is_empty() {
+            method_body.push_str("\t// No parameters required\n");
+            method_body.push_str("\tcalldata := []*felt.Felt{}\n\n");
+        } else {
+            method_body.push_str("\t// Serialize parameters to calldata\n");
+            method_body.push_str("\tcalldata := []*felt.Felt{\n");
+            for (param_name, _) in &function.inputs {
+                let param_snake = param_name.to_case(Case::Snake);
+                let safe_param_name = self.generate_safe_param_name(&param_snake);
+                method_body.push_str(&format!(
+                    "\t\t// TODO: Serialize {} to felt\n",
+                    safe_param_name
+                ));
+            }
+            method_body.push_str("\t}\n");
+            method_body.push_str("\t_ = calldata // TODO: populate from parameters\n");
+            for (param_name, _) in &function.inputs {
+                let param_snake = param_name.to_case(Case::Snake);
+                let safe_param_name = self.generate_safe_param_name(&param_snake);
+                method_body.push_str(&format!("\t_ = {}\n", safe_param_name));
+            }
+            method_body.push('\n');
+        }
+
+        method_body.push_str("\t// TODO: Implement invoke transaction\n");
+        method_body
+            .push_str("\t// This requires account/signer setup for transaction submission\n");
+        method_body.push_str("\t_ = calldata\n");
+
+        // Generate proper return statement based on function outputs
+        if function.outputs.is_empty() {
+            method_body.push_str("\treturn fmt.Errorf(\"invoke methods require account setup - not yet implemented\")\n");
+        } else if function.outputs.len() == 1 {
+            let return_type = self.token_to_go_type(&function.outputs[0]);
+            let zero_value = self.generate_zero_value(&return_type);
+            method_body.push_str(&format!("\treturn {}, fmt.Errorf(\"invoke methods require account setup - not yet implemented\")\n", zero_value));
+        } else {
+            // Multiple return values
+            let zero_returns: Vec<String> = function
+                .outputs
+                .iter()
+                .map(|output| {
+                    let return_type = self.token_to_go_type(output);
+                    self.generate_zero_value(&return_type)
+                })
+                .collect();
+            method_body.push_str(&format!("\treturn {}, fmt.Errorf(\"invoke methods require account setup - not yet implemented\")\n", zero_returns.join(", ")));
+        }
+
+        method_body
     }
 
     /// Generates the main contract struct and constructor
@@ -354,19 +607,22 @@ impl GolangPlugin {
         &self,
         package_name: &str,
         needs_big_int: bool,
-        needs_fmt: bool,
+        needs_utils: bool,
+        _needs_fmt: bool, // fmt is always needed now
     ) -> String {
         let mut import_lines = vec![
+            "\"context\"",
+            "\"fmt\"",
             "\"github.com/NethermindEth/juno/core/felt\"",
             "\"github.com/NethermindEth/starknet.go/rpc\"",
         ];
 
-        if needs_fmt {
-            import_lines.insert(0, "\"fmt\"");
+        if needs_big_int {
+            import_lines.insert(2, "\"math/big\"");
         }
 
-        if needs_big_int {
-            import_lines.insert(if needs_fmt { 1 } else { 0 }, "\"math/big\"");
+        if needs_utils {
+            import_lines.push("\"github.com/NethermindEth/starknet.go/utils\"");
         }
 
         let imports = format!("import (\n\t{}\n)", import_lines.join("\n\t"));
@@ -399,15 +655,40 @@ package {}
 
 import (
 	"fmt"
+	"github.com/NethermindEth/starknet.go/rpc"
 )
 
 "#,
             package_name
         );
 
-        // Add Result type definition for handling Cairo Result types
+        // Add CallOpts type definition for optional call parameters
         types_content.push_str(
-            r#"// Result type for handling Cairo Result types with idiomatic Go error handling
+            r#"// CallOpts contains options for contract view calls
+type CallOpts struct {
+	BlockID *rpc.BlockID // Optional block ID (defaults to "latest" if nil)
+}
+
+// CallOption defines a function type for setting call options
+type CallOption func(*CallOpts)
+
+// WithBlockID sets the block ID for the call
+func WithBlockID(blockID rpc.BlockID) CallOption {
+	return func(opts *CallOpts) {
+		opts.BlockID = &blockID
+	}
+}
+
+// NewCallOpts creates a new CallOpts with optional configurations
+func NewCallOpts(options ...CallOption) *CallOpts {
+	opts := &CallOpts{}
+	for _, option := range options {
+		option(opts)
+	}
+	return opts
+}
+
+// Result type for handling Cairo Result types with idiomatic Go error handling
 type Result[T, E any] struct {
 	IsOk bool
 	Ok   T
@@ -606,7 +887,7 @@ impl BuiltinPlugin for GolangPlugin {
                     CompositeType::Struct => {
                         // Check if this is an event struct that should implement an event interface
                         let struct_name = composite.type_name_or_alias().to_case(Case::Pascal);
-                        let mut struct_code = self.generate_struct(composite, &contract_name);
+                        let mut struct_code = self.generate_struct(composite);
 
                         // Find matching event enum and generate interface implementations
                         for event_enum in &event_enums {
@@ -647,8 +928,7 @@ impl BuiltinPlugin for GolangPlugin {
                         generated_code_temp.push('\n');
                     }
                     CompositeType::Enum => {
-                        generated_code_temp
-                            .push_str(&self.generate_enum(composite, &contract_name));
+                        generated_code_temp.push_str(&self.generate_enum(composite));
                         generated_code_temp.push('\n');
                     }
                     _ => {}
@@ -658,11 +938,12 @@ impl BuiltinPlugin for GolangPlugin {
             // Generate contract struct and methods
             generated_code_temp.push_str(&self.generate_contract(&contract_name, &functions));
 
-            // Check if generated code actually uses big.Int
+            // Check if generated code actually uses big.Int and utils
             let needs_big_int = generated_code_temp.contains("*big.Int");
+            let needs_utils = generated_code_temp.contains("utils.GetSelectorFromNameFelt");
 
             let mut generated_code =
-                self.generate_package_header(package_name, needs_big_int, false);
+                self.generate_package_header(package_name, needs_big_int, needs_utils, false);
 
             // Add the pre-generated content
             generated_code.push_str(&generated_code_temp);
@@ -885,7 +1166,8 @@ mod tests {
             "Struct field should use [31]byte"
         );
         assert!(
-            go_content.contains("GetBytes31() ([31]byte, error)"),
+            go_content
+                .contains("GetBytes31(ctx context.Context, opts *CallOpts) ([31]byte, error)"),
             "Function should return [31]byte"
         );
     }

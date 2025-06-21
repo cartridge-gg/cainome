@@ -4,8 +4,11 @@
 package abigen
 
 import (
+	"context"
+	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 )
 
 // ByteArrayEvent represents a contract event
@@ -26,18 +29,91 @@ func NewByteArray(contractAddress *felt.Felt, provider *rpc.Provider) *ByteArray
 	}
 }
 
-func (byte_array *ByteArray) GetByteArray() ([]byte, error) {
-	// TODO: Implement Call method for GetByteArray
-	panic("not implemented")
+func (byte_array *ByteArray) GetByteArray(ctx context.Context, opts *CallOpts) ([]byte, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    byte_array.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_byte_array"),
+		Calldata:           calldata,
+	}
+
+	response, err := byte_array.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result []byte
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (byte_array *ByteArray) GetByteArrayStorage() ([]byte, error) {
-	// TODO: Implement Call method for GetByteArrayStorage
-	panic("not implemented")
+func (byte_array *ByteArray) GetByteArrayStorage(ctx context.Context, opts *CallOpts) ([]byte, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    byte_array.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_byte_array_storage"),
+		Calldata:           calldata,
+	}
+
+	response, err := byte_array.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result []byte
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (byte_array *ByteArray) SetByteArray(v []byte) error {
-	// TODO: Implement Invoke method for SetByteArray
-	panic("not implemented")
+func (byte_array *ByteArray) SetByteArray(ctx context.Context, v []byte) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize v to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = v
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 

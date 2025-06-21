@@ -4,9 +4,12 @@
 package abigen
 
 import (
+	"context"
+	"fmt"
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 )
 
 // SimpleTypesEvent represents a contract event
@@ -27,99 +30,471 @@ func NewSimpleTypes(contractAddress *felt.Felt, provider *rpc.Provider) *SimpleT
 	}
 }
 
-func (simple_types *SimpleTypes) GetBool() (bool, error) {
-	// TODO: Implement Call method for GetBool
-	panic("not implemented")
+func (simple_types *SimpleTypes) GetBool(ctx context.Context, opts *CallOpts) (bool, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_types.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_bool"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return false, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return false, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result bool
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (simple_types *SimpleTypes) SetBool(v bool) error {
-	// TODO: Implement Invoke method for SetBool
-	panic("not implemented")
+func (simple_types *SimpleTypes) SetBool(ctx context.Context, v bool) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize v to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = v
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetFelt() (*felt.Felt, error) {
-	// TODO: Implement Call method for GetFelt
-	panic("not implemented")
+func (simple_types *SimpleTypes) GetFelt(ctx context.Context, opts *CallOpts) (*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_types.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_felt"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	return response[0], nil
 }
 
-func (simple_types *SimpleTypes) SetFelt(felt *felt.Felt) error {
-	// TODO: Implement Invoke method for SetFelt
-	panic("not implemented")
+func (simple_types *SimpleTypes) SetFelt(ctx context.Context, feltValue *felt.Felt) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize feltValue to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = feltValue
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetU256() (*big.Int, error) {
-	// TODO: Implement Call method for GetU256
-	panic("not implemented")
+func (simple_types *SimpleTypes) GetU256(ctx context.Context, opts *CallOpts) (*big.Int, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_types.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_u256"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result *big.Int
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (simple_types *SimpleTypes) SetU256(uint_256 *big.Int) error {
-	// TODO: Implement Invoke method for SetU256
-	panic("not implemented")
+func (simple_types *SimpleTypes) SetU256(ctx context.Context, uint_256 *big.Int) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize uint_256 to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = uint_256
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetU64() (uint64, error) {
-	// TODO: Implement Call method for GetU64
-	panic("not implemented")
+func (simple_types *SimpleTypes) GetU64(ctx context.Context, opts *CallOpts) (uint64, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_types.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_u64"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return 0, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return 0, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result uint64
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (simple_types *SimpleTypes) SetU64(uint_64 uint64) error {
-	// TODO: Implement Invoke method for SetU64
-	panic("not implemented")
+func (simple_types *SimpleTypes) SetU64(ctx context.Context, uint_64 uint64) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize uint_64 to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = uint_64
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetAddress() (*felt.Felt, error) {
-	// TODO: Implement Call method for GetAddress
-	panic("not implemented")
+func (simple_types *SimpleTypes) GetAddress(ctx context.Context, opts *CallOpts) (*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_types.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_address"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	return response[0], nil
 }
 
-func (simple_types *SimpleTypes) SetAddress(address *felt.Felt) error {
-	// TODO: Implement Invoke method for SetAddress
-	panic("not implemented")
+func (simple_types *SimpleTypes) SetAddress(ctx context.Context, address *felt.Felt) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize address to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = address
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetClassHash() (*felt.Felt, error) {
-	// TODO: Implement Call method for GetClassHash
-	panic("not implemented")
+func (simple_types *SimpleTypes) GetClassHash(ctx context.Context, opts *CallOpts) (*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_types.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_class_hash"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	return response[0], nil
 }
 
-func (simple_types *SimpleTypes) SetClassHash(class_hash *felt.Felt) error {
-	// TODO: Implement Invoke method for SetClassHash
-	panic("not implemented")
+func (simple_types *SimpleTypes) SetClassHash(ctx context.Context, class_hash *felt.Felt) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize class_hash to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = class_hash
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetEthAddress() ([20]byte, error) {
-	// TODO: Implement Call method for GetEthAddress
-	panic("not implemented")
+func (simple_types *SimpleTypes) GetEthAddress(ctx context.Context, opts *CallOpts) ([20]byte, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_types.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_eth_address"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return [20]byte{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return [20]byte{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result [20]byte
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (simple_types *SimpleTypes) SetEthAddress(eth_address [20]byte) error {
-	// TODO: Implement Invoke method for SetEthAddress
-	panic("not implemented")
+func (simple_types *SimpleTypes) SetEthAddress(ctx context.Context, eth_address [20]byte) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize eth_address to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = eth_address
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetTuple() (struct {
+func (simple_types *SimpleTypes) GetTuple(ctx context.Context, opts *CallOpts) (struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
 }, error) {
-	// TODO: Implement Call method for GetTuple
-	panic("not implemented")
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_types.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_tuple"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return struct {
+	Field0 *felt.Felt
+	Field1 *big.Int
+}{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return struct {
+	Field0 *felt.Felt
+	Field1 *big.Int
+}{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result struct {
+	Field0 *felt.Felt
+	Field1 *big.Int
+}
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (simple_types *SimpleTypes) SetTuple(tuple struct {
+func (simple_types *SimpleTypes) SetTuple(ctx context.Context, tuple struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
 }) error {
-	// TODO: Implement Invoke method for SetTuple
-	panic("not implemented")
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize tuple to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = tuple
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_types *SimpleTypes) GetArray() ([]*felt.Felt, error) {
-	// TODO: Implement Call method for GetArray
-	panic("not implemented")
+func (simple_types *SimpleTypes) GetArray(ctx context.Context, opts *CallOpts) ([]*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_types.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_array"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_types.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result []*felt.Felt
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
-func (simple_types *SimpleTypes) SetArray(data []*felt.Felt) error {
-	// TODO: Implement Invoke method for SetArray
-	panic("not implemented")
+func (simple_types *SimpleTypes) SetArray(ctx context.Context, data []*felt.Felt) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize data to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = data
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 

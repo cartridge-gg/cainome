@@ -4,9 +4,12 @@
 package abigen
 
 import (
+	"context"
+	"fmt"
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 )
 
 // BasicEvent represents a contract event
@@ -27,16 +30,68 @@ func NewBasic(contractAddress *felt.Felt, provider *rpc.Provider) *Basic {
 	}
 }
 
-func (basic *Basic) SetStorage(v_1 *felt.Felt, v_2 *big.Int) error {
-	// TODO: Implement Invoke method for SetStorage
-	panic("not implemented")
+func (basic *Basic) SetStorage(ctx context.Context, v_1 *felt.Felt, v_2 *big.Int) error {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{
+		// TODO: Serialize v_1 to felt
+		// TODO: Serialize v_2 to felt
+	}
+	_ = calldata // TODO: populate from parameters
+	_ = v_1
+	_ = v_2
+
+	// TODO: Implement invoke transaction
+	// This requires account/signer setup for transaction submission
+	_ = calldata
+	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (basic *Basic) ReadStorageTuple() (struct {
+func (basic *Basic) ReadStorageTuple(ctx context.Context, opts *CallOpts) (struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
 }, error) {
-	// TODO: Implement Call method for ReadStorageTuple
-	panic("not implemented")
+	// Setup call options
+	if opts == nil {
+		opts = &CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    basic.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("read_storage_tuple"),
+		Calldata:           calldata,
+	}
+
+	response, err := basic.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return struct {
+	Field0 *felt.Felt
+	Field1 *big.Int
+}{}, err
+	}
+
+	// TODO: Deserialize response to proper type
+	if len(response) == 0 {
+		return struct {
+	Field0 *felt.Felt
+	Field1 *big.Int
+}{}, fmt.Errorf("empty response")
+	}
+	// For now, return zero value - proper deserialization needed
+	var result struct {
+	Field0 *felt.Felt
+	Field1 *big.Int
+}
+	_ = response // TODO: deserialize response into result
+	return result, nil
 }
 
