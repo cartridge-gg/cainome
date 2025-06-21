@@ -1,4 +1,4 @@
-module abigen
+module github.com/cartridge-gg/cainome
 
 go 1.24.1
 

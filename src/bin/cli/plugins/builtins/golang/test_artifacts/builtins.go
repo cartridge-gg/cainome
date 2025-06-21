@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/cartridge-gg/cainome"
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
@@ -19,7 +20,7 @@ type MyStructBuiltins struct {
 func (s *MyStructBuiltins) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	// TODO: Handle unknown token type for field A
+	result = append(result, s.A)
 	return result, nil
 }
 
@@ -27,8 +28,12 @@ func (s *MyStructBuiltins) MarshalCairo() ([]*felt.Felt, error) {
 func (s *MyStructBuiltins) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// TODO: Handle unknown token type for field A unmarshal
-	_ = offset // Suppress unused variable warning
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field A")
+	}
+	s.A = data[offset]
+	offset++
+
 	return nil
 }
 
@@ -56,10 +61,10 @@ func NewBuiltins(contractAddress *felt.Felt, provider *rpc.Provider) *Builtins {
 	}
 }
 
-func (builtins *Builtins) StructNonZero(ctx context.Context, res *MyStructBuiltins, opts *CallOpts) (*felt.Felt, error) {
+func (builtins *Builtins) StructNonZero(ctx context.Context, res *MyStructBuiltins, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -70,13 +75,11 @@ func (builtins *Builtins) StructNonZero(ctx context.Context, res *MyStructBuilti
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize complex type res using MarshalCairo()
-	// if res_data, err := res.MarshalCairo(); err != nil {
-	//     return nil, fmt.Errorf("failed to marshal res: %w", err)
-	// } else {
-	//     calldata = append(calldata, res_data...)
-	// }
-	_ = res // TODO: implement MarshalCairo and add to calldata
+	if res_data, err := res.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		calldata = append(calldata, res_data...)
+	}
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -97,10 +100,10 @@ func (builtins *Builtins) StructNonZero(ctx context.Context, res *MyStructBuilti
 	return response[0], nil
 }
 
-func (builtins *Builtins) NonZero(ctx context.Context, res *felt.Felt, opts *CallOpts) (*felt.Felt, error) {
+func (builtins *Builtins) NonZero(ctx context.Context, res *felt.Felt, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -111,8 +114,7 @@ func (builtins *Builtins) NonZero(ctx context.Context, res *felt.Felt, opts *Cal
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type res to felt
-	_ = res // TODO: add to calldata
+	calldata = append(calldata, res)
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{

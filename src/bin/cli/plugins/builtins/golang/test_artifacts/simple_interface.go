@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/cartridge-gg/cainome"
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
@@ -29,10 +30,10 @@ func NewSimpleInterface(contractAddress *felt.Felt, provider *rpc.Provider) *Sim
 	}
 }
 
-func (simple_interface *SimpleInterface) GetValue(ctx context.Context, opts *CallOpts) (*felt.Felt, error) {
+func (simple_interface *SimpleInterface) GetValue(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -66,8 +67,7 @@ func (simple_interface *SimpleInterface) GetValue(ctx context.Context, opts *Cal
 func (simple_interface *SimpleInterface) SetValue(ctx context.Context, value *felt.Felt) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type value to felt
-	_ = value // TODO: add to calldata
+	calldata = append(calldata, value)
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission

@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/cartridge-gg/cainome"
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
@@ -18,9 +19,10 @@ type SimpleGetSetEvent interface {
 }
 
 
-type TestEnum struct {
-	Variant string `json:"variant"`
-	Value   interface{} `json:"value,omitempty"`
+// TestEnum represents a Cairo enum type
+type TestEnum interface {
+	IsTestEnum() bool
+	MarshalCairo() ([]*felt.Felt, error)
 }
 
 const (
@@ -28,64 +30,91 @@ const (
 	TestEnum_V2 = "V2"
 )
 
-func NewTestEnumV1() TestEnum {
-	return TestEnum {
-		Variant: "V1",
-	}
+type TestEnumV1 struct {}
+
+func NewTestEnumV1() TestEnumV1 {
+	return TestEnumV1{}
 }
 
-func NewTestEnumV2() TestEnum {
-	return TestEnum {
-		Variant: "V2",
-	}
+// IsTestEnum implements the TestEnum interface
+func (v TestEnumV1) IsTestEnum() bool {
+	return true
 }
 
-// MarshalCairo serializes TestEnum to Cairo felt array
-func (e *TestEnum) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes TestEnumV1 to Cairo felt array
+func (t *TestEnumV1) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	switch e.Variant {
-	case "V1":
-		// Discriminant for variant V1
-		result = append(result, FeltFromUint(0))
-		// Unit variant - no additional data
-	case "V2":
-		// Discriminant for variant V2
-		result = append(result, FeltFromUint(1))
-		// Unit variant - no additional data
-	default:
-		return nil, fmt.Errorf("unknown variant: %s", e.Variant)
-	}
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(0))
+	// Unit variant - no additional data
 
 	return result, nil
 }
 
-// UnmarshalCairo deserializes TestEnum from Cairo felt array
-func (e *TestEnum) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes TestEnumV1 from Cairo felt array
+func (t *TestEnumV1) UnmarshalCairo(data []*felt.Felt) error {
 	if len(data) == 0 {
 		return fmt.Errorf("insufficient data for enum discriminant")
 	}
 
-	discriminant := UintFromFelt(data[0])
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 0 {
+		return fmt.Errorf("expected discriminant 0, got %d", discriminant)
+	}
 	offset := 1
 
-	switch discriminant {
-	case 0:
-		e.Variant = "V1"
-		e.Value = nil
-	case 1:
-		e.Variant = "V2"
-		e.Value = nil
-	default:
-		return fmt.Errorf("unknown discriminant: %d", discriminant)
-	}
-
-	_ = offset // Suppress unused variable warning for unit-only enums
+	// Unit variant - no additional data to unmarshal
+	_ = offset // Suppress unused variable warning
 	return nil
 }
 
-// CairoSize returns the serialized size for TestEnum
-func (e *TestEnum) CairoSize() int {
+// CairoSize returns the serialized size for TestEnumV1
+func (t *TestEnumV1) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type TestEnumV2 struct {}
+
+func NewTestEnumV2() TestEnumV2 {
+	return TestEnumV2{}
+}
+
+// IsTestEnum implements the TestEnum interface
+func (v TestEnumV2) IsTestEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes TestEnumV2 to Cairo felt array
+func (t *TestEnumV2) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(1))
+	// Unit variant - no additional data
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes TestEnumV2 from Cairo felt array
+func (t *TestEnumV2) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 1 {
+		return fmt.Errorf("expected discriminant 1, got %d", discriminant)
+	}
+	offset := 1
+
+	// Unit variant - no additional data to unmarshal
+	_ = offset // Suppress unused variable warning
+	return nil
+}
+
+// CairoSize returns the serialized size for TestEnumV2
+func (t *TestEnumV2) CairoSize() int {
 	return -1 // Dynamic size
 }
 
@@ -102,10 +131,10 @@ func NewSimpleGetSet(contractAddress *felt.Felt, provider *rpc.Provider) *Simple
 	}
 }
 
-func (simple_get_set *SimpleGetSet) GetSetEnum(ctx context.Context, v *TestEnum, opts *CallOpts) (TestEnum, error) {
+func (simple_get_set *SimpleGetSet) GetSetEnum(ctx context.Context, v *TestEnum, opts *cainome.CallOpts) (TestEnum, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -116,13 +145,11 @@ func (simple_get_set *SimpleGetSet) GetSetEnum(ctx context.Context, v *TestEnum,
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize complex type v using MarshalCairo()
-	// if v_data, err := v.MarshalCairo(); err != nil {
-	//     return TestEnum{}, fmt.Errorf("failed to marshal v: %w", err)
-	// } else {
-	//     calldata = append(calldata, v_data...)
-	// }
-	_ = v // TODO: implement MarshalCairo and add to calldata
+	if v_data, err := (*v).MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		calldata = append(calldata, v_data...)
+	}
 
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
@@ -133,26 +160,42 @@ func (simple_get_set *SimpleGetSet) GetSetEnum(ctx context.Context, v *TestEnum,
 
 	response, err := simple_get_set.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
-		return TestEnum{}, err
+		return nil, err
 	}
 
 	// Deserialize response to proper type
 	if len(response) == 0 {
-		return TestEnum{}, fmt.Errorf("empty response")
+		return nil, fmt.Errorf("empty response")
 	}
-	var result TestEnum
-	// TODO: Deserialize using UnmarshalCairo()
-	// if err := result.UnmarshalCairo(response); err != nil {
-	//     return TestEnum{}, fmt.Errorf("failed to unmarshal response: %w", err)
-	// }
-	_ = response // TODO: implement UnmarshalCairo and deserialize response into result
-	return result, nil
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	
+	// Read discriminant to determine variant
+	discriminant := cainome.UintFromFelt(response[0])
+	
+	switch discriminant {
+	case 0:
+		var result TestEnumV1
+		if err := result.UnmarshalCairo(response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 1:
+		var result TestEnumV2
+		if err := result.UnmarshalCairo(response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	default:
+		return nil, fmt.Errorf("unknown enum discriminant: %d", discriminant)
+	}
 }
 
-func (simple_get_set *SimpleGetSet) GetA(ctx context.Context, opts *CallOpts) (*felt.Felt, error) {
+func (simple_get_set *SimpleGetSet) GetA(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -186,8 +229,7 @@ func (simple_get_set *SimpleGetSet) GetA(ctx context.Context, opts *CallOpts) (*
 func (simple_get_set *SimpleGetSet) SetA(ctx context.Context, a *felt.Felt) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type a to felt
-	_ = a // TODO: add to calldata
+	calldata = append(calldata, a)
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -195,10 +237,10 @@ func (simple_get_set *SimpleGetSet) SetA(ctx context.Context, a *felt.Felt) erro
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_get_set *SimpleGetSet) GetB(ctx context.Context, opts *CallOpts) (*big.Int, error) {
+func (simple_get_set *SimpleGetSet) GetB(ctx context.Context, opts *cainome.CallOpts) (*big.Int, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -227,16 +269,15 @@ func (simple_get_set *SimpleGetSet) GetB(ctx context.Context, opts *CallOpts) (*
 		return nil, fmt.Errorf("empty response")
 	}
 	var result *big.Int
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	// TODO: Convert felt to Composite(Composite { type_path: "core::integer::u256", inners: [CompositeInner { index: 0, name: "low", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u128" }) }, CompositeInner { index: 1, name: "high", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u128" }) }], generic_args: [], type: Struct, is_event: false, alias: None })
+	_ = response
 	return result, nil
 }
 
 func (simple_get_set *SimpleGetSet) SetB(ctx context.Context, b *big.Int) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type b to felt
-	_ = b // TODO: add to calldata
+	calldata = append(calldata, cainome.FeltFromBigInt(b))
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -247,8 +288,11 @@ func (simple_get_set *SimpleGetSet) SetB(ctx context.Context, b *big.Int) error 
 func (simple_get_set *SimpleGetSet) SetArray(ctx context.Context, data []*felt.Felt) error {
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// TODO: Serialize basic type data to felt
-	_ = data // TODO: add to calldata
+	if data_data, err := cainome.NewCairoFeltArray(data).MarshalCairo(); err != nil {
+		return fmt.Errorf("failed to marshal data: %w", err)
+	} else {
+		calldata = append(calldata, data_data...)
+	}
 
 	// TODO: Implement invoke transaction
 	// This requires account/signer setup for transaction submission
@@ -256,10 +300,10 @@ func (simple_get_set *SimpleGetSet) SetArray(ctx context.Context, data []*felt.F
 	return fmt.Errorf("invoke methods require account setup - not yet implemented")
 }
 
-func (simple_get_set *SimpleGetSet) GetArray(ctx context.Context, opts *CallOpts) ([]*felt.Felt, error) {
+func (simple_get_set *SimpleGetSet) GetArray(ctx context.Context, opts *cainome.CallOpts) ([]*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
-		opts = &CallOpts{}
+		opts = &cainome.CallOpts{}
 	}
 	var blockID rpc.BlockID
 	if opts.BlockID != nil {
@@ -288,8 +332,8 @@ func (simple_get_set *SimpleGetSet) GetArray(ctx context.Context, opts *CallOpts
 		return nil, fmt.Errorf("empty response")
 	}
 	var result []*felt.Felt
-	// TODO: Convert felt to basic type
-	_ = response // TODO: deserialize response into result
+	// TODO: Convert felt to Array(Array { type_path: "core::array::Span::<core::felt252>", inner: CoreBasic(CoreBasic { type_path: "core::felt252" }), is_legacy: false })
+	_ = response
 	return result, nil
 }
 
