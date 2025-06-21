@@ -73,11 +73,18 @@ impl TryFrom<&AbiEnum> for Token {
             c.r#type = CompositeType::Enum;
 
             for (i, v) in value.variants.iter().enumerate() {
+                // Determine the kind based on whether the variant has data
+                let kind = if v.r#type == "()" {
+                    CompositeInnerKind::NotUsed
+                } else {
+                    CompositeInnerKind::Data
+                };
+
                 c.inners.push(CompositeInner {
                     index: i,
                     name: v.name.clone(),
                     token: Token::parse(&v.r#type).unwrap(),
-                    kind: CompositeInnerKind::NotUsed,
+                    kind,
                 });
             }
 
@@ -218,5 +225,60 @@ impl TryFrom<&RawLegacyEvent> for Token {
                 value,
             )))
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::AbiParser;
+    use crate::tokens::CompositeType;
+    use std::collections::HashMap;
+
+    #[test]
+    fn test_enum_variant_composite_inner_kind() {
+        // Test ABI with enum variants - some with data, some without
+        let abi_json = r#"
+        [
+            {
+                "type": "enum",
+                "name": "test::TestEnum",
+                "variants": [
+                    {
+                        "name": "VariantWithoutData",
+                        "type": "()"
+                    },
+                    {
+                        "name": "VariantWithFelt252",
+                        "type": "core::felt252"
+                    },
+                    {
+                        "name": "VariantWithTuple",
+                        "type": "(core::felt252, core::integer::u32)"
+                    }
+                ]
+            }
+        ]
+        "#;
+
+        let result = AbiParser::tokens_from_abi_string(abi_json, &HashMap::new()).unwrap();
+        
+        assert_eq!(result.enums.len(), 1);
+        let enum_composite = result.enums[0].to_composite().unwrap();
+        
+        assert_eq!(enum_composite.r#type, CompositeType::Enum);
+        assert_eq!(enum_composite.inners.len(), 3);
+        
+        // Check that variant without data has NotUsed kind
+        assert_eq!(enum_composite.inners[0].name, "VariantWithoutData");
+        assert_eq!(enum_composite.inners[0].kind, CompositeInnerKind::NotUsed);
+        
+        // Check that variant with felt252 has Data kind
+        assert_eq!(enum_composite.inners[1].name, "VariantWithFelt252");
+        assert_eq!(enum_composite.inners[1].kind, CompositeInnerKind::Data);
+        
+        // Check that variant with tuple has Data kind
+        assert_eq!(enum_composite.inners[2].name, "VariantWithTuple");
+        assert_eq!(enum_composite.inners[2].kind, CompositeInnerKind::Data);
     }
 }
