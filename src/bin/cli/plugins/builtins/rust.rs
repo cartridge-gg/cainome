@@ -42,8 +42,8 @@ impl BuiltinPlugin for RustPlugin {
                 &contract_name,
                 &contract.tokens,
                 input.execution_version,
-                &derives,
-                &contract_derives,
+                derives,
+                contract_derives,
                 &input.type_skips,
             );
             let filename = format!(
