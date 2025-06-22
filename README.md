@@ -7,11 +7,11 @@ for different languages (backends).
 
 ## When Cainome can be useful?
 
-When you have to interact with a Cairo contract from Rust, you can use Cainome to generate the bindings for you.
+When you have to interact with a Cairo contract from **Rust** or **Go**, you can use Cainome to generate the bindings for you.
 
 Cainome will totally abstract the Cairo serialization and deserialization, and you can focus on the logic around your contract.
 
-Example of usage:
+### Rust usage example:
 
 ```rust
 use cainome::rs::abigen;
@@ -30,6 +30,47 @@ fn main() -> Result<()> {
 }
 ```
 
+### Go usage example:
+
+```bash
+# Generate Go bindings using CLI
+cainome --golang --golang-package mycontract --output-dir ./bindings /path/project.contract_class.json
+```
+
+```go
+package main
+
+import (
+    "context"
+    "github.com/NethermindEth/starknet.go/account"
+    "github.com/NethermindEth/starknet.go/rpc"
+    "mycontract"
+)
+
+func main() {
+    // Setup StarkNet provider and account
+    provider := rpc.NewProvider("https://starknet-mainnet.public.blastapi.io")
+    
+    // Create contract reader for view functions
+    reader := mycontract.NewReader(contractAddress, provider)
+    
+    // Call view functions
+    result, err := reader.MyView(context.Background())
+    if err != nil {
+        panic(err)
+    }
+    
+    // Create contract writer for transactions
+    writer := mycontract.NewWriter(contractAddress, account)
+    
+    // Send transactions
+    txResult, err := writer.MyFunc(context.Background(), feltValue)
+    if err != nil {
+        panic(err)
+    }
+}
+```
+
 For more details, refer to the different READMEs in the [github repository](https://github.com/cartridge-gg/cainome).
 
 ## Project structure
@@ -41,13 +82,21 @@ For more details, refer to the different READMEs in the [github repository](http
 - **rs-macro**: a compile-time library backend for the `abigen` macro to generate rust bindings [README](./crates/rs-macro/README.md).
 - **rs**: a a run-time library to generated rust bindings [README](./crates/rs/README.md).
 - **ts**: a compile-time library backend to generate `TypeScript` bindings (coming soon).
+- **golang**: a built-in plugin for generating Go bindings via CLI.
 
 Currently those crates are not published on crates.io, please consider using them with the release tags.
 
 ## Plugin system
 
-Cainome uses a plugin system that is for now only supporting `built-in` plugins (written in rust).
-Cainome will support in the future plugins like `protobuf`, which can be written in any languages.
+Cainome uses a plugin system that currently supports two main approaches:
+
+1. **Built-in plugins** (written in Rust): Rust and Go plugins are built into the CLI
+2. **Future external plugins**: Cainome will support plugins like `protobuf`, which can be written in any language
+
+### Available plugins:
+
+- **Rust plugin**: Generate Rust bindings (via macro or CLI)
+- **Go plugin**: Generate Go bindings (via CLI with `--golang` flag)
 
 ### How to write a plugin
 

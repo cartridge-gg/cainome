@@ -118,39 +118,8 @@ func (s *GenericTwo) CairoSize() int {
 }
 
 
-type ToAlias struct {
-	A uint32 `json:"a"`
-}
-
-// MarshalCairo serializes ToAlias to Cairo felt array
-func (s *ToAlias) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, cainome.FeltFromUint(uint64(s.A)))
-	return result, nil
-}
-
-// UnmarshalCairo deserializes ToAlias from Cairo felt array
-func (s *ToAlias) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field A")
-	}
-	s.A = uint32(cainome.UintFromFelt(data[offset]))
-	offset++
-
-	return nil
-}
-
-// CairoSize returns the serialized size for ToAlias
-func (s *ToAlias) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
 type GenericOne struct {
-	A ToAlias `json:"a"`
+	A []*felt.Felt `json:"a"`
 	B *felt.Felt `json:"b"`
 	C *big.Int `json:"c"`
 }
@@ -159,11 +128,10 @@ type GenericOne struct {
 func (s *GenericOne) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	// Struct field A: marshal using CairoMarshaler
-	if fieldData, err := s.A.MarshalCairo(); err != nil {
-		return nil, err
-	} else {
-		result = append(result, fieldData...)
+	// Array field A: serialize length then elements
+	result = append(result, cainome.FeltFromUint(uint64(len(s.A))))
+	for _, item := range s.A {
+		result = append(result, item)
 	}
 	result = append(result, s.B)
 	result = append(result, cainome.FeltFromBigInt(s.C))
@@ -174,11 +142,20 @@ func (s *GenericOne) MarshalCairo() ([]*felt.Felt, error) {
 func (s *GenericOne) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Struct field A: unmarshal using CairoMarshaler
-	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
-		return err
+	// Array field A: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of A")
 	}
-	// TODO: Update offset based on consumed data
+	lengthA := cainome.UintFromFelt(data[offset])
+	offset++
+	s.A = make([]*felt.Felt, lengthA)
+	for i := uint64(0); i < lengthA; i++ {
+		if offset >= len(data) {
+			return fmt.Errorf("insufficient data for array element %d of A", i)
+		}
+		s.A[i] = data[offset]
+		offset++
+	}
 
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field B")
@@ -237,6 +214,43 @@ func (s *StructWithStruct) CairoSize() int {
 }
 
 
+type ToAlias struct {
+	A uint32 `json:"a"`
+}
+
+// MarshalCairo serializes ToAlias to Cairo felt array
+func (s *ToAlias) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, cainome.FeltFromUint(uint64(s.A)))
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ToAlias from Cairo felt array
+func (s *ToAlias) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field A")
+	}
+	s.A = uint32(cainome.UintFromFelt(data[offset]))
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ToAlias
+func (s *ToAlias) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+// StructsEvent represents a contract event
+type StructsEvent interface {
+	IsStructsEvent() bool
+}
+
+
 type Simple struct {
 	Felt *felt.Felt `json:"felt"`
 	Uint256 *big.Int `json:"uint256"`
@@ -260,7 +274,7 @@ func (s *Simple) MarshalCairo() ([]*felt.Felt, error) {
 	result = append(result, cainome.FeltFromUint(uint64(s.Uint64)))
 	result = append(result, s.Address)
 	result = append(result, s.ClassHash)
-	// TODO: Handle builtin composite core::starknet::eth_address::EthAddress for field EthAddress
+	result = append(result, cainome.FeltFromBytes(s.EthAddress[:]))
 	// Tuple field Tuple: marshal each sub-field
 	result = append(result, s.Tuple.Field0)
 	result = append(result, cainome.FeltFromBigInt(s.Tuple.Field1))
@@ -306,8 +320,13 @@ func (s *Simple) UnmarshalCairo(data []*felt.Felt) error {
 	s.ClassHash = data[offset]
 	offset++
 
-	// TODO: Handle builtin composite core::starknet::eth_address::EthAddress for field EthAddress unmarshal
-	_ = offset // Suppress unused variable warning
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field EthAddress")
+	}
+	ethBytes := data[offset].Bytes()
+	copy(s.EthAddress[:], ethBytes[:])
+	offset++
+
 	// Tuple field Tuple: unmarshal each sub-field
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for tuple field Tuple element 0")
@@ -341,12 +360,6 @@ func (s *Simple) UnmarshalCairo(data []*felt.Felt) error {
 // CairoSize returns the serialized size for Simple
 func (s *Simple) CairoSize() int {
 	return -1 // Dynamic size
-}
-
-
-// StructsEvent represents a contract event
-type StructsEvent interface {
-	IsStructsEvent() bool
 }
 
 

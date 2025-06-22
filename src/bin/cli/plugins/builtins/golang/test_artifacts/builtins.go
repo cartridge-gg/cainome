@@ -13,12 +13,6 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
-// BuiltinsEvent represents a contract event
-type BuiltinsEvent interface {
-	IsBuiltinsEvent() bool
-}
-
-
 type MyStructBuiltins struct {
 	A *felt.Felt `json:"a"`
 }
@@ -47,6 +41,12 @@ func (s *MyStructBuiltins) UnmarshalCairo(data []*felt.Felt) error {
 // CairoSize returns the serialized size for MyStructBuiltins
 func (s *MyStructBuiltins) CairoSize() int {
 	return -1 // Dynamic size
+}
+
+
+// BuiltinsEvent represents a contract event
+type BuiltinsEvent interface {
+	IsBuiltinsEvent() bool
 }
 
 

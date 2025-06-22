@@ -14,71 +14,14 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
-type MyStructOther struct {
-	Data *big.Int `json:"data"`
+// OtherEvent represents a contract event
+type OtherEvent interface {
+	IsOtherEvent() bool
 }
 
-// MarshalCairo serializes MyStructOther to Cairo felt array
-func (s *MyStructOther) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, cainome.FeltFromBigInt(s.Data))
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MyStructOther from Cairo felt array
-func (s *MyStructOther) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Data")
-	}
-	s.Data = cainome.BigIntFromFelt(data[offset])
-	offset++
-
-	return nil
-}
-
-// CairoSize returns the serialized size for MyStructOther
-func (s *MyStructOther) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
-type WrittenAb struct {
-	Data *felt.Felt `json:"data"`
-}
-
-// MarshalCairo serializes WrittenAb to Cairo felt array
-func (s *WrittenAb) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, s.Data)
-	return result, nil
-}
-
-// UnmarshalCairo deserializes WrittenAb from Cairo felt array
-func (s *WrittenAb) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Data")
-	}
-	s.Data = data[offset]
-	offset++
-
-	return nil
-}
-
-// CairoSize returns the serialized size for WrittenAb
-func (s *WrittenAb) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-// IsSimpleEvent implements the SimpleEvent interface
-func (e WrittenAb) IsSimpleEvent() bool {
-	return true
-}
+const (
+	OtherEvent_Written = "Written"
+)
 
 
 type OutterEvent struct {
@@ -193,24 +136,46 @@ func (e OtherWritten) IsOtherEvent() bool {
 }
 
 
-// OtherEvent represents a contract event
-type OtherEvent interface {
-	IsOtherEvent() bool
+type MyStructOther struct {
+	Data *big.Int `json:"data"`
+}
+
+// MarshalCairo serializes MyStructOther to Cairo felt array
+func (s *MyStructOther) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, cainome.FeltFromBigInt(s.Data))
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyStructOther from Cairo felt array
+func (s *MyStructOther) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Data")
+	}
+	s.Data = cainome.BigIntFromFelt(data[offset])
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for MyStructOther
+func (s *MyStructOther) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+// ComponentsContractEvent represents a contract event
+type ComponentsContractEvent interface {
+	IsComponentsContractEvent() bool
 }
 
 const (
-	OtherEvent_Written = "Written"
-)
-
-
-// SimpleEvent represents a contract event
-type SimpleEvent interface {
-	IsSimpleEvent() bool
-}
-
-const (
-	SimpleEvent_Written = "Written"
-	SimpleEvent_Written88 = "Written88"
+	ComponentsContractEvent_OutterEvent = "OutterEvent"
+	ComponentsContractEvent_SimpleEvent = "SimpleEvent"
+	ComponentsContractEvent_SimpleEventOther = "SimpleEventOther"
 )
 
 
@@ -253,15 +218,50 @@ func (s *MyStructSimple) CairoSize() int {
 }
 
 
-// ComponentsContractEvent represents a contract event
-type ComponentsContractEvent interface {
-	IsComponentsContractEvent() bool
+type WrittenAb struct {
+	Data *felt.Felt `json:"data"`
+}
+
+// MarshalCairo serializes WrittenAb to Cairo felt array
+func (s *WrittenAb) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Data)
+	return result, nil
+}
+
+// UnmarshalCairo deserializes WrittenAb from Cairo felt array
+func (s *WrittenAb) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Data")
+	}
+	s.Data = data[offset]
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for WrittenAb
+func (s *WrittenAb) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+// IsSimpleEvent implements the SimpleEvent interface
+func (e WrittenAb) IsSimpleEvent() bool {
+	return true
+}
+
+
+// SimpleEvent represents a contract event
+type SimpleEvent interface {
+	IsSimpleEvent() bool
 }
 
 const (
-	ComponentsContractEvent_OutterEvent = "OutterEvent"
-	ComponentsContractEvent_SimpleEvent = "SimpleEvent"
-	ComponentsContractEvent_SimpleEventOther = "SimpleEventOther"
+	SimpleEvent_Written = "Written"
+	SimpleEvent_Written88 = "Written88"
 )
 
 

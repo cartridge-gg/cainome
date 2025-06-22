@@ -503,6 +503,18 @@ impl GolangPlugin {
                                 receiver_var
                             )
                         }
+                        "core::starknet::eth_address::EthAddress" => {
+                            format!(
+                                "\tresult = append(result, cainome.FeltFromBytes({}.Data[:]))\n",
+                                receiver_var
+                            )
+                        }
+                        "core::byte_array::ByteArray" => {
+                            format!(
+                                "\tif byteArrayData, err := cainome.NewCairoByteArray({}.Data).MarshalCairo(); err != nil {{\n\t\treturn nil, fmt.Errorf(\"failed to marshal ByteArray enum variant: %w\", err)\n\t}} else {{\n\t\tresult = append(result, byteArrayData...)\n\t}}\n",
+                                receiver_var
+                            )
+                        }
                         _ => "\t// TODO: Handle unknown builtin composite type for enum variant\n"
                             .to_string(),
                     }
@@ -548,6 +560,12 @@ impl GolangPlugin {
                                 match composite.type_path_no_generic().as_str() {
                                     "core::integer::u256" => {
                                         marshal_code.push_str(&format!("\tresult = append(result, cainome.FeltFromBigInt({}.Data.Field{}))\n", receiver_var, i));
+                                    }
+                                    "core::starknet::eth_address::EthAddress" => {
+                                        marshal_code.push_str(&format!("\tresult = append(result, cainome.FeltFromBytes({}.Data.Field{}[:]))\n", receiver_var, i));
+                                    }
+                                    "core::byte_array::ByteArray" => {
+                                        marshal_code.push_str(&format!("\tif field{}_data, err := cainome.NewCairoByteArray({}.Data.Field{}).MarshalCairo(); err != nil {{\n\t\treturn nil, fmt.Errorf(\"failed to marshal ByteArray tuple field {}: %w\", err)\n\t}} else {{\n\t\tresult = append(result, field{}_data...)\n\t}}\n", i, receiver_var, i, i, i));
                                     }
                                     _ => {
                                         marshal_code.push_str(&format!(
@@ -614,6 +632,12 @@ impl GolangPlugin {
                         "core::integer::u256" => {
                             format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\t{}.Data = cainome.BigIntFromFelt(data[offset])\n\toffset++\n", receiver_var)
                         }
+                        "core::starknet::eth_address::EthAddress" => {
+                            format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\tethBytes := data[offset].Bytes()\n\tcopy({}.Data[:], ethBytes[:])\n\toffset++\n", receiver_var)
+                        }
+                        "core::byte_array::ByteArray" => {
+                            format!("\t// ByteArray unmarshaling for enum variant\n\tif byteArrayLength := len(data) - offset; byteArrayLength > 0 {{\n\t\tbyteArray := &cainome.CairoByteArray{{}}\n\t\tif err := byteArray.UnmarshalCairo(data[offset:]); err != nil {{\n\t\t\treturn fmt.Errorf(\"failed to unmarshal ByteArray enum variant: %w\", err)\n\t\t}}\n\t\t{}.Data = byteArray.ToBytes()\n\t\t// TODO: Update offset based on consumed data for ByteArray enum variant\n\t}}\n", receiver_var)
+                        }
                         _ => "\t// TODO: Handle unknown builtin composite type for enum variant unmarshal\n".to_string(),
                     }
                 } else {
@@ -658,6 +682,12 @@ impl GolangPlugin {
                                 match composite.type_path_no_generic().as_str() {
                                     "core::integer::u256" => {
                                         unmarshal_code.push_str(&format!("\t{}.Data.Field{} = cainome.BigIntFromFelt(data[offset])\n\toffset++\n", receiver_var, i));
+                                    }
+                                    "core::starknet::eth_address::EthAddress" => {
+                                        unmarshal_code.push_str(&format!("\tethBytes{} := data[offset].Bytes()\n\tcopy({}.Data.Field{}[:], ethBytes{}[:])\n\toffset++\n", i, receiver_var, i, i));
+                                    }
+                                    "core::byte_array::ByteArray" => {
+                                        unmarshal_code.push_str(&format!("\t// ByteArray unmarshaling for tuple field {}\n\tif byteArrayLength{} := len(data) - offset; byteArrayLength{} > 0 {{\n\t\tbyteArray{} := &cainome.CairoByteArray{{}}\n\t\tif err := byteArray{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\t\treturn fmt.Errorf(\"failed to unmarshal ByteArray tuple field {}: %w\", err)\n\t\t}}\n\t\t{}.Data.Field{} = byteArray{}.ToBytes()\n\t\t// TODO: Update offset based on consumed data for ByteArray tuple field {}\n\t}}\n", i, i, i, i, i, i, receiver_var, i, i, i));
                                     }
                                     _ => {
                                         unmarshal_code.push_str(&format!("\t// TODO: Handle unknown builtin {} in tuple unmarshal\n", composite.type_path));
@@ -851,6 +881,16 @@ impl GolangPlugin {
                                 "\t\tresult = append(result, cainome.FeltFromBigInt(item))\n",
                             );
                         }
+                        "core::starknet::eth_address::EthAddress" => {
+                            code.push_str(
+                                "\t\tresult = append(result, cainome.FeltFromBytes(item[:]))\n",
+                            );
+                        }
+                        "core::byte_array::ByteArray" => {
+                            code.push_str(
+                                "\t\tif itemData, err := cainome.NewCairoByteArray(item).MarshalCairo(); err != nil {\n\t\t\treturn nil, fmt.Errorf(\"failed to marshal ByteArray array item: %w\", err)\n\t\t} else {\n\t\t\tresult = append(result, itemData...)\n\t\t}\n",
+                            );
+                        }
                         _ => {
                             code.push_str(
                                 "\t\t// TODO: Handle unknown builtin composite type in array\n",
@@ -1035,6 +1075,22 @@ impl GolangPlugin {
                             ));
                             code.push_str("\t\toffset++\n");
                         }
+                        "core::starknet::eth_address::EthAddress" => {
+                            code.push_str("\t\tif offset >= len(data) {\n");
+                            code.push_str(&format!("\t\t\treturn fmt.Errorf(\"insufficient data for array element %d of {}\", i)\n", field_name));
+                            code.push_str("\t\t}\n");
+                            code.push_str(&format!(
+                                "\t\tethBytes := data[offset].Bytes()\n\t\tcopy(s.{}[i][:], ethBytes[:])\n",
+                                field_name
+                            ));
+                            code.push_str("\t\toffset++\n");
+                        }
+                        "core::byte_array::ByteArray" => {
+                            code.push_str(&format!(
+                                "\t\t// ByteArray unmarshaling for array element\n\t\tif byteArrayLength := len(data) - offset; byteArrayLength > 0 {{\n\t\t\tbyteArray := &cainome.CairoByteArray{{}}\n\t\t\tif err := byteArray.UnmarshalCairo(data[offset:]); err != nil {{\n\t\t\t\treturn fmt.Errorf(\"failed to unmarshal ByteArray array element %d of {}: %w\", i, err)\n\t\t\t}}\n\t\t\ts.{}[i] = byteArray.ToBytes()\n\t\t\t// TODO: Update offset based on consumed data for ByteArray array element\n\t\t}}\n",
+                                field_name, field_name
+                            ));
+                        }
                         _ => {
                             code.push_str("\t\t// TODO: Handle unknown builtin composite type in array unmarshal\n");
                         }
@@ -1127,6 +1183,18 @@ impl GolangPlugin {
                                 code.push_str(&format!(
                                     "\tresult = append(result, cainome.FeltFromBigInt({}))\n",
                                     field_access
+                                ));
+                            }
+                            "core::starknet::eth_address::EthAddress" => {
+                                code.push_str(&format!(
+                                    "\tresult = append(result, cainome.FeltFromBytes({}[:]))\n",
+                                    field_access
+                                ));
+                            }
+                            "core::byte_array::ByteArray" => {
+                                code.push_str(&format!(
+                                    "\tif field{}_data, err := cainome.NewCairoByteArray({}).MarshalCairo(); err != nil {{\n\t\treturn nil, fmt.Errorf(\"failed to marshal ByteArray tuple field {}: %w\", err)\n\t}} else {{\n\t\tresult = append(result, field{}_data...)\n\t}}\n",
+                                    index, field_access, index, index
                                 ));
                             }
                             _ => {
@@ -1311,6 +1379,22 @@ impl GolangPlugin {
                                     field_access
                                 ));
                                 code.push_str("\toffset++\n");
+                            }
+                            "core::starknet::eth_address::EthAddress" => {
+                                code.push_str("\tif offset >= len(data) {\n");
+                                code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                                code.push_str("\t}\n");
+                                code.push_str(&format!(
+                                    "\tethBytes{} := data[offset].Bytes()\n\tcopy({}[:], ethBytes{}[:])\n",
+                                    index, field_access, index
+                                ));
+                                code.push_str("\toffset++\n");
+                            }
+                            "core::byte_array::ByteArray" => {
+                                code.push_str(&format!(
+                                    "\t// ByteArray unmarshaling for tuple field {} element {}\n\tif byteArrayLength{} := len(data) - offset; byteArrayLength{} > 0 {{\n\t\tbyteArray{} := &cainome.CairoByteArray{{}}\n\t\tif err := byteArray{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\t\treturn fmt.Errorf(\"failed to unmarshal ByteArray tuple field {} element {}: %w\", err)\n\t\t}}\n\t\t{} = byteArray{}.ToBytes()\n\t\t// TODO: Update offset based on consumed data for ByteArray tuple field {} element {}\n\t}}\n",
+                                    field_name, index, index, index, index, index, field_name, index, field_access, index, field_name, index
+                                ));
                             }
                             _ => {
                                 code.push_str(&format!("\t// TODO: Handle unknown builtin composite type in tuple field {} element {}\n", field_name, index));
@@ -1833,13 +1917,19 @@ impl GolangPlugin {
                     match composite.type_path_no_generic().as_str() {
                         "core::byte_array::ByteArray" => {
                             format!(
-                                "\t// TODO: Handle ByteArray serialization for field {}\n",
-                                field_name
+                                "\tif {}_data, err := cainome.NewCairoByteArray(s.{}).MarshalCairo(); err != nil {{\n\t\treturn nil, fmt.Errorf(\"failed to marshal ByteArray field {}: %w\", err)\n\t}} else {{\n\t\tresult = append(result, {}_data...)\n\t}}\n",
+                                field_name, field_name, field_name, field_name
                             )
                         }
                         "core::integer::u256" => {
                             format!(
                                 "\tresult = append(result, cainome.FeltFromBigInt(s.{}))\n",
+                                field_name
+                            )
+                        }
+                        "core::starknet::eth_address::EthAddress" => {
+                            format!(
+                                "\tresult = append(result, cainome.FeltFromBytes(s.{}[:]))\n",
                                 field_name
                             )
                         }
@@ -1919,6 +2009,12 @@ impl GolangPlugin {
                     match composite.type_path_no_generic().as_str() {
                         "core::integer::u256" => {
                             format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = cainome.BigIntFromFelt(data[offset])\n\toffset++\n\n", field_name, field_name)
+                        }
+                        "core::starknet::eth_address::EthAddress" => {
+                            format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\tethBytes := data[offset].Bytes()\n\tcopy(s.{}[:], ethBytes[:])\n\toffset++\n\n", field_name, field_name)
+                        }
+                        "core::byte_array::ByteArray" => {
+                            format!("\t// ByteArray unmarshaling for field {}\n\tif byteArrayLength := len(data) - offset; byteArrayLength > 0 {{\n\t\tbyteArray := &cainome.CairoByteArray{{}}\n\t\tif err := byteArray.UnmarshalCairo(data[offset:]); err != nil {{\n\t\t\treturn fmt.Errorf(\"failed to unmarshal ByteArray field {}: %w\", err)\n\t\t}}\n\t\ts.{} = byteArray.ToBytes()\n\t\t// TODO: Update offset based on consumed data for ByteArray\n\t}}\n\n", field_name, field_name, field_name)
                         }
                         _ => format!("\t// TODO: Handle builtin composite {} for field {} unmarshal\n\t_ = offset // Suppress unused variable warning\n", composite.type_path_no_generic(), field_name),
                     }

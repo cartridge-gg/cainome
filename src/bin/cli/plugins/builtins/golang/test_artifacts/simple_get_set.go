@@ -14,6 +14,12 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
+// SimpleGetSetEvent represents a contract event
+type SimpleGetSetEvent interface {
+	IsSimpleGetSetEvent() bool
+}
+
+
 // TestEnum represents a Cairo enum type
 type TestEnum interface {
 	IsTestEnum() bool
@@ -116,12 +122,6 @@ func (t *TestEnumV2) UnmarshalCairo(data []*felt.Felt) error {
 // CairoSize returns the serialized size for TestEnumV2
 func (t *TestEnumV2) CairoSize() int {
 	return -1 // Dynamic size
-}
-
-
-// SimpleGetSetEvent represents a contract event
-type SimpleGetSetEvent interface {
-	IsSimpleGetSetEvent() bool
 }
 
 
