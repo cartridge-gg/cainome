@@ -76,93 +76,75 @@ impl ContractParser {
     ) -> CainomeCliResult<Vec<ContractData>> {
         let mut contracts = vec![];
 
-        // If specific contracts are specified, only process those files
-        if let Some(included_contracts) = &config.included_contracts {
-            for file_name in included_contracts {
-                let file_path = path.join(file_name);
-                
-                if !file_path.exists() {
-                    tracing::warn!("Specified contract file '{}' not found in artifacts path", file_name);
-                    continue;
-                }
-
-                if !file_name.ends_with(&config.sierra_extension) {
-                    tracing::warn!("Specified contract file '{}' does not have the expected extension '{}'", file_name, config.sierra_extension);
-                    continue;
-                }
-
-                let file_content = fs::read_to_string(&file_path)?;
-
-                match AbiParser::tokens_from_abi_string(&file_content, &config.type_aliases) {
-                    Ok(tokens) => {
-                        let contract_name = {
-                            let n = file_name.trim_end_matches(&config.sierra_extension);
-                            if let Some(alias) = config.contract_aliases.get(n) {
-                                tracing::trace!(
-                                    "Aliasing {file_name} contract name with {alias}"
-                                );
-                                alias
-                            } else {
-                                n
-                            }
-                        };
-
-                        tracing::trace!(
-                            "Adding {contract_name} ({file_name}) to the list of contracts"
-                        );
-                        contracts.push(ContractData {
-                            name: contract_name.to_string(),
-                            origin: ContractOrigin::SierraClassFile(file_name.to_string()),
-                            tokens,
-                        });
-                    }
-                    Err(e) => {
-                        tracing::warn!("Sierra file {file_name} could not be parsed {e:?}")
-                    }
-                }
-            }
+        // Collect files to process based on configuration
+        let files_to_process: Vec<String> = if let Some(included_contracts) = &config.included_contracts {
+            // Use explicitly specified contracts
+            included_contracts.clone()
         } else {
-            // Original behavior: process all files with the sierra extension
-            for entry in fs::read_dir(path)? {
-                let entry = entry?;
-                let path = entry.path();
-
-                if path.is_file() {
-                    if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                        if !file_name.ends_with(&config.sierra_extension) {
-                            continue;
+            // Discover all files with the sierra extension
+            fs::read_dir(&path)?
+                .filter_map(|entry| {
+                    let entry = entry.ok()?;
+                    let file_path = entry.path();
+                    
+                    if file_path.is_file() {
+                        let file_name = file_path.file_name()?.to_str()?;
+                        if file_name.ends_with(&config.sierra_extension) {
+                            Some(file_name.to_string())
+                        } else {
+                            None
                         }
-
-                        let file_content = fs::read_to_string(&path)?;
-
-                        match AbiParser::tokens_from_abi_string(&file_content, &config.type_aliases) {
-                            Ok(tokens) => {
-                                let contract_name = {
-                                    let n = file_name.trim_end_matches(&config.sierra_extension);
-                                    if let Some(alias) = config.contract_aliases.get(n) {
-                                        tracing::trace!(
-                                            "Aliasing {file_name} contract name with {alias}"
-                                        );
-                                        alias
-                                    } else {
-                                        n
-                                    }
-                                };
-
-                                tracing::trace!(
-                                    "Adding {contract_name} ({file_name}) to the list of contracts"
-                                );
-                                contracts.push(ContractData {
-                                    name: contract_name.to_string(),
-                                    origin: ContractOrigin::SierraClassFile(file_name.to_string()),
-                                    tokens,
-                                });
-                            }
-                            Err(e) => {
-                                tracing::warn!("Sierra file {file_name} could not be parsed {e:?}")
-                            }
-                        }
+                    } else {
+                        None
                     }
+                })
+                .collect()
+        };
+
+        // Process each file
+        for file_name in files_to_process {
+            let file_path = path.join(&file_name);
+            
+            // Validate file exists (important for explicitly specified files)
+            if !file_path.exists() {
+                tracing::warn!("Contract file '{}' not found in artifacts path", file_name);
+                continue;
+            }
+
+            // Validate file extension
+            if !file_name.ends_with(&config.sierra_extension) {
+                tracing::warn!("Contract file '{}' does not have the expected extension '{}'", file_name, config.sierra_extension);
+                continue;
+            }
+
+            // Read and parse the file
+            let file_content = fs::read_to_string(&file_path)?;
+
+            match AbiParser::tokens_from_abi_string(&file_content, &config.type_aliases) {
+                Ok(tokens) => {
+                    let contract_name = {
+                        let n = file_name.trim_end_matches(&config.sierra_extension);
+                        if let Some(alias) = config.contract_aliases.get(n) {
+                            tracing::trace!(
+                                "Aliasing {file_name} contract name with {alias}"
+                            );
+                            alias
+                        } else {
+                            n
+                        }
+                    };
+
+                    tracing::trace!(
+                        "Adding {contract_name} ({file_name}) to the list of contracts"
+                    );
+                    contracts.push(ContractData {
+                        name: contract_name.to_string(),
+                        origin: ContractOrigin::SierraClassFile(file_name.to_string()),
+                        tokens,
+                    });
+                }
+                Err(e) => {
+                    tracing::warn!("Sierra file {file_name} could not be parsed {e:?}")
                 }
             }
         }
