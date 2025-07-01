@@ -59,6 +59,10 @@ impl Array {
     pub fn apply_alias(&mut self, type_path: &str, alias: &str) {
         self.inner.apply_alias(type_path, alias);
     }
+
+    pub fn apply_alias_with_file_context(&mut self, type_path: &str, alias: &str, file_name: std::option::Option<&str>) {
+        self.inner.apply_alias_with_file_context(type_path, alias, file_name);
+    }
 }
 
 #[cfg(test)]

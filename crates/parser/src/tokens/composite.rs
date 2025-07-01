@@ -185,6 +185,29 @@ impl Composite {
             }
         }
     }
+
+    pub fn apply_alias_with_file_context(&mut self, type_path: &str, alias: &str, file_name: std::option::Option<&str>) {
+        // Check if the type_path contains a file name prefix (format: "filename::type_path")
+        if let Some((file_prefix, path_without_file)) = type_path.split_once("::") {
+            // If we have a file context and it matches the prefix, apply the alias
+            if let Some(current_file) = file_name {
+                if current_file == file_prefix && self.type_path_no_generic() == path_without_file {
+                    self.alias = Some(alias.to_string());
+                }
+            }
+        } else {
+            // Original logic: match full type path directly (backward compatibility)
+            if self.type_path_no_generic() == type_path {
+                self.alias = Some(alias.to_string());
+            }
+        }
+
+        for ref mut i in &mut self.inners {
+            if let Token::Composite(ref mut c) = i.token {
+                c.apply_alias_with_file_context(type_path, alias, file_name);
+            }
+        }
+    }
 }
 
 /// Converts a snake case string to pascal case.

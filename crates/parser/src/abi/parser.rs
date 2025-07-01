@@ -40,6 +40,29 @@ impl AbiParser {
         Ok(tokenized_abi)
     }
 
+    /// Generates the [`Token`]s from the given ABI string with file context for type aliases.
+    ///
+    /// The `abi` can have two formats:
+    /// 1. Entire [`SierraClass`] json representation.
+    /// 2. The `abi` key from the [`SierraClass`], which is an array of [`AbiEntry`].
+    ///
+    /// # Arguments
+    ///
+    /// * `abi` - A string representing the ABI.
+    /// * `type_aliases` - Types to be renamed to avoid name clashing of generated types.
+    /// * `file_name` - Optional file name for type alias disambiguation.
+    pub fn tokens_from_abi_string_with_file_context(
+        abi: &str,
+        type_aliases: &HashMap<String, String>,
+        file_name: std::option::Option<&str>,
+    ) -> CainomeResult<TokenizedAbi> {
+        let abi_entries = Self::parse_abi_string(abi)?;
+        let tokenized_abi =
+            AbiParser::collect_tokens_with_file_context(&abi_entries, type_aliases, file_name).expect("failed tokens parsing");
+
+        Ok(tokenized_abi)
+    }
+
     /// Parses an ABI string to output a `Vec<AbiEntry>`.
     ///
     /// The `abi` can have two formats:
@@ -108,6 +131,68 @@ impl AbiParser {
                 &mut interfaces,
                 None,
                 type_aliases,
+            )?;
+        }
+
+        Ok(TokenizedAbi {
+            enums,
+            structs,
+            functions,
+            interfaces,
+        })
+    }
+
+    /// Parse all tokens in the ABI with file context for type aliases.
+    pub fn collect_tokens_with_file_context(
+        entries: &[AbiEntry],
+        type_aliases: &HashMap<String, String>,
+        file_name: std::option::Option<&str>,
+    ) -> CainomeResult<TokenizedAbi> {
+        let mut token_candidates: HashMap<String, Vec<Token>> = HashMap::new();
+
+        // Entry tokens are structs, enums and events (which are structs and enums).
+        for entry in entries {
+            Self::collect_entry_token(entry, &mut token_candidates)?;
+        }
+
+        let tokens = Self::filter_struct_enum_tokens(token_candidates);
+
+        let mut structs = vec![];
+        let mut enums = vec![];
+        // This is not memory efficient, but
+        // currently the focus is on search speed.
+        // To be optimized.
+        let mut all_composites: HashMap<String, Composite> = HashMap::new();
+
+        // Apply type aliases only on structs and enums.
+        for (_, mut t) in tokens {
+            for (type_path, alias) in type_aliases {
+                t.apply_alias_with_file_context(type_path, alias, file_name);
+            }
+
+            if let Token::Composite(ref c) = t {
+                all_composites.insert(c.type_path_no_generic(), c.clone());
+
+                match c.r#type {
+                    CompositeType::Struct => structs.push(t),
+                    CompositeType::Enum => enums.push(t),
+                    _ => (),
+                }
+            }
+        }
+
+        let mut functions = vec![];
+        let mut interfaces: HashMap<String, Vec<Token>> = HashMap::new();
+
+        for entry in entries {
+            Self::collect_entry_function_with_file_context(
+                entry,
+                &all_composites,
+                &mut functions,
+                &mut interfaces,
+                None,
+                type_aliases,
+                file_name,
             )?;
         }
 
@@ -201,6 +286,101 @@ impl AbiParser {
                         interfaces,
                         Some(interface.name.clone()),
                         type_aliases,
+                    )?;
+                }
+            }
+            _ => (),
+        }
+
+        Ok(())
+    }
+
+    /// Collects the function from the ABI entry with file context for type aliases.
+    ///
+    /// # Arguments
+    ///
+    /// * `entry` - The ABI entry to collect functions from.
+    /// * `all_composites` - All known composites tokens.
+    /// * `functions` - The list of functions already collected.
+    /// * `interfaces` - The list of interfaces already collected.
+    /// * `interface_name` - The name of the interface (if any).
+    /// * `type_aliases` - Types to be renamed to avoid name clashing of generated types.
+    /// * `file_name` - Optional file name for type alias disambiguation.
+    fn collect_entry_function_with_file_context(
+        entry: &AbiEntry,
+        all_composites: &HashMap<String, Composite>,
+        functions: &mut Vec<Token>,
+        interfaces: &mut HashMap<String, Vec<Token>>,
+        interface_name: std::option::Option<String>,
+        type_aliases: &HashMap<String, String>,
+        file_name: std::option::Option<&str>,
+    ) -> CainomeResult<()> {
+        /// Gets the existing token into known composite, if any.
+        /// Otherwise, return the parsed token.
+        fn get_existing_token_or_parsed(
+            type_path: &str,
+            all_composites: &HashMap<String, Composite>,
+        ) -> CainomeResult<Token> {
+            let parsed_token = Token::parse(type_path)?;
+
+            // If the token is an known struct or enum, we look up
+            // in existing one to get full info from there as the parsing
+            // of composites is already done before functions.
+            if let Token::Composite(ref c) = parsed_token {
+                match all_composites.get(&c.type_path_no_generic()) {
+                    Some(e) => Ok(Token::Composite(e.clone())),
+                    None => Ok(parsed_token),
+                }
+            } else {
+                Ok(parsed_token)
+            }
+        }
+
+        // TODO: optimize the search and data structures.
+        // HashMap would be more appropriate than vec.
+        match entry {
+            AbiEntry::Function(f) => {
+                let mut func = Function::new(&f.name, f.state_mutability.clone().into());
+
+                for i in &f.inputs {
+                    let mut token = get_existing_token_or_parsed(&i.r#type, all_composites)?;
+
+                    for (alias_type_path, alias) in type_aliases {
+                        token.apply_alias_with_file_context(alias_type_path, alias, file_name);
+                    }
+
+                    func.inputs.push((i.name.clone(), token));
+                }
+
+                for o in &f.outputs {
+                    let mut token = get_existing_token_or_parsed(&o.r#type, all_composites)?;
+
+                    for (alias_type_path, alias) in type_aliases {
+                        token.apply_alias_with_file_context(alias_type_path, alias, file_name);
+                    }
+
+                    func.outputs.push(token);
+                }
+
+                if let Some(name) = interface_name {
+                    interfaces
+                        .entry(name)
+                        .or_default()
+                        .push(Token::Function(func));
+                } else {
+                    functions.push(Token::Function(func));
+                }
+            }
+            AbiEntry::Interface(interface) => {
+                for entry in &interface.items {
+                    Self::collect_entry_function_with_file_context(
+                        entry,
+                        all_composites,
+                        functions,
+                        interfaces,
+                        Some(interface.name.clone()),
+                        type_aliases,
+                        file_name,
                     )?;
                 }
             }

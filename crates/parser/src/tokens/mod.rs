@@ -133,6 +133,19 @@ impl Token {
         }
     }
 
+    pub fn apply_alias_with_file_context(&mut self, type_path: &str, alias: &str, file_name: std::option::Option<&str>) {
+        match self {
+            Token::Array(t) => t.apply_alias_with_file_context(type_path, alias, file_name),
+            Token::Tuple(t) => t.apply_alias_with_file_context(type_path, alias, file_name),
+            Token::Composite(t) => t.apply_alias_with_file_context(type_path, alias, file_name),
+            Token::Function(t) => t.apply_alias_with_file_context(type_path, alias, file_name),
+            Token::Option(t) => t.apply_alias_with_file_context(type_path, alias, file_name),
+            Token::Result(t) => t.apply_alias_with_file_context(type_path, alias, file_name),
+            Token::NonZero(t) => t.apply_alias_with_file_context(type_path, alias, file_name),
+            _ => (),
+        }
+    }
+
     /// Recursively hydrates nested tokens
     ///
     /// Once abi is parsed, a flat list of tokens defined in cairo code is generated from parsed

@@ -82,7 +82,10 @@ impl ContractParser {
 
                     let file_content = fs::read_to_string(&path)?;
 
-                    match AbiParser::tokens_from_abi_string(&file_content, &config.type_aliases) {
+                    // Extract the base file name without extension for type alias context
+                    let base_file_name = file_name.trim_end_matches(&config.sierra_extension);
+                    
+                    match AbiParser::tokens_from_abi_string_with_file_context(&file_content, &config.type_aliases, Some(base_file_name)) {
                         Ok(tokens) => {
                             let contract_name = {
                                 let n = file_name.trim_end_matches(&config.sierra_extension);

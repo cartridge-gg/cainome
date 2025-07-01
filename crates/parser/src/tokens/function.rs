@@ -51,6 +51,16 @@ impl Function {
         }
     }
 
+    pub fn apply_alias_with_file_context(&mut self, type_path: &str, alias: &str, file_name: std::option::Option<&str>) {
+        for (_, ref mut t) in &mut self.inputs {
+            t.apply_alias_with_file_context(type_path, alias, file_name);
+        }
+
+        for ref mut t in &mut self.outputs {
+            t.apply_alias_with_file_context(type_path, alias, file_name);
+        }
+    }
+
     pub fn get_output_kind(&self) -> FunctionOutputKind {
         match (self.outputs.is_empty(), self.named_outputs.is_empty()) {
             (true, true) => FunctionOutputKind::NoOutput,
