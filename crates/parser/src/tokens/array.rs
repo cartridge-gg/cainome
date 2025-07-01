@@ -100,4 +100,62 @@ mod tests {
         assert!(Array::parse("module::module2::array::Array::<core::felt252>").is_err());
         assert!(Array::parse("module::module2::MyStruct::<core::felt252>").is_err());
     }
+
+    #[test]
+    fn test_apply_alias_with_file_context() {
+        // Create an array with a composite inner type
+        let inner_composite = Token::Composite(Composite {
+            type_path: "contracts::Token".to_string(),
+            inners: vec![],
+            generic_args: vec![],
+            r#type: CompositeType::Struct,
+            is_event: false,
+            alias: None,
+        });
+
+        let mut array = Array {
+            type_path: "core::array::Array::<contracts::Token>".to_string(),
+            inner: Box::new(inner_composite),
+            is_legacy: false,
+        };
+
+        // Apply alias with file context - should affect the inner composite
+        array.apply_alias_with_file_context("erc20::contracts::Token", "ERC20Token", Some("erc20"));
+
+        // Check that the inner composite got the alias
+        if let Token::Composite(ref inner) = *array.inner {
+            assert_eq!(inner.alias, Some("ERC20Token".to_string()));
+        } else {
+            panic!("Expected composite token in array inner");
+        }
+    }
+
+    #[test]
+    fn test_apply_alias_with_file_context_no_match() {
+        // Create an array with a composite inner type
+        let inner_composite = Token::Composite(Composite {
+            type_path: "contracts::Token".to_string(),
+            inners: vec![],
+            generic_args: vec![],
+            r#type: CompositeType::Struct,
+            is_event: false,
+            alias: None,
+        });
+
+        let mut array = Array {
+            type_path: "core::array::Array::<contracts::Token>".to_string(),
+            inner: Box::new(inner_composite),
+            is_legacy: false,
+        };
+
+        // Apply alias with non-matching file context
+        array.apply_alias_with_file_context("erc721::contracts::Token", "ERC721Token", Some("erc20"));
+
+        // Check that the inner composite did not get the alias
+        if let Token::Composite(ref inner) = *array.inner {
+            assert_eq!(inner.alias, None);
+        } else {
+            panic!("Expected composite token in array inner");
+        }
+    }
 }

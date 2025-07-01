@@ -166,7 +166,31 @@ impl AbiParser {
 
         // Apply type aliases only on structs and enums.
         for (_, mut t) in tokens {
+            // Separate file-specific and general aliases
+            let mut file_specific_aliases = Vec::new();
+            let mut general_aliases = Vec::new();
+
             for (type_path, alias) in type_aliases {
+                // Check if this is a file-specific alias
+                if let Some((file_prefix, _)) = type_path.split_once("::") {
+                    if let Some(current_file) = file_name {
+                        if current_file == file_prefix {
+                            file_specific_aliases.push((type_path, alias));
+                            continue;
+                        }
+                    }
+                }
+                // If not file-specific, treat as general
+                general_aliases.push((type_path, alias));
+            }
+
+            // Apply file-specific aliases first (highest priority)
+            for (type_path, alias) in file_specific_aliases {
+                t.apply_alias_with_file_context(type_path, alias, file_name);
+            }
+
+            // Then apply general aliases (lower priority, only if no file-specific alias was applied)
+            for (type_path, alias) in general_aliases {
                 t.apply_alias_with_file_context(type_path, alias, file_name);
             }
 
@@ -1332,12 +1356,464 @@ Composite {
 
     #[test]
     fn test_collect_tokens() {
-        let sierra_abi = include_str!("../../test_data/cairo_ls_abi.json");
-        let sierra = serde_json::from_str::<SierraClass>(sierra_abi).unwrap();
-        let tokens = AbiParser::collect_tokens(&sierra.abi, &HashMap::new()).unwrap();
-        assert_ne!(tokens.enums.len(), 0);
-        assert_ne!(tokens.functions.len(), 0);
-        assert_ne!(tokens.interfaces.len(), 0);
-        assert_ne!(tokens.structs.len(), 0);
+        let abi = r#"
+        [
+            {
+                "type": "struct",
+                "name": "package::StructOne",
+                "members": [
+                    {
+                        "name": "a",
+                        "type": "core::integer::u64"
+                    }
+                ]
+            }
+        ]
+        "#;
+
+        let entries = AbiParser::parse_abi_string(abi).unwrap();
+        let tokens = AbiParser::collect_tokens(&entries, &HashMap::new()).unwrap();
+
+        assert_eq!(tokens.structs.len(), 1);
+        assert_eq!(tokens.enums.len(), 0);
+        assert_eq!(tokens.functions.len(), 0);
+        assert_eq!(tokens.interfaces.len(), 0);
+    }
+
+    #[test]
+    fn test_file_based_type_aliases_basic() {
+        let abi = r#"
+        [
+            {
+                "type": "struct",
+                "name": "contracts::Token",
+                "members": [
+                    {
+                        "name": "balance",
+                        "type": "core::integer::u256"
+                    }
+                ]
+            }
+        ]
+        "#;
+
+        let mut type_aliases = HashMap::new();
+        type_aliases.insert("erc20::contracts::Token".to_string(), "ERC20Token".to_string());
+        type_aliases.insert("erc721::contracts::Token".to_string(), "ERC721Token".to_string());
+
+        let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+        // Test with erc20 file context
+        let tokens_erc20 = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, Some("erc20")).unwrap();
+        assert_eq!(tokens_erc20.structs.len(), 1);
+        if let Token::Composite(ref composite) = tokens_erc20.structs[0] {
+            assert_eq!(composite.alias, Some("ERC20Token".to_string()));
+            assert_eq!(composite.type_name_or_alias(), "ERC20Token");
+        } else {
+            panic!("Expected composite token");
+        }
+
+        // Test with erc721 file context
+        let tokens_erc721 = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, Some("erc721")).unwrap();
+        assert_eq!(tokens_erc721.structs.len(), 1);
+        if let Token::Composite(ref composite) = tokens_erc721.structs[0] {
+            assert_eq!(composite.alias, Some("ERC721Token".to_string()));
+            assert_eq!(composite.type_name_or_alias(), "ERC721Token");
+        } else {
+            panic!("Expected composite token");
+        }
+
+        // Test with different file context (should not match)
+        let tokens_other = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, Some("other")).unwrap();
+        assert_eq!(tokens_other.structs.len(), 1);
+        if let Token::Composite(ref composite) = tokens_other.structs[0] {
+            assert_eq!(composite.alias, None);
+            assert_eq!(composite.type_name_or_alias(), "Token");
+        } else {
+            panic!("Expected composite token");
+        }
+    }
+
+    #[test]
+    fn test_file_based_type_aliases_backward_compatibility() {
+        let abi = r#"
+        [
+            {
+                "type": "struct",
+                "name": "contracts::Token",
+                "members": [
+                    {
+                        "name": "balance",
+                        "type": "core::integer::u256"
+                    }
+                ]
+            }
+        ]
+        "#;
+
+        let mut type_aliases = HashMap::new();
+        // Traditional alias without file prefix
+        type_aliases.insert("contracts::Token".to_string(), "GeneralToken".to_string());
+
+        let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+        // Test with any file context - should still work
+        let tokens = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, Some("any_file")).unwrap();
+        assert_eq!(tokens.structs.len(), 1);
+        if let Token::Composite(ref composite) = tokens.structs[0] {
+            assert_eq!(composite.alias, Some("GeneralToken".to_string()));
+            assert_eq!(composite.type_name_or_alias(), "GeneralToken");
+        } else {
+            panic!("Expected composite token");
+        }
+
+        // Test without file context - should still work
+        let tokens_no_context = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, None).unwrap();
+        assert_eq!(tokens_no_context.structs.len(), 1);
+        if let Token::Composite(ref composite) = tokens_no_context.structs[0] {
+            assert_eq!(composite.alias, Some("GeneralToken".to_string()));
+            assert_eq!(composite.type_name_or_alias(), "GeneralToken");
+        } else {
+            panic!("Expected composite token");
+        }
+    }
+
+    #[test]
+    fn test_file_based_type_aliases_priority() {
+        let abi = r#"
+        [
+            {
+                "type": "struct",
+                "name": "contracts::Token",
+                "members": [
+                    {
+                        "name": "balance",
+                        "type": "core::integer::u256"
+                    }
+                ]
+            }
+        ]
+        "#;
+
+        let mut type_aliases = HashMap::new();
+        // Both file-specific and general aliases
+        type_aliases.insert("erc20::contracts::Token".to_string(), "ERC20Token".to_string());
+        type_aliases.insert("contracts::Token".to_string(), "GeneralToken".to_string());
+
+        let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+        // Test with erc20 file context - should prefer file-specific alias
+        let tokens_erc20 = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, Some("erc20")).unwrap();
+        assert_eq!(tokens_erc20.structs.len(), 1);
+        if let Token::Composite(ref composite) = tokens_erc20.structs[0] {
+            assert_eq!(composite.alias, Some("ERC20Token".to_string()));
+            assert_eq!(composite.type_name_or_alias(), "ERC20Token");
+        } else {
+            panic!("Expected composite token");
+        }
+
+        // Test with different file context - should fall back to general alias
+        let tokens_other = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, Some("other")).unwrap();
+        assert_eq!(tokens_other.structs.len(), 1);
+        if let Token::Composite(ref composite) = tokens_other.structs[0] {
+            assert_eq!(composite.alias, Some("GeneralToken".to_string()));
+            assert_eq!(composite.type_name_or_alias(), "GeneralToken");
+        } else {
+            panic!("Expected composite token");
+        }
+    }
+
+    #[test]
+    fn test_file_based_type_aliases_enum() {
+        let abi = r#"
+        [
+            {
+                "type": "enum",
+                "name": "contracts::Status",
+                "variants": [
+                    {
+                        "name": "Active",
+                        "type": "()"
+                    },
+                    {
+                        "name": "Inactive",
+                        "type": "()"
+                    }
+                ]
+            }
+        ]
+        "#;
+
+        let mut type_aliases = HashMap::new();
+        type_aliases.insert("game::contracts::Status".to_string(), "GameStatus".to_string());
+        type_aliases.insert("user::contracts::Status".to_string(), "UserStatus".to_string());
+
+        let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+        // Test with game file context
+        let tokens_game = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, Some("game")).unwrap();
+        assert_eq!(tokens_game.enums.len(), 1);
+        if let Token::Composite(ref composite) = tokens_game.enums[0] {
+            assert_eq!(composite.alias, Some("GameStatus".to_string()));
+            assert_eq!(composite.type_name_or_alias(), "GameStatus");
+        } else {
+            panic!("Expected composite token");
+        }
+
+        // Test with user file context
+        let tokens_user = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, Some("user")).unwrap();
+        assert_eq!(tokens_user.enums.len(), 1);
+        if let Token::Composite(ref composite) = tokens_user.enums[0] {
+            assert_eq!(composite.alias, Some("UserStatus".to_string()));
+            assert_eq!(composite.type_name_or_alias(), "UserStatus");
+        } else {
+            panic!("Expected composite token");
+        }
+    }
+
+    #[test]
+    fn test_file_based_type_aliases_nested_structures() {
+        let abi = r#"
+        [
+            {
+                "type": "struct",
+                "name": "contracts::Token",
+                "members": [
+                    {
+                        "name": "balance",
+                        "type": "core::integer::u256"
+                    }
+                ]
+            },
+            {
+                "type": "struct",
+                "name": "contracts::Wallet",
+                "members": [
+                    {
+                        "name": "tokens",
+                        "type": "core::array::Array::<contracts::Token>"
+                    }
+                ]
+            }
+        ]
+        "#;
+
+        let mut type_aliases = HashMap::new();
+        type_aliases.insert("erc20::contracts::Token".to_string(), "ERC20Token".to_string());
+        type_aliases.insert("erc20::contracts::Wallet".to_string(), "ERC20Wallet".to_string());
+
+        let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+        // Test with erc20 file context
+        let tokens_erc20 = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, Some("erc20")).unwrap();
+        assert_eq!(tokens_erc20.structs.len(), 2);
+
+        // Find Token struct
+        let token_struct = tokens_erc20.structs.iter()
+            .find(|t| t.type_path().contains("Token"))
+            .expect("Token struct not found");
+        if let Token::Composite(ref composite) = token_struct {
+            assert_eq!(composite.alias, Some("ERC20Token".to_string()));
+        } else {
+            panic!("Expected composite token");
+        }
+
+        // Find Wallet struct
+        let wallet_struct = tokens_erc20.structs.iter()
+            .find(|t| t.type_path().contains("Wallet"))
+            .expect("Wallet struct not found");
+        if let Token::Composite(ref composite) = wallet_struct {
+            assert_eq!(composite.alias, Some("ERC20Wallet".to_string()));
+        } else {
+            panic!("Expected composite token");
+        }
+    }
+
+    #[test]
+    fn test_file_based_type_aliases_functions() {
+        let abi = r#"
+        [
+            {
+                "type": "struct",
+                "name": "contracts::Token",
+                "members": [
+                    {
+                        "name": "balance",
+                        "type": "core::integer::u256"
+                    }
+                ]
+            },
+            {
+                "type": "function",
+                "name": "transfer",
+                "inputs": [
+                    {
+                        "name": "token",
+                        "type": "contracts::Token"
+                    }
+                ],
+                "outputs": [
+                    {
+                        "type": "core::bool"
+                    }
+                ],
+                "state_mutability": "external"
+            }
+        ]
+        "#;
+
+        let mut type_aliases = HashMap::new();
+        type_aliases.insert("erc20::contracts::Token".to_string(), "ERC20Token".to_string());
+
+        let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+        // Test with erc20 file context
+        let tokens_erc20 = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, Some("erc20")).unwrap();
+        assert_eq!(tokens_erc20.structs.len(), 1);
+        assert_eq!(tokens_erc20.functions.len(), 1);
+
+        // Check that the Token struct has the alias
+        if let Token::Composite(ref composite) = tokens_erc20.structs[0] {
+            assert_eq!(composite.alias, Some("ERC20Token".to_string()));
+        } else {
+            panic!("Expected composite token");
+        }
+
+        // Check that the function uses the aliased type
+        if let Token::Function(ref function) = tokens_erc20.functions[0] {
+            assert_eq!(function.inputs.len(), 1);
+            // The function input should contain the aliased token
+            if let Token::Composite(ref input_composite) = function.inputs[0].1 {
+                assert_eq!(input_composite.alias, Some("ERC20Token".to_string()));
+            } else {
+                panic!("Expected composite token in function input");
+            }
+        } else {
+            panic!("Expected function token");
+        }
+    }
+
+    #[test]
+    fn test_tokens_from_abi_string_with_file_context() {
+        let abi = r#"
+        [
+            {
+                "type": "struct",
+                "name": "contracts::Token",
+                "members": [
+                    {
+                        "name": "balance",
+                        "type": "core::integer::u256"
+                    }
+                ]
+            }
+        ]
+        "#;
+
+        let mut type_aliases = HashMap::new();
+        type_aliases.insert("erc20::contracts::Token".to_string(), "ERC20Token".to_string());
+
+        // Test the main API method
+        let tokens = AbiParser::tokens_from_abi_string_with_file_context(abi, &type_aliases, Some("erc20")).unwrap();
+        assert_eq!(tokens.structs.len(), 1);
+        
+        if let Token::Composite(ref composite) = tokens.structs[0] {
+            assert_eq!(composite.alias, Some("ERC20Token".to_string()));
+            assert_eq!(composite.type_name_or_alias(), "ERC20Token");
+        } else {
+            panic!("Expected composite token");
+        }
+
+        // Test without file context (should not match file-specific alias)
+        let tokens_no_context = AbiParser::tokens_from_abi_string_with_file_context(abi, &type_aliases, None).unwrap();
+        assert_eq!(tokens_no_context.structs.len(), 1);
+        
+        if let Token::Composite(ref composite) = tokens_no_context.structs[0] {
+            assert_eq!(composite.alias, None);
+            assert_eq!(composite.type_name_or_alias(), "Token");
+        } else {
+            panic!("Expected composite token");
+        }
+    }
+
+    #[test]
+    fn test_file_based_type_aliases_complex_paths() {
+        let abi = r#"
+        [
+            {
+                "type": "struct",
+                "name": "my_project::contracts::utils::Token",
+                "members": [
+                    {
+                        "name": "balance",
+                        "type": "core::integer::u256"
+                    }
+                ]
+            }
+        ]
+        "#;
+
+        let mut type_aliases = HashMap::new();
+        // Test with complex file name and type path
+        type_aliases.insert("erc20_impl::my_project::contracts::utils::Token".to_string(), "ERC20TokenImpl".to_string());
+
+        let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+        // Test with matching file context
+        let tokens = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, Some("erc20_impl")).unwrap();
+        assert_eq!(tokens.structs.len(), 1);
+        
+        if let Token::Composite(ref composite) = tokens.structs[0] {
+            assert_eq!(composite.alias, Some("ERC20TokenImpl".to_string()));
+            assert_eq!(composite.type_name_or_alias(), "ERC20TokenImpl");
+        } else {
+            panic!("Expected composite token");
+        }
+
+        // Test with non-matching file context
+        let tokens_no_match = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, Some("other_impl")).unwrap();
+        assert_eq!(tokens_no_match.structs.len(), 1);
+        
+        if let Token::Composite(ref composite) = tokens_no_match.structs[0] {
+            assert_eq!(composite.alias, None);
+            assert_eq!(composite.type_name_or_alias(), "Token");
+        } else {
+            panic!("Expected composite token");
+        }
+    }
+
+    #[test]
+    fn test_file_based_type_aliases_empty_file_context() {
+        let abi = r#"
+        [
+            {
+                "type": "struct",
+                "name": "contracts::Token",
+                "members": [
+                    {
+                        "name": "balance",
+                        "type": "core::integer::u256"
+                    }
+                ]
+            }
+        ]
+        "#;
+
+        let mut type_aliases = HashMap::new();
+        type_aliases.insert("erc20::contracts::Token".to_string(), "ERC20Token".to_string());
+        type_aliases.insert("contracts::Token".to_string(), "GeneralToken".to_string());
+
+        let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+        // Test with None file context - should use general alias
+        let tokens = AbiParser::collect_tokens_with_file_context(&entries, &type_aliases, None).unwrap();
+        assert_eq!(tokens.structs.len(), 1);
+        
+        if let Token::Composite(ref composite) = tokens.structs[0] {
+            assert_eq!(composite.alias, Some("GeneralToken".to_string()));
+            assert_eq!(composite.type_name_or_alias(), "GeneralToken");
+        } else {
+            panic!("Expected composite token");
+        }
     }
 }

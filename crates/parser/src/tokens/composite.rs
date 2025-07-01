@@ -187,25 +187,29 @@ impl Composite {
     }
 
     pub fn apply_alias_with_file_context(&mut self, type_path: &str, alias: &str, file_name: std::option::Option<&str>) {
-        // Check if the type_path contains a file name prefix (format: "filename::type_path")
-        if let Some((file_prefix, path_without_file)) = type_path.split_once("::") {
-            // If we have a file context and it matches the prefix, apply the alias
-            if let Some(current_file) = file_name {
-                if current_file == file_prefix && self.type_path_no_generic() == path_without_file {
-                    self.alias = Some(alias.to_string());
+        // Don't overwrite an existing alias (ensures priority)
+        if self.alias.is_none() {
+            // Check if the type_path contains a file name prefix (format: "filename::type_path")
+            if let Some((file_prefix, path_without_file)) = type_path.split_once("::") {
+                // If we have a file context and it matches the prefix, apply the alias
+                if let Some(current_file) = file_name {
+                    if current_file == file_prefix && self.type_path_no_generic() == path_without_file {
+                        self.alias = Some(alias.to_string());
+                        return; // Early return to avoid checking traditional alias
+                    }
                 }
+                // If file prefix doesn't match current file, fall through to check traditional alias
             }
-        } else {
-            // Original logic: match full type path directly (backward compatibility)
+            
+            // Traditional alias logic: match full type path directly (backward compatibility)
             if self.type_path_no_generic() == type_path {
                 self.alias = Some(alias.to_string());
             }
         }
 
+        // Recursively apply to nested composites
         for ref mut i in &mut self.inners {
-            if let Token::Composite(ref mut c) = i.token {
-                c.apply_alias_with_file_context(type_path, alias, file_name);
-            }
+            i.token.apply_alias_with_file_context(type_path, alias, file_name);
         }
     }
 }
@@ -405,5 +409,178 @@ mod tests {
             escape_rust_keywords("type::move::final"),
             "r#type::r#move::r#final",
         );
+    }
+
+    #[test]
+    fn test_apply_alias_with_file_context_basic() {
+        let mut composite = Composite {
+            type_path: "contracts::Token".to_string(),
+            inners: vec![],
+            generic_args: vec![],
+            r#type: CompositeType::Struct,
+            is_event: false,
+            alias: None,
+        };
+
+        // Test with matching file context
+        composite.apply_alias_with_file_context("erc20::contracts::Token", "ERC20Token", Some("erc20"));
+        assert_eq!(composite.alias, Some("ERC20Token".to_string()));
+
+        // Reset alias
+        composite.alias = None;
+
+        // Test with non-matching file context
+        composite.apply_alias_with_file_context("erc721::contracts::Token", "ERC721Token", Some("erc20"));
+        assert_eq!(composite.alias, None);
+
+        // Test with matching file context but different type path
+        composite.apply_alias_with_file_context("erc20::contracts::Wallet", "ERC20Wallet", Some("erc20"));
+        assert_eq!(composite.alias, None);
+    }
+
+    #[test]
+    fn test_apply_alias_with_file_context_backward_compatibility() {
+        let mut composite = Composite {
+            type_path: "contracts::Token".to_string(),
+            inners: vec![],
+            generic_args: vec![],
+            r#type: CompositeType::Struct,
+            is_event: false,
+            alias: None,
+        };
+
+        // Test traditional alias without file prefix
+        composite.apply_alias_with_file_context("contracts::Token", "GeneralToken", Some("any_file"));
+        assert_eq!(composite.alias, Some("GeneralToken".to_string()));
+
+        // Reset alias
+        composite.alias = None;
+
+        // Test traditional alias without file context
+        composite.apply_alias_with_file_context("contracts::Token", "GeneralToken", None);
+        assert_eq!(composite.alias, Some("GeneralToken".to_string()));
+    }
+
+    #[test]
+    fn test_apply_alias_with_file_context_no_file_context() {
+        let mut composite = Composite {
+            type_path: "contracts::Token".to_string(),
+            inners: vec![],
+            generic_args: vec![],
+            r#type: CompositeType::Struct,
+            is_event: false,
+            alias: None,
+        };
+
+        // Test file-specific alias with no file context provided
+        composite.apply_alias_with_file_context("erc20::contracts::Token", "ERC20Token", None);
+        assert_eq!(composite.alias, None);
+
+        // Test traditional alias with no file context provided
+        composite.apply_alias_with_file_context("contracts::Token", "GeneralToken", None);
+        assert_eq!(composite.alias, Some("GeneralToken".to_string()));
+    }
+
+    #[test]
+    fn test_apply_alias_with_file_context_nested_composite() {
+        let inner_composite = Composite {
+            type_path: "contracts::Token".to_string(),
+            inners: vec![],
+            generic_args: vec![],
+            r#type: CompositeType::Struct,
+            is_event: false,
+            alias: None,
+        };
+
+        let mut outer_composite = Composite {
+            type_path: "contracts::Wallet".to_string(),
+            inners: vec![CompositeInner {
+                index: 0,
+                name: "token".to_string(),
+                kind: CompositeInnerKind::Data,
+                token: Token::Composite(inner_composite),
+            }],
+            generic_args: vec![],
+            r#type: CompositeType::Struct,
+            is_event: false,
+            alias: None,
+        };
+
+        // Apply alias with file context - should affect both outer and inner composite
+        outer_composite.apply_alias_with_file_context("erc20::contracts::Wallet", "ERC20Wallet", Some("erc20"));
+        outer_composite.apply_alias_with_file_context("erc20::contracts::Token", "ERC20Token", Some("erc20"));
+
+        // Check outer composite got the alias
+        assert_eq!(outer_composite.alias, Some("ERC20Wallet".to_string()));
+
+        // Check inner composite got the alias
+        if let Token::Composite(ref inner) = outer_composite.inners[0].token {
+            assert_eq!(inner.alias, Some("ERC20Token".to_string()));
+        } else {
+            panic!("Expected composite token in inner");
+        }
+    }
+
+    #[test]
+    fn test_apply_alias_with_file_context_generic_type() {
+        let mut composite = Composite {
+            type_path: "contracts::Token::<core::felt252>".to_string(),
+            inners: vec![],
+            generic_args: vec![("T".to_string(), basic_felt252())],
+            r#type: CompositeType::Struct,
+            is_event: false,
+            alias: None,
+        };
+
+        // Test with generic type - should match the type_path_no_generic
+        composite.apply_alias_with_file_context("erc20::contracts::Token", "ERC20Token", Some("erc20"));
+        assert_eq!(composite.alias, Some("ERC20Token".to_string()));
+    }
+
+    #[test]
+    fn test_apply_alias_with_file_context_complex_paths() {
+        let mut composite = Composite {
+            type_path: "my_project::contracts::utils::Token".to_string(),
+            inners: vec![],
+            generic_args: vec![],
+            r#type: CompositeType::Struct,
+            is_event: false,
+            alias: None,
+        };
+
+        // Test with complex file name and type path
+        composite.apply_alias_with_file_context(
+            "erc20_impl::my_project::contracts::utils::Token", 
+            "ERC20TokenImpl", 
+            Some("erc20_impl")
+        );
+        assert_eq!(composite.alias, Some("ERC20TokenImpl".to_string()));
+
+        // Reset alias
+        composite.alias = None;
+
+        // Test with non-matching complex file name
+        composite.apply_alias_with_file_context(
+            "erc721_impl::my_project::contracts::utils::Token", 
+            "ERC721TokenImpl", 
+            Some("erc20_impl")
+        );
+        assert_eq!(composite.alias, None);
+    }
+
+    #[test]
+    fn test_apply_alias_with_file_context_multiple_colons() {
+        let mut composite = Composite {
+            type_path: "deep::nested::module::Token".to_string(),
+            inners: vec![],
+            generic_args: vec![],
+            r#type: CompositeType::Struct,
+            is_event: false,
+            alias: None,
+        };
+
+        // Test that only the first :: is used for file prefix separation
+        composite.apply_alias_with_file_context("contract::deep::nested::module::Token", "ContractToken", Some("contract"));
+        assert_eq!(composite.alias, Some("ContractToken".to_string()));
     }
 }
