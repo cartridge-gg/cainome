@@ -23,6 +23,53 @@ impl GolangPlugin {
         Self { options }
     }
 
+    /// Sanitizes a contract name to be a valid Go identifier
+    fn sanitize_go_identifier(&self, name: &str) -> String {
+        // Replace common special characters with underscores
+        let mut sanitized = name
+            .replace('.', "_")
+            .replace('-', "_")
+            .replace('/', "_")
+            .replace('@', "_at_")
+            .replace('+', "_plus_")
+            .replace(' ', "_");
+        
+        // Remove any remaining invalid characters
+        sanitized = sanitized
+            .chars()
+            .map(|c| {
+                if c.is_alphanumeric() || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
+            .collect();
+        
+        // Ensure it starts with a letter or underscore
+        if sanitized.chars().next().map_or(true, |c| c.is_numeric()) {
+            sanitized = format!("_{}", sanitized);
+        }
+        
+        // Remove consecutive underscores
+        let mut result = String::new();
+        let mut prev_underscore = false;
+        for c in sanitized.chars() {
+            if c == '_' {
+                if !prev_underscore {
+                    result.push(c);
+                }
+                prev_underscore = true;
+            } else {
+                result.push(c);
+                prev_underscore = false;
+            }
+        }
+        
+        // Remove trailing underscores
+        result.trim_end_matches('_').to_string()
+    }
+
     /// Maps a Cairo core basic type to its Go equivalent
     fn map_core_basic_type(&self, cairo_type: &str) -> String {
         match cairo_type {
@@ -1243,154 +1290,154 @@ impl GolangPlugin {
         );
 
         for (index, inner_token) in tuple.inners.iter().enumerate() {
-            let field_access = format!("s.{}.Field{}", field_name, index);
-            match inner_token {
-                Token::CoreBasic(core_basic) => {
-                    match core_basic.type_path.as_str() {
-                        "felt" | "core::felt252" => {
-                            code.push_str("\tif offset >= len(data) {\n");
-                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                            code.push_str("\t}\n");
-                            code.push_str(&format!("\t{} = data[offset]\n", field_access));
-                            code.push_str("\toffset++\n");
-                        }
-                        "core::bool" => {
-                            code.push_str("\tif offset >= len(data) {\n");
-                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                            code.push_str("\t}\n");
-                            code.push_str(&format!(
-                                "\t{} = cainome.BoolFromFelt(data[offset])\n",
-                                field_access
-                            ));
-                            code.push_str("\toffset++\n");
-                        }
-                        "core::integer::u8" => {
-                            code.push_str("\tif offset >= len(data) {\n");
-                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                            code.push_str("\t}\n");
-                            code.push_str(&format!(
-                                "\t{} = uint8(cainome.UintFromFelt(data[offset]))\n",
-                                field_access
-                            ));
-                            code.push_str("\toffset++\n");
-                        }
-                        "core::integer::u16" => {
-                            code.push_str("\tif offset >= len(data) {\n");
-                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                            code.push_str("\t}\n");
-                            code.push_str(&format!(
-                                "\t{} = uint16(cainome.UintFromFelt(data[offset]))\n",
-                                field_access
-                            ));
-                            code.push_str("\toffset++\n");
-                        }
-                        "core::integer::u32" => {
-                            code.push_str("\tif offset >= len(data) {\n");
-                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                            code.push_str("\t}\n");
-                            code.push_str(&format!(
-                                "\t{} = uint32(cainome.UintFromFelt(data[offset]))\n",
-                                field_access
-                            ));
-                            code.push_str("\toffset++\n");
-                        }
-                        "core::integer::u64" | "core::integer::usize" => {
-                            code.push_str("\tif offset >= len(data) {\n");
-                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                            code.push_str("\t}\n");
-                            code.push_str(&format!(
-                                "\t{} = cainome.UintFromFelt(data[offset])\n",
-                                field_access
-                            ));
-                            code.push_str("\toffset++\n");
-                        }
-                        "core::integer::u128" | "core::integer::i128" => {
-                            code.push_str("\tif offset >= len(data) {\n");
-                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                            code.push_str("\t}\n");
-                            code.push_str(&format!(
-                                "\t{} = cainome.BigIntFromFelt(data[offset])\n",
-                                field_access
-                            ));
-                            code.push_str("\toffset++\n");
-                        }
-                        "core::integer::i8" => {
-                            code.push_str("\tif offset >= len(data) {\n");
-                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                            code.push_str("\t}\n");
-                            code.push_str(&format!(
-                                "\t{} = int8(cainome.UintFromFelt(data[offset]))\n",
-                                field_access
-                            ));
-                            code.push_str("\toffset++\n");
-                        }
-                        "core::integer::i16" => {
-                            code.push_str("\tif offset >= len(data) {\n");
-                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                            code.push_str("\t}\n");
-                            code.push_str(&format!(
-                                "\t{} = int16(cainome.UintFromFelt(data[offset]))\n",
-                                field_access
-                            ));
-                            code.push_str("\toffset++\n");
-                        }
-                        "core::integer::i32" => {
-                            code.push_str("\tif offset >= len(data) {\n");
-                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                            code.push_str("\t}\n");
-                            code.push_str(&format!(
-                                "\t{} = int32(cainome.UintFromFelt(data[offset]))\n",
-                                field_access
-                            ));
-                            code.push_str("\toffset++\n");
-                        }
-                        "core::integer::i64" => {
-                            code.push_str("\tif offset >= len(data) {\n");
-                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                            code.push_str("\t}\n");
-                            code.push_str(&format!(
-                                "\t{} = int64(cainome.UintFromFelt(data[offset]))\n",
-                                field_access
-                            ));
-                            code.push_str("\toffset++\n");
-                        }
-                        "core::starknet::contract_address::ContractAddress"
-                        | "core::starknet::class_hash::ClassHash" => {
-                            code.push_str("\tif offset >= len(data) {\n");
-                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                            code.push_str("\t}\n");
-                            code.push_str(&format!("\t{} = data[offset]\n", field_access));
-                            code.push_str("\toffset++\n");
-                        }
-                        _ => {
-                            code.push_str(&format!("\t// TODO: Handle unknown basic type in tuple field {} element {}\n", field_name, index));
-                        }
-                    }
-                }
-                Token::Composite(composite) => {
-                    if composite.is_builtin() {
-                        match composite.type_path_no_generic().as_str() {
-                            "core::integer::u256" => {
-                                code.push_str("\tif offset >= len(data) {\n");
-                                code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                                code.push_str("\t}\n");
-                                code.push_str(&format!(
-                                    "\t{} = cainome.BigIntFromFelt(data[offset])\n",
-                                    field_access
-                                ));
-                                code.push_str("\toffset++\n");
-                            }
-                            "core::starknet::eth_address::EthAddress" => {
-                                code.push_str("\tif offset >= len(data) {\n");
-                                code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                                code.push_str("\t}\n");
-                                code.push_str(&format!(
-                                    "\tethBytes{} := data[offset].Bytes()\n\tcopy({}[:], ethBytes{}[:])\n",
-                                    index, field_access, index
-                                ));
-                                code.push_str("\toffset++\n");
-                            }
-                            "core::byte_array::ByteArray" => {
+                          let field_access = format!("s.{}.Field{}", field_name, index);
+              match inner_token {
+                 Token::CoreBasic(core_basic) => {
+                     match core_basic.type_path.as_str() {
+                         "felt" | "core::felt252" => {
+                             code.push_str("\tif offset >= len(data) {\n");
+                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                             code.push_str("\t}\n");
+                             code.push_str(&format!("\t{} = data[offset]\n", field_access));
+                             code.push_str("\toffset++\n");
+                         }
+                         "core::bool" => {
+                             code.push_str("\tif offset >= len(data) {\n");
+                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                             code.push_str("\t}\n");
+                             code.push_str(&format!(
+                                 "\t{} = cainome.BoolFromFelt(data[offset])\n",
+                                 field_access
+                             ));
+                             code.push_str("\toffset++\n");
+                         }
+                         "core::integer::u8" => {
+                             code.push_str("\tif offset >= len(data) {\n");
+                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                             code.push_str("\t}\n");
+                             code.push_str(&format!(
+                                 "\t{} = uint8(cainome.UintFromFelt(data[offset]))\n",
+                                 field_access
+                             ));
+                             code.push_str("\toffset++\n");
+                         }
+                         "core::integer::u16" => {
+                             code.push_str("\tif offset >= len(data) {\n");
+                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                             code.push_str("\t}\n");
+                             code.push_str(&format!(
+                                 "\t{} = uint16(cainome.UintFromFelt(data[offset]))\n",
+                                 field_access
+                             ));
+                             code.push_str("\toffset++\n");
+                         }
+                         "core::integer::u32" => {
+                             code.push_str("\tif offset >= len(data) {\n");
+                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                             code.push_str("\t}\n");
+                             code.push_str(&format!(
+                                 "\t{} = uint32(cainome.UintFromFelt(data[offset]))\n",
+                                 field_access
+                             ));
+                             code.push_str("\toffset++\n");
+                         }
+                         "core::integer::u64" | "core::integer::usize" => {
+                             code.push_str("\tif offset >= len(data) {\n");
+                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                             code.push_str("\t}\n");
+                             code.push_str(&format!(
+                                 "\t{} = cainome.UintFromFelt(data[offset])\n",
+                                 field_access
+                             ));
+                             code.push_str("\toffset++\n");
+                         }
+                         "core::integer::u128" | "core::integer::i128" => {
+                             code.push_str("\tif offset >= len(data) {\n");
+                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                             code.push_str("\t}\n");
+                             code.push_str(&format!(
+                                 "\t{} = cainome.BigIntFromFelt(data[offset])\n",
+                                 field_access
+                             ));
+                             code.push_str("\toffset++\n");
+                         }
+                         "core::integer::i8" => {
+                             code.push_str("\tif offset >= len(data) {\n");
+                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                             code.push_str("\t}\n");
+                             code.push_str(&format!(
+                                 "\t{} = int8(cainome.UintFromFelt(data[offset]))\n",
+                                 field_access
+                             ));
+                             code.push_str("\toffset++\n");
+                         }
+                         "core::integer::i16" => {
+                             code.push_str("\tif offset >= len(data) {\n");
+                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                             code.push_str("\t}\n");
+                             code.push_str(&format!(
+                                 "\t{} = int16(cainome.UintFromFelt(data[offset]))\n",
+                                 field_access
+                             ));
+                             code.push_str("\toffset++\n");
+                         }
+                         "core::integer::i32" => {
+                             code.push_str("\tif offset >= len(data) {\n");
+                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                             code.push_str("\t}\n");
+                             code.push_str(&format!(
+                                 "\t{} = int32(cainome.UintFromFelt(data[offset]))\n",
+                                 field_access
+                             ));
+                             code.push_str("\toffset++\n");
+                         }
+                         "core::integer::i64" => {
+                             code.push_str("\tif offset >= len(data) {\n");
+                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                             code.push_str("\t}\n");
+                             code.push_str(&format!(
+                                 "\t{} = int64(cainome.UintFromFelt(data[offset]))\n",
+                                 field_access
+                             ));
+                             code.push_str("\toffset++\n");
+                         }
+                         "core::starknet::contract_address::ContractAddress"
+                         | "core::starknet::class_hash::ClassHash" => {
+                             code.push_str("\tif offset >= len(data) {\n");
+                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                             code.push_str("\t}\n");
+                             code.push_str(&format!("\t{} = data[offset]\n", field_access));
+                             code.push_str("\toffset++\n");
+                         }
+                         _ => {
+                             code.push_str(&format!("\t// TODO: Handle unknown basic type in tuple field {} element {}\n", field_name, index));
+                         }
+                     }
+                 }
+                 Token::Composite(composite) => {
+                     if composite.is_builtin() {
+                         match composite.type_path_no_generic().as_str() {
+                             "core::integer::u256" => {
+                                 code.push_str("\tif offset >= len(data) {\n");
+                                 code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                                 code.push_str("\t}\n");
+                                 code.push_str(&format!(
+                                     "\t{} = cainome.BigIntFromFelt(data[offset])\n",
+                                     field_access
+                                 ));
+                                 code.push_str("\toffset++\n");
+                             }
+                             "core::starknet::eth_address::EthAddress" => {
+                                 code.push_str("\tif offset >= len(data) {\n");
+                                 code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                                 code.push_str("\t}\n");
+                                 code.push_str(&format!(
+                                     "\tethBytes{} := data[offset].Bytes()\n\tcopy({}[:], ethBytes{}[:])\n",
+                                     index, field_access, index
+                                 ));
+                                 code.push_str("\toffset++\n");
+                             }
+                             "core::byte_array::ByteArray" => {
                                 code.push_str(&format!(
                                     "\t// ByteArray unmarshaling for tuple field {} element {}\n\tif byteArrayLength{} := len(data) - offset; byteArrayLength{} > 0 {{\n\t\tbyteArray{} := &cainome.CairoByteArray{{}}\n\t\tif err := byteArray{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\t\treturn fmt.Errorf(\"failed to unmarshal ByteArray tuple field {} element {}: %w\", err)\n\t\t}}\n\t\t{} = byteArray{}.ToBytes()\n\t\t// TODO: Update offset based on consumed data for ByteArray tuple field {} element {}\n\t}}\n",
                                     field_name, index, index, index, index, index, field_name, index, field_access, index, field_name, index
@@ -2055,8 +2102,9 @@ impl GolangPlugin {
     /// Generates a view function for the Reader struct
     fn generate_reader_function(&self, function: &Function, contract_name: &str) -> String {
         let func_name = function.name.to_case(Case::Pascal);
-        let receiver_name = format!("{}Reader", contract_name.to_case(Case::Snake));
-        let struct_name = format!("{}Reader", contract_name.to_case(Case::Pascal));
+        let sanitized_contract_name = self.sanitize_go_identifier(contract_name);
+        let receiver_name = format!("{}Reader", sanitized_contract_name.to_case(Case::Snake));
+        let struct_name = format!("{}Reader", sanitized_contract_name.to_case(Case::Pascal));
 
         // Generate parameters
         let mut params = Vec::new();
@@ -2112,8 +2160,9 @@ impl GolangPlugin {
     /// Generates an invoke function for the Writer struct
     fn generate_writer_function(&self, function: &Function, contract_name: &str) -> String {
         let func_name = function.name.to_case(Case::Pascal);
-        let receiver_name = format!("{}Writer", contract_name.to_case(Case::Snake));
-        let struct_name = format!("{}Writer", contract_name.to_case(Case::Pascal));
+        let sanitized_contract_name = self.sanitize_go_identifier(contract_name);
+        let receiver_name = format!("{}Writer", sanitized_contract_name.to_case(Case::Snake));
+        let struct_name = format!("{}Writer", sanitized_contract_name.to_case(Case::Pascal));
 
         // Generate parameters
         let mut params = Vec::new();
@@ -2943,7 +2992,8 @@ impl GolangPlugin {
 
     /// Generates the main contract struct and constructor
     fn generate_contract(&self, contract_name: &str, functions: &[&Function]) -> String {
-        let struct_name = contract_name.to_case(Case::Pascal);
+        let sanitized_contract_name = self.sanitize_go_identifier(contract_name);
+        let struct_name = sanitized_contract_name.to_case(Case::Pascal);
         let mut contract_def = String::new();
 
         // Generate reader struct for view functions
@@ -3063,11 +3113,13 @@ impl BuiltinPlugin for GolangPlugin {
         // No longer need to generate shared types file as all types are in main cainome package
 
         for contract in &input.contracts {
-            let contract_name = contract
+            let raw_contract_name = contract
                 .name
                 .split("::")
                 .last()
-                .unwrap_or(&contract.name)
+                .unwrap_or(&contract.name);
+            let sanitized_name = self.sanitize_go_identifier(raw_contract_name);
+            let contract_name = sanitized_name
                 .from_case(Case::Snake)
                 .to_case(Case::Pascal);
 
@@ -3567,5 +3619,25 @@ mod tests {
                 }
             })
             .collect()
+    }
+
+    /// Test sanitization of contract names with special characters
+    #[test]
+    fn test_contract_name_sanitization() {
+        let plugin = GolangPlugin::new(crate::args::GolangPluginOptions {
+            package_name: "test".to_string(),
+        });
+
+        // Test various special character scenarios
+        assert_eq!(plugin.sanitize_go_identifier("controller.v_1.0.9"), "controller_v_1_0_9");
+        assert_eq!(plugin.sanitize_go_identifier("my-contract"), "my_contract");
+        assert_eq!(plugin.sanitize_go_identifier("contract@v2"), "contract_at_v2");
+        assert_eq!(plugin.sanitize_go_identifier("contract+plus"), "contract_plus_plus");
+        assert_eq!(plugin.sanitize_go_identifier("contract with spaces"), "contract_with_spaces");
+        assert_eq!(plugin.sanitize_go_identifier("123contract"), "_123contract");
+        assert_eq!(plugin.sanitize_go_identifier("contract...name"), "contract_name");
+        assert_eq!(plugin.sanitize_go_identifier("_contract_"), "_contract");
+        assert_eq!(plugin.sanitize_go_identifier("contract!@#$%^&*()"), "contract_at");
+        assert_eq!(plugin.sanitize_go_identifier("valid_name"), "valid_name");
     }
 }

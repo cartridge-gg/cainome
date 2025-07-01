@@ -14,12 +14,6 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
-// OptionResultEvent represents a contract event
-type OptionResultEvent interface {
-	IsOptionResultEvent() bool
-}
-
-
 type GenericOneOptionResult struct {
 	A *felt.Felt `json:"a"`
 	B *felt.Felt `json:"b"`
@@ -64,6 +58,12 @@ func (s *GenericOneOptionResult) UnmarshalCairo(data []*felt.Felt) error {
 // CairoSize returns the serialized size for GenericOneOptionResult
 func (s *GenericOneOptionResult) CairoSize() int {
 	return -1 // Dynamic size
+}
+
+
+// OptionResultEvent represents a contract event
+type OptionResultEvent interface {
+	IsOptionResultEvent() bool
 }
 
 

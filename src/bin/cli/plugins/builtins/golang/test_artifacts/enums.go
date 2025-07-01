@@ -14,6 +14,111 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
+// MixedEnum represents a Cairo enum type
+type MixedEnum interface {
+	IsMixedEnum() bool
+	MarshalCairo() ([]*felt.Felt, error)
+}
+
+const (
+	MixedEnum_Variant1 = "Variant1"
+	MixedEnum_Variant2 = "Variant2"
+)
+
+type MixedEnumVariant1 struct {
+	Data *felt.Felt `json:"data"`
+}
+
+func NewMixedEnumVariant1(data *felt.Felt) MixedEnumVariant1 {
+	return MixedEnumVariant1 {Data: data}
+}
+
+// IsMixedEnum implements the MixedEnum interface
+func (v MixedEnumVariant1) IsMixedEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes MixedEnumVariant1 to Cairo felt array
+func (m *MixedEnumVariant1) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(0))
+	result = append(result, m.Data)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MixedEnumVariant1 from Cairo felt array
+func (m *MixedEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 0 {
+		return fmt.Errorf("expected discriminant 0, got %d", discriminant)
+	}
+	offset := 1
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for variant data")
+	}
+	m.Data = data[offset]
+	offset++
+	return nil
+}
+
+// CairoSize returns the serialized size for MixedEnumVariant1
+func (m *MixedEnumVariant1) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type MixedEnumVariant2 struct {}
+
+func NewMixedEnumVariant2() MixedEnumVariant2 {
+	return MixedEnumVariant2{}
+}
+
+// IsMixedEnum implements the MixedEnum interface
+func (v MixedEnumVariant2) IsMixedEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes MixedEnumVariant2 to Cairo felt array
+func (m *MixedEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(1))
+	// Unit variant - no additional data
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MixedEnumVariant2 from Cairo felt array
+func (m *MixedEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 1 {
+		return fmt.Errorf("expected discriminant 1, got %d", discriminant)
+	}
+	offset := 1
+
+	// Unit variant - no additional data to unmarshal
+	_ = offset // Suppress unused variable warning
+	return nil
+}
+
+// CairoSize returns the serialized size for MixedEnumVariant2
+func (m *MixedEnumVariant2) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
 // SimpleEnum represents a Cairo enum type
 type SimpleEnum interface {
 	IsSimpleEnum() bool
@@ -288,111 +393,6 @@ func (t *TypedEnumVariant3) UnmarshalCairo(data []*felt.Felt) error {
 
 // CairoSize returns the serialized size for TypedEnumVariant3
 func (t *TypedEnumVariant3) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
-// MixedEnum represents a Cairo enum type
-type MixedEnum interface {
-	IsMixedEnum() bool
-	MarshalCairo() ([]*felt.Felt, error)
-}
-
-const (
-	MixedEnum_Variant1 = "Variant1"
-	MixedEnum_Variant2 = "Variant2"
-)
-
-type MixedEnumVariant1 struct {
-	Data *felt.Felt `json:"data"`
-}
-
-func NewMixedEnumVariant1(data *felt.Felt) MixedEnumVariant1 {
-	return MixedEnumVariant1 {Data: data}
-}
-
-// IsMixedEnum implements the MixedEnum interface
-func (v MixedEnumVariant1) IsMixedEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes MixedEnumVariant1 to Cairo felt array
-func (m *MixedEnumVariant1) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(0))
-	result = append(result, m.Data)
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MixedEnumVariant1 from Cairo felt array
-func (m *MixedEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 0 {
-		return fmt.Errorf("expected discriminant 0, got %d", discriminant)
-	}
-	offset := 1
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for variant data")
-	}
-	m.Data = data[offset]
-	offset++
-	return nil
-}
-
-// CairoSize returns the serialized size for MixedEnumVariant1
-func (m *MixedEnumVariant1) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-type MixedEnumVariant2 struct {}
-
-func NewMixedEnumVariant2() MixedEnumVariant2 {
-	return MixedEnumVariant2{}
-}
-
-// IsMixedEnum implements the MixedEnum interface
-func (v MixedEnumVariant2) IsMixedEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes MixedEnumVariant2 to Cairo felt array
-func (m *MixedEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(1))
-	// Unit variant - no additional data
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MixedEnumVariant2 from Cairo felt array
-func (m *MixedEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 1 {
-		return fmt.Errorf("expected discriminant 1, got %d", discriminant)
-	}
-	offset := 1
-
-	// Unit variant - no additional data to unmarshal
-	_ = offset // Suppress unused variable warning
-	return nil
-}
-
-// CairoSize returns the serialized size for MixedEnumVariant2
-func (m *MixedEnumVariant2) CairoSize() int {
 	return -1 // Dynamic size
 }
 

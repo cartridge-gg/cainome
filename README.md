@@ -32,6 +32,41 @@ fn main() -> Result<()> {
 
 ### Go usage example:
 
+#### Using go generate (recommended)
+
+Add a `//go:generate` directive to your Go source file:
+
+```go
+//go:generate go run -mod=mod github.com/cartridge-gg/cainome/src/bin/cainome-go --golang --golang-package mycontract --output-dir ./bindings ./contract.json
+
+package main
+
+import (
+    "context"
+    "mymodule/bindings/mycontract"
+)
+
+func main() {
+    // Your code using the generated bindings
+}
+```
+
+Then run:
+```bash
+go generate ./...
+```
+
+This will automatically download and run cainome to generate your bindings. The cainome binary will be installed via cargo if not already present.
+
+You can also set a specific version using the `CAINOME_VERSION` environment variable:
+```bash
+CAINOME_VERSION=v0.3.0 go generate ./...
+```
+
+For more advanced usage, environment variables, and troubleshooting, see the [CLI documentation](./src/bin/cli/README.md#go-generate-integration).
+
+#### Using CLI directly
+
 ```bash
 # Generate Go bindings using CLI
 cainome --golang --golang-package mycontract --output-dir ./bindings /path/project.contract_class.json
