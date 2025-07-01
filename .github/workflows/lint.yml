@@ -27,34 +27,20 @@ jobs:
         uses: Swatinem/rust-cache@v2
         with:
           cache-on-failure: true
+
       - name: Install prettier
         run: |
           yarn global add prettier
-      - name: Check Markdown format
-        run: |
-          prettier --check "**/*.md" --ignore-path <(echo "CLAUDE.md")
-      - name: Check Yaml format
-        run: |
-          prettier --check "**/*.{yaml,yml}"
 
-      - name: Check Rust format
-        run: |
-          cargo fmt --all -- --check
-
-      - name: Compile contracts
+      - name: Setup Scarb
         uses: software-mansion/setup-scarb@v1
         with:
           scarb-lock: contracts
           scarb-version: "2.11.4"
 
-      - run: make -C contracts generate_artifacts
-      - run: scarb fmt --check
-        working-directory: contracts
+      - name: Compile contracts
+        run: make -C contracts generate_artifacts
 
-      - name: Run Clippy lints
+      - name: Run all linting checks
         run: |
-          cargo clippy --all --all-targets --all-features -- -D warnings
-
-      - name: check Rust docs
-        run: |
-          RUSTDOCFLAGS="-Dwarnings" cargo doc --document-private-items --no-deps --all-features --workspace
+          ./bin/lint --all --check-only

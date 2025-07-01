@@ -1,0 +1,71 @@
+#!/bin/bash
+#
+# Prettier linting script
+# Usage: ./bin/prettier-lint [--check-only]
+#
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+CHECK_ONLY=false
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --check-only)
+            CHECK_ONLY=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [--check-only]"
+            exit 1
+            ;;
+    esac
+done
+
+# Move to repo root
+pushd $(dirname "$0")/.. > /dev/null
+
+# Check if prettier is available
+if ! command -v prettier >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠️  prettier not found, skipping Prettier checks${NC}"
+    exit 0
+fi
+
+ERRORS=0
+
+echo -e "${BLUE}  Checking Markdown format...${NC}"
+if [[ "$CHECK_ONLY" == "true" ]]; then
+    if ! prettier --check "**/*.md"; then
+        echo -e "${RED}❌ Markdown formatting failed${NC}"
+        ((ERRORS++))
+    else
+        echo -e "${GREEN}✓ Markdown formatting OK${NC}"
+    fi
+else
+    prettier --write "**/*.md"
+    echo -e "${GREEN}✓ Markdown formatted${NC}"
+fi
+
+echo -e "${BLUE}  Checking YAML format...${NC}"
+if [[ "$CHECK_ONLY" == "true" ]]; then
+    if ! prettier --check "**/*.{yaml,yml}"; then
+        echo -e "${RED}❌ YAML formatting failed${NC}"
+        ((ERRORS++))
+    else
+        echo -e "${GREEN}✓ YAML formatting OK${NC}"
+    fi
+else
+    prettier --write "**/*.{yaml,yml}"
+    echo -e "${GREEN}✓ YAML formatted${NC}"
+fi
+
+popd > /dev/null
+
+exit $ERRORS 

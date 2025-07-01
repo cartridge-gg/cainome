@@ -1,0 +1,18 @@
+#!/bin/bash
+#
+# Pre-commit hook for Rust linting - runs only on changed files
+# Usage: ./bin/pre-commit-rust-lint file1.rs file2.rs ...
+#
+set -euo pipefail
+
+# Exit early if no files provided
+if [ $# -eq 0 ]; then
+    echo "No Rust files to lint"
+    exit 0
+fi
+
+echo "🔍 Running Rust lint on changed files..."
+echo "Files: $*"
+
+# Use the focused Rust script for linting (check-only mode)
+$(dirname "$0")/rust-lint --check-only 

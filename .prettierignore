@@ -1,0 +1,12 @@
+# Generated documentation
+target/
+
+# Special files we don't want to format
+CLAUDE.md
+
+# Lock files
+Cargo.lock
+pnpm-lock.yaml
+
+# Generated files
+*.generated.* 

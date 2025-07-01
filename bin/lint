@@ -1,0 +1,115 @@
+#!/bin/bash
+#
+# Shared linting script - orchestrates language-specific linting scripts
+# Usage: ./bin/lint [--rust] [--cairo] [--prettier] [--all] [--check-only]
+#
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# Default options
+RUN_RUST=false
+RUN_CAIRO=false
+RUN_PRETTIER=false
+CHECK_ONLY=false
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --rust)
+            RUN_RUST=true
+            shift
+            ;;
+        --cairo)
+            RUN_CAIRO=true
+            shift
+            ;;
+        --prettier)
+            RUN_PRETTIER=true
+            shift
+            ;;
+        --all)
+            RUN_RUST=true
+            RUN_CAIRO=true
+            RUN_PRETTIER=true
+            shift
+            ;;
+        --check-only)
+            CHECK_ONLY=true
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Usage: $0 [--rust] [--cairo] [--prettier] [--all] [--check-only]"
+            exit 1
+            ;;
+    esac
+done
+
+# If no specific options, run all
+if [[ "$RUN_RUST" == "false" && "$RUN_CAIRO" == "false" && "$RUN_PRETTIER" == "false" ]]; then
+    RUN_RUST=true
+    RUN_CAIRO=true
+    RUN_PRETTIER=true
+fi
+
+# Move to repo root
+pushd $(dirname "$0")/.. > /dev/null
+
+ERRORS=0
+
+# Rust linting and formatting
+if [[ "$RUN_RUST" == "true" ]]; then
+    echo -e "${BLUE}🦀 Running Rust checks...${NC}"
+    
+    if [[ "$CHECK_ONLY" == "true" ]]; then
+        if ! $(dirname "$0")/rust-lint --check-only; then
+            ((ERRORS++))
+        fi
+    else
+        $(dirname "$0")/rust-lint
+    fi
+    echo
+fi
+
+# Cairo formatting
+if [[ "$RUN_CAIRO" == "true" ]]; then
+    echo -e "${BLUE}🏺 Running Cairo checks...${NC}"
+    
+    if [[ "$CHECK_ONLY" == "true" ]]; then
+        $(dirname "$0")/cairo-lint --check-only
+    else
+        $(dirname "$0")/cairo-lint
+    fi
+    echo
+fi
+
+# Prettier formatting
+if [[ "$RUN_PRETTIER" == "true" ]]; then
+    echo -e "${BLUE}📝 Running Prettier checks...${NC}"
+    
+    if [[ "$CHECK_ONLY" == "true" ]]; then
+        if ! $(dirname "$0")/prettier-lint --check-only; then
+            ((ERRORS++))
+        fi
+    else
+        $(dirname "$0")/prettier-lint
+    fi
+    echo
+fi
+
+# Summary
+if [[ $ERRORS -eq 0 ]]; then
+    echo -e "${GREEN}✅ All checks passed!${NC}"
+    exit 0
+else
+    echo -e "${RED}❌ $ERRORS check(s) failed${NC}"
+    exit 1
+fi
+
+popd > /dev/null 
