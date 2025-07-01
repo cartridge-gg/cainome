@@ -234,6 +234,7 @@ dependencies = [
  "clap",
  "clap_complete",
  "convert_case",
+ "glob",
  "paste",
  "serde",
  "serde_json",

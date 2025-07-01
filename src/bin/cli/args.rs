@@ -21,7 +21,7 @@ pub struct CainomeArgs {
     #[arg(value_name = "PATH")]
     #[arg(conflicts_with = "contract_address")]
     #[arg(
-        help = "Path where artifacts are located. Cainome will parse all the files that are a valid Sierra artifact."
+        help = "Path or glob pattern where artifacts are located. Cainome will parse all the files that are a valid Sierra artifact. Examples: '/path/to/artifacts', '/path/**/*.contract_class.json'"
     )]
     pub artifacts_path: Option<Utf8PathBuf>,
 

@@ -3,6 +3,7 @@ use camino::Utf8PathBuf;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
+use std::path::Path;
 use url::Url;
 
 use starknet::{
@@ -69,45 +70,85 @@ impl ContractParser {
         config: &ContractParserConfig,
     ) -> CainomeCliResult<Vec<ContractData>> {
         let mut contracts = vec![];
+        let path_str = path.as_str();
 
-        for entry in fs::read_dir(path)? {
-            let entry = entry?;
-            let path = entry.path();
-
-            if path.is_file() {
-                if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                    if !file_name.ends_with(&config.sierra_extension) {
-                        continue;
+        // Check if the path contains glob patterns
+        let file_paths = if path_str.contains('*') || path_str.contains('?') || path_str.contains('[') {
+            // Handle glob pattern
+            tracing::trace!("Processing glob pattern: {}", path_str);
+            let glob_paths = glob::glob(path_str)
+                .map_err(|e| Error::Other(format!("Invalid glob pattern '{}': {}", path_str, e)))?;
+            
+            let mut paths = Vec::new();
+            for glob_result in glob_paths {
+                match glob_result {
+                    Ok(path) => paths.push(path),
+                    Err(e) => tracing::warn!("Error processing glob entry: {}", e),
+                }
+            }
+            paths
+        } else {
+            // Handle directory path (existing behavior)
+            let path_obj = Path::new(path_str);
+            if path_obj.is_dir() {
+                tracing::trace!("Processing directory: {}", path_str);
+                let mut paths = Vec::new();
+                for entry in fs::read_dir(path_obj)? {
+                    let entry = entry?;
+                    let entry_path = entry.path();
+                    if entry_path.is_file() {
+                        paths.push(entry_path);
                     }
+                }
+                paths
+            } else if path_obj.is_file() {
+                // Handle single file path
+                tracing::trace!("Processing single file: {}", path_str);
+                vec![path_obj.to_path_buf()]
+            } else {
+                return Err(Error::Other(format!("Path '{}' does not exist or is not accessible", path_str)));
+            }
+        };
 
-                    let file_content = fs::read_to_string(&path)?;
+        // Process all collected file paths
+        for file_path in file_paths {
+            if let Some(file_name) = file_path.file_name().and_then(|n| n.to_str()) {
+                if !file_name.ends_with(&config.sierra_extension) {
+                    continue;
+                }
 
-                    match AbiParser::tokens_from_abi_string(&file_content, &config.type_aliases) {
-                        Ok(tokens) => {
-                            let contract_name = {
-                                let n = file_name.trim_end_matches(&config.sierra_extension);
-                                if let Some(alias) = config.contract_aliases.get(n) {
-                                    tracing::trace!(
-                                        "Aliasing {file_name} contract name with {alias}"
-                                    );
-                                    alias
-                                } else {
-                                    n
-                                }
-                            };
+                match fs::read_to_string(&file_path) {
+                    Ok(file_content) => {
+                        match AbiParser::tokens_from_abi_string(&file_content, &config.type_aliases) {
+                            Ok(tokens) => {
+                                let contract_name = {
+                                    let n = file_name.trim_end_matches(&config.sierra_extension);
+                                    if let Some(alias) = config.contract_aliases.get(n) {
+                                        tracing::trace!(
+                                            "Aliasing {file_name} contract name with {alias}"
+                                        );
+                                        alias
+                                    } else {
+                                        n
+                                    }
+                                };
 
-                            tracing::trace!(
-                                "Adding {contract_name} ({file_name}) to the list of contracts"
-                            );
-                            contracts.push(ContractData {
-                                name: contract_name.to_string(),
-                                origin: ContractOrigin::SierraClassFile(file_name.to_string()),
-                                tokens,
-                            });
+                                tracing::trace!(
+                                    "Adding {contract_name} ({file_name}) to the list of contracts"
+                                );
+                                contracts.push(ContractData {
+                                    name: contract_name.to_string(),
+                                    origin: ContractOrigin::SierraClassFile(file_name.to_string()),
+                                    tokens,
+                                });
+                            }
+                            Err(e) => {
+                                tracing::warn!("Sierra file {file_name} could not be parsed {e:?}")
+                            }
                         }
-                        Err(e) => {
-                            tracing::warn!("Sierra file {file_name} could not be parsed {e:?}")
-                        }
+                    }
+                    Err(e) => {
+                        tracing::warn!("Could not read file {}: {}", file_path.display(), e);
                     }
                 }
             }

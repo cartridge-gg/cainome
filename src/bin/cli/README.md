@@ -22,6 +22,13 @@ Quick usage overview of the binary.
    cainome --artifacts-path /path/target/dev --output-dir /tmp --rust
    ```
 
+   You can also use glob patterns to specify files:
+
+   ```
+   cainome --artifacts-path "/path/**/*.contract_class.json" --output-dir /tmp --rust
+   cainome --artifacts-path "/path/target/dev/*.contract_class.json" --output-dir /tmp --rust
+   ```
+
 2. To fetch ABI from a chain, the name of the contract must be given:
    ```
    cainome --contract-address 0x1234.. --contract-name MyContract --rpc-url https://node.url --output-dir /tmp --rust
