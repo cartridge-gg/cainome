@@ -14,21 +14,6 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
-// SimpleEventsEvent represents a contract event
-type SimpleEventsEvent interface {
-	IsSimpleEventsEvent() bool
-}
-
-const (
-	SimpleEventsEvent_EventOnlyKey = "EventOnlyKey"
-	SimpleEventsEvent_EventOnlyData = "EventOnlyData"
-	SimpleEventsEvent_EventAll = "EventAll"
-	SimpleEventsEvent_EventMultiple = "EventMultiple"
-	SimpleEventsEvent_EventNothing = "EventNothing"
-	SimpleEventsEvent_SuperEvent = "SuperEvent"
-)
-
-
 type EventNothing struct {
 }
 
@@ -61,20 +46,20 @@ func (e EventNothing) IsSimpleEventsEvent() bool {
 }
 
 
-type EventWithOtherName struct {
+type EventOnlyData struct {
 	Value *felt.Felt `json:"value"`
 }
 
-// MarshalCairo serializes EventWithOtherName to Cairo felt array
-func (s *EventWithOtherName) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes EventOnlyData to Cairo felt array
+func (s *EventOnlyData) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, s.Value)
 	return result, nil
 }
 
-// UnmarshalCairo deserializes EventWithOtherName from Cairo felt array
-func (s *EventWithOtherName) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes EventOnlyData from Cairo felt array
+func (s *EventOnlyData) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
@@ -86,21 +71,36 @@ func (s *EventWithOtherName) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for EventWithOtherName
-func (s *EventWithOtherName) CairoSize() int {
+// CairoSize returns the serialized size for EventOnlyData
+func (s *EventOnlyData) CairoSize() int {
 	return -1 // Dynamic size
 }
 
 
 // EventName returns the name of this event type
-func (e EventWithOtherName) EventName() string {
-	return "with_other_name"
+func (e EventOnlyData) EventName() string {
+	return "only_data"
 }
 
 // IsSimpleEventsEvent implements the SimpleEventsEvent interface
-func (e EventWithOtherName) IsSimpleEventsEvent() bool {
+func (e EventOnlyData) IsSimpleEventsEvent() bool {
 	return true
 }
+
+
+// SimpleEventsEvent represents a contract event
+type SimpleEventsEvent interface {
+	IsSimpleEventsEvent() bool
+}
+
+const (
+	SimpleEventsEvent_EventOnlyKey = "EventOnlyKey"
+	SimpleEventsEvent_EventOnlyData = "EventOnlyData"
+	SimpleEventsEvent_EventAll = "EventAll"
+	SimpleEventsEvent_EventMultiple = "EventMultiple"
+	SimpleEventsEvent_EventNothing = "EventNothing"
+	SimpleEventsEvent_SuperEvent = "SuperEvent"
+)
 
 
 type EventAll struct {
@@ -251,20 +251,20 @@ func (e EventMultiple) IsSimpleEventsEvent() bool {
 }
 
 
-type EventOnlyData struct {
+type EventWithOtherName struct {
 	Value *felt.Felt `json:"value"`
 }
 
-// MarshalCairo serializes EventOnlyData to Cairo felt array
-func (s *EventOnlyData) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes EventWithOtherName to Cairo felt array
+func (s *EventWithOtherName) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, s.Value)
 	return result, nil
 }
 
-// UnmarshalCairo deserializes EventOnlyData from Cairo felt array
-func (s *EventOnlyData) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes EventWithOtherName from Cairo felt array
+func (s *EventWithOtherName) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
@@ -276,19 +276,19 @@ func (s *EventOnlyData) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for EventOnlyData
-func (s *EventOnlyData) CairoSize() int {
+// CairoSize returns the serialized size for EventWithOtherName
+func (s *EventWithOtherName) CairoSize() int {
 	return -1 // Dynamic size
 }
 
 
 // EventName returns the name of this event type
-func (e EventOnlyData) EventName() string {
-	return "only_data"
+func (e EventWithOtherName) EventName() string {
+	return "with_other_name"
 }
 
 // IsSimpleEventsEvent implements the SimpleEventsEvent interface
-func (e EventOnlyData) IsSimpleEventsEvent() bool {
+func (e EventWithOtherName) IsSimpleEventsEvent() bool {
 	return true
 }
 

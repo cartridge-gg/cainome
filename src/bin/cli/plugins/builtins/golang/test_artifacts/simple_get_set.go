@@ -383,9 +383,17 @@ func (simple_get_set_reader *SimpleGetSetReader) GetArray(ctx context.Context, o
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	var result []*felt.Felt
-	// TODO: Convert felt to Array(Array { type_path: "core::array::Span::<core::felt252>", inner: CoreBasic(CoreBasic { type_path: "core::felt252" }), is_legacy: false })
-	_ = response
+	if len(response) < 1 {
+		return nil, fmt.Errorf("insufficient response data for array")
+	}
+	arrayLength := cainome.UintFromFelt(response[0])
+	if len(response) < int(1 + arrayLength) {
+		return nil, fmt.Errorf("insufficient response data for array elements")
+	}
+	result := make([]*felt.Felt, arrayLength)
+	for i := uint64(0); i < arrayLength; i++ {
+		result[i] = response[1+i]
+	}
 	return result, nil
 }
 

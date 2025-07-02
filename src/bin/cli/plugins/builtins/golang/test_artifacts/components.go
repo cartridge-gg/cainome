@@ -14,138 +14,39 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
-type MyStructSimple struct {
-	A *felt.Felt `json:"a"`
-	B *felt.Felt `json:"b"`
+type OtherWritten struct {
+	Data *felt.Felt `json:"data"`
 }
 
-// MarshalCairo serializes MyStructSimple to Cairo felt array
-func (s *MyStructSimple) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes OtherWritten to Cairo felt array
+func (s *OtherWritten) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	result = append(result, s.A)
-	result = append(result, s.B)
+	result = append(result, s.Data)
 	return result, nil
 }
 
-// UnmarshalCairo deserializes MyStructSimple from Cairo felt array
-func (s *MyStructSimple) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field A")
-	}
-	s.A = data[offset]
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field B")
-	}
-	s.B = data[offset]
-	offset++
-
-	return nil
-}
-
-// CairoSize returns the serialized size for MyStructSimple
-func (s *MyStructSimple) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
-type OutterEvent struct {
-}
-
-// MarshalCairo serializes OutterEvent to Cairo felt array
-func (s *OutterEvent) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes OutterEvent from Cairo felt array
-func (s *OutterEvent) UnmarshalCairo(data []*felt.Felt) error {
-	return nil
-}
-
-// CairoSize returns the serialized size for OutterEvent
-func (s *OutterEvent) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
-// EventName returns the name of this event type
-func (e OutterEvent) EventName() string {
-	return "outter"
-}
-
-// IsComponentsContractEvent implements the ComponentsContractEvent interface
-func (e OutterEvent) IsComponentsContractEvent() bool {
-	return true
-}
-
-
-// SimpleEvent represents a contract event
-type SimpleEvent interface {
-	IsSimpleEvent() bool
-}
-
-const (
-	SimpleEvent_Written = "Written"
-	SimpleEvent_Written88 = "Written88"
-)
-
-
-// OtherEvent represents a contract event
-type OtherEvent interface {
-	IsOtherEvent() bool
-}
-
-const (
-	OtherEvent_Written = "Written"
-)
-
-
-// ComponentsContractEvent represents a contract event
-type ComponentsContractEvent interface {
-	IsComponentsContractEvent() bool
-}
-
-const (
-	ComponentsContractEvent_OutterEvent = "OutterEvent"
-	ComponentsContractEvent_SimpleEvent = "SimpleEvent"
-	ComponentsContractEvent_SimpleEventOther = "SimpleEventOther"
-)
-
-
-type MyStructOther struct {
-	Data *big.Int `json:"data"`
-}
-
-// MarshalCairo serializes MyStructOther to Cairo felt array
-func (s *MyStructOther) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, cainome.FeltFromBigInt(s.Data))
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MyStructOther from Cairo felt array
-func (s *MyStructOther) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes OtherWritten from Cairo felt array
+func (s *OtherWritten) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field Data")
 	}
-	s.Data = cainome.BigIntFromFelt(data[offset])
+	s.Data = data[offset]
 	offset++
 
 	return nil
 }
 
-// CairoSize returns the serialized size for MyStructOther
-func (s *MyStructOther) CairoSize() int {
+// CairoSize returns the serialized size for OtherWritten
+func (s *OtherWritten) CairoSize() int {
 	return -1 // Dynamic size
+}
+
+// IsOtherEvent implements the OtherEvent interface
+func (e OtherWritten) IsOtherEvent() bool {
+	return true
 }
 
 
@@ -185,40 +86,15 @@ func (e WrittenAb) IsSimpleEvent() bool {
 }
 
 
-type OtherWritten struct {
-	Data *felt.Felt `json:"data"`
+// SimpleEvent represents a contract event
+type SimpleEvent interface {
+	IsSimpleEvent() bool
 }
 
-// MarshalCairo serializes OtherWritten to Cairo felt array
-func (s *OtherWritten) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, s.Data)
-	return result, nil
-}
-
-// UnmarshalCairo deserializes OtherWritten from Cairo felt array
-func (s *OtherWritten) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Data")
-	}
-	s.Data = data[offset]
-	offset++
-
-	return nil
-}
-
-// CairoSize returns the serialized size for OtherWritten
-func (s *OtherWritten) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-// IsOtherEvent implements the OtherEvent interface
-func (e OtherWritten) IsOtherEvent() bool {
-	return true
-}
+const (
+	SimpleEvent_Written = "Written"
+	SimpleEvent_Written88 = "Written88"
+)
 
 
 type SimpleWritten struct {
@@ -262,6 +138,130 @@ func (s *SimpleWritten) CairoSize() int {
 // IsSimpleEvent implements the SimpleEvent interface
 func (e SimpleWritten) IsSimpleEvent() bool {
 	return true
+}
+
+
+type MyStructOther struct {
+	Data *big.Int `json:"data"`
+}
+
+// MarshalCairo serializes MyStructOther to Cairo felt array
+func (s *MyStructOther) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, cainome.FeltFromBigInt(s.Data))
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyStructOther from Cairo felt array
+func (s *MyStructOther) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Data")
+	}
+	s.Data = cainome.BigIntFromFelt(data[offset])
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for MyStructOther
+func (s *MyStructOther) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+// OtherEvent represents a contract event
+type OtherEvent interface {
+	IsOtherEvent() bool
+}
+
+const (
+	OtherEvent_Written = "Written"
+)
+
+
+type OutterEvent struct {
+}
+
+// MarshalCairo serializes OutterEvent to Cairo felt array
+func (s *OutterEvent) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OutterEvent from Cairo felt array
+func (s *OutterEvent) UnmarshalCairo(data []*felt.Felt) error {
+	return nil
+}
+
+// CairoSize returns the serialized size for OutterEvent
+func (s *OutterEvent) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+// EventName returns the name of this event type
+func (e OutterEvent) EventName() string {
+	return "outter"
+}
+
+// IsComponentsContractEvent implements the ComponentsContractEvent interface
+func (e OutterEvent) IsComponentsContractEvent() bool {
+	return true
+}
+
+
+// ComponentsContractEvent represents a contract event
+type ComponentsContractEvent interface {
+	IsComponentsContractEvent() bool
+}
+
+const (
+	ComponentsContractEvent_OutterEvent = "OutterEvent"
+	ComponentsContractEvent_SimpleEvent = "SimpleEvent"
+	ComponentsContractEvent_SimpleEventOther = "SimpleEventOther"
+)
+
+
+type MyStructSimple struct {
+	A *felt.Felt `json:"a"`
+	B *felt.Felt `json:"b"`
+}
+
+// MarshalCairo serializes MyStructSimple to Cairo felt array
+func (s *MyStructSimple) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.A)
+	result = append(result, s.B)
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyStructSimple from Cairo felt array
+func (s *MyStructSimple) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field A")
+	}
+	s.A = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field B")
+	}
+	s.B = data[offset]
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for MyStructSimple
+func (s *MyStructSimple) CairoSize() int {
+	return -1 // Dynamic size
 }
 
 

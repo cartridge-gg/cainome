@@ -14,6 +14,107 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
+// SimpleEnum represents a Cairo enum type
+type SimpleEnum interface {
+	IsSimpleEnum() bool
+	MarshalCairo() ([]*felt.Felt, error)
+	UnmarshalCairo(data []*felt.Felt) error
+}
+
+const (
+	SimpleEnum_Variant1 = "Variant1"
+	SimpleEnum_Variant2 = "Variant2"
+)
+
+type SimpleEnumVariant1 struct {}
+
+func NewSimpleEnumVariant1() SimpleEnumVariant1 {
+	return SimpleEnumVariant1{}
+}
+
+// IsSimpleEnum implements the SimpleEnum interface
+func (v SimpleEnumVariant1) IsSimpleEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes SimpleEnumVariant1 to Cairo felt array
+func (s *SimpleEnumVariant1) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(0))
+	// Unit variant - no additional data
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleEnumVariant1 from Cairo felt array
+func (s *SimpleEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 0 {
+		return fmt.Errorf("expected discriminant 0, got %d", discriminant)
+	}
+	offset := 1
+
+	// Unit variant - no additional data to unmarshal
+	_ = offset // Suppress unused variable warning
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleEnumVariant1
+func (s *SimpleEnumVariant1) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleEnumVariant2 struct {}
+
+func NewSimpleEnumVariant2() SimpleEnumVariant2 {
+	return SimpleEnumVariant2{}
+}
+
+// IsSimpleEnum implements the SimpleEnum interface
+func (v SimpleEnumVariant2) IsSimpleEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes SimpleEnumVariant2 to Cairo felt array
+func (s *SimpleEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(1))
+	// Unit variant - no additional data
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleEnumVariant2 from Cairo felt array
+func (s *SimpleEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 1 {
+		return fmt.Errorf("expected discriminant 1, got %d", discriminant)
+	}
+	offset := 1
+
+	// Unit variant - no additional data to unmarshal
+	_ = offset // Suppress unused variable warning
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleEnumVariant2
+func (s *SimpleEnumVariant2) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
 // MixedEnum represents a Cairo enum type
 type MixedEnum interface {
 	IsMixedEnum() bool
@@ -117,12 +218,6 @@ func (m *MixedEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
 // CairoSize returns the serialized size for MixedEnumVariant2
 func (m *MixedEnumVariant2) CairoSize() int {
 	return -1 // Dynamic size
-}
-
-
-// EnumsEvent represents a contract event
-type EnumsEvent interface {
-	IsEnumsEvent() bool
 }
 
 
@@ -349,104 +444,9 @@ func (t *TypedEnumVariant4) CairoSize() int {
 }
 
 
-// SimpleEnum represents a Cairo enum type
-type SimpleEnum interface {
-	IsSimpleEnum() bool
-	MarshalCairo() ([]*felt.Felt, error)
-	UnmarshalCairo(data []*felt.Felt) error
-}
-
-const (
-	SimpleEnum_Variant1 = "Variant1"
-	SimpleEnum_Variant2 = "Variant2"
-)
-
-type SimpleEnumVariant1 struct {}
-
-func NewSimpleEnumVariant1() SimpleEnumVariant1 {
-	return SimpleEnumVariant1{}
-}
-
-// IsSimpleEnum implements the SimpleEnum interface
-func (v SimpleEnumVariant1) IsSimpleEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes SimpleEnumVariant1 to Cairo felt array
-func (s *SimpleEnumVariant1) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(0))
-	// Unit variant - no additional data
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes SimpleEnumVariant1 from Cairo felt array
-func (s *SimpleEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 0 {
-		return fmt.Errorf("expected discriminant 0, got %d", discriminant)
-	}
-	offset := 1
-
-	// Unit variant - no additional data to unmarshal
-	_ = offset // Suppress unused variable warning
-	return nil
-}
-
-// CairoSize returns the serialized size for SimpleEnumVariant1
-func (s *SimpleEnumVariant1) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-type SimpleEnumVariant2 struct {}
-
-func NewSimpleEnumVariant2() SimpleEnumVariant2 {
-	return SimpleEnumVariant2{}
-}
-
-// IsSimpleEnum implements the SimpleEnum interface
-func (v SimpleEnumVariant2) IsSimpleEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes SimpleEnumVariant2 to Cairo felt array
-func (s *SimpleEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(1))
-	// Unit variant - no additional data
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes SimpleEnumVariant2 from Cairo felt array
-func (s *SimpleEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 1 {
-		return fmt.Errorf("expected discriminant 1, got %d", discriminant)
-	}
-	offset := 1
-
-	// Unit variant - no additional data to unmarshal
-	_ = offset // Suppress unused variable warning
-	return nil
-}
-
-// CairoSize returns the serialized size for SimpleEnumVariant2
-func (s *SimpleEnumVariant2) CairoSize() int {
-	return -1 // Dynamic size
+// EnumsEvent represents a contract event
+type EnumsEvent interface {
+	IsEnumsEvent() bool
 }
 
 
@@ -994,14 +994,16 @@ func (enums_reader *EnumsReader) GetTypedWithOptionArg(ctx context.Context, e *T
 		// None variant
 		return nil, nil
 	} else {
-		// Some variant - extract value
+		// Some variant - deserialize enum from response[1:]
 		if len(response) < 2 {
 			return nil, fmt.Errorf("insufficient data for Some variant")
 		}
-		var result TypedEnum
-		// TODO: Convert response[1:] to inner type
-		_ = response
-		return &result, nil
+		// Read enum discriminant from response[1]
+		discriminant := cainome.UintFromFelt(response[1])
+		switch discriminant {
+		default:
+			return nil, fmt.Errorf("unknown enum discriminant: %d", discriminant)
+		}
 	}
 }
 

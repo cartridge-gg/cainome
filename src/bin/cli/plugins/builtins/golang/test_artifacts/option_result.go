@@ -14,6 +14,12 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
+// OptionResultEvent represents a contract event
+type OptionResultEvent interface {
+	IsOptionResultEvent() bool
+}
+
+
 type GenericOneOptionResult struct {
 	A *felt.Felt `json:"a"`
 	B *felt.Felt `json:"b"`
@@ -58,12 +64,6 @@ func (s *GenericOneOptionResult) UnmarshalCairo(data []*felt.Felt) error {
 // CairoSize returns the serialized size for GenericOneOptionResult
 func (s *GenericOneOptionResult) CairoSize() int {
 	return -1 // Dynamic size
-}
-
-
-// OptionResultEvent represents a contract event
-type OptionResultEvent interface {
-	IsOptionResultEvent() bool
 }
 
 
@@ -431,9 +431,7 @@ func (option_result_reader *OptionResultReader) OptionNone(ctx context.Context, 
 		if len(response) < 2 {
 			return nil, fmt.Errorf("insufficient data for Some variant")
 		}
-		var result uint64
-		// TODO: Convert response[1:] to inner type
-		_ = response
+		result := cainome.UintFromFelt(response[1])
 		return &result, nil
 	}
 }

@@ -14,6 +14,152 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
+type GenericTwo struct {
+	A *felt.Felt `json:"a"`
+	B uint64 `json:"b"`
+	C *felt.Felt `json:"c"`
+	D ToAlias `json:"d"`
+	E []ToAlias `json:"e"`
+	F GenericOne `json:"f"`
+}
+
+// MarshalCairo serializes GenericTwo to Cairo felt array
+func (s *GenericTwo) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.A)
+	result = append(result, cainome.FeltFromUint(uint64(s.B)))
+	result = append(result, s.C)
+	// Struct field D: marshal using CairoMarshaler
+	if fieldData, err := s.D.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
+	// Array field E: serialize length then elements
+	result = append(result, cainome.FeltFromUint(uint64(len(s.E))))
+	for _, item := range s.E {
+		if itemData, err := item.MarshalCairo(); err != nil {
+			return nil, err
+		} else {
+			result = append(result, itemData...)
+		}
+	}
+	// Struct field F: marshal using CairoMarshaler
+	if fieldData, err := s.F.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
+	return result, nil
+}
+
+// UnmarshalCairo deserializes GenericTwo from Cairo felt array
+func (s *GenericTwo) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field A")
+	}
+	s.A = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field B")
+	}
+	s.B = cainome.UintFromFelt(data[offset])
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field C")
+	}
+	s.C = data[offset]
+	offset++
+
+	// Struct field D: unmarshal using CairoMarshaler
+	if err := s.D.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+	// Array field E: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of E")
+	}
+	lengthE := cainome.UintFromFelt(data[offset])
+	offset++
+	s.E = make([]ToAlias, lengthE)
+	for i := uint64(0); i < lengthE; i++ {
+		var item ToAlias
+		if err := item.UnmarshalCairo(data[offset:]); err != nil {
+			return err
+		}
+		s.E[i] = item
+		// Calculate consumed felts to update offset
+		if itemData, err := item.MarshalCairo(); err != nil {
+			return err
+		} else {
+			offset += len(itemData)
+		}
+	}
+
+	// Struct field F: unmarshal using CairoMarshaler
+	if err := s.F.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+	return nil
+}
+
+// CairoSize returns the serialized size for GenericTwo
+func (s *GenericTwo) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+type StructWithStruct struct {
+	Simple Simple `json:"simple"`
+}
+
+// MarshalCairo serializes StructWithStruct to Cairo felt array
+func (s *StructWithStruct) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Struct field Simple: marshal using CairoMarshaler
+	if fieldData, err := s.Simple.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructWithStruct from Cairo felt array
+func (s *StructWithStruct) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Struct field Simple: unmarshal using CairoMarshaler
+	if err := s.Simple.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructWithStruct
+func (s *StructWithStruct) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+// StructsEvent represents a contract event
+type StructsEvent interface {
+	IsStructsEvent() bool
+}
+
+
 type Simple struct {
 	Felt *felt.Felt `json:"felt"`
 	Uint256 *big.Int `json:"uint256"`
@@ -126,48 +272,24 @@ func (s *Simple) CairoSize() int {
 }
 
 
-type GenericTwo struct {
+type GenericOne struct {
 	A uint64 `json:"a"`
-	B uint64 `json:"b"`
-	C *felt.Felt `json:"c"`
-	D ToAlias `json:"d"`
-	E []ToAlias `json:"e"`
-	F GenericOne `json:"f"`
+	B *felt.Felt `json:"b"`
+	C *big.Int `json:"c"`
 }
 
-// MarshalCairo serializes GenericTwo to Cairo felt array
-func (s *GenericTwo) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes GenericOne to Cairo felt array
+func (s *GenericOne) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, cainome.FeltFromUint(uint64(s.A)))
-	result = append(result, cainome.FeltFromUint(uint64(s.B)))
-	result = append(result, s.C)
-	// Struct field D: marshal using CairoMarshaler
-	if fieldData, err := s.D.MarshalCairo(); err != nil {
-		return nil, err
-	} else {
-		result = append(result, fieldData...)
-	}
-	// Array field E: serialize length then elements
-	result = append(result, cainome.FeltFromUint(uint64(len(s.E))))
-	for _, item := range s.E {
-		if itemData, err := item.MarshalCairo(); err != nil {
-			return nil, err
-		} else {
-			result = append(result, itemData...)
-		}
-	}
-	// Struct field F: marshal using CairoMarshaler
-	if fieldData, err := s.F.MarshalCairo(); err != nil {
-		return nil, err
-	} else {
-		result = append(result, fieldData...)
-	}
+	result = append(result, s.B)
+	result = append(result, cainome.FeltFromBigInt(s.C))
 	return result, nil
 }
 
-// UnmarshalCairo deserializes GenericTwo from Cairo felt array
-func (s *GenericTwo) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes GenericOne from Cairo felt array
+func (s *GenericOne) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
@@ -179,53 +301,20 @@ func (s *GenericTwo) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field B")
 	}
-	s.B = cainome.UintFromFelt(data[offset])
+	s.B = data[offset]
 	offset++
 
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field C")
 	}
-	s.C = data[offset]
+	s.C = cainome.BigIntFromFelt(data[offset])
 	offset++
-
-	// Struct field D: unmarshal using CairoMarshaler
-	if err := s.D.UnmarshalCairo(data[offset:]); err != nil {
-		return err
-	}
-	// TODO: Update offset based on consumed data
-
-	// Array field E: read length then elements
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for array length of E")
-	}
-	lengthE := cainome.UintFromFelt(data[offset])
-	offset++
-	s.E = make([]ToAlias, lengthE)
-	for i := uint64(0); i < lengthE; i++ {
-		var item ToAlias
-		if err := item.UnmarshalCairo(data[offset:]); err != nil {
-			return err
-		}
-		s.E[i] = item
-		// Calculate consumed felts to update offset
-		if itemData, err := item.MarshalCairo(); err != nil {
-			return err
-		} else {
-			offset += len(itemData)
-		}
-	}
-
-	// Struct field F: unmarshal using CairoMarshaler
-	if err := s.F.UnmarshalCairo(data[offset:]); err != nil {
-		return err
-	}
-	// TODO: Update offset based on consumed data
 
 	return nil
 }
 
-// CairoSize returns the serialized size for GenericTwo
-func (s *GenericTwo) CairoSize() int {
+// CairoSize returns the serialized size for GenericOne
+func (s *GenericOne) CairoSize() int {
 	return -1 // Dynamic size
 }
 
@@ -258,95 +347,6 @@ func (s *ToAlias) UnmarshalCairo(data []*felt.Felt) error {
 // CairoSize returns the serialized size for ToAlias
 func (s *ToAlias) CairoSize() int {
 	return -1 // Dynamic size
-}
-
-
-type StructWithStruct struct {
-	Simple Simple `json:"simple"`
-}
-
-// MarshalCairo serializes StructWithStruct to Cairo felt array
-func (s *StructWithStruct) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Struct field Simple: marshal using CairoMarshaler
-	if fieldData, err := s.Simple.MarshalCairo(); err != nil {
-		return nil, err
-	} else {
-		result = append(result, fieldData...)
-	}
-	return result, nil
-}
-
-// UnmarshalCairo deserializes StructWithStruct from Cairo felt array
-func (s *StructWithStruct) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	// Struct field Simple: unmarshal using CairoMarshaler
-	if err := s.Simple.UnmarshalCairo(data[offset:]); err != nil {
-		return err
-	}
-	// TODO: Update offset based on consumed data
-
-	return nil
-}
-
-// CairoSize returns the serialized size for StructWithStruct
-func (s *StructWithStruct) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
-type GenericOne struct {
-	A *big.Int `json:"a"`
-	B *felt.Felt `json:"b"`
-	C *big.Int `json:"c"`
-}
-
-// MarshalCairo serializes GenericOne to Cairo felt array
-func (s *GenericOne) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, cainome.FeltFromBigInt(s.A))
-	result = append(result, s.B)
-	result = append(result, cainome.FeltFromBigInt(s.C))
-	return result, nil
-}
-
-// UnmarshalCairo deserializes GenericOne from Cairo felt array
-func (s *GenericOne) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field A")
-	}
-	s.A = cainome.BigIntFromFelt(data[offset])
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field B")
-	}
-	s.B = data[offset]
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field C")
-	}
-	s.C = cainome.BigIntFromFelt(data[offset])
-	offset++
-
-	return nil
-}
-
-// CairoSize returns the serialized size for GenericOne
-func (s *GenericOne) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
-// StructsEvent represents a contract event
-type StructsEvent interface {
-	IsStructsEvent() bool
 }
 
 
