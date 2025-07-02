@@ -1,9 +1,8 @@
 #!/bin/bash
-
-# Pre-commit hook that conditionally runs linting/formatting based on changed files
-# Mirrors the logic from .github/workflows/lint.yml
-
-set -e
+#
+# Pre-commit hook that runs linting/formatting on staged files only
+#
+set -euo pipefail
 
 # Colors for output
 RED='\033[0;31m'
@@ -26,107 +25,105 @@ echo "Staged files:"
 echo "$STAGED_FILES" | sed 's/^/  /'
 echo
 
-# Track which jobs need to run
-RUN_RUST_LINT=false
-RUN_RUST_FORMAT=false
-RUN_CAIRO_FORMAT=false
-RUN_PRETTIER=false
+# Get repo root
+REPO_ROOT=$(git rev-parse --show-toplevel)
 
-# Check for Rust files
-if echo "$STAGED_FILES" | grep -qE '\.(rs)$|^Cargo\.(toml|lock)$|^rust-toolchain\.toml$'; then
-    RUN_RUST_LINT=true
-    RUN_RUST_FORMAT=true
-fi
+# Collect files by type
+RUST_FILES=()
+CAIRO_FILES=()
+PRETTIER_FILES=()
 
-# Check for Cairo files
-if echo "$STAGED_FILES" | grep -qE '^contracts/.*\.cairo$|^contracts/Scarb\.(toml|lock)$'; then
-    RUN_CAIRO_FORMAT=true
-fi
-
-# Check for Markdown/YAML files
-if echo "$STAGED_FILES" | grep -qE '\.(md|yaml|yml)$' | grep -v "CLAUDE\.md"; then
-    RUN_PRETTIER=true
-fi
+while IFS= read -r file; do
+    if [[ "$file" =~ \.rs$ ]] || [[ "$file" =~ ^Cargo\.(toml|lock)$ ]] || [[ "$file" =~ ^rust-toolchain\.toml$ ]]; then
+        if [[ "$file" =~ \.rs$ ]]; then
+            RUST_FILES+=("$file")
+        fi
+    elif [[ "$file" =~ ^contracts/.*\.cairo$ ]] || [[ "$file" =~ ^contracts/Scarb\.(toml|lock)$ ]]; then
+        if [[ "$file" =~ \.cairo$ ]]; then
+            CAIRO_FILES+=("$file")
+        fi
+    elif [[ "$file" =~ \.(md|yaml|yml)$ ]] && [[ ! "$file" =~ CLAUDE\.md ]]; then
+        PRETTIER_FILES+=("$file")
+    fi
+done <<<"$STAGED_FILES"
 
 # Track errors
 ERRORS=0
 
-# Get staged Rust files
-STAGED_RUST_FILES=()
-if [[ "$RUN_RUST_FORMAT" == "true" || "$RUN_RUST_LINT" == "true" ]]; then
-    while IFS= read -r -d '' file; do
-        if [[ "$file" =~ \.rs$ ]]; then
-            STAGED_RUST_FILES+=("$file")
+# Run checks using the main lint script
+if [[ ${#RUST_FILES[@]} -gt 0 ]] || echo "$STAGED_FILES" | grep -qE '^Cargo\.(toml|lock)$|^rust-toolchain\.toml$'; then
+    echo -e "${BLUE}Running Rust checks...${NC}"
+    if [[ ${#RUST_FILES[@]} -gt 0 ]]; then
+        if ! "$REPO_ROOT/bin/lint" --rust --files "${RUST_FILES[@]}"; then
+            ((ERRORS++))
         fi
-    done < <(echo "$STAGED_FILES" | grep '\.rs$' | tr '\n' '\0' 2>/dev/null || true)
-fi
-
-# Get staged Cairo files
-STAGED_CAIRO_FILES=()
-if [[ "$RUN_CAIRO_FORMAT" == "true" ]]; then
-    while IFS= read -r -d '' file; do
-        if [[ "$file" =~ ^contracts/.*\.cairo$ ]]; then
-            STAGED_CAIRO_FILES+=("$file")
+    else
+        if ! "$REPO_ROOT/bin/lint" --rust; then
+            ((ERRORS++))
         fi
-    done < <(echo "$STAGED_FILES" | grep '^contracts/.*\.cairo$' | tr '\n' '\0' 2>/dev/null || true)
+    fi
+    echo
 fi
 
-# Get staged Markdown/YAML files
-STAGED_PRETTIER_FILES=()
-if [[ "$RUN_PRETTIER" == "true" ]]; then
-    while IFS= read -r -d '' file; do
-        if [[ "$file" =~ \.(md|yaml|yml)$ ]] && [[ ! "$file" =~ CLAUDE\.md ]]; then
-            STAGED_PRETTIER_FILES+=("$file")
+if [[ ${#CAIRO_FILES[@]} -gt 0 ]] || echo "$STAGED_FILES" | grep -qE '^contracts/Scarb\.(toml|lock)$'; then
+    echo -e "${BLUE}Running Cairo checks...${NC}"
+    if [[ ${#CAIRO_FILES[@]} -gt 0 ]]; then
+        if ! "$REPO_ROOT/bin/lint" --cairo --files "${CAIRO_FILES[@]}"; then
+            ((ERRORS++))
         fi
-    done < <(echo "$STAGED_FILES" | grep -E '\.(md|yaml|yml)$' | grep -v "CLAUDE\.md" | tr '\n' '\0' 2>/dev/null || true)
+    else
+        if ! "$REPO_ROOT/bin/lint" --cairo; then
+            ((ERRORS++))
+        fi
+    fi
+    echo
 fi
 
-# Run Rust formatting if needed
-if [[ "$RUN_RUST_FORMAT" == "true" && ${#STAGED_RUST_FILES[@]} -gt 0 ]]; then
-    echo -e "${BLUE}Running Rust formatting...${NC}"
-    if ! bin/pre-commit-rust-format "${STAGED_RUST_FILES[@]}"; then
-        echo -e "${RED}Rust formatting failed${NC}"
+if [[ ${#PRETTIER_FILES[@]} -gt 0 ]]; then
+    echo -e "${BLUE}Running Prettier checks...${NC}"
+    if ! "$REPO_ROOT/bin/lint" --prettier --files "${PRETTIER_FILES[@]}"; then
         ((ERRORS++))
     fi
     echo
 fi
 
-# Run Rust linting if needed
-if [[ "$RUN_RUST_LINT" == "true" && ${#STAGED_RUST_FILES[@]} -gt 0 ]]; then
-    echo -e "${BLUE}Running Rust linting...${NC}"
-    if ! bin/pre-commit-rust-lint "${STAGED_RUST_FILES[@]}"; then
-        echo -e "${RED}Rust linting failed${NC}"
-        ((ERRORS++))
-    fi
-    echo
+# Check if any files were modified after formatting
+MODIFIED_FILES=()
+if [[ ${#RUST_FILES[@]} -gt 0 ]]; then
+    for file in "${RUST_FILES[@]}"; do
+        if [ -f "$file" ] && ! git diff --name-only --exit-code "$file" >/dev/null 2>&1; then
+            MODIFIED_FILES+=("$file")
+        fi
+    done
+fi
+if [[ ${#CAIRO_FILES[@]} -gt 0 ]]; then
+    for file in "${CAIRO_FILES[@]}"; do
+        if [ -f "$file" ] && ! git diff --name-only --exit-code "$file" >/dev/null 2>&1; then
+            MODIFIED_FILES+=("$file")
+        fi
+    done
+fi
+if [[ ${#PRETTIER_FILES[@]} -gt 0 ]]; then
+    for file in "${PRETTIER_FILES[@]}"; do
+        if [ -f "$file" ] && ! git diff --name-only --exit-code "$file" >/dev/null 2>&1; then
+            MODIFIED_FILES+=("$file")
+        fi
+    done
 fi
 
-# Run Cairo formatting if needed
-if [[ "$RUN_CAIRO_FORMAT" == "true" && ${#STAGED_CAIRO_FILES[@]} -gt 0 ]]; then
-    echo -e "${BLUE}Running Cairo formatting...${NC}"
-    if ! bin/pre-commit-cairo-format "${STAGED_CAIRO_FILES[@]}"; then
-        echo -e "${RED}Cairo formatting failed${NC}"
-        ((ERRORS++))
-    fi
-    echo
-fi
-
-# Run Prettier formatting if needed
-if [[ "$RUN_PRETTIER" == "true" && ${#STAGED_PRETTIER_FILES[@]} -gt 0 ]]; then
-    echo -e "${BLUE}Running Prettier formatting...${NC}"
-    if ! bin/pre-commit-prettier-format "${STAGED_PRETTIER_FILES[@]}"; then
-        echo -e "${RED}Prettier formatting failed${NC}"
-        ((ERRORS++))
-    fi
-    echo
+if [ ${#MODIFIED_FILES[@]} -gt 0 ]; then
+    echo -e "${YELLOW}📝 The following files were formatted:${NC}"
+    printf '  %s\n' "${MODIFIED_FILES[@]}"
+    echo -e "${YELLOW}Please stage these changes and commit again.${NC}"
+    exit 1
 fi
 
 # Summary
 if [[ $ERRORS -eq 0 ]]; then
-    echo -e "${GREEN}✓ All pre-commit checks passed!${NC}"
+    echo -e "${GREEN}✅ All pre-commit checks passed!${NC}"
     exit 0
 else
-    echo -e "${RED}✗ Pre-commit checks failed with $ERRORS error(s)${NC}"
+    echo -e "${RED}❌ Pre-commit checks failed with $ERRORS error(s)${NC}"
     echo -e "${YELLOW}Fix the issues above and try committing again.${NC}"
     exit 1
 fi

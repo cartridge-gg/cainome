@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Rust linting script
-# Usage: ./bin/rust-lint [--check-only]
+# Usage: ./bin/rust-lint [--check-only] [file1.rs file2.rs ...]
 #
 set -euo pipefail
 
@@ -12,6 +12,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 CHECK_ONLY=false
+SPECIFIC_FILES=()
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -21,9 +22,9 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         *)
-            echo "Unknown option: $1"
-            echo "Usage: $0 [--check-only]"
-            exit 1
+            # All other arguments are treated as files
+            SPECIFIC_FILES+=("$1")
+            shift
             ;;
     esac
 done
@@ -42,11 +43,22 @@ ERRORS=0
 if [[ "$CHECK_ONLY" == "true" ]]; then
     # Check formatting
     echo -e "${BLUE}  Checking Rust format...${NC}"
-    if ! cargo fmt --all -- --check; then
-        echo -e "${RED}❌ Rust formatting failed${NC}"
-        ((ERRORS++))
+    if [[ ${#SPECIFIC_FILES[@]} -gt 0 ]]; then
+        # Check specific files
+        if ! cargo fmt --all -- --check "${SPECIFIC_FILES[@]}"; then
+            echo -e "${RED}❌ Rust formatting failed${NC}"
+            ((ERRORS++))
+        else
+            echo -e "${GREEN}✓ Rust formatting OK${NC}"
+        fi
     else
-        echo -e "${GREEN}✓ Rust formatting OK${NC}"
+        # Check all files
+        if ! cargo fmt --all -- --check; then
+            echo -e "${RED}❌ Rust formatting failed${NC}"
+            ((ERRORS++))
+        else
+            echo -e "${GREEN}✓ Rust formatting OK${NC}"
+        fi
     fi
     
     # Run linting
@@ -69,7 +81,13 @@ if [[ "$CHECK_ONLY" == "true" ]]; then
 else
     # Format only
     echo -e "${BLUE}  Formatting Rust code...${NC}"
-    cargo fmt --all
+    if [[ ${#SPECIFIC_FILES[@]} -gt 0 ]]; then
+        # Format specific files
+        cargo fmt --all -- "${SPECIFIC_FILES[@]}"
+    else
+        # Format all files
+        cargo fmt --all
+    fi
     echo -e "${GREEN}✓ Rust formatted${NC}"
 fi
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Prettier linting script
-# Usage: ./bin/prettier-lint [--check-only]
+# Usage: ./bin/prettier-lint [--check-only] [file1.md file2.yaml ...]
 #
 set -euo pipefail
 
@@ -13,6 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 CHECK_ONLY=false
+SPECIFIC_FILES=()
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -22,9 +23,9 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         *)
-            echo "Unknown option: $1"
-            echo "Usage: $0 [--check-only]"
-            exit 1
+            # All other arguments are treated as files
+            SPECIFIC_FILES+=("$1")
+            shift
             ;;
     esac
 done
@@ -40,30 +41,47 @@ fi
 
 ERRORS=0
 
-echo -e "${BLUE}  Checking Markdown format...${NC}"
-if [[ "$CHECK_ONLY" == "true" ]]; then
-    if ! prettier --check "**/*.md"; then
-        echo -e "${RED}❌ Markdown formatting failed${NC}"
-        ((ERRORS++))
+if [[ ${#SPECIFIC_FILES[@]} -gt 0 ]]; then
+    # Process specific files
+    echo -e "${BLUE}  Processing specific files...${NC}"
+    if [[ "$CHECK_ONLY" == "true" ]]; then
+        if ! prettier --check "${SPECIFIC_FILES[@]}"; then
+            echo -e "${RED}❌ Prettier formatting failed${NC}"
+            ((ERRORS++))
+        else
+            echo -e "${GREEN}✓ Prettier formatting OK${NC}"
+        fi
     else
-        echo -e "${GREEN}✓ Markdown formatting OK${NC}"
+        prettier --write "${SPECIFIC_FILES[@]}"
+        echo -e "${GREEN}✓ Files formatted with Prettier${NC}"
     fi
 else
-    prettier --write "**/*.md"
-    echo -e "${GREEN}✓ Markdown formatted${NC}"
-fi
+    # Process all markdown and yaml files
+    echo -e "${BLUE}  Checking Markdown format...${NC}"
+    if [[ "$CHECK_ONLY" == "true" ]]; then
+        if ! prettier --check "**/*.md"; then
+            echo -e "${RED}❌ Markdown formatting failed${NC}"
+            ((ERRORS++))
+        else
+            echo -e "${GREEN}✓ Markdown formatting OK${NC}"
+        fi
+    else
+        prettier --write "**/*.md"
+        echo -e "${GREEN}✓ Markdown formatted${NC}"
+    fi
 
-echo -e "${BLUE}  Checking YAML format...${NC}"
-if [[ "$CHECK_ONLY" == "true" ]]; then
-    if ! prettier --check "**/*.{yaml,yml}"; then
-        echo -e "${RED}❌ YAML formatting failed${NC}"
-        ((ERRORS++))
+    echo -e "${BLUE}  Checking YAML format...${NC}"
+    if [[ "$CHECK_ONLY" == "true" ]]; then
+        if ! prettier --check "**/*.{yaml,yml}"; then
+            echo -e "${RED}❌ YAML formatting failed${NC}"
+            ((ERRORS++))
+        else
+            echo -e "${GREEN}✓ YAML formatting OK${NC}"
+        fi
     else
-        echo -e "${GREEN}✓ YAML formatting OK${NC}"
+        prettier --write "**/*.{yaml,yml}"
+        echo -e "${GREEN}✓ YAML formatted${NC}"
     fi
-else
-    prettier --write "**/*.{yaml,yml}"
-    echo -e "${GREEN}✓ YAML formatted${NC}"
 fi
 
 popd > /dev/null

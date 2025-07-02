@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Shared linting script - orchestrates language-specific linting scripts
-# Usage: ./bin/lint [--rust] [--cairo] [--prettier] [--all] [--check-only]
+# Usage: ./bin/lint [--rust] [--cairo] [--prettier] [--all] [--check-only] [--files file1 file2 ...]
 #
 set -euo pipefail
 
@@ -17,6 +17,7 @@ RUN_RUST=false
 RUN_CAIRO=false
 RUN_PRETTIER=false
 CHECK_ONLY=false
+SPECIFIC_FILES=()
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -43,9 +44,17 @@ while [[ $# -gt 0 ]]; do
             CHECK_ONLY=true
             shift
             ;;
+        --files)
+            shift
+            # Collect all remaining arguments as files
+            while [[ $# -gt 0 && ! "$1" =~ ^-- ]]; do
+                SPECIFIC_FILES+=("$1")
+                shift
+            done
+            ;;
         *)
             echo "Unknown option: $1"
-            echo "Usage: $0 [--rust] [--cairo] [--prettier] [--all] [--check-only]"
+            echo "Usage: $0 [--rust] [--cairo] [--prettier] [--all] [--check-only] [--files file1 file2 ...]"
             exit 1
             ;;
     esac
@@ -68,11 +77,11 @@ if [[ "$RUN_RUST" == "true" ]]; then
     echo -e "${BLUE}🦀 Running Rust checks...${NC}"
     
     if [[ "$CHECK_ONLY" == "true" ]]; then
-        if ! $(dirname "$0")/rust-lint --check-only; then
+        if ! $(dirname "$0")/rust-lint --check-only "${SPECIFIC_FILES[@]}"; then
             ((ERRORS++))
         fi
     else
-        $(dirname "$0")/rust-lint
+        $(dirname "$0")/rust-lint "${SPECIFIC_FILES[@]}"
     fi
     echo
 fi
@@ -82,9 +91,9 @@ if [[ "$RUN_CAIRO" == "true" ]]; then
     echo -e "${BLUE}🏺 Running Cairo checks...${NC}"
     
     if [[ "$CHECK_ONLY" == "true" ]]; then
-        $(dirname "$0")/cairo-lint --check-only
+        $(dirname "$0")/cairo-lint --check-only "${SPECIFIC_FILES[@]}"
     else
-        $(dirname "$0")/cairo-lint
+        $(dirname "$0")/cairo-lint "${SPECIFIC_FILES[@]}"
     fi
     echo
 fi
@@ -94,11 +103,11 @@ if [[ "$RUN_PRETTIER" == "true" ]]; then
     echo -e "${BLUE}📝 Running Prettier checks...${NC}"
     
     if [[ "$CHECK_ONLY" == "true" ]]; then
-        if ! $(dirname "$0")/prettier-lint --check-only; then
+        if ! $(dirname "$0")/prettier-lint --check-only "${SPECIFIC_FILES[@]}"; then
             ((ERRORS++))
         fi
     else
-        $(dirname "$0")/prettier-lint
+        $(dirname "$0")/prettier-lint "${SPECIFIC_FILES[@]}"
     fi
     echo
 fi

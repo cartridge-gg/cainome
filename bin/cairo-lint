@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # Cairo linting script
-# Usage: ./bin/cairo-lint [--check-only]
+# Usage: ./bin/cairo-lint [--check-only] [file1.cairo file2.cairo ...]
 #
 set -euo pipefail
 
@@ -13,6 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 CHECK_ONLY=false
+SPECIFIC_FILES=()
 
 # Parse arguments
 while [[ $# -gt 0 ]]; do
@@ -22,9 +23,9 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         *)
-            echo "Unknown option: $1"
-            echo "Usage: $0 [--check-only]"
-            exit 1
+            # All other arguments are treated as files
+            SPECIFIC_FILES+=("$1")
+            shift
             ;;
     esac
 done
@@ -42,20 +43,44 @@ echo -e "${BLUE}  Checking Cairo format...${NC}"
 cd contracts
 
 if [[ "$CHECK_ONLY" == "true" ]]; then
-    if ! scarb fmt --check 2>/dev/null; then
-        echo -e "${YELLOW}⚠️  Cairo formatting check failed or scarb version issue${NC}"
-        # Don't fail for Cairo formatting issues
-        exit 0
+    if [[ ${#SPECIFIC_FILES[@]} -gt 0 ]]; then
+        # Check specific files - scarb fmt doesn't support individual files, so check all
+        if ! scarb fmt --check 2>/dev/null; then
+            echo -e "${YELLOW}⚠️  Cairo formatting check failed or scarb version issue${NC}"
+            # Don't fail for Cairo formatting issues
+            exit 0
+        else
+            echo -e "${GREEN}✓ Cairo formatting OK${NC}"
+        fi
     else
-        echo -e "${GREEN}✓ Cairo formatting OK${NC}"
+        # Check all files
+        if ! scarb fmt --check 2>/dev/null; then
+            echo -e "${YELLOW}⚠️  Cairo formatting check failed or scarb version issue${NC}"
+            # Don't fail for Cairo formatting issues
+            exit 0
+        else
+            echo -e "${GREEN}✓ Cairo formatting OK${NC}"
+        fi
     fi
 else
-    if ! scarb fmt 2>/dev/null; then
-        echo -e "${YELLOW}⚠️  Cairo formatting failed or scarb version issue${NC}"
-        # Don't fail for Cairo formatting issues
-        exit 0
+    if [[ ${#SPECIFIC_FILES[@]} -gt 0 ]]; then
+        # Format - scarb fmt doesn't support individual files, so format all in contracts
+        if ! scarb fmt 2>/dev/null; then
+            echo -e "${YELLOW}⚠️  Cairo formatting failed or scarb version issue${NC}"
+            # Don't fail for Cairo formatting issues
+            exit 0
+        else
+            echo -e "${GREEN}✓ Cairo formatted${NC}"
+        fi
     else
-        echo -e "${GREEN}✓ Cairo formatted${NC}"
+        # Format all files
+        if ! scarb fmt 2>/dev/null; then
+            echo -e "${YELLOW}⚠️  Cairo formatting failed or scarb version issue${NC}"
+            # Don't fail for Cairo formatting issues
+            exit 0
+        else
+            echo -e "${GREEN}✓ Cairo formatted${NC}"
+        fi
     fi
 fi
 
