@@ -77,34 +77,35 @@ impl ContractParser {
         let mut contracts = vec![];
 
         // Collect files to process based on configuration
-        let files_to_process: Vec<String> = if let Some(included_contracts) = &config.included_contracts {
-            // Use explicitly specified contracts
-            included_contracts.clone()
-        } else {
-            // Discover all files with the sierra extension
-            fs::read_dir(&path)?
-                .filter_map(|entry| {
-                    let entry = entry.ok()?;
-                    let file_path = entry.path();
-                    
-                    if file_path.is_file() {
-                        let file_name = file_path.file_name()?.to_str()?;
-                        if file_name.ends_with(&config.sierra_extension) {
-                            Some(file_name.to_string())
+        let files_to_process: Vec<String> =
+            if let Some(included_contracts) = &config.included_contracts {
+                // Use explicitly specified contracts
+                included_contracts.clone()
+            } else {
+                // Discover all files with the sierra extension
+                fs::read_dir(&path)?
+                    .filter_map(|entry| {
+                        let entry = entry.ok()?;
+                        let file_path = entry.path();
+
+                        if file_path.is_file() {
+                            let file_name = file_path.file_name()?.to_str()?;
+                            if file_name.ends_with(&config.sierra_extension) {
+                                Some(file_name.to_string())
+                            } else {
+                                None
+                            }
                         } else {
                             None
                         }
-                    } else {
-                        None
-                    }
-                })
-                .collect()
-        };
+                    })
+                    .collect()
+            };
 
         // Process each file
         for file_name in files_to_process {
             let file_path = path.join(&file_name);
-            
+
             // Validate file exists (important for explicitly specified files)
             if !file_path.exists() {
                 tracing::warn!("Contract file '{}' not found in artifacts path", file_name);
@@ -113,7 +114,11 @@ impl ContractParser {
 
             // Validate file extension
             if !file_name.ends_with(&config.sierra_extension) {
-                tracing::warn!("Contract file '{}' does not have the expected extension '{}'", file_name, config.sierra_extension);
+                tracing::warn!(
+                    "Contract file '{}' does not have the expected extension '{}'",
+                    file_name,
+                    config.sierra_extension
+                );
                 continue;
             }
 
@@ -125,9 +130,7 @@ impl ContractParser {
                     let contract_name = {
                         let n = file_name.trim_end_matches(&config.sierra_extension);
                         if let Some(alias) = config.contract_aliases.get(n) {
-                            tracing::trace!(
-                                "Aliasing {file_name} contract name with {alias}"
-                            );
+                            tracing::trace!("Aliasing {file_name} contract name with {alias}");
                             alias
                         } else {
                             n
