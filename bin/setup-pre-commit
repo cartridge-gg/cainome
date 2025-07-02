@@ -1,0 +1,114 @@
+#!/bin/bash
+#
+# Setup script for pre-commit hooks
+# This script configures Git to use the .githooks directory for pre-commit hooks
+#
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+echo -e "${BLUE}🔧 Setting up pre-commit hooks...${NC}"
+
+# Move to repo root
+pushd $(dirname "$0")/.. > /dev/null
+
+# Check if we're in a Git repository
+if [ ! -d ".git" ]; then
+    echo -e "${RED}❌ Error: Not in a Git repository${NC}"
+    exit 1
+fi
+
+# Configure Git to use .githooks directory
+echo -e "${BLUE}Configuring Git hooks path...${NC}"
+git config core.hooksPath .githooks
+
+# Make sure our hook is executable
+echo -e "${BLUE}Making hooks executable...${NC}"
+chmod +x .githooks/pre-commit
+
+# Check if required tools are available
+echo -e "${BLUE}Checking required tools...${NC}"
+
+# Check for Rust tools
+if ! command -v cargo >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠️  Warning: Cargo not found. Rust linting will not work.${NC}"
+else
+    echo -e "${GREEN}✓ Cargo found${NC}"
+    
+    # Check for rustfmt
+    if ! cargo fmt --version >/dev/null 2>&1; then
+        echo -e "${YELLOW}⚠️  Warning: rustfmt not found. Installing...${NC}"
+        rustup component add rustfmt
+    else
+        echo -e "${GREEN}✓ rustfmt found${NC}"
+    fi
+    
+    # Check for clippy
+    if ! cargo clippy --version >/dev/null 2>&1; then
+        echo -e "${YELLOW}⚠️  Warning: clippy not found. Installing...${NC}"
+        rustup component add clippy
+    else
+        echo -e "${GREEN}✓ clippy found${NC}"
+    fi
+fi
+
+# Check for Scarb (Cairo)
+if ! command -v scarb >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠️  Warning: scarb not found. Cairo formatting will not work.${NC}"
+    echo -e "${YELLOW}    Install from: https://docs.swmansion.com/scarb/${NC}"
+else
+    echo -e "${GREEN}✓ scarb found${NC}"
+fi
+
+# Check for prettier
+if ! command -v prettier >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠️  Warning: prettier not found. Markdown/YAML formatting will not work.${NC}"
+    echo -e "${YELLOW}    Install with: npm install -g prettier or yarn global add prettier${NC}"
+else
+    echo -e "${GREEN}✓ prettier found${NC}"
+fi
+
+# Test the hooks
+echo -e "\n${BLUE}Testing pre-commit hooks...${NC}"
+
+# Check if the hook script exists and is executable
+if [ -x ".githooks/pre-commit" ]; then
+    echo -e "${GREEN}✓ Pre-commit hook is installed and executable${NC}"
+else
+    echo -e "${RED}❌ Pre-commit hook is not properly installed${NC}"
+    exit 1
+fi
+
+# Verify git config
+HOOKS_PATH=$(git config core.hooksPath)
+if [ "$HOOKS_PATH" = ".githooks" ]; then
+    echo -e "${GREEN}✓ Git hooks path is configured correctly${NC}"
+else
+    echo -e "${RED}❌ Git hooks path is not configured correctly${NC}"
+    exit 1
+fi
+
+echo -e "\n${GREEN}✅ Pre-commit hooks setup completed successfully!${NC}"
+echo -e "\n${BLUE}ℹ️  How it works:${NC}"
+echo "• The pre-commit hook will automatically run when you commit changes"
+echo "• Only files in your current commit (staged files) will be checked"
+echo "• Rust files will be formatted with cargo fmt and linted with cargo clippy"
+echo "• Cairo files will be formatted with scarb fmt"
+echo "• Markdown/YAML files will be formatted with prettier"
+echo "• If any issues are found, the commit will be blocked until they're fixed"
+echo ""
+echo -e "${BLUE}ℹ️  To skip the hooks temporarily (not recommended):${NC}"
+echo "  git commit --no-verify"
+echo ""
+echo -e "${BLUE}ℹ️  To manually run the hooks on staged files:${NC}"
+echo "  .githooks/pre-commit"
+echo ""
+echo -e "${BLUE}ℹ️  To disable hooks entirely:${NC}"
+echo "  git config --unset core.hooksPath"
+
+popd > /dev/null 

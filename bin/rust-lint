@@ -1,0 +1,96 @@
+#!/bin/bash
+#
+# Rust linting script
+# Usage: ./bin/rust-lint [--check-only] [file1.rs file2.rs ...]
+#
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+CHECK_ONLY=false
+SPECIFIC_FILES=()
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --check-only)
+            CHECK_ONLY=true
+            shift
+            ;;
+        *)
+            # All other arguments are treated as files
+            SPECIFIC_FILES+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# Move to repo root
+pushd $(dirname "$0")/.. > /dev/null
+
+# Check if cargo is available
+if ! command -v cargo >/dev/null 2>&1; then
+    echo -e "${RED}❌ cargo not found${NC}"
+    exit 1
+fi
+
+ERRORS=0
+
+if [[ "$CHECK_ONLY" == "true" ]]; then
+    # Check formatting
+    echo -e "${BLUE}  Checking Rust format...${NC}"
+    if [[ ${#SPECIFIC_FILES[@]} -gt 0 ]]; then
+        # Check specific files
+        if ! cargo fmt --all -- --check "${SPECIFIC_FILES[@]}"; then
+            echo -e "${RED}❌ Rust formatting failed${NC}"
+            ((ERRORS++))
+        else
+            echo -e "${GREEN}✓ Rust formatting OK${NC}"
+        fi
+    else
+        # Check all files
+        if ! cargo fmt --all -- --check; then
+            echo -e "${RED}❌ Rust formatting failed${NC}"
+            ((ERRORS++))
+        else
+            echo -e "${GREEN}✓ Rust formatting OK${NC}"
+        fi
+    fi
+    
+    # Run linting
+    echo -e "${BLUE}  Running Clippy...${NC}"
+    if ! cargo clippy --all --all-targets --all-features -- -D warnings; then
+        echo -e "${RED}❌ Clippy failed${NC}"
+        ((ERRORS++))
+    else
+        echo -e "${GREEN}✓ Clippy passed${NC}"
+    fi
+    
+    # Doc check (only in check mode)
+    echo -e "${BLUE}  Checking Rust docs...${NC}"
+    if ! RUSTDOCFLAGS="-Dwarnings" cargo doc --document-private-items --no-deps --all-features --workspace --quiet; then
+        echo -e "${RED}❌ Rust docs failed${NC}"
+        ((ERRORS++))
+    else
+        echo -e "${GREEN}✓ Rust docs OK${NC}"
+    fi
+else
+    # Format only
+    echo -e "${BLUE}  Formatting Rust code...${NC}"
+    if [[ ${#SPECIFIC_FILES[@]} -gt 0 ]]; then
+        # Format specific files
+        cargo fmt --all -- "${SPECIFIC_FILES[@]}"
+    else
+        # Format all files
+        cargo fmt --all
+    fi
+    echo -e "${GREEN}✓ Rust formatted${NC}"
+fi
+
+popd > /dev/null
+
+exit $ERRORS 

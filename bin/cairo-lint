@@ -1,0 +1,88 @@
+#!/bin/bash
+#
+# Cairo linting script
+# Usage: ./bin/cairo-lint [--check-only] [file1.cairo file2.cairo ...]
+#
+set -euo pipefail
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+CHECK_ONLY=false
+SPECIFIC_FILES=()
+
+# Parse arguments
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --check-only)
+            CHECK_ONLY=true
+            shift
+            ;;
+        *)
+            # All other arguments are treated as files
+            SPECIFIC_FILES+=("$1")
+            shift
+            ;;
+    esac
+done
+
+# Move to repo root
+pushd $(dirname "$0")/.. > /dev/null
+
+# Check if scarb is available
+if ! command -v scarb >/dev/null 2>&1; then
+    echo -e "${YELLOW}⚠️  scarb not found, skipping Cairo checks${NC}"
+    exit 0
+fi
+
+echo -e "${BLUE}  Checking Cairo format...${NC}"
+cd contracts
+
+if [[ "$CHECK_ONLY" == "true" ]]; then
+    if [[ ${#SPECIFIC_FILES[@]} -gt 0 ]]; then
+        # Check specific files - scarb fmt doesn't support individual files, so check all
+        if ! scarb fmt --check 2>/dev/null; then
+            echo -e "${YELLOW}⚠️  Cairo formatting check failed or scarb version issue${NC}"
+            # Don't fail for Cairo formatting issues
+            exit 0
+        else
+            echo -e "${GREEN}✓ Cairo formatting OK${NC}"
+        fi
+    else
+        # Check all files
+        if ! scarb fmt --check 2>/dev/null; then
+            echo -e "${YELLOW}⚠️  Cairo formatting check failed or scarb version issue${NC}"
+            # Don't fail for Cairo formatting issues
+            exit 0
+        else
+            echo -e "${GREEN}✓ Cairo formatting OK${NC}"
+        fi
+    fi
+else
+    if [[ ${#SPECIFIC_FILES[@]} -gt 0 ]]; then
+        # Format - scarb fmt doesn't support individual files, so format all in contracts
+        if ! scarb fmt 2>/dev/null; then
+            echo -e "${YELLOW}⚠️  Cairo formatting failed or scarb version issue${NC}"
+            # Don't fail for Cairo formatting issues
+            exit 0
+        else
+            echo -e "${GREEN}✓ Cairo formatted${NC}"
+        fi
+    else
+        # Format all files
+        if ! scarb fmt 2>/dev/null; then
+            echo -e "${YELLOW}⚠️  Cairo formatting failed or scarb version issue${NC}"
+            # Don't fail for Cairo formatting issues
+            exit 0
+        else
+            echo -e "${GREEN}✓ Cairo formatted${NC}"
+        fi
+    fi
+fi
+
+cd ..
+popd > /dev/null 

@@ -40,4 +40,4 @@ jobs:
           max_attempts: 3
           retry_wait_seconds: 30
           command: |
-            bash ./scripts/test_all.sh
+            bin/test
