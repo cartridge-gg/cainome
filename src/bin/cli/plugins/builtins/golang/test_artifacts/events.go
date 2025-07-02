@@ -14,46 +14,19 @@ import (
 	"github.com/NethermindEth/starknet.go/utils"
 )
 
-type EventOnlyData struct {
-	Value *felt.Felt `json:"value"`
+// SimpleEventsEvent represents a contract event
+type SimpleEventsEvent interface {
+	IsSimpleEventsEvent() bool
 }
 
-// MarshalCairo serializes EventOnlyData to Cairo felt array
-func (s *EventOnlyData) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, s.Value)
-	return result, nil
-}
-
-// UnmarshalCairo deserializes EventOnlyData from Cairo felt array
-func (s *EventOnlyData) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Value")
-	}
-	s.Value = data[offset]
-	offset++
-
-	return nil
-}
-
-// CairoSize returns the serialized size for EventOnlyData
-func (s *EventOnlyData) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
-// EventName returns the name of this event type
-func (e EventOnlyData) EventName() string {
-	return "only_data"
-}
-
-// IsSimpleEventsEvent implements the SimpleEventsEvent interface
-func (e EventOnlyData) IsSimpleEventsEvent() bool {
-	return true
-}
+const (
+	SimpleEventsEvent_EventOnlyKey = "EventOnlyKey"
+	SimpleEventsEvent_EventOnlyData = "EventOnlyData"
+	SimpleEventsEvent_EventAll = "EventAll"
+	SimpleEventsEvent_EventMultiple = "EventMultiple"
+	SimpleEventsEvent_EventNothing = "EventNothing"
+	SimpleEventsEvent_SuperEvent = "SuperEvent"
+)
 
 
 type EventNothing struct {
@@ -84,133 +57,6 @@ func (e EventNothing) EventName() string {
 
 // IsSimpleEventsEvent implements the SimpleEventsEvent interface
 func (e EventNothing) IsSimpleEventsEvent() bool {
-	return true
-}
-
-
-type EventMultiple struct {
-	Key1 *felt.Felt `json:"key1"`
-	Key2 *felt.Felt `json:"key2"`
-	Data1 *felt.Felt `json:"data1"`
-	Data2 *big.Int `json:"data2"`
-	Data3 struct {
-	Field0 *felt.Felt
-	Field1 *felt.Felt
-} `json:"data3"`
-}
-
-// MarshalCairo serializes EventMultiple to Cairo felt array
-func (s *EventMultiple) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, s.Key1)
-	result = append(result, s.Key2)
-	result = append(result, s.Data1)
-	result = append(result, cainome.FeltFromBigInt(s.Data2))
-	// Tuple field Data3: marshal each sub-field
-	result = append(result, s.Data3.Field0)
-	result = append(result, s.Data3.Field1)
-	return result, nil
-}
-
-// UnmarshalCairo deserializes EventMultiple from Cairo felt array
-func (s *EventMultiple) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Key1")
-	}
-	s.Key1 = data[offset]
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Key2")
-	}
-	s.Key2 = data[offset]
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Data1")
-	}
-	s.Data1 = data[offset]
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Data2")
-	}
-	s.Data2 = cainome.BigIntFromFelt(data[offset])
-	offset++
-
-	// Tuple field Data3: unmarshal each sub-field
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for tuple field Data3 element 0")
-	}
-	s.Data3.Field0 = data[offset]
-	offset++
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for tuple field Data3 element 1")
-	}
-	s.Data3.Field1 = data[offset]
-	offset++
-
-	return nil
-}
-
-// CairoSize returns the serialized size for EventMultiple
-func (s *EventMultiple) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
-// EventName returns the name of this event type
-func (e EventMultiple) EventName() string {
-	return "multiple"
-}
-
-// IsSimpleEventsEvent implements the SimpleEventsEvent interface
-func (e EventMultiple) IsSimpleEventsEvent() bool {
-	return true
-}
-
-
-type EventOnlyKey struct {
-	Value *felt.Felt `json:"value"`
-}
-
-// MarshalCairo serializes EventOnlyKey to Cairo felt array
-func (s *EventOnlyKey) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, s.Value)
-	return result, nil
-}
-
-// UnmarshalCairo deserializes EventOnlyKey from Cairo felt array
-func (s *EventOnlyKey) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Value")
-	}
-	s.Value = data[offset]
-	offset++
-
-	return nil
-}
-
-// CairoSize returns the serialized size for EventOnlyKey
-func (s *EventOnlyKey) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
-// EventName returns the name of this event type
-func (e EventOnlyKey) EventName() string {
-	return "only_key"
-}
-
-// IsSimpleEventsEvent implements the SimpleEventsEvent interface
-func (e EventOnlyKey) IsSimpleEventsEvent() bool {
 	return true
 }
 
@@ -320,19 +166,173 @@ func (e EventAll) IsSimpleEventsEvent() bool {
 }
 
 
-// SimpleEventsEvent represents a contract event
-type SimpleEventsEvent interface {
-	IsSimpleEventsEvent() bool
+type EventMultiple struct {
+	Key1 *felt.Felt `json:"key1"`
+	Key2 *felt.Felt `json:"key2"`
+	Data1 *felt.Felt `json:"data1"`
+	Data2 *big.Int `json:"data2"`
+	Data3 struct {
+	Field0 *felt.Felt
+	Field1 *felt.Felt
+} `json:"data3"`
 }
 
-const (
-	SimpleEventsEvent_EventOnlyKey = "EventOnlyKey"
-	SimpleEventsEvent_EventOnlyData = "EventOnlyData"
-	SimpleEventsEvent_EventAll = "EventAll"
-	SimpleEventsEvent_EventMultiple = "EventMultiple"
-	SimpleEventsEvent_EventNothing = "EventNothing"
-	SimpleEventsEvent_SuperEvent = "SuperEvent"
-)
+// MarshalCairo serializes EventMultiple to Cairo felt array
+func (s *EventMultiple) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Key1)
+	result = append(result, s.Key2)
+	result = append(result, s.Data1)
+	result = append(result, cainome.FeltFromBigInt(s.Data2))
+	// Tuple field Data3: marshal each sub-field
+	result = append(result, s.Data3.Field0)
+	result = append(result, s.Data3.Field1)
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EventMultiple from Cairo felt array
+func (s *EventMultiple) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Key1")
+	}
+	s.Key1 = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Key2")
+	}
+	s.Key2 = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Data1")
+	}
+	s.Data1 = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Data2")
+	}
+	s.Data2 = cainome.BigIntFromFelt(data[offset])
+	offset++
+
+	// Tuple field Data3: unmarshal each sub-field
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for tuple field Data3 element 0")
+	}
+	s.Data3.Field0 = data[offset]
+	offset++
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for tuple field Data3 element 1")
+	}
+	s.Data3.Field1 = data[offset]
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EventMultiple
+func (s *EventMultiple) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+// EventName returns the name of this event type
+func (e EventMultiple) EventName() string {
+	return "multiple"
+}
+
+// IsSimpleEventsEvent implements the SimpleEventsEvent interface
+func (e EventMultiple) IsSimpleEventsEvent() bool {
+	return true
+}
+
+
+type EventOnlyData struct {
+	Value *felt.Felt `json:"value"`
+}
+
+// MarshalCairo serializes EventOnlyData to Cairo felt array
+func (s *EventOnlyData) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Value)
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EventOnlyData from Cairo felt array
+func (s *EventOnlyData) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Value")
+	}
+	s.Value = data[offset]
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EventOnlyData
+func (s *EventOnlyData) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+// EventName returns the name of this event type
+func (e EventOnlyData) EventName() string {
+	return "only_data"
+}
+
+// IsSimpleEventsEvent implements the SimpleEventsEvent interface
+func (e EventOnlyData) IsSimpleEventsEvent() bool {
+	return true
+}
+
+
+type EventOnlyKey struct {
+	Value *felt.Felt `json:"value"`
+}
+
+// MarshalCairo serializes EventOnlyKey to Cairo felt array
+func (s *EventOnlyKey) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Value)
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EventOnlyKey from Cairo felt array
+func (s *EventOnlyKey) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Value")
+	}
+	s.Value = data[offset]
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EventOnlyKey
+func (s *EventOnlyKey) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+// EventName returns the name of this event type
+func (e EventOnlyKey) EventName() string {
+	return "only_key"
+}
+
+// IsSimpleEventsEvent implements the SimpleEventsEvent interface
+func (e EventOnlyKey) IsSimpleEventsEvent() bool {
+	return true
+}
 
 
 type EventsReader struct {

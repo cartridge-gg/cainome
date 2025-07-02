@@ -13,6 +13,7 @@ enum TypedEnum {
     Variant1: felt252,
     Variant2: u256,
     Variant3: (felt252, u256),
+    Variant4: starknet::ContractAddress,
 }
 
 #[derive(Serde, Drop, starknet::Store)]
@@ -57,6 +58,21 @@ mod enums {
     #[external(v0)]
     fn get_typed_3(self: @ContractState) -> TypedEnum {
         TypedEnum::Variant3((1, 0xffffff_u256))
+    }
+
+    #[external(v0)]
+    fn get_typed_4(self: @ContractState) -> TypedEnum {
+        TypedEnum::Variant4(42.try_into().unwrap())
+    }
+
+    #[external(v0)]
+    fn get_typed_with_arg(self: @ContractState, e: TypedEnum) -> TypedEnum {
+        e
+    }
+
+    #[external(v0)]
+    fn get_typed_with_option_arg(self: @ContractState, e: Option<TypedEnum>) -> Option<TypedEnum> {
+        e
     }
 
     #[external(v0)]

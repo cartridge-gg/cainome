@@ -517,7 +517,6 @@ func (simple_types_writer *SimpleTypesWriter) SetTuple(ctx context.Context, tupl
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	// Tuple field tuple: marshal each sub-field
 	calldata = append(calldata, tuple.Field0)
 	calldata = append(calldata, cainome.FeltFromBigInt(tuple.Field1))
 
@@ -528,6 +527,47 @@ func (simple_types_writer *SimpleTypesWriter) SetTuple(ctx context.Context, tupl
 	}
 
 	return txHash, nil
+}
+
+func (simple_types_reader *SimpleTypesReader) GetBoolWithTupleArgs(ctx context.Context, nonce struct {
+	Field0 *felt.Felt
+	Field1 *big.Int
+}, opts *cainome.CallOpts) (bool, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &cainome.CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	// Tuple field nonce: serialize each element
+	calldata = append(calldata, nonce.Field0)
+	calldata = append(calldata, cainome.FeltFromBigInt(nonce.Field1))
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_types_reader.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_bool_with_tuple_args"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_types_reader.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return false, err
+	}
+
+	// Deserialize response to proper type
+	if len(response) == 0 {
+		return false, fmt.Errorf("empty response")
+	}
+	result := cainome.UintFromFelt(response[0]) != 0
+	return result, nil
 }
 
 func (simple_types_reader *SimpleTypesReader) GetArray(ctx context.Context, opts *cainome.CallOpts) ([]*felt.Felt, error) {
@@ -575,11 +615,8 @@ func (simple_types_writer *SimpleTypesWriter) SetArray(ctx context.Context, data
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	if data_data, err := cainome.NewCairoFeltArray(data).MarshalCairo(); err != nil {
-		return nil, fmt.Errorf("failed to marshal data: %w", err)
-	} else {
-		calldata = append(calldata, data_data...)
-	}
+	calldata = append(calldata, cainome.FeltFromUint(uint64(len(data))))
+	calldata = append(calldata, data...)
 
 	// Build and send invoke transaction using cainome helper
 	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_types_writer.account, simple_types_writer.contractAddress, utils.GetSelectorFromNameFelt("set_array"), calldata, opts)

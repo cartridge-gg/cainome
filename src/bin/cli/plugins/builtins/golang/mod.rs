@@ -33,7 +33,7 @@ impl GolangPlugin {
             .replace('@', "_at_")
             .replace('+', "_plus_")
             .replace(' ', "_");
-        
+
         // Remove any remaining invalid characters
         sanitized = sanitized
             .chars()
@@ -45,12 +45,12 @@ impl GolangPlugin {
                 }
             })
             .collect();
-        
+
         // Ensure it starts with a letter or underscore
         if sanitized.chars().next().map_or(true, |c| c.is_numeric()) {
             sanitized = format!("_{}", sanitized);
         }
-        
+
         // Remove consecutive underscores
         let mut result = String::new();
         let mut prev_underscore = false;
@@ -65,7 +65,7 @@ impl GolangPlugin {
                 prev_underscore = false;
             }
         }
-        
+
         // Remove trailing underscores
         result.trim_end_matches('_').to_string()
     }
@@ -134,8 +134,9 @@ impl GolangPlugin {
                 }
             }
             Token::Option(option) => {
+                // For all Option types, add a pointer for nullability
                 let inner_type = self.token_to_go_type(&option.inner);
-                format!("*{}", inner_type) // Use pointer for optional types
+                format!("*{}", inner_type)
             }
             Token::Result(result) => {
                 // Generate a Result type that can be unpacked into (value, error) pattern
@@ -174,6 +175,9 @@ impl GolangPlugin {
             Token::Composite(composite) => {
                 if composite.is_builtin() {
                     self.map_composite_builtin_type(&composite.type_path_no_generic())
+                } else if composite.r#type == CompositeType::Enum {
+                    // Enum interfaces should not be pointers
+                    composite.type_name_or_alias().to_case(Case::Pascal)
                 } else {
                     // Use pointer to struct type for pass-by-reference parameters
                     let type_name = composite.type_name_or_alias().to_case(Case::Pascal);
@@ -181,8 +185,10 @@ impl GolangPlugin {
                 }
             }
             Token::Option(option) => {
-                let inner_type = self.token_to_go_param_type(&option.inner);
-                format!("*{}", inner_type) // Use pointer for optional types
+                // For all Option types, add a pointer for nullability
+                // Use token_to_go_type instead of token_to_go_param_type to avoid double pointers
+                let inner_type = self.token_to_go_type(&option.inner);
+                format!("*{}", inner_type)
             }
             Token::Result(result) => {
                 // Generate a Result type that can be unpacked into (value, error) pattern
@@ -264,6 +270,7 @@ impl GolangPlugin {
         enum_def.push_str(&format!("type {} interface {{\n", enum_name));
         enum_def.push_str(&format!("\tIs{}() bool\n", enum_name));
         enum_def.push_str("\tMarshalCairo() ([]*felt.Felt, error)\n");
+        enum_def.push_str("\tUnmarshalCairo(data []*felt.Felt) error\n");
         enum_def.push_str("}\n\n");
 
         // Generate constants for each variant
@@ -539,7 +546,14 @@ impl GolangPlugin {
                         receiver_var
                     )
                 }
-                _ => "\t// TODO: Handle unknown core basic type for enum variant\n".to_string(),
+                "core::starknet::contract_address::ContractAddress"
+                | "core::starknet::class_hash::ClassHash" => {
+                    format!("\tresult = append(result, {}.Data)\n", receiver_var)
+                }
+                _ => format!(
+                    "\t// TODO: Handle unknown core basic type {} for enum variant\n",
+                    core_basic.type_path
+                ),
             },
             Token::Composite(composite) => {
                 if composite.is_builtin() {
@@ -670,8 +684,14 @@ impl GolangPlugin {
                     let go_type = self.token_to_go_type(token);
                     format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\t{}.Data = {}(cainome.IntFromFelt(data[offset]))\n\toffset++\n", receiver_var, go_type)
                 }
-                _ => "\t// TODO: Handle unknown core basic type for enum variant unmarshal\n"
-                    .to_string(),
+                "core::starknet::contract_address::ContractAddress"
+                | "core::starknet::class_hash::ClassHash" => {
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\t{}.Data = data[offset]\n\toffset++\n", receiver_var)
+                }
+                _ => {
+                    // For unknown types, still consume the data to avoid unused offset
+                    format!("\t// TODO: Handle unknown core basic type {} for enum variant unmarshal\n\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\t// Skip unknown data\n\t_ = data[offset]\n\toffset++\n", core_basic.type_path)
+                }
             },
             Token::Composite(composite) => {
                 if composite.is_builtin() {
@@ -1290,154 +1310,154 @@ impl GolangPlugin {
         );
 
         for (index, inner_token) in tuple.inners.iter().enumerate() {
-                          let field_access = format!("s.{}.Field{}", field_name, index);
-              match inner_token {
-                 Token::CoreBasic(core_basic) => {
-                     match core_basic.type_path.as_str() {
-                         "felt" | "core::felt252" => {
-                             code.push_str("\tif offset >= len(data) {\n");
-                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                             code.push_str("\t}\n");
-                             code.push_str(&format!("\t{} = data[offset]\n", field_access));
-                             code.push_str("\toffset++\n");
-                         }
-                         "core::bool" => {
-                             code.push_str("\tif offset >= len(data) {\n");
-                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                             code.push_str("\t}\n");
-                             code.push_str(&format!(
-                                 "\t{} = cainome.BoolFromFelt(data[offset])\n",
-                                 field_access
-                             ));
-                             code.push_str("\toffset++\n");
-                         }
-                         "core::integer::u8" => {
-                             code.push_str("\tif offset >= len(data) {\n");
-                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                             code.push_str("\t}\n");
-                             code.push_str(&format!(
-                                 "\t{} = uint8(cainome.UintFromFelt(data[offset]))\n",
-                                 field_access
-                             ));
-                             code.push_str("\toffset++\n");
-                         }
-                         "core::integer::u16" => {
-                             code.push_str("\tif offset >= len(data) {\n");
-                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                             code.push_str("\t}\n");
-                             code.push_str(&format!(
-                                 "\t{} = uint16(cainome.UintFromFelt(data[offset]))\n",
-                                 field_access
-                             ));
-                             code.push_str("\toffset++\n");
-                         }
-                         "core::integer::u32" => {
-                             code.push_str("\tif offset >= len(data) {\n");
-                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                             code.push_str("\t}\n");
-                             code.push_str(&format!(
-                                 "\t{} = uint32(cainome.UintFromFelt(data[offset]))\n",
-                                 field_access
-                             ));
-                             code.push_str("\toffset++\n");
-                         }
-                         "core::integer::u64" | "core::integer::usize" => {
-                             code.push_str("\tif offset >= len(data) {\n");
-                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                             code.push_str("\t}\n");
-                             code.push_str(&format!(
-                                 "\t{} = cainome.UintFromFelt(data[offset])\n",
-                                 field_access
-                             ));
-                             code.push_str("\toffset++\n");
-                         }
-                         "core::integer::u128" | "core::integer::i128" => {
-                             code.push_str("\tif offset >= len(data) {\n");
-                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                             code.push_str("\t}\n");
-                             code.push_str(&format!(
-                                 "\t{} = cainome.BigIntFromFelt(data[offset])\n",
-                                 field_access
-                             ));
-                             code.push_str("\toffset++\n");
-                         }
-                         "core::integer::i8" => {
-                             code.push_str("\tif offset >= len(data) {\n");
-                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                             code.push_str("\t}\n");
-                             code.push_str(&format!(
-                                 "\t{} = int8(cainome.UintFromFelt(data[offset]))\n",
-                                 field_access
-                             ));
-                             code.push_str("\toffset++\n");
-                         }
-                         "core::integer::i16" => {
-                             code.push_str("\tif offset >= len(data) {\n");
-                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                             code.push_str("\t}\n");
-                             code.push_str(&format!(
-                                 "\t{} = int16(cainome.UintFromFelt(data[offset]))\n",
-                                 field_access
-                             ));
-                             code.push_str("\toffset++\n");
-                         }
-                         "core::integer::i32" => {
-                             code.push_str("\tif offset >= len(data) {\n");
-                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                             code.push_str("\t}\n");
-                             code.push_str(&format!(
-                                 "\t{} = int32(cainome.UintFromFelt(data[offset]))\n",
-                                 field_access
-                             ));
-                             code.push_str("\toffset++\n");
-                         }
-                         "core::integer::i64" => {
-                             code.push_str("\tif offset >= len(data) {\n");
-                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                             code.push_str("\t}\n");
-                             code.push_str(&format!(
-                                 "\t{} = int64(cainome.UintFromFelt(data[offset]))\n",
-                                 field_access
-                             ));
-                             code.push_str("\toffset++\n");
-                         }
-                         "core::starknet::contract_address::ContractAddress"
-                         | "core::starknet::class_hash::ClassHash" => {
-                             code.push_str("\tif offset >= len(data) {\n");
-                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                             code.push_str("\t}\n");
-                             code.push_str(&format!("\t{} = data[offset]\n", field_access));
-                             code.push_str("\toffset++\n");
-                         }
-                         _ => {
-                             code.push_str(&format!("\t// TODO: Handle unknown basic type in tuple field {} element {}\n", field_name, index));
-                         }
-                     }
-                 }
-                 Token::Composite(composite) => {
-                     if composite.is_builtin() {
-                         match composite.type_path_no_generic().as_str() {
-                             "core::integer::u256" => {
-                                 code.push_str("\tif offset >= len(data) {\n");
-                                 code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                                 code.push_str("\t}\n");
-                                 code.push_str(&format!(
-                                     "\t{} = cainome.BigIntFromFelt(data[offset])\n",
-                                     field_access
-                                 ));
-                                 code.push_str("\toffset++\n");
-                             }
-                             "core::starknet::eth_address::EthAddress" => {
-                                 code.push_str("\tif offset >= len(data) {\n");
-                                 code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
-                                 code.push_str("\t}\n");
-                                 code.push_str(&format!(
+            let field_access = format!("s.{}.Field{}", field_name, index);
+            match inner_token {
+                Token::CoreBasic(core_basic) => {
+                    match core_basic.type_path.as_str() {
+                        "felt" | "core::felt252" => {
+                            code.push_str("\tif offset >= len(data) {\n");
+                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                            code.push_str("\t}\n");
+                            code.push_str(&format!("\t{} = data[offset]\n", field_access));
+                            code.push_str("\toffset++\n");
+                        }
+                        "core::bool" => {
+                            code.push_str("\tif offset >= len(data) {\n");
+                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                            code.push_str("\t}\n");
+                            code.push_str(&format!(
+                                "\t{} = cainome.BoolFromFelt(data[offset])\n",
+                                field_access
+                            ));
+                            code.push_str("\toffset++\n");
+                        }
+                        "core::integer::u8" => {
+                            code.push_str("\tif offset >= len(data) {\n");
+                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                            code.push_str("\t}\n");
+                            code.push_str(&format!(
+                                "\t{} = uint8(cainome.UintFromFelt(data[offset]))\n",
+                                field_access
+                            ));
+                            code.push_str("\toffset++\n");
+                        }
+                        "core::integer::u16" => {
+                            code.push_str("\tif offset >= len(data) {\n");
+                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                            code.push_str("\t}\n");
+                            code.push_str(&format!(
+                                "\t{} = uint16(cainome.UintFromFelt(data[offset]))\n",
+                                field_access
+                            ));
+                            code.push_str("\toffset++\n");
+                        }
+                        "core::integer::u32" => {
+                            code.push_str("\tif offset >= len(data) {\n");
+                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                            code.push_str("\t}\n");
+                            code.push_str(&format!(
+                                "\t{} = uint32(cainome.UintFromFelt(data[offset]))\n",
+                                field_access
+                            ));
+                            code.push_str("\toffset++\n");
+                        }
+                        "core::integer::u64" | "core::integer::usize" => {
+                            code.push_str("\tif offset >= len(data) {\n");
+                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                            code.push_str("\t}\n");
+                            code.push_str(&format!(
+                                "\t{} = cainome.UintFromFelt(data[offset])\n",
+                                field_access
+                            ));
+                            code.push_str("\toffset++\n");
+                        }
+                        "core::integer::u128" | "core::integer::i128" => {
+                            code.push_str("\tif offset >= len(data) {\n");
+                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                            code.push_str("\t}\n");
+                            code.push_str(&format!(
+                                "\t{} = cainome.BigIntFromFelt(data[offset])\n",
+                                field_access
+                            ));
+                            code.push_str("\toffset++\n");
+                        }
+                        "core::integer::i8" => {
+                            code.push_str("\tif offset >= len(data) {\n");
+                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                            code.push_str("\t}\n");
+                            code.push_str(&format!(
+                                "\t{} = int8(cainome.UintFromFelt(data[offset]))\n",
+                                field_access
+                            ));
+                            code.push_str("\toffset++\n");
+                        }
+                        "core::integer::i16" => {
+                            code.push_str("\tif offset >= len(data) {\n");
+                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                            code.push_str("\t}\n");
+                            code.push_str(&format!(
+                                "\t{} = int16(cainome.UintFromFelt(data[offset]))\n",
+                                field_access
+                            ));
+                            code.push_str("\toffset++\n");
+                        }
+                        "core::integer::i32" => {
+                            code.push_str("\tif offset >= len(data) {\n");
+                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                            code.push_str("\t}\n");
+                            code.push_str(&format!(
+                                "\t{} = int32(cainome.UintFromFelt(data[offset]))\n",
+                                field_access
+                            ));
+                            code.push_str("\toffset++\n");
+                        }
+                        "core::integer::i64" => {
+                            code.push_str("\tif offset >= len(data) {\n");
+                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                            code.push_str("\t}\n");
+                            code.push_str(&format!(
+                                "\t{} = int64(cainome.UintFromFelt(data[offset]))\n",
+                                field_access
+                            ));
+                            code.push_str("\toffset++\n");
+                        }
+                        "core::starknet::contract_address::ContractAddress"
+                        | "core::starknet::class_hash::ClassHash" => {
+                            code.push_str("\tif offset >= len(data) {\n");
+                            code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                            code.push_str("\t}\n");
+                            code.push_str(&format!("\t{} = data[offset]\n", field_access));
+                            code.push_str("\toffset++\n");
+                        }
+                        _ => {
+                            code.push_str(&format!("\t// TODO: Handle unknown basic type in tuple field {} element {}\n", field_name, index));
+                        }
+                    }
+                }
+                Token::Composite(composite) => {
+                    if composite.is_builtin() {
+                        match composite.type_path_no_generic().as_str() {
+                            "core::integer::u256" => {
+                                code.push_str("\tif offset >= len(data) {\n");
+                                code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                                code.push_str("\t}\n");
+                                code.push_str(&format!(
+                                    "\t{} = cainome.BigIntFromFelt(data[offset])\n",
+                                    field_access
+                                ));
+                                code.push_str("\toffset++\n");
+                            }
+                            "core::starknet::eth_address::EthAddress" => {
+                                code.push_str("\tif offset >= len(data) {\n");
+                                code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                                code.push_str("\t}\n");
+                                code.push_str(&format!(
                                      "\tethBytes{} := data[offset].Bytes()\n\tcopy({}[:], ethBytes{}[:])\n",
                                      index, field_access, index
                                  ));
-                                 code.push_str("\toffset++\n");
-                             }
-                             "core::byte_array::ByteArray" => {
+                                code.push_str("\toffset++\n");
+                            }
+                            "core::byte_array::ByteArray" => {
                                 code.push_str(&format!(
                                     "\t// ByteArray unmarshaling for tuple field {} element {}\n\tif byteArrayLength{} := len(data) - offset; byteArrayLength{} > 0 {{\n\t\tbyteArray{} := &cainome.CairoByteArray{{}}\n\t\tif err := byteArray{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\t\treturn fmt.Errorf(\"failed to unmarshal ByteArray tuple field {} element {}: %w\", err)\n\t\t}}\n\t\t{} = byteArray{}.ToBytes()\n\t\t// TODO: Update offset based on consumed data for ByteArray tuple field {} element {}\n\t}}\n",
                                     field_name, index, index, index, index, index, field_name, index, field_access, index, field_name, index
@@ -2115,6 +2135,7 @@ impl GolangPlugin {
             let go_type = self.token_to_go_param_type(param_token);
             let param_snake = param_name.to_case(Case::Snake);
             let safe_param_name = self.generate_safe_param_name(&param_snake);
+
             params.push(format!("{} {}", safe_param_name, go_type));
         }
 
@@ -2250,38 +2271,85 @@ impl GolangPlugin {
                 let safe_param_name = self.generate_safe_param_name(&param_snake);
 
                 // Generate serialization code based on parameter type
-                if self.is_complex_type(param_token) {
-                    // Check if this is an enum interface type that needs dereferencing
-                    let marshal_target = if matches!(param_token, Token::Composite(composite) if composite.r#type == CompositeType::Enum)
-                    {
-                        // For enum interfaces, we need to dereference the pointer to call MarshalCairo on the underlying type
-                        format!("(*{})", safe_param_name)
-                    } else {
-                        safe_param_name.clone()
-                    };
-
-                    method_body.push_str(&format!(
-                        "\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n",
-                        safe_param_name, marshal_target
-                    ));
-                    let zero_returns = self.generate_zero_returns(function);
-                    let error_return = if zero_returns.is_empty() {
-                        "err".to_string()
-                    } else {
-                        format!("{}, err", zero_returns)
-                    };
-                    method_body.push_str(&format!("\t\treturn {}\n", error_return));
-                    method_body.push_str("\t} else {\n");
-                    method_body.push_str(&format!(
-                        "\t\tcalldata = append(calldata, {}_data...)\n",
-                        safe_param_name
-                    ));
-                    method_body.push_str("\t}\n");
-                } else {
-                    // For basic types, use direct serialization
-                    let serialization_code =
-                        self.generate_basic_type_serialization(param_token, &safe_param_name);
-                    method_body.push_str(&serialization_code);
+                match param_token {
+                    Token::Option(option) => {
+                        // Handle Option types specially
+                        match option.inner.as_ref() {
+                            Token::Composite(composite)
+                                if composite.r#type == CompositeType::Enum =>
+                            {
+                                // Option of enum interface needs special handling
+                                method_body
+                                    .push_str(&format!("\tif {} != nil {{\n", safe_param_name));
+                                method_body.push_str("\t\t// Some variant\n");
+                                method_body.push_str(
+                                    "\t\tcalldata = append(calldata, cainome.FeltFromUint(0))\n",
+                                );
+                                method_body.push_str(&format!(
+                                    "\t\tif {}_data, err := (*{}).MarshalCairo(); err != nil {{\n",
+                                    safe_param_name, safe_param_name
+                                ));
+                                let zero_returns = self.generate_zero_returns(function);
+                                let error_return = if zero_returns.is_empty() {
+                                    "err".to_string()
+                                } else {
+                                    format!("{}, err", zero_returns)
+                                };
+                                method_body.push_str(&format!("\t\t\treturn {}\n", error_return));
+                                method_body.push_str("\t\t} else {\n");
+                                method_body.push_str(&format!(
+                                    "\t\t\tcalldata = append(calldata, {}_data...)\n",
+                                    safe_param_name
+                                ));
+                                method_body.push_str("\t\t}\n");
+                                method_body.push_str("\t} else {\n");
+                                method_body.push_str("\t\t// None variant\n");
+                                method_body.push_str(
+                                    "\t\tcalldata = append(calldata, cainome.FeltFromUint(1))\n",
+                                );
+                                method_body.push_str("\t}\n");
+                            }
+                            _ => {
+                                // For other Option types, use basic serialization
+                                let serialization_code = self
+                                    .generate_basic_type_serialization_with_context(
+                                        param_token,
+                                        &safe_param_name,
+                                        function,
+                                    );
+                                method_body.push_str(&serialization_code);
+                            }
+                        }
+                    }
+                    _ if self.is_complex_type(param_token) => {
+                        method_body.push_str(&format!(
+                            "\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n",
+                            safe_param_name, safe_param_name
+                        ));
+                        let zero_returns = self.generate_zero_returns(function);
+                        let error_return = if zero_returns.is_empty() {
+                            "err".to_string()
+                        } else {
+                            format!("{}, err", zero_returns)
+                        };
+                        method_body.push_str(&format!("\t\treturn {}\n", error_return));
+                        method_body.push_str("\t} else {\n");
+                        method_body.push_str(&format!(
+                            "\t\tcalldata = append(calldata, {}_data...)\n",
+                            safe_param_name
+                        ));
+                        method_body.push_str("\t}\n");
+                    }
+                    _ => {
+                        // For basic types, use direct serialization
+                        let serialization_code = self
+                            .generate_basic_type_serialization_with_context(
+                                param_token,
+                                &safe_param_name,
+                                function,
+                            );
+                        method_body.push_str(&serialization_code);
+                    }
                 }
             }
             method_body.push('\n');
@@ -2486,6 +2554,394 @@ impl GolangPlugin {
         }
     }
 
+    /// Generate serialization code for basic types with invoke function context for proper error returns
+    fn generate_basic_type_serialization_for_invoke(
+        &self,
+        token: &Token,
+        param_name: &str,
+        function: &Function,
+    ) -> String {
+        let zero_returns = self.generate_invoke_zero_returns(function);
+        let error_return = format!(
+            "{}, fmt.Errorf(\"failed to marshal {}: %w\", err)",
+            zero_returns, param_name
+        );
+
+        match token {
+            Token::CoreBasic(core_basic) => {
+                match core_basic.type_path.as_str() {
+                    "felt" | "core::felt252" => {
+                        format!("\tcalldata = append(calldata, {})\n", param_name)
+                    }
+                    "core::bool" => {
+                        format!("\tif {} {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1))\n\t}} else {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0))\n\t}}\n", param_name)
+                    }
+                    "core::integer::u8"
+                    | "core::integer::u16"
+                    | "core::integer::u32"
+                    | "core::integer::u64"
+                    | "core::integer::usize" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromUint(uint64({})))\n",
+                            param_name
+                        )
+                    }
+                    "core::integer::u128" | "core::integer::i128" | "core::integer::u256" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromBigInt({}))\n",
+                            param_name
+                        )
+                    }
+                    "core::integer::i8" | "core::integer::i16" | "core::integer::i32"
+                    | "core::integer::i64" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromInt(int64({})))\n",
+                            param_name
+                        )
+                    }
+                    "core::starknet::contract_address::ContractAddress"
+                    | "core::starknet::class_hash::ClassHash" => {
+                        format!("\tcalldata = append(calldata, {})\n", param_name)
+                    }
+                    "core::starknet::eth_address::EthAddress" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromBytes({}[:]))\n",
+                            param_name
+                        )
+                    }
+                    "core::bytes_31::bytes31" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromBytes({}.Bytes()))\n",
+                            param_name
+                        )
+                    }
+                    "core::byte_array::ByteArray" => {
+                        format!("\tif {}_data, err := cainome.NewCairoByteArray({}).MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+                    }
+                    "[]byte" => {
+                        // Handle Go []byte type - assuming it maps to ByteArray
+                        format!("\tif {}_data, err := cainome.NewCairoByteArray({}).MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+                    }
+                    "()" => {
+                        "".to_string() // Unit type - no serialization needed
+                    }
+                    _ => {
+                        format!("\t// TODO: Add serialization for {}\n\tcalldata = append(calldata, {})\n", core_basic.type_path, param_name)
+                    }
+                }
+            }
+            Token::Composite(composite) => {
+                // Handle built-in composite types like u256
+                match composite.type_path.as_str() {
+                    "core::integer::u256" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromBigInt({}))\n",
+                            param_name
+                        )
+                    }
+                    "core::byte_array::ByteArray" => {
+                        format!("\tif {}_data, err := cainome.NewCairoByteArray({}).MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+                    }
+                    "core::starknet::eth_address::EthAddress" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromBytes({}[:]))\n",
+                            param_name
+                        )
+                    }
+                    _ => {
+                        // For other composite types, try CairoMarshaler interface
+                        format!("\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+                    }
+                }
+            }
+            Token::Array(array) => {
+                // Handle arrays based on their inner type
+                match array.inner.as_ref() {
+                    Token::CoreBasic(core_basic)
+                        if core_basic.type_path == "felt"
+                            || core_basic.type_path == "core::felt252" =>
+                    {
+                        // []*felt.Felt - serialize as length + elements
+                        format!("\tcalldata = append(calldata, cainome.FeltFromUint(uint64(len({}))))\n\tcalldata = append(calldata, {}...)\n", param_name, param_name)
+                    }
+                    _ => {
+                        // For arrays of complex types, iterate and marshal each element
+                        format!("\t// Array of complex types: serialize length then elements\n\tcalldata = append(calldata, cainome.FeltFromUint(uint64(len({}))))\n\tfor _, item := range {} {{\n\t\tif item_data, err := item.MarshalCairo(); err != nil {{\n\t\t\treturn {}\n\t\t}} else {{\n\t\t\tcalldata = append(calldata, item_data...)\n\t\t}}\n\t}}\n", param_name, param_name, error_return)
+                    }
+                }
+            }
+            Token::NonZero(non_zero) => {
+                // Handle NonZero types - check if the inner type is a basic type
+                match non_zero.inner.as_ref() {
+                    Token::CoreBasic(core_basic)
+                        if core_basic.type_path == "felt"
+                            || core_basic.type_path == "core::felt252" =>
+                    {
+                        // NonZero<felt> - can be directly appended as *felt.Felt
+                        format!("\tcalldata = append(calldata, {})\n", param_name)
+                    }
+                    _ => {
+                        // Other NonZero types - use CairoMarshaler interface
+                        format!("\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+                    }
+                }
+            }
+            Token::Option(option) => {
+                // Handle Option types - check if the inner type is a basic type
+                match option.inner.as_ref() {
+                    Token::CoreBasic(core_basic)
+                        if core_basic.type_path == "felt"
+                            || core_basic.type_path == "core::felt252" =>
+                    {
+                        // Option<felt> - handle as **felt.Felt with nil check and direct append
+                        format!("\tif {} != nil {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1)) // Some variant\n\t\tcalldata = append(calldata, *{})\n\t}} else {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0)) // None variant\n\t}}\n", param_name, param_name)
+                    }
+                    _ => {
+                        // Other Option types - use CairoMarshaler interface
+                        format!("\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+                    }
+                }
+            }
+            Token::Result(_result) => {
+                // For Result types, use MarshalCairo interface
+                format!("\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+            }
+            Token::Tuple(tuple) => {
+                // For Tuple types, serialize each field manually
+                let mut code = String::new();
+                for (i, inner_token) in tuple.inners.iter().enumerate() {
+                    let field_access = format!("{}.Field{}", param_name, i);
+                    match inner_token {
+                        Token::CoreBasic(core_basic) => {
+                            match core_basic.type_path.as_str() {
+                                "felt" | "core::felt252" => {
+                                    code.push_str(&format!(
+                                        "\tcalldata = append(calldata, {})\n",
+                                        field_access
+                                    ));
+                                }
+                                "core::bool" => {
+                                    code.push_str(&format!("\tif {} {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1))\n\t}} else {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0))\n\t}}\n", field_access));
+                                }
+                                "core::integer::u8"
+                                | "core::integer::u16"
+                                | "core::integer::u32"
+                                | "core::integer::u64"
+                                | "core::integer::usize" => {
+                                    code.push_str(&format!("\tcalldata = append(calldata, cainome.FeltFromUint(uint64({})))\n", field_access));
+                                }
+                                "core::integer::u128"
+                                | "core::integer::i128"
+                                | "core::integer::u256" => {
+                                    code.push_str(&format!("\tcalldata = append(calldata, cainome.FeltFromBigInt({}))\n", field_access));
+                                }
+                                "core::integer::i8" | "core::integer::i16"
+                                | "core::integer::i32" | "core::integer::i64" => {
+                                    code.push_str(&format!("\tcalldata = append(calldata, cainome.FeltFromInt(int64({})))\n", field_access));
+                                }
+                                path if path.starts_with("core::integer::") => {
+                                    // Handle any other integer types that might not be explicitly listed
+                                    if path.contains("u128")
+                                        || path.contains("i128")
+                                        || path.contains("u256")
+                                    {
+                                        code.push_str(&format!("\tcalldata = append(calldata, cainome.FeltFromBigInt({}))\n", field_access));
+                                    } else {
+                                        code.push_str(&format!("\tcalldata = append(calldata, cainome.FeltFromUint(uint64({})))\n", field_access));
+                                    }
+                                }
+                                _ => {
+                                    let temp_var = format!("field{}_data", i);
+                                    code.push_str(&format!("\tif {}, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}...)\n\t}}\n", temp_var, field_access, error_return, temp_var));
+                                }
+                            }
+                        }
+                        Token::Composite(composite) => {
+                            // Handle composite types like u256
+                            match composite.type_path.as_str() {
+                                "core::integer::u256" => {
+                                    code.push_str(&format!("\tcalldata = append(calldata, cainome.FeltFromBigInt({}))\n", field_access));
+                                }
+                                _ => {
+                                    // For other composite types, use MarshalCairo interface
+                                    let temp_var = format!("field{}_data", i);
+                                    code.push_str(&format!("\tif {}, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}...)\n\t}}\n", temp_var, field_access, error_return, temp_var));
+                                }
+                            }
+                        }
+                        _ => {
+                            // For complex types, use MarshalCairo interface
+                            let temp_var = format!("field{}_data", i);
+                            code.push_str(&format!("\tif {}, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}...)\n\t}}\n", temp_var, field_access, error_return, temp_var));
+                        }
+                    }
+                }
+                code
+            }
+            _ => {
+                format!(
+                    "\t// TODO: Add serialization for {:?}\n\tcalldata = append(calldata, {})\n",
+                    token, param_name
+                )
+            }
+        }
+    }
+
+    /// Generate serialization code for basic types with function context for proper error returns
+    fn generate_basic_type_serialization_with_context(
+        &self,
+        token: &Token,
+        param_name: &str,
+        function: &Function,
+    ) -> String {
+        let zero_returns = self.generate_zero_returns(function);
+        let error_return = if zero_returns.is_empty() {
+            "err".to_string()
+        } else {
+            format!("{}, err", zero_returns)
+        };
+
+        match token {
+            Token::CoreBasic(core_basic) => {
+                match core_basic.type_path.as_str() {
+                    "felt" | "core::felt252" => {
+                        format!("\tcalldata = append(calldata, {})\n", param_name)
+                    }
+                    "core::bool" => {
+                        format!("\tif {} {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1))\n\t}} else {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0))\n\t}}\n", param_name)
+                    }
+                    "core::integer::u8"
+                    | "core::integer::u16"
+                    | "core::integer::u32"
+                    | "core::integer::u64"
+                    | "core::integer::usize" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromUint(uint64({})))\n",
+                            param_name
+                        )
+                    }
+                    "core::integer::u128" | "core::integer::i128" | "core::integer::u256" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromBigInt({}))\n",
+                            param_name
+                        )
+                    }
+                    "core::integer::i8" | "core::integer::i16" | "core::integer::i32"
+                    | "core::integer::i64" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromInt(int64({})))\n",
+                            param_name
+                        )
+                    }
+                    "core::starknet::contract_address::ContractAddress"
+                    | "core::starknet::class_hash::ClassHash" => {
+                        format!("\tcalldata = append(calldata, {})\n", param_name)
+                    }
+                    "core::starknet::eth_address::EthAddress" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromBytes({}[:]))\n",
+                            param_name
+                        )
+                    }
+                    "core::bytes_31::bytes31" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromBytes({}.Bytes()))\n",
+                            param_name
+                        )
+                    }
+                    "core::byte_array::ByteArray" => {
+                        format!("\tif {}_data, err := cainome.NewCairoByteArray({}).MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+                    }
+                    "[]byte" => {
+                        // Handle Go []byte type - assuming it maps to ByteArray
+                        format!("\tif {}_data, err := cainome.NewCairoByteArray({}).MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+                    }
+                    "()" => {
+                        "".to_string() // Unit type - no serialization needed
+                    }
+                    _ => {
+                        format!("\t// TODO: Add serialization for {}\n\tcalldata = append(calldata, {})\n", core_basic.type_path, param_name)
+                    }
+                }
+            }
+            Token::Composite(composite) => {
+                // Handle built-in composite types like u256
+                match composite.type_path.as_str() {
+                    "core::integer::u256" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromBigInt({}))\n",
+                            param_name
+                        )
+                    }
+                    "core::byte_array::ByteArray" => {
+                        format!("\tif {}_data, err := cainome.NewCairoByteArray({}).MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+                    }
+                    "core::starknet::eth_address::EthAddress" => {
+                        format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromBytes({}[:]))\n",
+                            param_name
+                        )
+                    }
+                    _ => {
+                        // For other composite types, try CairoMarshaler interface
+                        format!("\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+                    }
+                }
+            }
+            Token::Array(array) => {
+                self.generate_array_serialization_code_with_context(param_name, array, function)
+            }
+            Token::NonZero(non_zero) => {
+                // Handle NonZero types - check if the inner type is a basic type
+                match non_zero.inner.as_ref() {
+                    Token::CoreBasic(core_basic)
+                        if core_basic.type_path == "felt"
+                            || core_basic.type_path == "core::felt252" =>
+                    {
+                        // NonZero<felt> - can be directly appended as *felt.Felt
+                        format!("\tcalldata = append(calldata, {})\n", param_name)
+                    }
+                    _ => {
+                        // Other NonZero types - use CairoMarshaler interface
+                        format!("\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+                    }
+                }
+            }
+            Token::Option(option) => {
+                // Handle Option types - check if the inner type is a basic type
+                match option.inner.as_ref() {
+                    Token::CoreBasic(core_basic)
+                        if core_basic.type_path == "felt"
+                            || core_basic.type_path == "core::felt252" =>
+                    {
+                        // Option<felt> - handle as **felt.Felt with nil check and direct append
+                        format!("\tif {} != nil {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1)) // Some variant\n\t\tcalldata = append(calldata, *{})\n\t}} else {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0)) // None variant\n\t}}\n", param_name, param_name)
+                    }
+                    Token::Composite(composite) if composite.r#type == CompositeType::Enum => {
+                        // Option of enum interface - enum interfaces can be nil directly
+                        format!("\tif {} != nil && *{} != nil {{\n\t\t// Some variant\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0))\n\t\tif {}_data, err := (*{}).MarshalCairo(); err != nil {{\n\t\t\treturn {}\n\t\t}} else {{\n\t\t\tcalldata = append(calldata, {}_data...)\n\t\t}}\n\t}} else {{\n\t\t// None variant\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1))\n\t}}\n", param_name, param_name, param_name, param_name, error_return, param_name)
+                    }
+                    _ => {
+                        // Other Option types - handle special cases
+                        format!("\tif {} != nil {{\n\t\t// Some variant\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0))\n\t\tif {}_data, err := (*{}).MarshalCairo(); err != nil {{\n\t\t\treturn {}\n\t\t}} else {{\n\t\t\tcalldata = append(calldata, {}_data...)\n\t\t}}\n\t}} else {{\n\t\t// None variant\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1))\n\t}}\n", param_name, param_name, param_name, error_return, param_name)
+                    }
+                }
+            }
+            Token::Result(_result) => {
+                self.generate_result_serialization_code_with_context(param_name, function)
+            }
+            Token::Tuple(tuple) => {
+                self.generate_tuple_serialization_code_with_context(param_name, tuple, function)
+            }
+            _ => {
+                format!(
+                    "\t// TODO: Add serialization for {:?}\n\tcalldata = append(calldata, {})\n",
+                    token, param_name
+                )
+            }
+        }
+    }
+
     /// Generate serialization code for basic types
     fn generate_basic_type_serialization(&self, token: &Token, param_name: &str) -> String {
         match token {
@@ -2608,7 +3064,10 @@ impl GolangPlugin {
                     }
                 }
             }
-            Token::Result(result) => self.generate_result_serialization_code(param_name, result),
+            Token::Result(_result) => {
+                // For Result types, use MarshalCairo interface
+                format!("\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n\t\treturn nil, fmt.Errorf(\"failed to marshal {}: %w\", err)\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, param_name, param_name)
+            }
             Token::Tuple(tuple) => self.generate_tuple_serialization_code(param_name, tuple),
             _ => {
                 format!(
@@ -2764,6 +3223,101 @@ impl GolangPlugin {
         }
     }
 
+    /// Generate serialization code for tuple types with function context for proper error returns
+    fn generate_tuple_serialization_code_with_context(
+        &self,
+        param_name: &str,
+        tuple: &cainome_parser::tokens::Tuple,
+        function: &Function,
+    ) -> String {
+        let zero_returns = self.generate_zero_returns(function);
+        let error_return = if zero_returns.is_empty() {
+            "err".to_string()
+        } else {
+            format!("{}, err", zero_returns)
+        };
+
+        let mut code = String::new();
+        code.push_str(&format!(
+            "\t// Tuple field {}: serialize each element\n",
+            param_name
+        ));
+
+        for (i, inner_token) in tuple.inners.iter().enumerate() {
+            let field_access = format!("{}.Field{}", param_name, i);
+            match inner_token {
+                Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                    "felt" | "core::felt252" => {
+                        code.push_str(&format!(
+                            "\tcalldata = append(calldata, {})\n",
+                            field_access
+                        ));
+                    }
+                    "core::bool" => {
+                        code.push_str(&format!("\tif {} {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1))\n\t}} else {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0))\n\t}}\n", field_access));
+                    }
+                    "core::integer::u8"
+                    | "core::integer::u16"
+                    | "core::integer::u32"
+                    | "core::integer::u64"
+                    | "core::integer::usize" => {
+                        code.push_str(&format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromUint(uint64({})))\n",
+                            field_access
+                        ));
+                    }
+                    "core::integer::u128" | "core::integer::i128" => {
+                        code.push_str(&format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromBigInt({}))\n",
+                            field_access
+                        ));
+                    }
+                    "core::integer::i8" | "core::integer::i16" | "core::integer::i32"
+                    | "core::integer::i64" => {
+                        code.push_str(&format!(
+                            "\tcalldata = append(calldata, cainome.FeltFromInt(int64({})))\n",
+                            field_access
+                        ));
+                    }
+                    "core::starknet::contract_address::ContractAddress"
+                    | "core::starknet::class_hash::ClassHash" => {
+                        code.push_str(&format!(
+                            "\tcalldata = append(calldata, {})\n",
+                            field_access
+                        ));
+                    }
+                    _ => {
+                        let temp_var = format!("field{}_data", i);
+                        code.push_str(&format!("\tif {}, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}...)\n\t}}\n", temp_var, field_access, error_return, temp_var));
+                    }
+                },
+                Token::Composite(composite) => {
+                    // Handle composite types like u256
+                    match composite.type_path.as_str() {
+                        "core::integer::u256" => {
+                            code.push_str(&format!(
+                                "\tcalldata = append(calldata, cainome.FeltFromBigInt({}))\n",
+                                field_access
+                            ));
+                        }
+                        _ => {
+                            // For other composite types, use MarshalCairo interface
+                            let temp_var = format!("field{}_data", i);
+                            code.push_str(&format!("\tif {}, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}...)\n\t}}\n", temp_var, field_access, error_return, temp_var));
+                        }
+                    }
+                }
+                _ => {
+                    // For complex types, use MarshalCairo interface
+                    let temp_var = format!("field{}_data", i);
+                    code.push_str(&format!("\tif {}, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}...)\n\t}}\n", temp_var, field_access, error_return, temp_var));
+                }
+            }
+        }
+
+        code
+    }
+
     /// Generate serialization code for tuple types
     fn generate_tuple_serialization_code(
         &self,
@@ -2863,6 +3417,50 @@ impl GolangPlugin {
         code
     }
 
+    /// Generate serialization code for array types with function context for proper error returns
+    fn generate_array_serialization_code_with_context(
+        &self,
+        param_name: &str,
+        array: &cainome_parser::tokens::Array,
+        function: &Function,
+    ) -> String {
+        let zero_returns = self.generate_zero_returns(function);
+        let error_return = if zero_returns.is_empty() {
+            "err".to_string()
+        } else {
+            format!("{}, err", zero_returns)
+        };
+
+        match array.inner.as_ref() {
+            Token::CoreBasic(core_basic)
+                if core_basic.type_path == "felt" || core_basic.type_path == "core::felt252" =>
+            {
+                // []*felt.Felt - use cainome.CairoFeltArray for serialization
+                format!("\tif {}_data, err := cainome.NewCairoFeltArray({}).MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+            }
+            _ => {
+                // For arrays of structs/other types, iterate and marshal each element
+                let mut code = String::new();
+                code.push_str(&format!(
+                    "\t// Array field {}: serialize length then elements\n",
+                    param_name
+                ));
+                code.push_str(&format!(
+                    "\tcalldata = append(calldata, cainome.FeltFromUint(uint64(len({}))))\n",
+                    param_name
+                ));
+                code.push_str(&format!("\tfor _, item := range {} {{\n", param_name));
+                code.push_str("\t\tif item_data, err := item.MarshalCairo(); err != nil {\n");
+                code.push_str(&format!("\t\t\treturn {}\n", error_return));
+                code.push_str("\t\t} else {\n");
+                code.push_str("\t\t\tcalldata = append(calldata, item_data...)\n");
+                code.push_str("\t\t}\n");
+                code.push_str("\t}\n");
+                code
+            }
+        }
+    }
+
     /// Generate serialization code for array types
     fn generate_array_serialization_code(
         &self,
@@ -2901,14 +3499,54 @@ impl GolangPlugin {
         }
     }
 
-    /// Generate serialization code for result types
-    fn generate_result_serialization_code(
+    /// Generate serialization code for result types with function context for proper error returns
+    fn generate_result_serialization_code_with_context(
         &self,
         param_name: &str,
-        _result: &cainome_parser::tokens::Result,
+        function: &Function,
     ) -> String {
+        let zero_returns = self.generate_zero_returns(function);
+        let error_return = if zero_returns.is_empty() {
+            "err".to_string()
+        } else {
+            format!("{}, err", zero_returns)
+        };
+
         // For Result types, use the MarshalCairo interface
-        format!("\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n\t\treturn nil, err\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, param_name)
+        format!("\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}_data...)\n\t}}\n", param_name, param_name, error_return, param_name)
+    }
+
+    /// Generate serialization code for option types with invoke context
+    fn generate_option_serialization_for_invoke(
+        &self,
+        param_name: &str,
+        option: &cainome_parser::tokens::Option,
+        function: &Function,
+    ) -> String {
+        let zero_returns = self.generate_invoke_zero_returns(function);
+        let error_return = format!(
+            "{}, fmt.Errorf(\"failed to marshal {}: %w\", err)",
+            zero_returns, param_name
+        );
+
+        // Handle Option types - for structs, we need special handling
+        match option.inner.as_ref() {
+            Token::CoreBasic(core_basic)
+                if core_basic.type_path == "felt" || core_basic.type_path == "core::felt252" =>
+            {
+                // Option<felt> - handle as **felt.Felt with nil check and direct append
+                format!("\tif {} != nil {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0)) // Some variant\n\t\tcalldata = append(calldata, *{})\n\t}} else {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1)) // None variant\n\t}}\n", param_name, param_name)
+            }
+            Token::Composite(_) => {
+                // For Option of struct types (represented as **StructType)
+                // We need to check if it's nil (None) or dereference and marshal (Some)
+                format!("\tif {} != nil {{\n\t\t// Some variant\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0))\n\t\tif {}_data, err := (*{}).MarshalCairo(); err != nil {{\n\t\t\treturn {}\n\t\t}} else {{\n\t\t\tcalldata = append(calldata, {}_data...)\n\t\t}}\n\t}} else {{\n\t\t// None variant\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1))\n\t}}\n", param_name, param_name, param_name, error_return, param_name)
+            }
+            _ => {
+                // For other Option types, check nil and marshal the inner value
+                format!("\tif {} != nil {{\n\t\t// Some variant\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0))\n\t\tif {}_data, err := (*{}).MarshalCairo(); err != nil {{\n\t\t\treturn {}\n\t\t}} else {{\n\t\t\tcalldata = append(calldata, {}_data...)\n\t\t}}\n\t}} else {{\n\t\t// None variant\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1))\n\t}}\n", param_name, param_name, param_name, error_return, param_name)
+            }
+        }
     }
 
     /// Generate the body for a state-changing function invoke
@@ -2933,37 +3571,78 @@ impl GolangPlugin {
                 let safe_param_name = self.generate_safe_param_name(&param_snake);
 
                 // Generate serialization code based on parameter type
-                if self.is_complex_type(param_token) {
-                    // Check if this is an enum interface type that needs dereferencing
-                    let marshal_target = if matches!(param_token, Token::Composite(composite) if composite.r#type == CompositeType::Enum)
-                    {
-                        // For enum interfaces, we need to dereference the pointer to call MarshalCairo on the underlying type
-                        format!("(*{})", safe_param_name)
-                    } else {
-                        safe_param_name.clone()
-                    };
-
-                    method_body.push_str(&format!(
-                        "\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n",
-                        safe_param_name, marshal_target
-                    ));
-                    // For invoke methods, generate appropriate zero returns based on function outputs
-                    let zero_returns = self.generate_invoke_zero_returns(function);
-                    method_body.push_str(&format!(
-                        "\t\treturn {}, fmt.Errorf(\"failed to marshal {}: %w\", err)\n",
-                        zero_returns, safe_param_name
-                    ));
-                    method_body.push_str("\t} else {\n");
-                    method_body.push_str(&format!(
-                        "\t\tcalldata = append(calldata, {}_data...)\n",
-                        safe_param_name
-                    ));
-                    method_body.push_str("\t}\n");
-                } else {
-                    // For basic types, use direct serialization
-                    let serialization_code =
-                        self.generate_basic_type_serialization(param_token, &safe_param_name);
-                    method_body.push_str(&serialization_code);
+                match param_token {
+                    Token::Option(option) => {
+                        // Handle Option types specially
+                        match option.inner.as_ref() {
+                            Token::Composite(composite)
+                                if composite.r#type == CompositeType::Enum =>
+                            {
+                                // Option of enum interface - enum interfaces can be nil directly
+                                method_body
+                                    .push_str(&format!("\tif {} != nil {{\n", safe_param_name));
+                                method_body.push_str("\t\t// Some variant\n");
+                                method_body.push_str(
+                                    "\t\tcalldata = append(calldata, cainome.FeltFromUint(0))\n",
+                                );
+                                method_body.push_str(&format!(
+                                    "\t\tif {}_data, err := (*{}).MarshalCairo(); err != nil {{\n",
+                                    safe_param_name, safe_param_name
+                                ));
+                                let zero_returns = self.generate_invoke_zero_returns(function);
+                                method_body.push_str(&format!("\t\t\treturn {}, fmt.Errorf(\"failed to marshal {}: %w\", err)\n", zero_returns, safe_param_name));
+                                method_body.push_str("\t\t} else {\n");
+                                method_body.push_str(&format!(
+                                    "\t\t\tcalldata = append(calldata, {}_data...)\n",
+                                    safe_param_name
+                                ));
+                                method_body.push_str("\t\t}\n");
+                                method_body.push_str("\t} else {\n");
+                                method_body.push_str("\t\t// None variant\n");
+                                method_body.push_str(
+                                    "\t\tcalldata = append(calldata, cainome.FeltFromUint(1))\n",
+                                );
+                                method_body.push_str("\t}\n");
+                            }
+                            _ => {
+                                // For other Option types, use the existing function
+                                let serialization_code = self
+                                    .generate_option_serialization_for_invoke(
+                                        &safe_param_name,
+                                        option,
+                                        function,
+                                    );
+                                method_body.push_str(&serialization_code);
+                            }
+                        }
+                    }
+                    _ if self.is_complex_type(param_token) => {
+                        method_body.push_str(&format!(
+                            "\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n",
+                            safe_param_name, safe_param_name
+                        ));
+                        // For invoke methods, generate appropriate zero returns based on function outputs
+                        let zero_returns = self.generate_invoke_zero_returns(function);
+                        method_body.push_str(&format!(
+                            "\t\treturn {}, fmt.Errorf(\"failed to marshal {}: %w\", err)\n",
+                            zero_returns, safe_param_name
+                        ));
+                        method_body.push_str("\t} else {\n");
+                        method_body.push_str(&format!(
+                            "\t\tcalldata = append(calldata, {}_data...)\n",
+                            safe_param_name
+                        ));
+                        method_body.push_str("\t}\n");
+                    }
+                    _ => {
+                        // For basic types, use direct serialization with invoke context
+                        let serialization_code = self.generate_basic_type_serialization_for_invoke(
+                            param_token,
+                            &safe_param_name,
+                            function,
+                        );
+                        method_body.push_str(&serialization_code);
+                    }
                 }
             }
             method_body.push('\n');
@@ -3113,15 +3792,9 @@ impl BuiltinPlugin for GolangPlugin {
         // No longer need to generate shared types file as all types are in main cainome package
 
         for contract in &input.contracts {
-            let raw_contract_name = contract
-                .name
-                .split("::")
-                .last()
-                .unwrap_or(&contract.name);
+            let raw_contract_name = contract.name.split("::").last().unwrap_or(&contract.name);
             let sanitized_name = self.sanitize_go_identifier(raw_contract_name);
-            let contract_name = sanitized_name
-                .from_case(Case::Snake)
-                .to_case(Case::Pascal);
+            let contract_name = sanitized_name.from_case(Case::Snake).to_case(Case::Pascal);
 
             // We'll check if math/big is actually needed by examining the generated code
 
@@ -3629,15 +4302,33 @@ mod tests {
         });
 
         // Test various special character scenarios
-        assert_eq!(plugin.sanitize_go_identifier("controller.v_1.0.9"), "controller_v_1_0_9");
+        assert_eq!(
+            plugin.sanitize_go_identifier("controller.v_1.0.9"),
+            "controller_v_1_0_9"
+        );
         assert_eq!(plugin.sanitize_go_identifier("my-contract"), "my_contract");
-        assert_eq!(plugin.sanitize_go_identifier("contract@v2"), "contract_at_v2");
-        assert_eq!(plugin.sanitize_go_identifier("contract+plus"), "contract_plus_plus");
-        assert_eq!(plugin.sanitize_go_identifier("contract with spaces"), "contract_with_spaces");
+        assert_eq!(
+            plugin.sanitize_go_identifier("contract@v2"),
+            "contract_at_v2"
+        );
+        assert_eq!(
+            plugin.sanitize_go_identifier("contract+plus"),
+            "contract_plus_plus"
+        );
+        assert_eq!(
+            plugin.sanitize_go_identifier("contract with spaces"),
+            "contract_with_spaces"
+        );
         assert_eq!(plugin.sanitize_go_identifier("123contract"), "_123contract");
-        assert_eq!(plugin.sanitize_go_identifier("contract...name"), "contract_name");
+        assert_eq!(
+            plugin.sanitize_go_identifier("contract...name"),
+            "contract_name"
+        );
         assert_eq!(plugin.sanitize_go_identifier("_contract_"), "_contract");
-        assert_eq!(plugin.sanitize_go_identifier("contract!@#$%^&*()"), "contract_at");
+        assert_eq!(
+            plugin.sanitize_go_identifier("contract!@#$%^&*()"),
+            "contract_at"
+        );
         assert_eq!(plugin.sanitize_go_identifier("valid_name"), "valid_name");
     }
 }

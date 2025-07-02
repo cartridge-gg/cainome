@@ -2,7 +2,7 @@
 //
 // Usage in Go files:
 //
-//	//go:generate go run -mod=mod github.com/cartridge-gg/cainome/src/bin/cainome-go --golang --golang-package mycontract --output-dir ./bindings ./path/to/contract.json
+//	//go:generate go run -mod=mod github.com/cartridge-gg/cainome/src/bin/cli/plugins/builtins/golang --golang --golang-package mycontract --output-dir ./bindings ./path/to/contract.json
 package main
 
 import (

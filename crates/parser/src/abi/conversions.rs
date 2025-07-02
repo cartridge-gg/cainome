@@ -231,8 +231,8 @@ impl TryFrom<&RawLegacyEvent> for Token {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::AbiParser;
     use crate::tokens::CompositeType;
+    use crate::AbiParser;
     use std::collections::HashMap;
 
     #[test]
@@ -262,21 +262,21 @@ mod tests {
         "#;
 
         let result = AbiParser::tokens_from_abi_string(abi_json, &HashMap::new()).unwrap();
-        
+
         assert_eq!(result.enums.len(), 1);
         let enum_composite = result.enums[0].to_composite().unwrap();
-        
+
         assert_eq!(enum_composite.r#type, CompositeType::Enum);
         assert_eq!(enum_composite.inners.len(), 3);
-        
+
         // Check that variant without data has NotUsed kind
         assert_eq!(enum_composite.inners[0].name, "VariantWithoutData");
         assert_eq!(enum_composite.inners[0].kind, CompositeInnerKind::NotUsed);
-        
+
         // Check that variant with felt252 has Data kind
         assert_eq!(enum_composite.inners[1].name, "VariantWithFelt252");
         assert_eq!(enum_composite.inners[1].kind, CompositeInnerKind::Data);
-        
+
         // Check that variant with tuple has Data kind
         assert_eq!(enum_composite.inners[2].name, "VariantWithTuple");
         assert_eq!(enum_composite.inners[2].kind, CompositeInnerKind::Data);

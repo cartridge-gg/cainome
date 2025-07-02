@@ -18,6 +18,7 @@ import (
 type TestEnum interface {
 	IsTestEnum() bool
 	MarshalCairo() ([]*felt.Felt, error)
+	UnmarshalCairo(data []*felt.Felt) error
 }
 
 const (
@@ -161,7 +162,7 @@ func NewSimpleGetSet(contractAddress *felt.Felt, account *account.Account) *Simp
 	}
 }
 
-func (simple_get_set_reader *SimpleGetSetReader) GetSetEnum(ctx context.Context, v *TestEnum, opts *cainome.CallOpts) (TestEnum, error) {
+func (simple_get_set_reader *SimpleGetSetReader) GetSetEnum(ctx context.Context, v TestEnum, opts *cainome.CallOpts) (TestEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -175,7 +176,7 @@ func (simple_get_set_reader *SimpleGetSetReader) GetSetEnum(ctx context.Context,
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	if v_data, err := (*v).MarshalCairo(); err != nil {
+	if v_data, err := v.MarshalCairo(); err != nil {
 		return nil, err
 	} else {
 		calldata = append(calldata, v_data...)
@@ -339,11 +340,8 @@ func (simple_get_set_writer *SimpleGetSetWriter) SetArray(ctx context.Context, d
 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
-	if data_data, err := cainome.NewCairoFeltArray(data).MarshalCairo(); err != nil {
-		return nil, fmt.Errorf("failed to marshal data: %w", err)
-	} else {
-		calldata = append(calldata, data_data...)
-	}
+	calldata = append(calldata, cainome.FeltFromUint(uint64(len(data))))
+	calldata = append(calldata, data...)
 
 	// Build and send invoke transaction using cainome helper
 	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_get_set_writer.account, simple_get_set_writer.contractAddress, utils.GetSelectorFromNameFelt("set_array"), calldata, opts)

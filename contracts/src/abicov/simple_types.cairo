@@ -104,6 +104,11 @@ mod simple_types {
     }
 
     #[external(v0)]
+    fn get_bool_with_tuple_args(self: @ContractState, nonce: (felt252, u128)) -> bool {
+        true
+    }
+
+    #[external(v0)]
     fn get_array(self: @ContractState) -> Span<felt252> {
         let felt = self.felt.read();
         let uint256 = self.uint256.read();
