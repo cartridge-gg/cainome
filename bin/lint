@@ -77,11 +77,11 @@ if [[ "$RUN_RUST" == "true" ]]; then
     echo -e "${BLUE}🦀 Running Rust checks...${NC}"
     
     if [[ "$CHECK_ONLY" == "true" ]]; then
-        if ! $(dirname "$0")/rust-lint --check-only "${SPECIFIC_FILES[@]}"; then
+        if ! $(dirname "$0")/rust-lint --check-only ${SPECIFIC_FILES[@]+"${SPECIFIC_FILES[@]}"}; then
             ((ERRORS++))
         fi
     else
-        $(dirname "$0")/rust-lint "${SPECIFIC_FILES[@]}"
+        $(dirname "$0")/rust-lint ${SPECIFIC_FILES[@]+"${SPECIFIC_FILES[@]}"}
     fi
     echo
 fi
@@ -91,9 +91,9 @@ if [[ "$RUN_CAIRO" == "true" ]]; then
     echo -e "${BLUE}🏺 Running Cairo checks...${NC}"
     
     if [[ "$CHECK_ONLY" == "true" ]]; then
-        $(dirname "$0")/cairo-lint --check-only "${SPECIFIC_FILES[@]}"
+        $(dirname "$0")/cairo-lint --check-only ${SPECIFIC_FILES[@]+"${SPECIFIC_FILES[@]}"}
     else
-        $(dirname "$0")/cairo-lint "${SPECIFIC_FILES[@]}"
+        $(dirname "$0")/cairo-lint ${SPECIFIC_FILES[@]+"${SPECIFIC_FILES[@]}"}
     fi
     echo
 fi
@@ -103,11 +103,11 @@ if [[ "$RUN_PRETTIER" == "true" ]]; then
     echo -e "${BLUE}📝 Running Prettier checks...${NC}"
     
     if [[ "$CHECK_ONLY" == "true" ]]; then
-        if ! $(dirname "$0")/prettier-lint --check-only "${SPECIFIC_FILES[@]}"; then
+        if ! $(dirname "$0")/prettier-lint --check-only ${SPECIFIC_FILES[@]+"${SPECIFIC_FILES[@]}"}; then
             ((ERRORS++))
         fi
     else
-        $(dirname "$0")/prettier-lint "${SPECIFIC_FILES[@]}"
+        $(dirname "$0")/prettier-lint ${SPECIFIC_FILES[@]+"${SPECIFIC_FILES[@]}"}
     fi
     echo
 fi
