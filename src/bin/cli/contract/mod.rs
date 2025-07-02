@@ -43,9 +43,10 @@ pub struct ContractParserConfig {
     pub contract_aliases: HashMap<String, String>,
     /// Optional list of specific contract files to include from the artifacts path.
     /// If not specified, all files with the sierra_extension will be included.
-    /// File names should include the extension (e.g., "my_contract.contract_class.json").
+    /// File paths are resolved relative to the artifacts path and should include
+    /// the extension (e.g., "my_contract.contract_class.json").
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub included_contracts: Option<Vec<String>>,
+    pub contracts: Option<Vec<String>>,
 }
 
 impl ContractParserConfig {
@@ -62,7 +63,7 @@ impl Default for ContractParserConfig {
             sierra_extension: ".contract_class.json".to_string(),
             type_aliases: HashMap::default(),
             contract_aliases: HashMap::default(),
-            included_contracts: None,
+            contracts: None,
         }
     }
 }
@@ -77,50 +78,43 @@ impl ContractParser {
         let mut contracts = vec![];
 
         // Collect files to process based on configuration
-        let files_to_process: Vec<String> =
-            if let Some(included_contracts) = &config.included_contracts {
-                // Use explicitly specified contracts
-                included_contracts.clone()
-            } else {
-                // Discover all files with the sierra extension
-                fs::read_dir(&path)?
-                    .filter_map(|entry| {
-                        let entry = entry.ok()?;
-                        let file_path = entry.path();
+        let files_to_process: Vec<Utf8PathBuf> = if let Some(contracts) = &config.contracts {
+            // Use explicitly specified contracts, resolved relative to the artifacts path
+            contracts
+                .iter()
+                .map(|contract_file| path.join(contract_file))
+                .collect()
+        } else {
+            // Discover all files with the sierra extension
+            fs::read_dir(&path)?
+                .filter_map(|entry| {
+                    let entry = entry.ok()?;
+                    let file_path = entry.path();
 
-                        if file_path.is_file() {
-                            let file_name = file_path.file_name()?.to_str()?;
-                            if file_name.ends_with(&config.sierra_extension) {
-                                Some(file_name.to_string())
-                            } else {
-                                None
-                            }
+                    if file_path.is_file() {
+                        let file_name = file_path.file_name()?.to_str()?;
+                        if file_name.ends_with(&config.sierra_extension) {
+                            Some(Utf8PathBuf::from_path_buf(file_path).ok()?)
                         } else {
                             None
                         }
-                    })
-                    .collect()
-            };
+                    } else {
+                        None
+                    }
+                })
+                .collect()
+        };
 
         // Process each file
-        for file_name in files_to_process {
-            let file_path = path.join(&file_name);
-
-            // Validate file exists (important for explicitly specified files)
+        for file_path in files_to_process {
+            // Validate file exists
             if !file_path.exists() {
+                let file_name = file_path.file_name().unwrap_or("unknown");
                 tracing::warn!("Contract file '{}' not found in artifacts path", file_name);
                 continue;
             }
 
-            // Validate file extension
-            if !file_name.ends_with(&config.sierra_extension) {
-                tracing::warn!(
-                    "Contract file '{}' does not have the expected extension '{}'",
-                    file_name,
-                    config.sierra_extension
-                );
-                continue;
-            }
+            let file_name = file_path.file_name().unwrap_or("unknown");
 
             // Read and parse the file
             let file_content = fs::read_to_string(&file_path)?;
