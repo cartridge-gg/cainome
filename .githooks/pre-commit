@@ -34,6 +34,11 @@ CAIRO_FILES=()
 PRETTIER_FILES=()
 
 while IFS= read -r file; do
+    # Skip deleted files (they don't exist on filesystem)
+    if [[ ! -f "$file" ]]; then
+        continue
+    fi
+    
     if [[ "$file" =~ \.rs$ ]] || [[ "$file" =~ ^Cargo\.(toml|lock)$ ]] || [[ "$file" =~ ^rust-toolchain\.toml$ ]]; then
         if [[ "$file" =~ \.rs$ ]]; then
             RUST_FILES+=("$file")

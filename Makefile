@@ -12,7 +12,6 @@ help: ## Show this help message
 	@echo ""
 	@echo "Individual tools (advanced):"
 	@echo "  \033[36m./bin/lint --help\033[0m        Show lint options (--rust, --cairo, --prettier, --all, --check-only)"
-	@echo "  \033[36m./bin/fmt --help\033[0m         Show format options (--rust, --cairo, --prettier, --all)"
 	@echo "  \033[36m./bin/rust-lint\033[0m          Rust formatting & linting"
 	@echo "  \033[36m./bin/cairo-lint\033[0m         Cairo formatting"
 	@echo "  \033[36m./bin/prettier-lint\033[0m      Prettier formatting"
@@ -23,9 +22,6 @@ setup-pre-commit: ## Set up pre-commit hooks
 
 lint: ## Run all linting checks (same as CI)
 	@./bin/lint --all --check-only
-
-fmt: ## Format all code
-	@./bin/fmt --all
 
 test: ## Run all tests
 	@./bin/test

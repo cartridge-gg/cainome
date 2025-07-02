@@ -1,9 +1,0 @@
-#!/bin/bash
-#
-# Shared formatting script - formats all code
-# Usage: ./bin/fmt [--rust] [--cairo] [--prettier] [--all]
-#
-set -euo pipefail
-
-# Use the shared lint script in format mode
-$(dirname "$0")/lint "$@" 
