@@ -41,7 +41,7 @@ thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 url = "2.5"
-starknet = "0.15.1"
+starknet = "0.14.0"
 starknet-types-core = "0.1"
 
 [dependencies]
