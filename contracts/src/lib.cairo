@@ -2,6 +2,7 @@ mod abicov {
     mod builtins;
     mod byte_array;
     mod components;
+    mod conflicting_events;
     mod enums;
     mod option_result;
     mod simple_events;

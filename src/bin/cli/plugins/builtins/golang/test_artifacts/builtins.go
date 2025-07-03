@@ -7,17 +7,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
-	"github.com/NethermindEth/starknet.go/rpc"
 	"github.com/NethermindEth/starknet.go/account"
-	"github.com/cartridge-gg/cainome"
+	"github.com/NethermindEth/starknet.go/rpc"
 	"github.com/NethermindEth/starknet.go/utils"
+	"github.com/cartridge-gg/cainome"
 )
-
-// BuiltinsEvent represents a contract event
-type BuiltinsEvent interface {
-	IsBuiltinsEvent() bool
-}
-
 
 type MyStructBuiltins struct {
 	A *felt.Felt `json:"a"`
@@ -47,6 +41,12 @@ func (s *MyStructBuiltins) UnmarshalCairo(data []*felt.Felt) error {
 // CairoSize returns the serialized size for MyStructBuiltins
 func (s *MyStructBuiltins) CairoSize() int {
 	return -1 // Dynamic size
+}
+
+
+// BuiltinsBuiltinsEvent represents a contract event
+type BuiltinsBuiltinsEvent interface {
+	IsBuiltinsBuiltinsEvent() bool
 }
 
 
@@ -86,6 +86,41 @@ func NewBuiltins(contractAddress *felt.Felt, account *account.Account) *Builtins
 	}
 }
 
+func (builtins_reader *BuiltinsReader) NonZero(ctx context.Context, res *felt.Felt, opts *cainome.CallOpts) (*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &cainome.CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	calldata = append(calldata, res)
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    builtins_reader.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("non_zero"),
+		Calldata:           calldata,
+	}
+
+	response, err := builtins_reader.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	return response[0], nil
+}
+
 func (builtins_reader *BuiltinsReader) StructNonZero(ctx context.Context, res *MyStructBuiltins, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
@@ -110,41 +145,6 @@ func (builtins_reader *BuiltinsReader) StructNonZero(ctx context.Context, res *M
 	functionCall := rpc.FunctionCall{
 		ContractAddress:    builtins_reader.contractAddress,
 		EntryPointSelector: utils.GetSelectorFromNameFelt("struct_non_zero"),
-		Calldata:           calldata,
-	}
-
-	response, err := builtins_reader.provider.Call(ctx, functionCall, blockID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Deserialize response to proper type
-	if len(response) == 0 {
-		return nil, fmt.Errorf("empty response")
-	}
-	return response[0], nil
-}
-
-func (builtins_reader *BuiltinsReader) NonZero(ctx context.Context, res *felt.Felt, opts *cainome.CallOpts) (*felt.Felt, error) {
-	// Setup call options
-	if opts == nil {
-		opts = &cainome.CallOpts{}
-	}
-	var blockID rpc.BlockID
-	if opts.BlockID != nil {
-		blockID = *opts.BlockID
-	} else {
-		blockID = rpc.BlockID{Tag: "latest"}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	calldata = append(calldata, res)
-
-	// Make the contract call
-	functionCall := rpc.FunctionCall{
-		ContractAddress:    builtins_reader.contractAddress,
-		EntryPointSelector: utils.GetSelectorFromNameFelt("non_zero"),
 		Calldata:           calldata,
 	}
 

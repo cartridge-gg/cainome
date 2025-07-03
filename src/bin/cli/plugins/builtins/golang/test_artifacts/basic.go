@@ -7,16 +7,16 @@ import (
 	"context"
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
-	"github.com/NethermindEth/starknet.go/rpc"
 	"github.com/NethermindEth/starknet.go/account"
+	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 	"github.com/cartridge-gg/cainome"
 	"math/big"
-	"github.com/NethermindEth/starknet.go/utils"
 )
 
-// BasicEvent represents a contract event
-type BasicEvent interface {
-	IsBasicEvent() bool
+// BasicBasicEvent represents a contract event
+type BasicBasicEvent interface {
+	IsBasicBasicEvent() bool
 }
 
 
@@ -54,26 +54,6 @@ func NewBasic(contractAddress *felt.Felt, account *account.Account) *Basic {
 		BasicReader: NewBasicReader(contractAddress, account.Provider),
 		BasicWriter: NewBasicWriter(contractAddress, account),
 	}
-}
-
-func (basic_writer *BasicWriter) SetStorage(ctx context.Context, v_1 *felt.Felt, v_2 *big.Int, opts *cainome.InvokeOpts) (*felt.Felt, error) {
-	// Setup invoke options
-	if opts == nil {
-		opts = &cainome.InvokeOpts{}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	calldata = append(calldata, v_1)
-	calldata = append(calldata, cainome.FeltFromBigInt(v_2))
-
-	// Build and send invoke transaction using cainome helper
-	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, basic_writer.account, basic_writer.contractAddress, utils.GetSelectorFromNameFelt("set_storage"), calldata, opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
-	}
-
-	return txHash, nil
 }
 
 func (basic_reader *BasicReader) ReadStorageTuple(ctx context.Context, opts *cainome.CallOpts) (struct {
@@ -141,5 +121,25 @@ func (basic_reader *BasicReader) ReadStorageTuple(ctx context.Context, opts *cai
 	offset++
 
 	return result, nil
+}
+
+func (basic_writer *BasicWriter) SetStorage(ctx context.Context, v_1 *felt.Felt, v_2 *big.Int, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	calldata = append(calldata, v_1)
+	calldata = append(calldata, cainome.FeltFromBigInt(v_2))
+
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, basic_writer.account, basic_writer.contractAddress, utils.GetSelectorFromNameFelt("set_storage"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
 }
 

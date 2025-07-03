@@ -7,15 +7,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
-	"github.com/NethermindEth/starknet.go/rpc"
 	"github.com/NethermindEth/starknet.go/account"
-	"github.com/cartridge-gg/cainome"
+	"github.com/NethermindEth/starknet.go/rpc"
 	"github.com/NethermindEth/starknet.go/utils"
+	"github.com/cartridge-gg/cainome"
 )
 
-// ByteArrayEvent represents a contract event
-type ByteArrayEvent interface {
-	IsByteArrayEvent() bool
+// ByteArrayByteArrayEvent represents a contract event
+type ByteArrayByteArrayEvent interface {
+	IsByteArrayByteArrayEvent() bool
 }
 
 

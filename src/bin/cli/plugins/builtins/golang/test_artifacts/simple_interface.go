@@ -7,15 +7,15 @@ import (
 	"context"
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
-	"github.com/NethermindEth/starknet.go/rpc"
 	"github.com/NethermindEth/starknet.go/account"
-	"github.com/cartridge-gg/cainome"
+	"github.com/NethermindEth/starknet.go/rpc"
 	"github.com/NethermindEth/starknet.go/utils"
+	"github.com/cartridge-gg/cainome"
 )
 
-// SimpleInterfaceEvent represents a contract event
-type SimpleInterfaceEvent interface {
-	IsSimpleInterfaceEvent() bool
+// SimpleInterfaceSimpleInterfaceEvent represents a contract event
+type SimpleInterfaceSimpleInterfaceEvent interface {
+	IsSimpleInterfaceSimpleInterfaceEvent() bool
 }
 
 

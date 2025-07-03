@@ -7,15 +7,62 @@ import (
 	"context"
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
-	"github.com/NethermindEth/starknet.go/rpc"
 	"github.com/NethermindEth/starknet.go/account"
+	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 	"github.com/cartridge-gg/cainome"
 	"math/big"
-	"github.com/NethermindEth/starknet.go/utils"
 )
 
+type GenericOne struct {
+	A *big.Int `json:"a"`
+	B *felt.Felt `json:"b"`
+	C *big.Int `json:"c"`
+}
+
+// MarshalCairo serializes GenericOne to Cairo felt array
+func (s *GenericOne) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, cainome.FeltFromBigInt(s.A))
+	result = append(result, s.B)
+	result = append(result, cainome.FeltFromBigInt(s.C))
+	return result, nil
+}
+
+// UnmarshalCairo deserializes GenericOne from Cairo felt array
+func (s *GenericOne) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field A")
+	}
+	s.A = cainome.BigIntFromFelt(data[offset])
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field B")
+	}
+	s.B = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field C")
+	}
+	s.C = cainome.BigIntFromFelt(data[offset])
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for GenericOne
+func (s *GenericOne) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
 type GenericTwo struct {
-	A *felt.Felt `json:"a"`
+	A uint64 `json:"a"`
 	B uint64 `json:"b"`
 	C *felt.Felt `json:"c"`
 	D ToAlias `json:"d"`
@@ -27,7 +74,7 @@ type GenericTwo struct {
 func (s *GenericTwo) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	result = append(result, s.A)
+	result = append(result, cainome.FeltFromUint(uint64(s.A)))
 	result = append(result, cainome.FeltFromUint(uint64(s.B)))
 	result = append(result, s.C)
 	// Struct field D: marshal using CairoMarshaler
@@ -61,7 +108,7 @@ func (s *GenericTwo) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field A")
 	}
-	s.A = data[offset]
+	s.A = cainome.UintFromFelt(data[offset])
 	offset++
 
 	if offset >= len(data) {
@@ -118,6 +165,118 @@ func (s *GenericTwo) CairoSize() int {
 }
 
 
+type Simple struct {
+	Address *felt.Felt `json:"address"`
+	ClassHash *felt.Felt `json:"class_hash"`
+	EthAddress [20]byte `json:"eth_address"`
+	Felt *felt.Felt `json:"felt"`
+	Span []*felt.Felt `json:"span"`
+	Tuple struct {
+	Field0 *felt.Felt
+	Field1 *big.Int
+} `json:"tuple"`
+	Uint256 *big.Int `json:"uint256"`
+	Uint64 uint64 `json:"uint64"`
+}
+
+// MarshalCairo serializes Simple to Cairo felt array
+func (s *Simple) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Address)
+	result = append(result, s.ClassHash)
+	result = append(result, cainome.FeltFromBytes(s.EthAddress[:]))
+	result = append(result, s.Felt)
+	// Array field Span: serialize length then elements
+	result = append(result, cainome.FeltFromUint(uint64(len(s.Span))))
+	for _, item := range s.Span {
+		result = append(result, item)
+	}
+	// Tuple field Tuple: marshal each sub-field
+	result = append(result, s.Tuple.Field0)
+	result = append(result, cainome.FeltFromBigInt(s.Tuple.Field1))
+	result = append(result, cainome.FeltFromBigInt(s.Uint256))
+	result = append(result, cainome.FeltFromUint(uint64(s.Uint64)))
+	return result, nil
+}
+
+// UnmarshalCairo deserializes Simple from Cairo felt array
+func (s *Simple) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Address")
+	}
+	s.Address = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field ClassHash")
+	}
+	s.ClassHash = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field EthAddress")
+	}
+	ethBytes := data[offset].Bytes()
+	copy(s.EthAddress[:], ethBytes[:])
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Felt")
+	}
+	s.Felt = data[offset]
+	offset++
+
+	// Array field Span: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of Span")
+	}
+	lengthSpan := cainome.UintFromFelt(data[offset])
+	offset++
+	s.Span = make([]*felt.Felt, lengthSpan)
+	for i := uint64(0); i < lengthSpan; i++ {
+		if offset >= len(data) {
+			return fmt.Errorf("insufficient data for array element %d of Span", i)
+		}
+		s.Span[i] = data[offset]
+		offset++
+	}
+
+	// Tuple field Tuple: unmarshal each sub-field
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for tuple field Tuple element 0")
+	}
+	s.Tuple.Field0 = data[offset]
+	offset++
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for tuple field Tuple element 1")
+	}
+	s.Tuple.Field1 = cainome.BigIntFromFelt(data[offset])
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Uint256")
+	}
+	s.Uint256 = cainome.BigIntFromFelt(data[offset])
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Uint64")
+	}
+	s.Uint64 = cainome.UintFromFelt(data[offset])
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for Simple
+func (s *Simple) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
 type StructWithStruct struct {
 	Simple Simple `json:"simple"`
 }
@@ -154,171 +313,6 @@ func (s *StructWithStruct) CairoSize() int {
 }
 
 
-// StructsEvent represents a contract event
-type StructsEvent interface {
-	IsStructsEvent() bool
-}
-
-
-type Simple struct {
-	Felt *felt.Felt `json:"felt"`
-	Uint256 *big.Int `json:"uint256"`
-	Uint64 uint64 `json:"uint64"`
-	Address *felt.Felt `json:"address"`
-	ClassHash *felt.Felt `json:"class_hash"`
-	EthAddress [20]byte `json:"eth_address"`
-	Tuple struct {
-	Field0 *felt.Felt
-	Field1 *big.Int
-} `json:"tuple"`
-	Span []*felt.Felt `json:"span"`
-}
-
-// MarshalCairo serializes Simple to Cairo felt array
-func (s *Simple) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, s.Felt)
-	result = append(result, cainome.FeltFromBigInt(s.Uint256))
-	result = append(result, cainome.FeltFromUint(uint64(s.Uint64)))
-	result = append(result, s.Address)
-	result = append(result, s.ClassHash)
-	result = append(result, cainome.FeltFromBytes(s.EthAddress[:]))
-	// Tuple field Tuple: marshal each sub-field
-	result = append(result, s.Tuple.Field0)
-	result = append(result, cainome.FeltFromBigInt(s.Tuple.Field1))
-	// Array field Span: serialize length then elements
-	result = append(result, cainome.FeltFromUint(uint64(len(s.Span))))
-	for _, item := range s.Span {
-		result = append(result, item)
-	}
-	return result, nil
-}
-
-// UnmarshalCairo deserializes Simple from Cairo felt array
-func (s *Simple) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Felt")
-	}
-	s.Felt = data[offset]
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Uint256")
-	}
-	s.Uint256 = cainome.BigIntFromFelt(data[offset])
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Uint64")
-	}
-	s.Uint64 = cainome.UintFromFelt(data[offset])
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field Address")
-	}
-	s.Address = data[offset]
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field ClassHash")
-	}
-	s.ClassHash = data[offset]
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field EthAddress")
-	}
-	ethBytes := data[offset].Bytes()
-	copy(s.EthAddress[:], ethBytes[:])
-	offset++
-
-	// Tuple field Tuple: unmarshal each sub-field
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for tuple field Tuple element 0")
-	}
-	s.Tuple.Field0 = data[offset]
-	offset++
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for tuple field Tuple element 1")
-	}
-	s.Tuple.Field1 = cainome.BigIntFromFelt(data[offset])
-	offset++
-
-	// Array field Span: read length then elements
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for array length of Span")
-	}
-	lengthSpan := cainome.UintFromFelt(data[offset])
-	offset++
-	s.Span = make([]*felt.Felt, lengthSpan)
-	for i := uint64(0); i < lengthSpan; i++ {
-		if offset >= len(data) {
-			return fmt.Errorf("insufficient data for array element %d of Span", i)
-		}
-		s.Span[i] = data[offset]
-		offset++
-	}
-
-	return nil
-}
-
-// CairoSize returns the serialized size for Simple
-func (s *Simple) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
-type GenericOne struct {
-	A uint64 `json:"a"`
-	B *felt.Felt `json:"b"`
-	C *big.Int `json:"c"`
-}
-
-// MarshalCairo serializes GenericOne to Cairo felt array
-func (s *GenericOne) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	result = append(result, cainome.FeltFromUint(uint64(s.A)))
-	result = append(result, s.B)
-	result = append(result, cainome.FeltFromBigInt(s.C))
-	return result, nil
-}
-
-// UnmarshalCairo deserializes GenericOne from Cairo felt array
-func (s *GenericOne) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field A")
-	}
-	s.A = cainome.UintFromFelt(data[offset])
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field B")
-	}
-	s.B = data[offset]
-	offset++
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field C")
-	}
-	s.C = cainome.BigIntFromFelt(data[offset])
-	offset++
-
-	return nil
-}
-
-// CairoSize returns the serialized size for GenericOne
-func (s *GenericOne) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-
 type ToAlias struct {
 	A uint32 `json:"a"`
 }
@@ -347,6 +341,12 @@ func (s *ToAlias) UnmarshalCairo(data []*felt.Felt) error {
 // CairoSize returns the serialized size for ToAlias
 func (s *ToAlias) CairoSize() int {
 	return -1 // Dynamic size
+}
+
+
+// StructsStructsEvent represents a contract event
+type StructsStructsEvent interface {
+	IsStructsStructsEvent() bool
 }
 
 
@@ -384,158 +384,6 @@ func NewStructs(contractAddress *felt.Felt, account *account.Account) *Structs {
 		StructsReader: NewStructsReader(contractAddress, account.Provider),
 		StructsWriter: NewStructsWriter(contractAddress, account),
 	}
-}
-
-func (structs_reader *StructsReader) GetSimple(ctx context.Context, opts *cainome.CallOpts) (Simple, error) {
-	// Setup call options
-	if opts == nil {
-		opts = &cainome.CallOpts{}
-	}
-	var blockID rpc.BlockID
-	if opts.BlockID != nil {
-		blockID = *opts.BlockID
-	} else {
-		blockID = rpc.BlockID{Tag: "latest"}
-	}
-
-	// No parameters required
-	calldata := []*felt.Felt{}
-
-	// Make the contract call
-	functionCall := rpc.FunctionCall{
-		ContractAddress:    structs_reader.contractAddress,
-		EntryPointSelector: utils.GetSelectorFromNameFelt("get_simple"),
-		Calldata:           calldata,
-	}
-
-	response, err := structs_reader.provider.Call(ctx, functionCall, blockID)
-	if err != nil {
-		return Simple{}, err
-	}
-
-	// Deserialize response to proper type
-	if len(response) == 0 {
-		return Simple{}, fmt.Errorf("empty response")
-	}
-	var result Simple
-	if err := result.UnmarshalCairo(response); err != nil {
-		return Simple{}, fmt.Errorf("failed to unmarshal response: %w", err)
-	}
-	return result, nil
-}
-
-func (structs_writer *StructsWriter) SetSimple(ctx context.Context, simple *Simple, opts *cainome.InvokeOpts) (*felt.Felt, error) {
-	// Setup invoke options
-	if opts == nil {
-		opts = &cainome.InvokeOpts{}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	if simple_data, err := simple.MarshalCairo(); err != nil {
-		return nil, fmt.Errorf("failed to marshal simple: %w", err)
-	} else {
-		calldata = append(calldata, simple_data...)
-	}
-
-	// Build and send invoke transaction using cainome helper
-	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_simple"), calldata, opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
-	}
-
-	return txHash, nil
-}
-
-func (structs_reader *StructsReader) GetStructWStruct(ctx context.Context, opts *cainome.CallOpts) (StructWithStruct, error) {
-	// Setup call options
-	if opts == nil {
-		opts = &cainome.CallOpts{}
-	}
-	var blockID rpc.BlockID
-	if opts.BlockID != nil {
-		blockID = *opts.BlockID
-	} else {
-		blockID = rpc.BlockID{Tag: "latest"}
-	}
-
-	// No parameters required
-	calldata := []*felt.Felt{}
-
-	// Make the contract call
-	functionCall := rpc.FunctionCall{
-		ContractAddress:    structs_reader.contractAddress,
-		EntryPointSelector: utils.GetSelectorFromNameFelt("get_struct_w_struct"),
-		Calldata:           calldata,
-	}
-
-	response, err := structs_reader.provider.Call(ctx, functionCall, blockID)
-	if err != nil {
-		return StructWithStruct{}, err
-	}
-
-	// Deserialize response to proper type
-	if len(response) == 0 {
-		return StructWithStruct{}, fmt.Errorf("empty response")
-	}
-	var result StructWithStruct
-	if err := result.UnmarshalCairo(response); err != nil {
-		return StructWithStruct{}, fmt.Errorf("failed to unmarshal response: %w", err)
-	}
-	return result, nil
-}
-
-func (structs_writer *StructsWriter) SetStructWStruct(ctx context.Context, sws *StructWithStruct, opts *cainome.InvokeOpts) (*felt.Felt, error) {
-	// Setup invoke options
-	if opts == nil {
-		opts = &cainome.InvokeOpts{}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	if sws_data, err := sws.MarshalCairo(); err != nil {
-		return nil, fmt.Errorf("failed to marshal sws: %w", err)
-	} else {
-		calldata = append(calldata, sws_data...)
-	}
-
-	// Build and send invoke transaction using cainome helper
-	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_struct_w_struct"), calldata, opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
-	}
-
-	return txHash, nil
-}
-
-func (structs_writer *StructsWriter) SetStructWOptionalStruct(ctx context.Context, sws *StructWithStruct, opts *cainome.InvokeOpts) (*felt.Felt, error) {
-	// Setup invoke options
-	if opts == nil {
-		opts = &cainome.InvokeOpts{}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	if sws != nil {
-		// Some variant
-		calldata = append(calldata, cainome.FeltFromUint(0))
-		if sws_data, err := (*sws).MarshalCairo(); err != nil {
-			return nil, fmt.Errorf("failed to marshal sws: %w", err)
-		} else {
-			calldata = append(calldata, sws_data...)
-		}
-	} else {
-		// None variant
-		calldata = append(calldata, cainome.FeltFromUint(1))
-	}
-
-	// Build and send invoke transaction using cainome helper
-	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_struct_w_optional_struct"), calldata, opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
-	}
-
-	return txHash, nil
 }
 
 func (structs_reader *StructsReader) GetGenericOne(ctx context.Context, opts *cainome.CallOpts) (GenericOne, error) {
@@ -614,98 +462,6 @@ func (structs_reader *StructsReader) GetGenericOneArray(ctx context.Context, opt
 	return result, nil
 }
 
-func (structs_writer *StructsWriter) SetGenericOne(ctx context.Context, generic *GenericOne, opts *cainome.InvokeOpts) (*felt.Felt, error) {
-	// Setup invoke options
-	if opts == nil {
-		opts = &cainome.InvokeOpts{}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	if generic_data, err := generic.MarshalCairo(); err != nil {
-		return nil, fmt.Errorf("failed to marshal generic: %w", err)
-	} else {
-		calldata = append(calldata, generic_data...)
-	}
-
-	// Build and send invoke transaction using cainome helper
-	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_generic_one"), calldata, opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
-	}
-
-	return txHash, nil
-}
-
-func (structs_writer *StructsWriter) SetGenericTwo2(ctx context.Context, generic *GenericTwo, opts *cainome.InvokeOpts) (*felt.Felt, error) {
-	// Setup invoke options
-	if opts == nil {
-		opts = &cainome.InvokeOpts{}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	if generic_data, err := generic.MarshalCairo(); err != nil {
-		return nil, fmt.Errorf("failed to marshal generic: %w", err)
-	} else {
-		calldata = append(calldata, generic_data...)
-	}
-
-	// Build and send invoke transaction using cainome helper
-	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_generic_two_2"), calldata, opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
-	}
-
-	return txHash, nil
-}
-
-func (structs_writer *StructsWriter) SetGenericTwo0(ctx context.Context, generic *GenericTwo, opts *cainome.InvokeOpts) (*felt.Felt, error) {
-	// Setup invoke options
-	if opts == nil {
-		opts = &cainome.InvokeOpts{}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	if generic_data, err := generic.MarshalCairo(); err != nil {
-		return nil, fmt.Errorf("failed to marshal generic: %w", err)
-	} else {
-		calldata = append(calldata, generic_data...)
-	}
-
-	// Build and send invoke transaction using cainome helper
-	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_generic_two_0"), calldata, opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
-	}
-
-	return txHash, nil
-}
-
-func (structs_writer *StructsWriter) SetGenericTwo(ctx context.Context, generic *GenericTwo, opts *cainome.InvokeOpts) (*felt.Felt, error) {
-	// Setup invoke options
-	if opts == nil {
-		opts = &cainome.InvokeOpts{}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	if generic_data, err := generic.MarshalCairo(); err != nil {
-		return nil, fmt.Errorf("failed to marshal generic: %w", err)
-	} else {
-		calldata = append(calldata, generic_data...)
-	}
-
-	// Build and send invoke transaction using cainome helper
-	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_generic_two"), calldata, opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
-	}
-
-	return txHash, nil
-}
-
 func (structs_reader *StructsReader) GetGenericTwo(ctx context.Context, opts *cainome.CallOpts) (GenericTwo, error) {
 	// Setup call options
 	if opts == nil {
@@ -744,35 +500,80 @@ func (structs_reader *StructsReader) GetGenericTwo(ctx context.Context, opts *ca
 	return result, nil
 }
 
-func (structs_writer *StructsWriter) SetTupleGeneric(ctx context.Context, value struct {
-	Field0 *GenericOne
-	Field1 *GenericTwo
-}, opts *cainome.InvokeOpts) (*felt.Felt, error) {
-	// Setup invoke options
+func (structs_reader *StructsReader) GetSimple(ctx context.Context, opts *cainome.CallOpts) (Simple, error) {
+	// Setup call options
 	if opts == nil {
-		opts = &cainome.InvokeOpts{}
+		opts = &cainome.CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
 	}
 
-	// Serialize parameters to calldata
+	// No parameters required
 	calldata := []*felt.Felt{}
-	if field0_data, err := value.Field0.MarshalCairo(); err != nil {
-		return nil, fmt.Errorf("failed to marshal value: %w", err)
-	} else {
-		calldata = append(calldata, field0_data...)
-	}
-	if field1_data, err := value.Field1.MarshalCairo(); err != nil {
-		return nil, fmt.Errorf("failed to marshal value: %w", err)
-	} else {
-		calldata = append(calldata, field1_data...)
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    structs_reader.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_simple"),
+		Calldata:           calldata,
 	}
 
-	// Build and send invoke transaction using cainome helper
-	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_tuple_generic"), calldata, opts)
+	response, err := structs_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
-		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+		return Simple{}, err
 	}
 
-	return txHash, nil
+	// Deserialize response to proper type
+	if len(response) == 0 {
+		return Simple{}, fmt.Errorf("empty response")
+	}
+	var result Simple
+	if err := result.UnmarshalCairo(response); err != nil {
+		return Simple{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return result, nil
+}
+
+func (structs_reader *StructsReader) GetStructWStruct(ctx context.Context, opts *cainome.CallOpts) (StructWithStruct, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &cainome.CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    structs_reader.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_struct_w_struct"),
+		Calldata:           calldata,
+	}
+
+	response, err := structs_reader.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return StructWithStruct{}, err
+	}
+
+	// Deserialize response to proper type
+	if len(response) == 0 {
+		return StructWithStruct{}, fmt.Errorf("empty response")
+	}
+	var result StructWithStruct
+	if err := result.UnmarshalCairo(response); err != nil {
+		return StructWithStruct{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return result, nil
 }
 
 func (structs_reader *StructsReader) GetTupleOfArrayGeneric(ctx context.Context, opts *cainome.CallOpts) (struct {
@@ -862,6 +663,205 @@ func (structs_writer *StructsWriter) SetFromAlias(ctx context.Context, value []*
 
 	// Build and send invoke transaction using cainome helper
 	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_from_alias"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
+}
+
+func (structs_writer *StructsWriter) SetGenericOne(ctx context.Context, generic *GenericOne, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if generic_data, err := generic.MarshalCairo(); err != nil {
+		return nil, fmt.Errorf("failed to marshal generic: %w", err)
+	} else {
+		calldata = append(calldata, generic_data...)
+	}
+
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_generic_one"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
+}
+
+func (structs_writer *StructsWriter) SetGenericTwo(ctx context.Context, generic *GenericTwo, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if generic_data, err := generic.MarshalCairo(); err != nil {
+		return nil, fmt.Errorf("failed to marshal generic: %w", err)
+	} else {
+		calldata = append(calldata, generic_data...)
+	}
+
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_generic_two"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
+}
+
+func (structs_writer *StructsWriter) SetGenericTwo0(ctx context.Context, generic *GenericTwo, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if generic_data, err := generic.MarshalCairo(); err != nil {
+		return nil, fmt.Errorf("failed to marshal generic: %w", err)
+	} else {
+		calldata = append(calldata, generic_data...)
+	}
+
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_generic_two_0"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
+}
+
+func (structs_writer *StructsWriter) SetGenericTwo2(ctx context.Context, generic *GenericTwo, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if generic_data, err := generic.MarshalCairo(); err != nil {
+		return nil, fmt.Errorf("failed to marshal generic: %w", err)
+	} else {
+		calldata = append(calldata, generic_data...)
+	}
+
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_generic_two_2"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
+}
+
+func (structs_writer *StructsWriter) SetSimple(ctx context.Context, simple *Simple, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if simple_data, err := simple.MarshalCairo(); err != nil {
+		return nil, fmt.Errorf("failed to marshal simple: %w", err)
+	} else {
+		calldata = append(calldata, simple_data...)
+	}
+
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_simple"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
+}
+
+func (structs_writer *StructsWriter) SetStructWOptionalStruct(ctx context.Context, sws *StructWithStruct, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if sws != nil {
+		// Some variant
+		calldata = append(calldata, cainome.FeltFromUint(0))
+		if sws_data, err := (*sws).MarshalCairo(); err != nil {
+			return nil, fmt.Errorf("failed to marshal sws: %w", err)
+		} else {
+			calldata = append(calldata, sws_data...)
+		}
+	} else {
+		// None variant
+		calldata = append(calldata, cainome.FeltFromUint(1))
+	}
+
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_struct_w_optional_struct"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
+}
+
+func (structs_writer *StructsWriter) SetStructWStruct(ctx context.Context, sws *StructWithStruct, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if sws_data, err := sws.MarshalCairo(); err != nil {
+		return nil, fmt.Errorf("failed to marshal sws: %w", err)
+	} else {
+		calldata = append(calldata, sws_data...)
+	}
+
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_struct_w_struct"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
+}
+
+func (structs_writer *StructsWriter) SetTupleGeneric(ctx context.Context, value struct {
+	Field0 *GenericOne
+	Field1 *GenericTwo
+}, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if field0_data, err := value.Field0.MarshalCairo(); err != nil {
+		return nil, fmt.Errorf("failed to marshal value: %w", err)
+	} else {
+		calldata = append(calldata, field0_data...)
+	}
+	if field1_data, err := value.Field1.MarshalCairo(); err != nil {
+		return nil, fmt.Errorf("failed to marshal value: %w", err)
+	} else {
+		calldata = append(calldata, field1_data...)
+	}
+
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, structs_writer.account, structs_writer.contractAddress, utils.GetSelectorFromNameFelt("set_tuple_generic"), calldata, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
 	}

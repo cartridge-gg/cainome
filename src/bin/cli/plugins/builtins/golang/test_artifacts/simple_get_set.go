@@ -7,12 +7,18 @@ import (
 	"context"
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
-	"github.com/NethermindEth/starknet.go/rpc"
 	"github.com/NethermindEth/starknet.go/account"
+	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 	"github.com/cartridge-gg/cainome"
 	"math/big"
-	"github.com/NethermindEth/starknet.go/utils"
 )
+
+// SimpleGetSetSimpleGetSetEvent represents a contract event
+type SimpleGetSetSimpleGetSetEvent interface {
+	IsSimpleGetSetSimpleGetSetEvent() bool
+}
+
 
 // TestEnum represents a Cairo enum type
 type TestEnum interface {
@@ -120,12 +126,6 @@ func (t *TestEnumV2) CairoSize() int {
 }
 
 
-// SimpleGetSetEvent represents a contract event
-type SimpleGetSetEvent interface {
-	IsSimpleGetSetEvent() bool
-}
-
-
 type SimpleGetSetReader struct {
 	contractAddress *felt.Felt
 	provider rpc.RpcProvider
@@ -160,6 +160,122 @@ func NewSimpleGetSet(contractAddress *felt.Felt, account *account.Account) *Simp
 		SimpleGetSetReader: NewSimpleGetSetReader(contractAddress, account.Provider),
 		SimpleGetSetWriter: NewSimpleGetSetWriter(contractAddress, account),
 	}
+}
+
+func (simple_get_set_reader *SimpleGetSetReader) GetA(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &cainome.CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_get_set_reader.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_a"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_get_set_reader.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	return response[0], nil
+}
+
+func (simple_get_set_reader *SimpleGetSetReader) GetArray(ctx context.Context, opts *cainome.CallOpts) ([]*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &cainome.CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_get_set_reader.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_array"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_get_set_reader.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	if len(response) < 1 {
+		return nil, fmt.Errorf("insufficient response data for array")
+	}
+	arrayLength := cainome.UintFromFelt(response[0])
+	if len(response) < int(1 + arrayLength) {
+		return nil, fmt.Errorf("insufficient response data for array elements")
+	}
+	result := make([]*felt.Felt, arrayLength)
+	for i := uint64(0); i < arrayLength; i++ {
+		result[i] = response[1+i]
+	}
+	return result, nil
+}
+
+func (simple_get_set_reader *SimpleGetSetReader) GetB(ctx context.Context, opts *cainome.CallOpts) (*big.Int, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &cainome.CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// No parameters required
+	calldata := []*felt.Felt{}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    simple_get_set_reader.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_b"),
+		Calldata:           calldata,
+	}
+
+	response, err := simple_get_set_reader.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	var result *big.Int
+	// TODO: Convert felt to Composite(Composite { type_path: "core::integer::u256", inners: [CompositeInner { index: 0, name: "low", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u128" }) }, CompositeInner { index: 1, name: "high", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u128" }) }], generic_args: [], type: Struct, is_event: false, alias: None })
+	_ = response
+	return result, nil
 }
 
 func (simple_get_set_reader *SimpleGetSetReader) GetSetEnum(ctx context.Context, v TestEnum, opts *cainome.CallOpts) (TestEnum, error) {
@@ -223,40 +339,6 @@ func (simple_get_set_reader *SimpleGetSetReader) GetSetEnum(ctx context.Context,
 	}
 }
 
-func (simple_get_set_reader *SimpleGetSetReader) GetA(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {
-	// Setup call options
-	if opts == nil {
-		opts = &cainome.CallOpts{}
-	}
-	var blockID rpc.BlockID
-	if opts.BlockID != nil {
-		blockID = *opts.BlockID
-	} else {
-		blockID = rpc.BlockID{Tag: "latest"}
-	}
-
-	// No parameters required
-	calldata := []*felt.Felt{}
-
-	// Make the contract call
-	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_get_set_reader.contractAddress,
-		EntryPointSelector: utils.GetSelectorFromNameFelt("get_a"),
-		Calldata:           calldata,
-	}
-
-	response, err := simple_get_set_reader.provider.Call(ctx, functionCall, blockID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Deserialize response to proper type
-	if len(response) == 0 {
-		return nil, fmt.Errorf("empty response")
-	}
-	return response[0], nil
-}
-
 func (simple_get_set_writer *SimpleGetSetWriter) SetA(ctx context.Context, a *felt.Felt, opts *cainome.InvokeOpts) (*felt.Felt, error) {
 	// Setup invoke options
 	if opts == nil {
@@ -269,62 +351,6 @@ func (simple_get_set_writer *SimpleGetSetWriter) SetA(ctx context.Context, a *fe
 
 	// Build and send invoke transaction using cainome helper
 	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_get_set_writer.account, simple_get_set_writer.contractAddress, utils.GetSelectorFromNameFelt("set_a"), calldata, opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
-	}
-
-	return txHash, nil
-}
-
-func (simple_get_set_reader *SimpleGetSetReader) GetB(ctx context.Context, opts *cainome.CallOpts) (*big.Int, error) {
-	// Setup call options
-	if opts == nil {
-		opts = &cainome.CallOpts{}
-	}
-	var blockID rpc.BlockID
-	if opts.BlockID != nil {
-		blockID = *opts.BlockID
-	} else {
-		blockID = rpc.BlockID{Tag: "latest"}
-	}
-
-	// No parameters required
-	calldata := []*felt.Felt{}
-
-	// Make the contract call
-	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_get_set_reader.contractAddress,
-		EntryPointSelector: utils.GetSelectorFromNameFelt("get_b"),
-		Calldata:           calldata,
-	}
-
-	response, err := simple_get_set_reader.provider.Call(ctx, functionCall, blockID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Deserialize response to proper type
-	if len(response) == 0 {
-		return nil, fmt.Errorf("empty response")
-	}
-	var result *big.Int
-	// TODO: Convert felt to Composite(Composite { type_path: "core::integer::u256", inners: [CompositeInner { index: 0, name: "low", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u128" }) }, CompositeInner { index: 1, name: "high", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u128" }) }], generic_args: [], type: Struct, is_event: false, alias: None })
-	_ = response
-	return result, nil
-}
-
-func (simple_get_set_writer *SimpleGetSetWriter) SetB(ctx context.Context, b *big.Int, opts *cainome.InvokeOpts) (*felt.Felt, error) {
-	// Setup invoke options
-	if opts == nil {
-		opts = &cainome.InvokeOpts{}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	calldata = append(calldata, cainome.FeltFromBigInt(b))
-
-	// Build and send invoke transaction using cainome helper
-	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_get_set_writer.account, simple_get_set_writer.contractAddress, utils.GetSelectorFromNameFelt("set_b"), calldata, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
 	}
@@ -352,48 +378,22 @@ func (simple_get_set_writer *SimpleGetSetWriter) SetArray(ctx context.Context, d
 	return txHash, nil
 }
 
-func (simple_get_set_reader *SimpleGetSetReader) GetArray(ctx context.Context, opts *cainome.CallOpts) ([]*felt.Felt, error) {
-	// Setup call options
+func (simple_get_set_writer *SimpleGetSetWriter) SetB(ctx context.Context, b *big.Int, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
 	if opts == nil {
-		opts = &cainome.CallOpts{}
-	}
-	var blockID rpc.BlockID
-	if opts.BlockID != nil {
-		blockID = *opts.BlockID
-	} else {
-		blockID = rpc.BlockID{Tag: "latest"}
+		opts = &cainome.InvokeOpts{}
 	}
 
-	// No parameters required
+	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
+	calldata = append(calldata, cainome.FeltFromBigInt(b))
 
-	// Make the contract call
-	functionCall := rpc.FunctionCall{
-		ContractAddress:    simple_get_set_reader.contractAddress,
-		EntryPointSelector: utils.GetSelectorFromNameFelt("get_array"),
-		Calldata:           calldata,
-	}
-
-	response, err := simple_get_set_reader.provider.Call(ctx, functionCall, blockID)
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, simple_get_set_writer.account, simple_get_set_writer.contractAddress, utils.GetSelectorFromNameFelt("set_b"), calldata, opts)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
 	}
 
-	// Deserialize response to proper type
-	if len(response) == 0 {
-		return nil, fmt.Errorf("empty response")
-	}
-	if len(response) < 1 {
-		return nil, fmt.Errorf("insufficient response data for array")
-	}
-	arrayLength := cainome.UintFromFelt(response[0])
-	if len(response) < int(1 + arrayLength) {
-		return nil, fmt.Errorf("insufficient response data for array elements")
-	}
-	result := make([]*felt.Felt, arrayLength)
-	for i := uint64(0); i < arrayLength; i++ {
-		result[i] = response[1+i]
-	}
-	return result, nil
+	return txHash, nil
 }
 

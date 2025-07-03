@@ -7,18 +7,12 @@ import (
 	"context"
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
-	"github.com/NethermindEth/starknet.go/rpc"
 	"github.com/NethermindEth/starknet.go/account"
+	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 	"github.com/cartridge-gg/cainome"
 	"math/big"
-	"github.com/NethermindEth/starknet.go/utils"
 )
-
-// OptionResultEvent represents a contract event
-type OptionResultEvent interface {
-	IsOptionResultEvent() bool
-}
-
 
 type GenericOneOptionResult struct {
 	A *felt.Felt `json:"a"`
@@ -67,6 +61,12 @@ func (s *GenericOneOptionResult) CairoSize() int {
 }
 
 
+// OptionResultOptionResultEvent represents a contract event
+type OptionResultOptionResultEvent interface {
+	IsOptionResultOptionResultEvent() bool
+}
+
+
 type OptionResultReader struct {
 	contractAddress *felt.Felt
 	provider rpc.RpcProvider
@@ -103,7 +103,165 @@ func NewOptionResult(contractAddress *felt.Felt, account *account.Account) *Opti
 	}
 }
 
-func (option_result_reader *OptionResultReader) ResultOkUnit(ctx context.Context, res cainome.Result[struct{}, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
+func (option_result_reader *OptionResultReader) OptionNone(ctx context.Context, opt **felt.Felt, opts *cainome.CallOpts) (*uint64, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &cainome.CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if opt != nil {
+		calldata = append(calldata, cainome.FeltFromUint(1)) // Some variant
+		calldata = append(calldata, *opt)
+	} else {
+		calldata = append(calldata, cainome.FeltFromUint(0)) // None variant
+	}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    option_result_reader.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("option_none"),
+		Calldata:           calldata,
+	}
+
+	response, err := option_result_reader.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// Check Option discriminant
+	if cainome.UintFromFelt(response[0]) == 0 {
+		// None variant
+		return nil, nil
+	} else {
+		// Some variant - extract value
+		if len(response) < 2 {
+			return nil, fmt.Errorf("insufficient data for Some variant")
+		}
+		result := cainome.UintFromFelt(response[1])
+		return &result, nil
+	}
+}
+
+func (option_result_reader *OptionResultReader) OptionSome(ctx context.Context, opt **felt.Felt, opts *cainome.CallOpts) (*[]*felt.Felt, error) {
+	// Setup call options
+	if opts == nil {
+		opts = &cainome.CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if opt != nil {
+		calldata = append(calldata, cainome.FeltFromUint(1)) // Some variant
+		calldata = append(calldata, *opt)
+	} else {
+		calldata = append(calldata, cainome.FeltFromUint(0)) // None variant
+	}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    option_result_reader.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("option_some"),
+		Calldata:           calldata,
+	}
+
+	response, err := option_result_reader.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Deserialize response to proper type
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	if len(response) == 0 {
+		return nil, fmt.Errorf("empty response")
+	}
+	// Check Option discriminant
+	if cainome.UintFromFelt(response[0]) == 0 {
+		// None variant
+		return nil, nil
+	} else {
+		// Some variant - deserialize array
+		if len(response) < 2 {
+			return nil, fmt.Errorf("insufficient data for Some variant")
+		}
+		arrayLength := cainome.UintFromFelt(response[1])
+		if len(response) < int(2 + arrayLength) {
+			return nil, fmt.Errorf("insufficient data for array elements")
+		}
+		result := make([]*felt.Felt, arrayLength)
+		for i := uint64(0); i < arrayLength; i++ {
+			result[i] = response[2+i]
+		}
+		return &result, nil
+	}
+}
+
+func (option_result_reader *OptionResultReader) ResultErr(ctx context.Context, res cainome.Result[*felt.Felt, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[*felt.Felt, *big.Int], error) {
+	// Setup call options
+	if opts == nil {
+		opts = &cainome.CallOpts{}
+	}
+	var blockID rpc.BlockID
+	if opts.BlockID != nil {
+		blockID = *opts.BlockID
+	} else {
+		blockID = rpc.BlockID{Tag: "latest"}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if res_data, err := res.MarshalCairo(); err != nil {
+		return cainome.Result[*felt.Felt, *big.Int]{}, err
+	} else {
+		calldata = append(calldata, res_data...)
+	}
+
+	// Make the contract call
+	functionCall := rpc.FunctionCall{
+		ContractAddress:    option_result_reader.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_err"),
+		Calldata:           calldata,
+	}
+
+	response, err := option_result_reader.provider.Call(ctx, functionCall, blockID)
+	if err != nil {
+		return cainome.Result[*felt.Felt, *big.Int]{}, err
+	}
+
+	// Deserialize response to proper type
+	if len(response) == 0 {
+		return cainome.Result[*felt.Felt, *big.Int]{}, fmt.Errorf("empty response")
+	}
+	var result cainome.Result[*felt.Felt, *big.Int]
+	if err := result.UnmarshalCairo(response); err != nil {
+		return cainome.Result[*felt.Felt, *big.Int]{}, fmt.Errorf("failed to unmarshal response: %w", err)
+	}
+	return result, nil
+}
+
+func (option_result_reader *OptionResultReader) ResultOk(ctx context.Context, res cainome.Result[*felt.Felt, *big.Int], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -126,7 +284,7 @@ func (option_result_reader *OptionResultReader) ResultOkUnit(ctx context.Context
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
 		ContractAddress:    option_result_reader.contractAddress,
-		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_unit"),
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok"),
 		Calldata:           calldata,
 	}
 
@@ -235,7 +393,7 @@ func (option_result_reader *OptionResultReader) ResultOkTupleStruct(ctx context.
 	return result, nil
 }
 
-func (option_result_reader *OptionResultReader) ResultOk(ctx context.Context, res cainome.Result[*felt.Felt, *big.Int], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
+func (option_result_reader *OptionResultReader) ResultOkUnit(ctx context.Context, res cainome.Result[struct{}, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -258,7 +416,7 @@ func (option_result_reader *OptionResultReader) ResultOk(ctx context.Context, re
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
 		ContractAddress:    option_result_reader.contractAddress,
-		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok"),
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_unit"),
 		Calldata:           calldata,
 	}
 
@@ -276,163 +434,5 @@ func (option_result_reader *OptionResultReader) ResultOk(ctx context.Context, re
 		return cainome.Result[uint64, *felt.Felt]{}, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 	return result, nil
-}
-
-func (option_result_reader *OptionResultReader) ResultErr(ctx context.Context, res cainome.Result[*felt.Felt, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[*felt.Felt, *big.Int], error) {
-	// Setup call options
-	if opts == nil {
-		opts = &cainome.CallOpts{}
-	}
-	var blockID rpc.BlockID
-	if opts.BlockID != nil {
-		blockID = *opts.BlockID
-	} else {
-		blockID = rpc.BlockID{Tag: "latest"}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	if res_data, err := res.MarshalCairo(); err != nil {
-		return cainome.Result[*felt.Felt, *big.Int]{}, err
-	} else {
-		calldata = append(calldata, res_data...)
-	}
-
-	// Make the contract call
-	functionCall := rpc.FunctionCall{
-		ContractAddress:    option_result_reader.contractAddress,
-		EntryPointSelector: utils.GetSelectorFromNameFelt("result_err"),
-		Calldata:           calldata,
-	}
-
-	response, err := option_result_reader.provider.Call(ctx, functionCall, blockID)
-	if err != nil {
-		return cainome.Result[*felt.Felt, *big.Int]{}, err
-	}
-
-	// Deserialize response to proper type
-	if len(response) == 0 {
-		return cainome.Result[*felt.Felt, *big.Int]{}, fmt.Errorf("empty response")
-	}
-	var result cainome.Result[*felt.Felt, *big.Int]
-	if err := result.UnmarshalCairo(response); err != nil {
-		return cainome.Result[*felt.Felt, *big.Int]{}, fmt.Errorf("failed to unmarshal response: %w", err)
-	}
-	return result, nil
-}
-
-func (option_result_reader *OptionResultReader) OptionSome(ctx context.Context, opt **felt.Felt, opts *cainome.CallOpts) (*[]*felt.Felt, error) {
-	// Setup call options
-	if opts == nil {
-		opts = &cainome.CallOpts{}
-	}
-	var blockID rpc.BlockID
-	if opts.BlockID != nil {
-		blockID = *opts.BlockID
-	} else {
-		blockID = rpc.BlockID{Tag: "latest"}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	if opt != nil {
-		calldata = append(calldata, cainome.FeltFromUint(1)) // Some variant
-		calldata = append(calldata, *opt)
-	} else {
-		calldata = append(calldata, cainome.FeltFromUint(0)) // None variant
-	}
-
-	// Make the contract call
-	functionCall := rpc.FunctionCall{
-		ContractAddress:    option_result_reader.contractAddress,
-		EntryPointSelector: utils.GetSelectorFromNameFelt("option_some"),
-		Calldata:           calldata,
-	}
-
-	response, err := option_result_reader.provider.Call(ctx, functionCall, blockID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Deserialize response to proper type
-	if len(response) == 0 {
-		return nil, fmt.Errorf("empty response")
-	}
-	if len(response) == 0 {
-		return nil, fmt.Errorf("empty response")
-	}
-	// Check Option discriminant
-	if cainome.UintFromFelt(response[0]) == 0 {
-		// None variant
-		return nil, nil
-	} else {
-		// Some variant - deserialize array
-		if len(response) < 2 {
-			return nil, fmt.Errorf("insufficient data for Some variant")
-		}
-		arrayLength := cainome.UintFromFelt(response[1])
-		if len(response) < int(2 + arrayLength) {
-			return nil, fmt.Errorf("insufficient data for array elements")
-		}
-		result := make([]*felt.Felt, arrayLength)
-		for i := uint64(0); i < arrayLength; i++ {
-			result[i] = response[2+i]
-		}
-		return &result, nil
-	}
-}
-
-func (option_result_reader *OptionResultReader) OptionNone(ctx context.Context, opt **felt.Felt, opts *cainome.CallOpts) (*uint64, error) {
-	// Setup call options
-	if opts == nil {
-		opts = &cainome.CallOpts{}
-	}
-	var blockID rpc.BlockID
-	if opts.BlockID != nil {
-		blockID = *opts.BlockID
-	} else {
-		blockID = rpc.BlockID{Tag: "latest"}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	if opt != nil {
-		calldata = append(calldata, cainome.FeltFromUint(1)) // Some variant
-		calldata = append(calldata, *opt)
-	} else {
-		calldata = append(calldata, cainome.FeltFromUint(0)) // None variant
-	}
-
-	// Make the contract call
-	functionCall := rpc.FunctionCall{
-		ContractAddress:    option_result_reader.contractAddress,
-		EntryPointSelector: utils.GetSelectorFromNameFelt("option_none"),
-		Calldata:           calldata,
-	}
-
-	response, err := option_result_reader.provider.Call(ctx, functionCall, blockID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Deserialize response to proper type
-	if len(response) == 0 {
-		return nil, fmt.Errorf("empty response")
-	}
-	if len(response) == 0 {
-		return nil, fmt.Errorf("empty response")
-	}
-	// Check Option discriminant
-	if cainome.UintFromFelt(response[0]) == 0 {
-		// None variant
-		return nil, nil
-	} else {
-		// Some variant - extract value
-		if len(response) < 2 {
-			return nil, fmt.Errorf("insufficient data for Some variant")
-		}
-		result := cainome.UintFromFelt(response[1])
-		return &result, nil
-	}
 }
 

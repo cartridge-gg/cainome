@@ -202,11 +202,26 @@ impl GolangPlugin {
     }
 
     /// Generates Go struct definition for a Cairo composite type
-    fn generate_struct(&self, composite: &Composite) -> String {
-        let struct_name = composite.type_name_or_alias().to_case(Case::Pascal);
+    fn generate_struct(&self, composite: &Composite, contract_name: Option<&str>) -> String {
+        let mut struct_name = composite.type_name_or_alias().to_case(Case::Pascal);
+
+        // Check if this is an event struct and prefix with contract name if provided
+        if self.is_event_struct(&struct_name) {
+            if let Some(contract) = contract_name {
+                let sanitized_contract = self.sanitize_go_identifier(contract);
+                let contract_pascal = sanitized_contract.to_case(Case::Pascal);
+                struct_name = format!("{}{}", contract_pascal, struct_name);
+            }
+        }
+
         let mut struct_def = format!("type {} struct {{\n", struct_name);
 
-        for inner in &composite.inners {
+        // Sort fields by name for deterministic output
+        let mut indexed_inners: Vec<(usize, &cainome_parser::tokens::CompositeInner)> =
+            composite.inners.iter().enumerate().collect();
+        indexed_inners.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+
+        for (_original_index, inner) in &indexed_inners {
             let field_name = inner.name.to_case(Case::Pascal);
             let field_type = self.token_to_go_type(&inner.token);
             let json_tag = format!("`json:\"{}\"`", inner.name);
@@ -255,12 +270,17 @@ impl GolangPlugin {
     }
 
     /// Generates Go enum definition for a Cairo enum type
-    fn generate_enum(&self, composite: &Composite) -> String {
-        let enum_name = composite.type_name_or_alias().to_case(Case::Pascal);
+    fn generate_enum(&self, composite: &Composite, contract_name: Option<&str>) -> String {
+        let mut enum_name = composite.type_name_or_alias().to_case(Case::Pascal);
 
-        // Check if this is an event enum (ends with "Event")
+        // Check if this is an event enum (ends with "Event") and prefix with contract name if provided
         if enum_name.ends_with("Event") {
-            return self.generate_event_enum(composite);
+            if let Some(contract) = contract_name {
+                let sanitized_contract = self.sanitize_go_identifier(contract);
+                let contract_pascal = sanitized_contract.to_case(Case::Pascal);
+                enum_name = format!("{}{}", contract_pascal, enum_name);
+            }
+            return self.generate_event_enum_with_name(composite, &enum_name);
         }
 
         let mut enum_def = String::new();
@@ -273,10 +293,18 @@ impl GolangPlugin {
         enum_def.push_str("\tUnmarshalCairo(data []*felt.Felt) error\n");
         enum_def.push_str("}\n\n");
 
+        // Suppress unused parameter warning for non-event enums
+        let _ = contract_name;
+
         // Generate constants for each variant
         if !composite.inners.is_empty() {
             enum_def.push_str("const (\n");
-            for inner in &composite.inners {
+            // Sort variants by name for deterministic output
+            let mut indexed_inners: Vec<(usize, &cainome_parser::tokens::CompositeInner)> =
+                composite.inners.iter().enumerate().collect();
+            indexed_inners.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+
+            for (_original_index, inner) in &indexed_inners {
                 let variant_name = format!("{}_{}", enum_name, inner.name.to_case(Case::Pascal));
                 enum_def.push_str(&format!("\t{} = \"{}\"\n", variant_name, inner.name));
             }
@@ -284,7 +312,12 @@ impl GolangPlugin {
         }
 
         // Generate individual variant types that implement the interface
-        for inner in &composite.inners {
+        // Sort variants by name for deterministic output but preserve original indices
+        let mut indexed_inners: Vec<(usize, &cainome_parser::tokens::CompositeInner)> =
+            composite.inners.iter().enumerate().collect();
+        indexed_inners.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+
+        for (_original_index, inner) in &indexed_inners {
             let variant_name = inner.name.to_case(Case::Pascal);
             let variant_type_name = format!("{}{}", enum_name, variant_name);
 
@@ -482,12 +515,17 @@ impl GolangPlugin {
             code.push_str("\t\n");
             code.push_str("\tswitch discriminant {\n");
 
-            // Generate cases for each variant
-            for (index, inner) in composite.inners.iter().enumerate() {
+            // Generate cases for each variant (preserve original indices for discriminants)
+            let mut indexed_inners: Vec<(usize, &cainome_parser::tokens::CompositeInner)> =
+                composite.inners.iter().enumerate().collect();
+            // Sort by name for deterministic output but preserve original index
+            indexed_inners.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+
+            for (original_index, inner) in indexed_inners {
                 let variant_name = inner.name.to_case(Case::Pascal);
                 let variant_type_name = format!("{}{}", enum_name, variant_name);
 
-                code.push_str(&format!("\tcase {}:\n", index));
+                code.push_str(&format!("\tcase {}:\n", original_index));
                 code.push_str(&format!("\t\tvar result {}\n", variant_type_name));
                 code.push_str("\t\tif err := result.UnmarshalCairo(response); err != nil {\n");
                 code.push_str(
@@ -806,10 +844,9 @@ impl GolangPlugin {
         }
     }
 
-    /// Generates Go event interface for Cairo event enum types (idiomatic Go approach)
-    fn generate_event_enum(&self, composite: &Composite) -> String {
-        let enum_name = composite.type_name_or_alias().to_case(Case::Pascal);
-        let interface_name = enum_name.clone();
+    /// Generates Go event interface for Cairo event enum types with a custom name
+    fn generate_event_enum_with_name(&self, composite: &Composite, enum_name: &str) -> String {
+        let interface_name = enum_name.to_string();
         let mut event_def = String::new();
 
         // Generate the event interface with a single marker method
@@ -827,7 +864,12 @@ impl GolangPlugin {
         // Generate constants for event names
         if !composite.inners.is_empty() {
             event_def.push_str("const (\n");
-            for inner in &composite.inners {
+            // Sort variants by name for deterministic output
+            let mut indexed_inners: Vec<(usize, &cainome_parser::tokens::CompositeInner)> =
+                composite.inners.iter().enumerate().collect();
+            indexed_inners.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+
+            for (_original_index, inner) in &indexed_inners {
                 let variant_name = inner.name.to_case(Case::Pascal);
                 let const_name = format!("{}_{}", interface_name, variant_name);
                 event_def.push_str(&format!("\t{} = \"{}\"\n", const_name, inner.name));
@@ -843,9 +885,16 @@ impl GolangPlugin {
         &self,
         struct_name: &str,
         event_enum: &Composite,
-        _contract_name: &str,
+        contract_name: &str,
     ) -> String {
-        let interface_name = event_enum.type_name_or_alias().to_case(Case::Pascal);
+        // Generate the interface name with contract prefix
+        let mut interface_name = event_enum.type_name_or_alias().to_case(Case::Pascal);
+        if interface_name.ends_with("Event") {
+            let sanitized_contract = self.sanitize_go_identifier(contract_name);
+            let contract_pascal = sanitized_contract.to_case(Case::Pascal);
+            interface_name = format!("{}{}", contract_pascal, interface_name);
+        }
+
         let mut impl_methods = String::new();
 
         // Generate the single marker method implementation
@@ -876,8 +925,12 @@ impl GolangPlugin {
         ));
         marshaler.push_str("\tvar result []*felt.Felt\n\n");
 
-        // Serialize each field
-        for inner in &composite.inners {
+        // Serialize each field (sorted for deterministic output)
+        let mut indexed_inners: Vec<(usize, &cainome_parser::tokens::CompositeInner)> =
+            composite.inners.iter().enumerate().collect();
+        indexed_inners.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+
+        for (_original_index, inner) in &indexed_inners {
             let field_name = inner.name.to_case(Case::Pascal);
             marshaler.push_str(&self.generate_field_marshal_code(&field_name, &inner.token));
         }
@@ -900,8 +953,12 @@ impl GolangPlugin {
             marshaler.push_str("\toffset := 0\n\n");
         }
 
-        // Deserialize each field
-        for inner in &composite.inners {
+        // Deserialize each field (sorted for deterministic output)
+        let mut indexed_inners: Vec<(usize, &cainome_parser::tokens::CompositeInner)> =
+            composite.inners.iter().enumerate().collect();
+        indexed_inners.sort_by(|a, b| a.1.name.cmp(&b.1.name));
+
+        for (_original_index, inner) in &indexed_inners {
             let field_name = inner.name.to_case(Case::Pascal);
             marshaler.push_str(&self.generate_field_unmarshal_code(&field_name, &inner.token));
         }
@@ -1161,7 +1218,7 @@ impl GolangPlugin {
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
                         "core::integer::u256" => {
-                            code.push_str("\t\tif offset >= len(data) {\n");
+                            code.push_str("\tif offset >= len(data) {\n");
                             code.push_str(&format!("\t\t\treturn fmt.Errorf(\"insufficient data for array element %d of {}\", i)\n", field_name));
                             code.push_str("\t\t}\n");
                             code.push_str(&format!(
@@ -3594,6 +3651,9 @@ impl GolangPlugin {
             import_lines.push("\"github.com/NethermindEth/starknet.go/utils\"");
         }
 
+        // Sort imports for deterministic output
+        import_lines.sort();
+
         let imports = format!("import (\n\t{}\n)", import_lines.join("\n\t"));
 
         format!(
@@ -3682,9 +3742,17 @@ impl BuiltinPlugin for GolangPlugin {
                 }
             }
 
-            // Find event enums first
+            // Sort functions by name for deterministic output
+            functions.sort_by(|a, b| a.name.cmp(&b.name));
+
+            // Create sorted vector of composites for deterministic iteration
+            let mut sorted_composites: Vec<(&String, &Composite)> =
+                composites.iter().map(|(k, &v)| (k, v)).collect();
+            sorted_composites.sort_by(|a, b| a.0.cmp(b.0));
+
+            // Find event enums first (from sorted composites)
             let mut event_enums: Vec<&Composite> = Vec::new();
-            for composite in composites.values() {
+            for (_, composite) in &sorted_composites {
                 if composite.r#type == CompositeType::Enum {
                     let enum_name = composite.type_name_or_alias().to_case(Case::Pascal);
                     if enum_name.ends_with("Event") {
@@ -3694,56 +3762,71 @@ impl BuiltinPlugin for GolangPlugin {
             }
 
             // Generate composite types (structs and enums) with contract namespacing
-            for composite in composites.values() {
-                match composite.r#type {
-                    CompositeType::Struct => {
-                        // Check if this is an event struct that should implement an event interface
-                        let struct_name = composite.type_name_or_alias().to_case(Case::Pascal);
-                        let mut struct_code = self.generate_struct(composite);
+            // Process in deterministic order: first all structs, then all enums
+            for (_, composite) in &sorted_composites {
+                if composite.r#type == CompositeType::Struct {
+                    // Check if this is an event struct that should implement an event interface
+                    let original_struct_name = composite.type_name_or_alias().to_case(Case::Pascal);
+                    let mut struct_code = self.generate_struct(composite, Some(&contract_name));
 
-                        // Find matching event enum and generate interface implementations
-                        for event_enum in &event_enums {
-                            // Check if this struct is one of the event variants
-                            for inner in &event_enum.inners {
-                                let variant_name = inner.name.to_case(Case::Pascal);
+                    // Compute the prefixed struct name (same logic as in generate_struct)
+                    let mut prefixed_struct_name = original_struct_name.clone();
+                    if self.is_event_struct(&original_struct_name) {
+                        let sanitized_contract = self.sanitize_go_identifier(&contract_name);
+                        let contract_pascal = sanitized_contract.to_case(Case::Pascal);
+                        prefixed_struct_name =
+                            format!("{}{}", contract_pascal, original_struct_name);
+                    }
 
-                                // Match by variant name or by the actual type referenced
-                                let matches = if struct_name == variant_name {
-                                    true
+                    // Find matching event enum and generate interface implementations
+                    for event_enum in &event_enums {
+                        // Check if this struct is one of the event variants
+                        for inner in &event_enum.inners {
+                            let variant_name = inner.name.to_case(Case::Pascal);
+
+                            // Check if the original struct name matches the event variant
+                            let matches = if original_struct_name
+                                .ends_with(&format!("Event{}", variant_name))
+                            {
+                                true
+                            } else if original_struct_name.ends_with(&variant_name) {
+                                // Also check if it just ends with the variant name for backward compatibility
+                                true
+                            } else {
+                                // Check if the variant's type matches this struct
+                                // Extract the type name from the variant's type path
+                                if let Token::Composite(variant_composite) = &inner.token {
+                                    let variant_type_name = variant_composite
+                                        .type_name_or_alias()
+                                        .to_case(Case::Pascal);
+                                    original_struct_name.ends_with(&variant_type_name)
                                 } else {
-                                    // Check if the variant's type matches this struct
-                                    // Extract the type name from the variant's type path
-                                    if let Token::Composite(variant_composite) = &inner.token {
-                                        let variant_type_name = variant_composite
-                                            .type_name_or_alias()
-                                            .to_case(Case::Pascal);
-                                        struct_name == variant_type_name
-                                    } else {
-                                        false
-                                    }
-                                };
-
-                                if matches {
-                                    struct_code.push_str(
-                                        &self.generate_event_struct_implementation(
-                                            &struct_name,
-                                            event_enum,
-                                            &contract_name,
-                                        ),
-                                    );
-                                    break;
+                                    false
                                 }
+                            };
+
+                            if matches {
+                                struct_code.push_str(&self.generate_event_struct_implementation(
+                                    &prefixed_struct_name, // Use the prefixed name here
+                                    event_enum,
+                                    &contract_name,
+                                ));
+                                break;
                             }
                         }
+                    }
 
-                        generated_code_temp.push_str(&struct_code);
-                        generated_code_temp.push('\n');
-                    }
-                    CompositeType::Enum => {
-                        generated_code_temp.push_str(&self.generate_enum(composite));
-                        generated_code_temp.push('\n');
-                    }
-                    _ => {}
+                    generated_code_temp.push_str(&struct_code);
+                    generated_code_temp.push('\n');
+                }
+            }
+
+            // Now process enums in deterministic order
+            for (_, composite) in &sorted_composites {
+                if composite.r#type == CompositeType::Enum {
+                    generated_code_temp
+                        .push_str(&self.generate_enum(composite, Some(&contract_name)));
+                    generated_code_temp.push('\n');
                 }
             }
 

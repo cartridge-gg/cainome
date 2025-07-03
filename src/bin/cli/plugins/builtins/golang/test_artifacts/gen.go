@@ -7,11 +7,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/NethermindEth/juno/core/felt"
-	"github.com/NethermindEth/starknet.go/rpc"
 	"github.com/NethermindEth/starknet.go/account"
+	"github.com/NethermindEth/starknet.go/rpc"
+	"github.com/NethermindEth/starknet.go/utils"
 	"github.com/cartridge-gg/cainome"
 	"math/big"
-	"github.com/NethermindEth/starknet.go/utils"
 )
 
 type E1 struct {
@@ -65,601 +65,107 @@ func (s *E1) CairoSize() int {
 	return -1 // Dynamic size
 }
 
-// IsGenEvent implements the GenEvent interface
-func (e E1) IsGenEvent() bool {
+// IsGenGenEvent implements the GenGenEvent interface
+func (e E1) IsGenGenEvent() bool {
 	return true
 }
 
 
-// MyEnum represents a Cairo enum type
-type MyEnum interface {
-	IsMyEnum() bool
-	MarshalCairo() ([]*felt.Felt, error)
-	UnmarshalCairo(data []*felt.Felt) error
+type MyStructGen struct {
+	F1 *felt.Felt `json:"f1"`
+	F2 *felt.Felt `json:"f2"`
+	F3 *felt.Felt `json:"f3"`
 }
 
-const (
-	MyEnum_One = "One"
-	MyEnum_Two = "Two"
-	MyEnum_Three = "Three"
-	MyEnum_Four = "Four"
-	MyEnum_Five = "Five"
-	MyEnum_Six = "Six"
-	MyEnum_Seven = "Seven"
-	MyEnum_Eight = "Eight"
-	MyEnum_Nine = "Nine"
-	MyEnum_Ten = "Ten"
-	MyEnum_Eleven = "Eleven"
-)
-
-type MyEnumOne struct {
-	Data uint8 `json:"data"`
-}
-
-func NewMyEnumOne(data uint8) MyEnumOne {
-	return MyEnumOne {Data: data}
-}
-
-// IsMyEnum implements the MyEnum interface
-func (o MyEnumOne) IsMyEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes MyEnumOne to Cairo felt array
-func (m *MyEnumOne) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes MyStructGen to Cairo felt array
+func (s *MyStructGen) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(0))
-	result = append(result, cainome.FeltFromUint(uint64(m.Data)))
-
+	result = append(result, s.F1)
+	result = append(result, s.F2)
+	result = append(result, s.F3)
 	return result, nil
 }
 
-// UnmarshalCairo deserializes MyEnumOne from Cairo felt array
-func (m *MyEnumOne) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 0 {
-		return fmt.Errorf("expected discriminant 0, got %d", discriminant)
-	}
-	offset := 1
+// UnmarshalCairo deserializes MyStructGen from Cairo felt array
+func (s *MyStructGen) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
 
 	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for variant data")
+		return fmt.Errorf("insufficient data for field F1")
 	}
-	m.Data = uint8(cainome.UintFromFelt(data[offset]))
+	s.F1 = data[offset]
 	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F2")
+	}
+	s.F2 = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F3")
+	}
+	s.F3 = data[offset]
+	offset++
+
 	return nil
 }
 
-// CairoSize returns the serialized size for MyEnumOne
-func (m *MyEnumOne) CairoSize() int {
+// CairoSize returns the serialized size for MyStructGen
+func (s *MyStructGen) CairoSize() int {
 	return -1 // Dynamic size
 }
 
-type MyEnumTwo struct {
-	Data uint16 `json:"data"`
+
+type MyStructInnerGeneric struct {
+	F1 *felt.Felt `json:"f1"`
+	F2 MyStructGen `json:"f2"`
+	F3 uint32 `json:"f3"`
 }
 
-func NewMyEnumTwo(data uint16) MyEnumTwo {
-	return MyEnumTwo {Data: data}
-}
-
-// IsMyEnum implements the MyEnum interface
-func (t MyEnumTwo) IsMyEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes MyEnumTwo to Cairo felt array
-func (m *MyEnumTwo) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes MyStructInnerGeneric to Cairo felt array
+func (s *MyStructInnerGeneric) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(1))
-	result = append(result, cainome.FeltFromUint(uint64(m.Data)))
-
+	result = append(result, s.F1)
+	// Struct field F2: marshal using CairoMarshaler
+	if fieldData, err := s.F2.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
+	result = append(result, cainome.FeltFromUint(uint64(s.F3)))
 	return result, nil
 }
 
-// UnmarshalCairo deserializes MyEnumTwo from Cairo felt array
-func (m *MyEnumTwo) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 1 {
-		return fmt.Errorf("expected discriminant 1, got %d", discriminant)
-	}
-	offset := 1
+// UnmarshalCairo deserializes MyStructInnerGeneric from Cairo felt array
+func (s *MyStructInnerGeneric) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
 
 	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for variant data")
+		return fmt.Errorf("insufficient data for field F1")
 	}
-	m.Data = uint16(cainome.UintFromFelt(data[offset]))
+	s.F1 = data[offset]
 	offset++
+
+	// Struct field F2: unmarshal using CairoMarshaler
+	if err := s.F2.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field F3")
+	}
+	s.F3 = uint32(cainome.UintFromFelt(data[offset]))
+	offset++
+
 	return nil
 }
 
-// CairoSize returns the serialized size for MyEnumTwo
-func (m *MyEnumTwo) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-type MyEnumThree struct {
-	Data uint32 `json:"data"`
-}
-
-func NewMyEnumThree(data uint32) MyEnumThree {
-	return MyEnumThree {Data: data}
-}
-
-// IsMyEnum implements the MyEnum interface
-func (t MyEnumThree) IsMyEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes MyEnumThree to Cairo felt array
-func (m *MyEnumThree) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(2))
-	result = append(result, cainome.FeltFromUint(uint64(m.Data)))
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MyEnumThree from Cairo felt array
-func (m *MyEnumThree) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 2 {
-		return fmt.Errorf("expected discriminant 2, got %d", discriminant)
-	}
-	offset := 1
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for variant data")
-	}
-	m.Data = uint32(cainome.UintFromFelt(data[offset]))
-	offset++
-	return nil
-}
-
-// CairoSize returns the serialized size for MyEnumThree
-func (m *MyEnumThree) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-type MyEnumFour struct {
-	Data uint64 `json:"data"`
-}
-
-func NewMyEnumFour(data uint64) MyEnumFour {
-	return MyEnumFour {Data: data}
-}
-
-// IsMyEnum implements the MyEnum interface
-func (f MyEnumFour) IsMyEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes MyEnumFour to Cairo felt array
-func (m *MyEnumFour) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(3))
-	result = append(result, cainome.FeltFromUint(uint64(m.Data)))
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MyEnumFour from Cairo felt array
-func (m *MyEnumFour) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 3 {
-		return fmt.Errorf("expected discriminant 3, got %d", discriminant)
-	}
-	offset := 1
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for variant data")
-	}
-	m.Data = uint64(cainome.UintFromFelt(data[offset]))
-	offset++
-	return nil
-}
-
-// CairoSize returns the serialized size for MyEnumFour
-func (m *MyEnumFour) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-type MyEnumFive struct {
-	Data *big.Int `json:"data"`
-}
-
-func NewMyEnumFive(data *big.Int) MyEnumFive {
-	return MyEnumFive {Data: data}
-}
-
-// IsMyEnum implements the MyEnum interface
-func (f MyEnumFive) IsMyEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes MyEnumFive to Cairo felt array
-func (m *MyEnumFive) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(4))
-	result = append(result, cainome.FeltFromBigInt(m.Data))
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MyEnumFive from Cairo felt array
-func (m *MyEnumFive) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 4 {
-		return fmt.Errorf("expected discriminant 4, got %d", discriminant)
-	}
-	offset := 1
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for variant data")
-	}
-	m.Data = cainome.BigIntFromFelt(data[offset])
-	offset++
-	return nil
-}
-
-// CairoSize returns the serialized size for MyEnumFive
-func (m *MyEnumFive) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-type MyEnumSix struct {
-	Data *felt.Felt `json:"data"`
-}
-
-func NewMyEnumSix(data *felt.Felt) MyEnumSix {
-	return MyEnumSix {Data: data}
-}
-
-// IsMyEnum implements the MyEnum interface
-func (s MyEnumSix) IsMyEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes MyEnumSix to Cairo felt array
-func (m *MyEnumSix) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(5))
-	result = append(result, m.Data)
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MyEnumSix from Cairo felt array
-func (m *MyEnumSix) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 5 {
-		return fmt.Errorf("expected discriminant 5, got %d", discriminant)
-	}
-	offset := 1
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for variant data")
-	}
-	m.Data = data[offset]
-	offset++
-	return nil
-}
-
-// CairoSize returns the serialized size for MyEnumSix
-func (m *MyEnumSix) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-type MyEnumSeven struct {
-	Data int32 `json:"data"`
-}
-
-func NewMyEnumSeven(data int32) MyEnumSeven {
-	return MyEnumSeven {Data: data}
-}
-
-// IsMyEnum implements the MyEnum interface
-func (s MyEnumSeven) IsMyEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes MyEnumSeven to Cairo felt array
-func (m *MyEnumSeven) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(6))
-	result = append(result, cainome.FeltFromInt(int64(m.Data)))
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MyEnumSeven from Cairo felt array
-func (m *MyEnumSeven) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 6 {
-		return fmt.Errorf("expected discriminant 6, got %d", discriminant)
-	}
-	offset := 1
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for variant data")
-	}
-	m.Data = int32(cainome.IntFromFelt(data[offset]))
-	offset++
-	return nil
-}
-
-// CairoSize returns the serialized size for MyEnumSeven
-func (m *MyEnumSeven) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-type MyEnumEight struct {
-	Data int64 `json:"data"`
-}
-
-func NewMyEnumEight(data int64) MyEnumEight {
-	return MyEnumEight {Data: data}
-}
-
-// IsMyEnum implements the MyEnum interface
-func (e MyEnumEight) IsMyEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes MyEnumEight to Cairo felt array
-func (m *MyEnumEight) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(7))
-	result = append(result, cainome.FeltFromInt(int64(m.Data)))
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MyEnumEight from Cairo felt array
-func (m *MyEnumEight) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 7 {
-		return fmt.Errorf("expected discriminant 7, got %d", discriminant)
-	}
-	offset := 1
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for variant data")
-	}
-	m.Data = int64(cainome.IntFromFelt(data[offset]))
-	offset++
-	return nil
-}
-
-// CairoSize returns the serialized size for MyEnumEight
-func (m *MyEnumEight) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-type MyEnumNine struct {
-	Data *big.Int `json:"data"`
-}
-
-func NewMyEnumNine(data *big.Int) MyEnumNine {
-	return MyEnumNine {Data: data}
-}
-
-// IsMyEnum implements the MyEnum interface
-func (n MyEnumNine) IsMyEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes MyEnumNine to Cairo felt array
-func (m *MyEnumNine) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(8))
-	result = append(result, cainome.FeltFromBigInt(m.Data))
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MyEnumNine from Cairo felt array
-func (m *MyEnumNine) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 8 {
-		return fmt.Errorf("expected discriminant 8, got %d", discriminant)
-	}
-	offset := 1
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for variant data")
-	}
-	m.Data = cainome.BigIntFromFelt(data[offset])
-	offset++
-	return nil
-}
-
-// CairoSize returns the serialized size for MyEnumNine
-func (m *MyEnumNine) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-type MyEnumTen struct {
-	Data struct {
-	Field0 uint8
-	Field1 *big.Int
-} `json:"data"`
-}
-
-func NewMyEnumTen(data struct {
-	Field0 uint8
-	Field1 *big.Int
-}) MyEnumTen {
-	return MyEnumTen {Data: data}
-}
-
-// IsMyEnum implements the MyEnum interface
-func (t MyEnumTen) IsMyEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes MyEnumTen to Cairo felt array
-func (m *MyEnumTen) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(9))
-	result = append(result, cainome.FeltFromUint(uint64(m.Data.Field0)))
-	result = append(result, cainome.FeltFromBigInt(m.Data.Field1))
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MyEnumTen from Cairo felt array
-func (m *MyEnumTen) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 9 {
-		return fmt.Errorf("expected discriminant 9, got %d", discriminant)
-	}
-	offset := 1
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for tuple field 0")
-	}
-	m.Data.Field0 = uint8(cainome.UintFromFelt(data[offset]))
-	offset++
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for tuple field 1")
-	}
-	m.Data.Field1 = cainome.BigIntFromFelt(data[offset])
-	offset++
-	return nil
-}
-
-// CairoSize returns the serialized size for MyEnumTen
-func (m *MyEnumTen) CairoSize() int {
-	return -1 // Dynamic size
-}
-
-type MyEnumEleven struct {
-	Data struct {
-	Field0 *felt.Felt
-	Field1 uint8
-	Field2 *big.Int
-} `json:"data"`
-}
-
-func NewMyEnumEleven(data struct {
-	Field0 *felt.Felt
-	Field1 uint8
-	Field2 *big.Int
-}) MyEnumEleven {
-	return MyEnumEleven {Data: data}
-}
-
-// IsMyEnum implements the MyEnum interface
-func (e MyEnumEleven) IsMyEnum() bool {
-	return true
-}
-
-// MarshalCairo serializes MyEnumEleven to Cairo felt array
-func (m *MyEnumEleven) MarshalCairo() ([]*felt.Felt, error) {
-	var result []*felt.Felt
-
-	// Discriminant for variant
-	result = append(result, cainome.FeltFromUint(10))
-	result = append(result, m.Data.Field0)
-	result = append(result, cainome.FeltFromUint(uint64(m.Data.Field1)))
-	result = append(result, cainome.FeltFromBigInt(m.Data.Field2))
-
-	return result, nil
-}
-
-// UnmarshalCairo deserializes MyEnumEleven from Cairo felt array
-func (m *MyEnumEleven) UnmarshalCairo(data []*felt.Felt) error {
-	if len(data) == 0 {
-		return fmt.Errorf("insufficient data for enum discriminant")
-	}
-
-	discriminant := cainome.UintFromFelt(data[0])
-	if discriminant != 10 {
-		return fmt.Errorf("expected discriminant 10, got %d", discriminant)
-	}
-	offset := 1
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for tuple field 0")
-	}
-	m.Data.Field0 = data[offset]
-	offset++
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for tuple field 1")
-	}
-	m.Data.Field1 = uint8(cainome.UintFromFelt(data[offset]))
-	offset++
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for tuple field 2")
-	}
-	m.Data.Field2 = cainome.BigIntFromFelt(data[offset])
-	offset++
-	return nil
-}
-
-// CairoSize returns the serialized size for MyEnumEleven
-func (m *MyEnumEleven) CairoSize() int {
+// CairoSize returns the serialized size for MyStructInnerGeneric
+func (s *MyStructInnerGeneric) CairoSize() int {
 	return -1 // Dynamic size
 }
 
@@ -796,111 +302,605 @@ func (s *PlainStruct) CairoSize() int {
 }
 
 
-// GenEvent represents a contract event
-type GenEvent interface {
-	IsGenEvent() bool
+// GenGenEvent represents a contract event
+type GenGenEvent interface {
+	IsGenGenEvent() bool
 }
 
 const (
-	GenEvent_E1 = "E1"
+	GenGenEvent_E1 = "E1"
 )
 
 
-type MyStructInnerGeneric struct {
-	F1 *felt.Felt `json:"f1"`
-	F2 MyStructGen `json:"f2"`
-	F3 uint32 `json:"f3"`
+// MyEnum represents a Cairo enum type
+type MyEnum interface {
+	IsMyEnum() bool
+	MarshalCairo() ([]*felt.Felt, error)
+	UnmarshalCairo(data []*felt.Felt) error
 }
 
-// MarshalCairo serializes MyStructInnerGeneric to Cairo felt array
-func (s *MyStructInnerGeneric) MarshalCairo() ([]*felt.Felt, error) {
+const (
+	MyEnum_Eight = "Eight"
+	MyEnum_Eleven = "Eleven"
+	MyEnum_Five = "Five"
+	MyEnum_Four = "Four"
+	MyEnum_Nine = "Nine"
+	MyEnum_One = "One"
+	MyEnum_Seven = "Seven"
+	MyEnum_Six = "Six"
+	MyEnum_Ten = "Ten"
+	MyEnum_Three = "Three"
+	MyEnum_Two = "Two"
+)
+
+type MyEnumEight struct {
+	Data int64 `json:"data"`
+}
+
+func NewMyEnumEight(data int64) MyEnumEight {
+	return MyEnumEight {Data: data}
+}
+
+// IsMyEnum implements the MyEnum interface
+func (e MyEnumEight) IsMyEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes MyEnumEight to Cairo felt array
+func (m *MyEnumEight) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	result = append(result, s.F1)
-	// Struct field F2: marshal using CairoMarshaler
-	if fieldData, err := s.F2.MarshalCairo(); err != nil {
-		return nil, err
-	} else {
-		result = append(result, fieldData...)
-	}
-	result = append(result, cainome.FeltFromUint(uint64(s.F3)))
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(7))
+	result = append(result, cainome.FeltFromInt(int64(m.Data)))
+
 	return result, nil
 }
 
-// UnmarshalCairo deserializes MyStructInnerGeneric from Cairo felt array
-func (s *MyStructInnerGeneric) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
+// UnmarshalCairo deserializes MyEnumEight from Cairo felt array
+func (m *MyEnumEight) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 7 {
+		return fmt.Errorf("expected discriminant 7, got %d", discriminant)
+	}
+	offset := 1
 
 	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field F1")
+		return fmt.Errorf("insufficient data for variant data")
 	}
-	s.F1 = data[offset]
+	m.Data = int64(cainome.IntFromFelt(data[offset]))
 	offset++
-
-	// Struct field F2: unmarshal using CairoMarshaler
-	if err := s.F2.UnmarshalCairo(data[offset:]); err != nil {
-		return err
-	}
-	// TODO: Update offset based on consumed data
-
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field F3")
-	}
-	s.F3 = uint32(cainome.UintFromFelt(data[offset]))
-	offset++
-
 	return nil
 }
 
-// CairoSize returns the serialized size for MyStructInnerGeneric
-func (s *MyStructInnerGeneric) CairoSize() int {
+// CairoSize returns the serialized size for MyEnumEight
+func (m *MyEnumEight) CairoSize() int {
 	return -1 // Dynamic size
 }
 
-
-type MyStructGen struct {
-	F1 *felt.Felt `json:"f1"`
-	F2 *felt.Felt `json:"f2"`
-	F3 *felt.Felt `json:"f3"`
+type MyEnumEleven struct {
+	Data struct {
+	Field0 *felt.Felt
+	Field1 uint8
+	Field2 *big.Int
+} `json:"data"`
 }
 
-// MarshalCairo serializes MyStructGen to Cairo felt array
-func (s *MyStructGen) MarshalCairo() ([]*felt.Felt, error) {
+func NewMyEnumEleven(data struct {
+	Field0 *felt.Felt
+	Field1 uint8
+	Field2 *big.Int
+}) MyEnumEleven {
+	return MyEnumEleven {Data: data}
+}
+
+// IsMyEnum implements the MyEnum interface
+func (e MyEnumEleven) IsMyEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes MyEnumEleven to Cairo felt array
+func (m *MyEnumEleven) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	result = append(result, s.F1)
-	result = append(result, s.F2)
-	result = append(result, s.F3)
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(10))
+	result = append(result, m.Data.Field0)
+	result = append(result, cainome.FeltFromUint(uint64(m.Data.Field1)))
+	result = append(result, cainome.FeltFromBigInt(m.Data.Field2))
+
 	return result, nil
 }
 
-// UnmarshalCairo deserializes MyStructGen from Cairo felt array
-func (s *MyStructGen) UnmarshalCairo(data []*felt.Felt) error {
-	offset := 0
+// UnmarshalCairo deserializes MyEnumEleven from Cairo felt array
+func (m *MyEnumEleven) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 10 {
+		return fmt.Errorf("expected discriminant 10, got %d", discriminant)
+	}
+	offset := 1
 
 	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field F1")
+		return fmt.Errorf("insufficient data for tuple field 0")
 	}
-	s.F1 = data[offset]
+	m.Data.Field0 = data[offset]
 	offset++
-
 	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field F2")
+		return fmt.Errorf("insufficient data for tuple field 1")
 	}
-	s.F2 = data[offset]
+	m.Data.Field1 = uint8(cainome.UintFromFelt(data[offset]))
 	offset++
-
 	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field F3")
+		return fmt.Errorf("insufficient data for tuple field 2")
 	}
-	s.F3 = data[offset]
+	m.Data.Field2 = cainome.BigIntFromFelt(data[offset])
 	offset++
-
 	return nil
 }
 
-// CairoSize returns the serialized size for MyStructGen
-func (s *MyStructGen) CairoSize() int {
+// CairoSize returns the serialized size for MyEnumEleven
+func (m *MyEnumEleven) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type MyEnumFive struct {
+	Data *big.Int `json:"data"`
+}
+
+func NewMyEnumFive(data *big.Int) MyEnumFive {
+	return MyEnumFive {Data: data}
+}
+
+// IsMyEnum implements the MyEnum interface
+func (f MyEnumFive) IsMyEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes MyEnumFive to Cairo felt array
+func (m *MyEnumFive) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(4))
+	result = append(result, cainome.FeltFromBigInt(m.Data))
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyEnumFive from Cairo felt array
+func (m *MyEnumFive) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 4 {
+		return fmt.Errorf("expected discriminant 4, got %d", discriminant)
+	}
+	offset := 1
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for variant data")
+	}
+	m.Data = cainome.BigIntFromFelt(data[offset])
+	offset++
+	return nil
+}
+
+// CairoSize returns the serialized size for MyEnumFive
+func (m *MyEnumFive) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type MyEnumFour struct {
+	Data uint64 `json:"data"`
+}
+
+func NewMyEnumFour(data uint64) MyEnumFour {
+	return MyEnumFour {Data: data}
+}
+
+// IsMyEnum implements the MyEnum interface
+func (f MyEnumFour) IsMyEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes MyEnumFour to Cairo felt array
+func (m *MyEnumFour) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(3))
+	result = append(result, cainome.FeltFromUint(uint64(m.Data)))
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyEnumFour from Cairo felt array
+func (m *MyEnumFour) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 3 {
+		return fmt.Errorf("expected discriminant 3, got %d", discriminant)
+	}
+	offset := 1
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for variant data")
+	}
+	m.Data = uint64(cainome.UintFromFelt(data[offset]))
+	offset++
+	return nil
+}
+
+// CairoSize returns the serialized size for MyEnumFour
+func (m *MyEnumFour) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type MyEnumNine struct {
+	Data *big.Int `json:"data"`
+}
+
+func NewMyEnumNine(data *big.Int) MyEnumNine {
+	return MyEnumNine {Data: data}
+}
+
+// IsMyEnum implements the MyEnum interface
+func (n MyEnumNine) IsMyEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes MyEnumNine to Cairo felt array
+func (m *MyEnumNine) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(8))
+	result = append(result, cainome.FeltFromBigInt(m.Data))
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyEnumNine from Cairo felt array
+func (m *MyEnumNine) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 8 {
+		return fmt.Errorf("expected discriminant 8, got %d", discriminant)
+	}
+	offset := 1
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for variant data")
+	}
+	m.Data = cainome.BigIntFromFelt(data[offset])
+	offset++
+	return nil
+}
+
+// CairoSize returns the serialized size for MyEnumNine
+func (m *MyEnumNine) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type MyEnumOne struct {
+	Data uint8 `json:"data"`
+}
+
+func NewMyEnumOne(data uint8) MyEnumOne {
+	return MyEnumOne {Data: data}
+}
+
+// IsMyEnum implements the MyEnum interface
+func (o MyEnumOne) IsMyEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes MyEnumOne to Cairo felt array
+func (m *MyEnumOne) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(0))
+	result = append(result, cainome.FeltFromUint(uint64(m.Data)))
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyEnumOne from Cairo felt array
+func (m *MyEnumOne) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 0 {
+		return fmt.Errorf("expected discriminant 0, got %d", discriminant)
+	}
+	offset := 1
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for variant data")
+	}
+	m.Data = uint8(cainome.UintFromFelt(data[offset]))
+	offset++
+	return nil
+}
+
+// CairoSize returns the serialized size for MyEnumOne
+func (m *MyEnumOne) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type MyEnumSeven struct {
+	Data int32 `json:"data"`
+}
+
+func NewMyEnumSeven(data int32) MyEnumSeven {
+	return MyEnumSeven {Data: data}
+}
+
+// IsMyEnum implements the MyEnum interface
+func (s MyEnumSeven) IsMyEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes MyEnumSeven to Cairo felt array
+func (m *MyEnumSeven) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(6))
+	result = append(result, cainome.FeltFromInt(int64(m.Data)))
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyEnumSeven from Cairo felt array
+func (m *MyEnumSeven) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 6 {
+		return fmt.Errorf("expected discriminant 6, got %d", discriminant)
+	}
+	offset := 1
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for variant data")
+	}
+	m.Data = int32(cainome.IntFromFelt(data[offset]))
+	offset++
+	return nil
+}
+
+// CairoSize returns the serialized size for MyEnumSeven
+func (m *MyEnumSeven) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type MyEnumSix struct {
+	Data *felt.Felt `json:"data"`
+}
+
+func NewMyEnumSix(data *felt.Felt) MyEnumSix {
+	return MyEnumSix {Data: data}
+}
+
+// IsMyEnum implements the MyEnum interface
+func (s MyEnumSix) IsMyEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes MyEnumSix to Cairo felt array
+func (m *MyEnumSix) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(5))
+	result = append(result, m.Data)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyEnumSix from Cairo felt array
+func (m *MyEnumSix) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 5 {
+		return fmt.Errorf("expected discriminant 5, got %d", discriminant)
+	}
+	offset := 1
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for variant data")
+	}
+	m.Data = data[offset]
+	offset++
+	return nil
+}
+
+// CairoSize returns the serialized size for MyEnumSix
+func (m *MyEnumSix) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type MyEnumTen struct {
+	Data struct {
+	Field0 uint8
+	Field1 *big.Int
+} `json:"data"`
+}
+
+func NewMyEnumTen(data struct {
+	Field0 uint8
+	Field1 *big.Int
+}) MyEnumTen {
+	return MyEnumTen {Data: data}
+}
+
+// IsMyEnum implements the MyEnum interface
+func (t MyEnumTen) IsMyEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes MyEnumTen to Cairo felt array
+func (m *MyEnumTen) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(9))
+	result = append(result, cainome.FeltFromUint(uint64(m.Data.Field0)))
+	result = append(result, cainome.FeltFromBigInt(m.Data.Field1))
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyEnumTen from Cairo felt array
+func (m *MyEnumTen) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 9 {
+		return fmt.Errorf("expected discriminant 9, got %d", discriminant)
+	}
+	offset := 1
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for tuple field 0")
+	}
+	m.Data.Field0 = uint8(cainome.UintFromFelt(data[offset]))
+	offset++
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for tuple field 1")
+	}
+	m.Data.Field1 = cainome.BigIntFromFelt(data[offset])
+	offset++
+	return nil
+}
+
+// CairoSize returns the serialized size for MyEnumTen
+func (m *MyEnumTen) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type MyEnumThree struct {
+	Data uint32 `json:"data"`
+}
+
+func NewMyEnumThree(data uint32) MyEnumThree {
+	return MyEnumThree {Data: data}
+}
+
+// IsMyEnum implements the MyEnum interface
+func (t MyEnumThree) IsMyEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes MyEnumThree to Cairo felt array
+func (m *MyEnumThree) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(2))
+	result = append(result, cainome.FeltFromUint(uint64(m.Data)))
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyEnumThree from Cairo felt array
+func (m *MyEnumThree) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 2 {
+		return fmt.Errorf("expected discriminant 2, got %d", discriminant)
+	}
+	offset := 1
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for variant data")
+	}
+	m.Data = uint32(cainome.UintFromFelt(data[offset]))
+	offset++
+	return nil
+}
+
+// CairoSize returns the serialized size for MyEnumThree
+func (m *MyEnumThree) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type MyEnumTwo struct {
+	Data uint16 `json:"data"`
+}
+
+func NewMyEnumTwo(data uint16) MyEnumTwo {
+	return MyEnumTwo {Data: data}
+}
+
+// IsMyEnum implements the MyEnum interface
+func (t MyEnumTwo) IsMyEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes MyEnumTwo to Cairo felt array
+func (m *MyEnumTwo) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(1))
+	result = append(result, cainome.FeltFromUint(uint64(m.Data)))
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes MyEnumTwo from Cairo felt array
+func (m *MyEnumTwo) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 1 {
+		return fmt.Errorf("expected discriminant 1, got %d", discriminant)
+	}
+	offset := 1
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for variant data")
+	}
+	m.Data = uint16(cainome.UintFromFelt(data[offset]))
+	offset++
+	return nil
+}
+
+// CairoSize returns the serialized size for MyEnumTwo
+func (m *MyEnumTwo) CairoSize() int {
 	return -1 // Dynamic size
 }
 
@@ -987,6 +987,37 @@ func (gen_writer *GenWriter) Func2(ctx context.Context, a *MyStructGen, opts *ca
 	return txHash, nil
 }
 
+func (gen_reader *GenReader) Func3(ctx context.Context, a *PlainStruct, opts *cainome.CallOpts) error {
+	return nil
+}
+
+func (gen_reader *GenReader) Func4(ctx context.Context, a MyEnum, opts *cainome.CallOpts) error {
+	return nil
+}
+
+func (gen_writer *GenWriter) Func5(ctx context.Context, a *MyStructInnerGeneric, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+	// Setup invoke options
+	if opts == nil {
+		opts = &cainome.InvokeOpts{}
+	}
+
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if a_data, err := a.MarshalCairo(); err != nil {
+		return nil, fmt.Errorf("failed to marshal a: %w", err)
+	} else {
+		calldata = append(calldata, a_data...)
+	}
+
+	// Build and send invoke transaction using cainome helper
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, gen_writer.account, gen_writer.contractAddress, utils.GetSelectorFromNameFelt("func5"), calldata, opts)
+	if err != nil {
+		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
+	}
+
+	return txHash, nil
+}
+
 func (gen_reader *GenReader) Read(ctx context.Context, opts *cainome.CallOpts) (struct {
 	Field0 *felt.Felt
 	Field1 *felt.Felt
@@ -1052,36 +1083,5 @@ func (gen_reader *GenReader) Read(ctx context.Context, opts *cainome.CallOpts) (
 	offset++
 
 	return result, nil
-}
-
-func (gen_reader *GenReader) Func3(ctx context.Context, a *PlainStruct, opts *cainome.CallOpts) error {
-	return nil
-}
-
-func (gen_reader *GenReader) Func4(ctx context.Context, a MyEnum, opts *cainome.CallOpts) error {
-	return nil
-}
-
-func (gen_writer *GenWriter) Func5(ctx context.Context, a *MyStructInnerGeneric, opts *cainome.InvokeOpts) (*felt.Felt, error) {
-	// Setup invoke options
-	if opts == nil {
-		opts = &cainome.InvokeOpts{}
-	}
-
-	// Serialize parameters to calldata
-	calldata := []*felt.Felt{}
-	if a_data, err := a.MarshalCairo(); err != nil {
-		return nil, fmt.Errorf("failed to marshal a: %w", err)
-	} else {
-		calldata = append(calldata, a_data...)
-	}
-
-	// Build and send invoke transaction using cainome helper
-	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, gen_writer.account, gen_writer.contractAddress, utils.GetSelectorFromNameFelt("func5"), calldata, opts)
-	if err != nil {
-		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
-	}
-
-	return txHash, nil
 }
 
