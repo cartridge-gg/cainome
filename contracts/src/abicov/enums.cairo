@@ -1,6 +1,19 @@
 //! A contract with enums.
 
 #[derive(Serde, Drop, starknet::Store)]
+struct Simple {
+    felt: felt252,
+    uint256: u256,
+    uint64: u64,
+    address: starknet::ContractAddress,
+}
+
+#[derive(Serde, Drop, starknet::Store)]
+struct StructWithStruct {
+    simple: Simple,
+}
+
+#[derive(Serde, Drop, starknet::Store)]
 enum SimpleEnum {
     #[default]
     Variant1,
@@ -14,6 +27,8 @@ enum TypedEnum {
     Variant2: u256,
     Variant3: (felt252, u256),
     Variant4: starknet::ContractAddress,
+    Variant5: Simple,
+    Variant6: StructWithStruct,
 }
 
 #[derive(Serde, Drop, starknet::Store)]

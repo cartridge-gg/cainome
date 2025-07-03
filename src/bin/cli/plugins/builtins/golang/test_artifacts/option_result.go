@@ -14,14 +14,14 @@ import (
 	"math/big"
 )
 
-type GenericOneOptionResult struct {
+type OptionResultGenericOneOptionResult struct {
 	A *felt.Felt `json:"a"`
 	B *felt.Felt `json:"b"`
 	C *big.Int `json:"c"`
 }
 
-// MarshalCairo serializes GenericOneOptionResult to Cairo felt array
-func (s *GenericOneOptionResult) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes OptionResultGenericOneOptionResult to Cairo felt array
+func (s *OptionResultGenericOneOptionResult) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, s.A)
@@ -30,8 +30,8 @@ func (s *GenericOneOptionResult) MarshalCairo() ([]*felt.Felt, error) {
 	return result, nil
 }
 
-// UnmarshalCairo deserializes GenericOneOptionResult from Cairo felt array
-func (s *GenericOneOptionResult) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes OptionResultGenericOneOptionResult from Cairo felt array
+func (s *OptionResultGenericOneOptionResult) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
@@ -55,8 +55,8 @@ func (s *GenericOneOptionResult) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for GenericOneOptionResult
-func (s *GenericOneOptionResult) CairoSize() int {
+// CairoSize returns the serialized size for OptionResultGenericOneOptionResult
+func (s *OptionResultGenericOneOptionResult) CairoSize() int {
 	return -1 // Dynamic size
 }
 
@@ -304,7 +304,7 @@ func (option_result_reader *OptionResultReader) ResultOk(ctx context.Context, re
 	return result, nil
 }
 
-func (option_result_reader *OptionResultReader) ResultOkStruct(ctx context.Context, res cainome.Result[*GenericOneOptionResult, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
+func (option_result_reader *OptionResultReader) ResultOkStruct(ctx context.Context, res cainome.Result[*OptionResultGenericOneOptionResult, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -348,7 +348,7 @@ func (option_result_reader *OptionResultReader) ResultOkStruct(ctx context.Conte
 }
 
 func (option_result_reader *OptionResultReader) ResultOkTupleStruct(ctx context.Context, res cainome.Result[struct {
-	Field0 *GenericOneOptionResult
+	Field0 *OptionResultGenericOneOptionResult
 	Field1 *felt.Felt
 }, *felt.Felt], opts *cainome.CallOpts) (cainome.Result[uint64, *felt.Felt], error) {
 	// Setup call options

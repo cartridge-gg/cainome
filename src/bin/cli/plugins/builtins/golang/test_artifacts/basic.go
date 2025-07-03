@@ -77,7 +77,7 @@ func (basic_reader *BasicReader) ReadStorageTuple(ctx context.Context, opts *cai
 	// Make the contract call
 	functionCall := rpc.FunctionCall{
 		ContractAddress:    basic_reader.contractAddress,
-		EntryPointSelector: utils.GetSelectorFromNameFelt("read_storage_tuple"),
+		EntryPointSelector: utils.GetSelectorFromNameFelt("readStorageTuple"),
 		Calldata:           calldata,
 	}
 
@@ -135,7 +135,7 @@ func (basic_writer *BasicWriter) SetStorage(ctx context.Context, v_1 *felt.Felt,
 	calldata = append(calldata, cainome.FeltFromBigInt(v_2))
 
 	// Build and send invoke transaction using cainome helper
-	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, basic_writer.account, basic_writer.contractAddress, utils.GetSelectorFromNameFelt("set_storage"), calldata, opts)
+	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, basic_writer.account, basic_writer.contractAddress, utils.GetSelectorFromNameFelt("setStorage"), calldata, opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
 	}

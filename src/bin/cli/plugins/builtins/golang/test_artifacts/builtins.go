@@ -13,20 +13,20 @@ import (
 	"github.com/cartridge-gg/cainome"
 )
 
-type MyStructBuiltins struct {
+type BuiltinsMyStructBuiltins struct {
 	A *felt.Felt `json:"a"`
 }
 
-// MarshalCairo serializes MyStructBuiltins to Cairo felt array
-func (s *MyStructBuiltins) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes BuiltinsMyStructBuiltins to Cairo felt array
+func (s *BuiltinsMyStructBuiltins) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, s.A)
 	return result, nil
 }
 
-// UnmarshalCairo deserializes MyStructBuiltins from Cairo felt array
-func (s *MyStructBuiltins) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes BuiltinsMyStructBuiltins from Cairo felt array
+func (s *BuiltinsMyStructBuiltins) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
@@ -38,8 +38,8 @@ func (s *MyStructBuiltins) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for MyStructBuiltins
-func (s *MyStructBuiltins) CairoSize() int {
+// CairoSize returns the serialized size for BuiltinsMyStructBuiltins
+func (s *BuiltinsMyStructBuiltins) CairoSize() int {
 	return -1 // Dynamic size
 }
 
@@ -121,7 +121,7 @@ func (builtins_reader *BuiltinsReader) NonZero(ctx context.Context, res *felt.Fe
 	return response[0], nil
 }
 
-func (builtins_reader *BuiltinsReader) StructNonZero(ctx context.Context, res *MyStructBuiltins, opts *cainome.CallOpts) (*felt.Felt, error) {
+func (builtins_reader *BuiltinsReader) StructNonZero(ctx context.Context, res *BuiltinsMyStructBuiltins, opts *cainome.CallOpts) (*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}

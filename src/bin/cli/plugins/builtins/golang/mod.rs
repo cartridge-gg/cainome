@@ -23,13 +23,93 @@ impl GolangPlugin {
         Self { options }
     }
 
+    /// Parses a Cairo generic type path and extracts base name and type parameters
+    fn parse_generic_type(&self, type_path: &str) -> (String, Vec<String>) {
+        // Look for the pattern "::<" which indicates generic parameters
+        if let Some(generic_start) = type_path.find("::<") {
+            if let Some(generic_end) = type_path.rfind('>') {
+                // Extract the base type name (everything before "::<")
+                let base_part = &type_path[..generic_start];
+                let base_name = base_part.split("::").last().unwrap_or(base_part);
+
+                // Extract type parameters (everything between "::<" and ">")
+                let type_params_str = &type_path[generic_start + 3..generic_end]; // +3 to skip "::<"
+
+                // Parse type parameters, handling nested generics
+                let type_params = self.parse_type_parameters(type_params_str);
+
+                return (base_name.to_string(), type_params);
+            }
+        }
+
+        // Not a generic type or couldn't parse
+        let base_name = type_path.split("::").last().unwrap_or(type_path);
+        (base_name.to_string(), Vec::new())
+    }
+
+    /// Parses type parameters from a string, handling nested generics
+    fn parse_type_parameters(&self, params_str: &str) -> Vec<String> {
+        let mut params = Vec::new();
+        let mut current_param = String::new();
+        let mut depth = 0;
+
+        for ch in params_str.chars() {
+            match ch {
+                '<' => {
+                    depth += 1;
+                    current_param.push(ch);
+                }
+                '>' => {
+                    depth -= 1;
+                    current_param.push(ch);
+                }
+                ',' if depth == 0 => {
+                    if !current_param.trim().is_empty() {
+                        params.push(current_param.trim().to_string());
+                    }
+                    current_param.clear();
+                }
+                _ => {
+                    current_param.push(ch);
+                }
+            }
+        }
+
+        if !current_param.trim().is_empty() {
+            params.push(current_param.trim().to_string());
+        }
+
+        params
+    }
+
+    /// Generates Go type parameters from Cairo type parameters
+    fn generate_go_type_parameters(&self, type_params: &[String]) -> String {
+        type_params
+            .iter()
+            .enumerate()
+            .map(|(i, _)| format!("T{}", i))
+            .collect::<Vec<_>>()
+            .join(", ")
+    }
+
+    /// Gets the prefixed type name for a composite type
+    fn get_prefixed_type_name(&self, composite: &Composite, contract_name: Option<&str>) -> String {
+        let base_name = composite.type_name_or_alias().to_case(Case::Pascal);
+
+        if let Some(contract) = contract_name {
+            let sanitized_contract = self.sanitize_go_identifier(contract);
+            let contract_pascal = sanitized_contract.to_case(Case::Pascal);
+            format!("{}{}", contract_pascal, base_name)
+        } else {
+            base_name
+        }
+    }
+
     /// Sanitizes a contract name to be a valid Go identifier
     fn sanitize_go_identifier(&self, name: &str) -> String {
         // Replace common special characters with underscores
         let mut sanitized = name
-            .replace('.', "_")
-            .replace('-', "_")
-            .replace('/', "_")
+            .replace(['.', '-', '/'], "_")
             .replace('@', "_at_")
             .replace('+', "_plus_")
             .replace(' ', "_");
@@ -104,6 +184,128 @@ impl GolangPlugin {
         }
     }
 
+    /// Converts a token to its Go type representation for generic structs
+    fn token_to_go_generic_type(
+        &self,
+        token: &Token,
+        type_param_map: &std::collections::HashMap<String, String>,
+    ) -> String {
+        match token {
+            Token::CoreBasic(core_basic) => self.map_core_basic_type(&core_basic.type_path),
+            Token::Array(array) => {
+                let inner_type = self.token_to_go_generic_type(&array.inner, type_param_map);
+                format!("[]{}", inner_type)
+            }
+            Token::Tuple(tuple) => {
+                if tuple.inners.is_empty() {
+                    "struct{}".to_string()
+                } else {
+                    let field_types: Vec<String> = tuple
+                        .inners
+                        .iter()
+                        .enumerate()
+                        .map(|(i, token)| {
+                            format!(
+                                "Field{} {}",
+                                i,
+                                self.token_to_go_generic_type(token, type_param_map)
+                            )
+                        })
+                        .collect();
+                    format!("struct {{\n\t{}\n}}", field_types.join("\n\t"))
+                }
+            }
+            Token::Composite(composite) => {
+                if composite.is_builtin() {
+                    self.map_composite_builtin_type(&composite.type_path_no_generic())
+                } else {
+                    // Check if this type is one of our generic parameters
+                    let type_path = &composite.type_path;
+                    if let Some(go_type_param) = type_param_map.get(type_path) {
+                        go_type_param.clone()
+                    } else {
+                        // Also check if this is a known Cairo core type that should be mapped to Go type param
+                        for (cairo_type, go_param) in type_param_map.iter() {
+                            if type_path == cairo_type {
+                                return go_param.clone();
+                            }
+                        }
+                        // Use actual type name without contract prefix for struct fields
+                        composite.type_name_or_alias().to_case(Case::Pascal)
+                    }
+                }
+            }
+            Token::Option(option) => {
+                // For all Option types, add a pointer for nullability
+                let inner_type = self.token_to_go_generic_type(&option.inner, type_param_map);
+                format!("*{}", inner_type)
+            }
+            Token::Result(result) => {
+                // Generate a Result type that can be unpacked into (value, error) pattern
+                let ok_type = self.token_to_go_generic_type(&result.inner, type_param_map);
+                let err_type = self.token_to_go_generic_type(&result.error, type_param_map);
+                format!("cainome.Result[{}, {}]", ok_type, err_type)
+            }
+            Token::NonZero(non_zero) => {
+                self.token_to_go_generic_type(&non_zero.inner, type_param_map)
+            }
+            Token::Function(_) => "func".to_string(),
+        }
+    }
+
+    /// Converts a token to its Go type representation for struct fields with contract context
+    fn token_to_go_type_with_context(&self, token: &Token, contract_name: Option<&str>) -> String {
+        match token {
+            Token::CoreBasic(core_basic) => self.map_core_basic_type(&core_basic.type_path),
+            Token::Array(array) => {
+                let inner_type = self.token_to_go_type_with_context(&array.inner, contract_name);
+                format!("[]{}", inner_type)
+            }
+            Token::Tuple(tuple) => {
+                if tuple.inners.is_empty() {
+                    "struct{}".to_string()
+                } else {
+                    let field_types: Vec<String> = tuple
+                        .inners
+                        .iter()
+                        .enumerate()
+                        .map(|(i, token)| {
+                            format!(
+                                "Field{} {}",
+                                i,
+                                self.token_to_go_type_with_context(token, contract_name)
+                            )
+                        })
+                        .collect();
+                    format!("struct {{\n\t{}\n}}", field_types.join("\n\t"))
+                }
+            }
+            Token::Composite(composite) => {
+                if composite.is_builtin() {
+                    self.map_composite_builtin_type(&composite.type_path_no_generic())
+                } else {
+                    // Use prefixed type name for consistency
+                    self.get_prefixed_type_name(composite, contract_name)
+                }
+            }
+            Token::Option(option) => {
+                // For all Option types, add a pointer for nullability
+                let inner_type = self.token_to_go_type_with_context(&option.inner, contract_name);
+                format!("*{}", inner_type)
+            }
+            Token::Result(result) => {
+                // Generate a Result type that can be unpacked into (value, error) pattern
+                let ok_type = self.token_to_go_type_with_context(&result.inner, contract_name);
+                let err_type = self.token_to_go_type_with_context(&result.error, contract_name);
+                format!("cainome.Result[{}, {}]", ok_type, err_type)
+            }
+            Token::NonZero(non_zero) => {
+                self.token_to_go_type_with_context(&non_zero.inner, contract_name)
+            }
+            Token::Function(_) => "func".to_string(),
+        }
+    }
+
     /// Converts a token to its Go type representation for struct fields
     fn token_to_go_type(&self, token: &Token) -> String {
         match token {
@@ -129,7 +331,7 @@ impl GolangPlugin {
                 if composite.is_builtin() {
                     self.map_composite_builtin_type(&composite.type_path_no_generic())
                 } else {
-                    // Use actual type name without contract prefix for struct fields
+                    // Use actual type name - this will need contract prefixing for consistency
                     composite.type_name_or_alias().to_case(Case::Pascal)
                 }
             }
@@ -149,12 +351,17 @@ impl GolangPlugin {
         }
     }
 
-    /// Converts a token to its Go type representation for function parameters (with pointers for structs)
-    fn token_to_go_param_type(&self, token: &Token) -> String {
+    /// Converts a token to its Go type representation for function parameters with contract context
+    fn token_to_go_param_type_with_context(
+        &self,
+        token: &Token,
+        contract_name: Option<&str>,
+    ) -> String {
         match token {
             Token::CoreBasic(core_basic) => self.map_core_basic_type(&core_basic.type_path),
             Token::Array(array) => {
-                let inner_type = self.token_to_go_param_type(&array.inner);
+                let inner_type =
+                    self.token_to_go_param_type_with_context(&array.inner, contract_name);
                 format!("[]{}", inner_type)
             }
             Token::Tuple(tuple) => {
@@ -166,7 +373,11 @@ impl GolangPlugin {
                         .iter()
                         .enumerate()
                         .map(|(i, token)| {
-                            format!("Field{} {}", i, self.token_to_go_param_type(token))
+                            format!(
+                                "Field{} {}",
+                                i,
+                                self.token_to_go_param_type_with_context(token, contract_name)
+                            )
                         })
                         .collect();
                     format!("struct {{\n\t{}\n}}", field_types.join("\n\t"))
@@ -176,27 +387,31 @@ impl GolangPlugin {
                 if composite.is_builtin() {
                     self.map_composite_builtin_type(&composite.type_path_no_generic())
                 } else if composite.r#type == CompositeType::Enum {
-                    // Enum interfaces should not be pointers
-                    composite.type_name_or_alias().to_case(Case::Pascal)
+                    // Enum interfaces should not be pointers, but use prefixed names
+                    self.get_prefixed_type_name(composite, contract_name)
                 } else {
-                    // Use pointer to struct type for pass-by-reference parameters
-                    let type_name = composite.type_name_or_alias().to_case(Case::Pascal);
+                    // Use pointer to struct type for pass-by-reference parameters with prefixed names
+                    let type_name = self.get_prefixed_type_name(composite, contract_name);
                     format!("*{}", type_name)
                 }
             }
             Token::Option(option) => {
                 // For all Option types, add a pointer for nullability
-                // Use token_to_go_type instead of token_to_go_param_type to avoid double pointers
-                let inner_type = self.token_to_go_type(&option.inner);
+                // Use token_to_go_type_with_context instead of token_to_go_param_type to avoid double pointers
+                let inner_type = self.token_to_go_type_with_context(&option.inner, contract_name);
                 format!("*{}", inner_type)
             }
             Token::Result(result) => {
                 // Generate a Result type that can be unpacked into (value, error) pattern
-                let ok_type = self.token_to_go_param_type(&result.inner);
-                let err_type = self.token_to_go_param_type(&result.error);
+                let ok_type =
+                    self.token_to_go_param_type_with_context(&result.inner, contract_name);
+                let err_type =
+                    self.token_to_go_param_type_with_context(&result.error, contract_name);
                 format!("cainome.Result[{}, {}]", ok_type, err_type)
             }
-            Token::NonZero(non_zero) => self.token_to_go_param_type(&non_zero.inner),
+            Token::NonZero(non_zero) => {
+                self.token_to_go_param_type_with_context(&non_zero.inner, contract_name)
+            }
             Token::Function(_) => "func".to_string(),
         }
     }
@@ -205,16 +420,33 @@ impl GolangPlugin {
     fn generate_struct(&self, composite: &Composite, contract_name: Option<&str>) -> String {
         let mut struct_name = composite.type_name_or_alias().to_case(Case::Pascal);
 
-        // Check if this is an event struct and prefix with contract name if provided
-        if self.is_event_struct(&struct_name) {
-            if let Some(contract) = contract_name {
-                let sanitized_contract = self.sanitize_go_identifier(contract);
-                let contract_pascal = sanitized_contract.to_case(Case::Pascal);
-                struct_name = format!("{}{}", contract_pascal, struct_name);
-            }
+        // Always prefix structs with contract name to prevent namespace conflicts
+        if let Some(contract) = contract_name {
+            let sanitized_contract = self.sanitize_go_identifier(contract);
+            let contract_pascal = sanitized_contract.to_case(Case::Pascal);
+            struct_name = format!("{}{}", contract_pascal, struct_name);
         }
 
-        let mut struct_def = format!("type {} struct {{\n", struct_name);
+        // Check if this is a generic type and generate with Go generics
+        let (base_name, type_params) = self.parse_generic_type(&composite.type_path);
+
+        let (final_struct_name, type_param_map) = if !type_params.is_empty() {
+            // Create mapping from Cairo type parameters to Go type parameters
+            let mut type_param_map = std::collections::HashMap::new();
+            for (i, cairo_type) in type_params.iter().enumerate() {
+                type_param_map.insert(cairo_type.clone(), format!("T{}", i));
+            }
+
+            // Generate Go generic struct
+            let go_type_params = self.generate_go_type_parameters(&type_params);
+            let generic_struct_name =
+                format!("{}[{}]", base_name.to_case(Case::Pascal), go_type_params);
+            (generic_struct_name, type_param_map)
+        } else {
+            (struct_name.clone(), std::collections::HashMap::new())
+        };
+
+        let mut struct_def = format!("type {} struct {{\n", final_struct_name);
 
         // Sort fields by name for deterministic output
         let mut indexed_inners: Vec<(usize, &cainome_parser::tokens::CompositeInner)> =
@@ -223,7 +455,11 @@ impl GolangPlugin {
 
         for (_original_index, inner) in &indexed_inners {
             let field_name = inner.name.to_case(Case::Pascal);
-            let field_type = self.token_to_go_type(&inner.token);
+            let field_type = if !type_params.is_empty() {
+                self.token_to_go_generic_type(&inner.token, &type_param_map)
+            } else {
+                self.token_to_go_type_with_context(&inner.token, contract_name)
+            };
             let json_tag = format!("`json:\"{}\"`", inner.name);
             struct_def.push_str(&format!("\t{} {} {}\n", field_name, field_type, json_tag));
         }
@@ -231,7 +467,17 @@ impl GolangPlugin {
         struct_def.push_str("}\n\n");
 
         // Generate CairoMarshaler implementation for the struct
-        struct_def.push_str(&self.generate_struct_cairo_marshaler(&struct_name, composite));
+        // For generic structs, we need to use the base name for the marshaler
+        let marshaler_struct_name = if !type_params.is_empty() {
+            base_name.to_case(Case::Pascal)
+        } else {
+            struct_name.clone()
+        };
+        struct_def.push_str(&self.generate_struct_cairo_marshaler_with_context(
+            &marshaler_struct_name,
+            composite,
+            contract_name,
+        ));
 
         // Check if this is an event struct and generate interface implementation
         if self.is_event_struct(&struct_name) {
@@ -273,13 +519,15 @@ impl GolangPlugin {
     fn generate_enum(&self, composite: &Composite, contract_name: Option<&str>) -> String {
         let mut enum_name = composite.type_name_or_alias().to_case(Case::Pascal);
 
-        // Check if this is an event enum (ends with "Event") and prefix with contract name if provided
+        // Always prefix enums with contract name to prevent namespace conflicts
+        if let Some(contract) = contract_name {
+            let sanitized_contract = self.sanitize_go_identifier(contract);
+            let contract_pascal = sanitized_contract.to_case(Case::Pascal);
+            enum_name = format!("{}{}", contract_pascal, enum_name);
+        }
+
+        // Check if this is an event enum (ends with "Event")
         if enum_name.ends_with("Event") {
-            if let Some(contract) = contract_name {
-                let sanitized_contract = self.sanitize_go_identifier(contract);
-                let contract_pascal = sanitized_contract.to_case(Case::Pascal);
-                enum_name = format!("{}{}", contract_pascal, enum_name);
-            }
             return self.generate_event_enum_with_name(composite, &enum_name);
         }
 
@@ -502,6 +750,7 @@ impl GolangPlugin {
         _return_type: &str,
         enum_name: &str,
         token: &Token,
+        contract_name: Option<&str>,
     ) -> String {
         let mut code = String::new();
 
@@ -523,7 +772,15 @@ impl GolangPlugin {
 
             for (original_index, inner) in indexed_inners {
                 let variant_name = inner.name.to_case(Case::Pascal);
-                let variant_type_name = format!("{}{}", enum_name, variant_name);
+
+                // Use prefixed variant type name if contract_name is provided
+                let variant_type_name = if let Some(contract) = contract_name {
+                    let sanitized_contract = self.sanitize_go_identifier(contract);
+                    let contract_pascal = sanitized_contract.to_case(Case::Pascal);
+                    format!("{}{}{}", contract_pascal, enum_name, variant_name)
+                } else {
+                    format!("{}{}", enum_name, variant_name)
+                };
 
                 code.push_str(&format!("\tcase {}:\n", original_index));
                 code.push_str(&format!("\t\tvar result {}\n", variant_type_name));
@@ -910,8 +1167,13 @@ impl GolangPlugin {
         impl_methods
     }
 
-    /// Generates CairoMarshaler implementation for a struct
-    fn generate_struct_cairo_marshaler(&self, struct_name: &str, composite: &Composite) -> String {
+    /// Generates CairoMarshaler implementation for a struct with contract context
+    fn generate_struct_cairo_marshaler_with_context(
+        &self,
+        struct_name: &str,
+        composite: &Composite,
+        contract_name: Option<&str>,
+    ) -> String {
         let mut marshaler = String::new();
 
         // Generate MarshalCairo method
@@ -960,7 +1222,11 @@ impl GolangPlugin {
 
         for (_original_index, inner) in &indexed_inners {
             let field_name = inner.name.to_case(Case::Pascal);
-            marshaler.push_str(&self.generate_field_unmarshal_code(&field_name, &inner.token));
+            marshaler.push_str(&self.generate_field_unmarshal_code_with_context(
+                &field_name,
+                &inner.token,
+                contract_name,
+            ));
         }
 
         marshaler.push_str("\treturn nil\n");
@@ -1069,8 +1335,13 @@ impl GolangPlugin {
         code
     }
 
-    /// Generates unmarshal code for array fields
-    fn generate_array_unmarshal_code(&self, field_name: &str, inner_token: &Token) -> String {
+    /// Generates unmarshal code for array fields with contract context
+    fn generate_array_unmarshal_code_with_context(
+        &self,
+        field_name: &str,
+        inner_token: &Token,
+        contract_name: Option<&str>,
+    ) -> String {
         let mut code = format!(
             "\t// Array field {}: read length then elements\n",
             field_name
@@ -1083,7 +1354,11 @@ impl GolangPlugin {
         code.push_str("\toffset++\n");
 
         // Get the Go type for the array element
-        let element_type = self.token_to_go_type(inner_token);
+        let element_type = if let Some(contract) = contract_name {
+            self.token_to_go_type_with_context(inner_token, Some(contract))
+        } else {
+            self.token_to_go_type(inner_token)
+        };
         code.push_str(&format!(
             "\ts.{} = make([]{}, length{})\n",
             field_name, element_type, field_name
@@ -2113,6 +2388,16 @@ impl GolangPlugin {
 
     /// Generates unmarshal code for a single field
     fn generate_field_unmarshal_code(&self, field_name: &str, token: &Token) -> String {
+        self.generate_field_unmarshal_code_with_context(field_name, token, None)
+    }
+
+    /// Generates unmarshal code for a single field with contract context
+    fn generate_field_unmarshal_code_with_context(
+        &self,
+        field_name: &str,
+        token: &Token,
+        contract_name: Option<&str>,
+    ) -> String {
         match token {
             Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
                 "felt" | "core::felt252" => {
@@ -2157,7 +2442,7 @@ impl GolangPlugin {
                 _ => format!("\t// TODO: Handle unknown core basic type for field {} unmarshal\n\t_ = offset // Suppress unused variable warning\n", field_name),
             },
             Token::Array(array) => {
-                self.generate_array_unmarshal_code(field_name, &array.inner)
+                self.generate_array_unmarshal_code_with_context(field_name, &array.inner, contract_name)
             }
             Token::Composite(composite) => {
                 if composite.is_builtin() {
@@ -2220,7 +2505,8 @@ impl GolangPlugin {
 
         // Add contract function parameters
         for (param_name, param_token) in &function.inputs {
-            let go_type = self.token_to_go_param_type(param_token);
+            let go_type =
+                self.token_to_go_param_type_with_context(param_token, Some(contract_name));
             let param_snake = param_name.to_case(Case::Snake);
             let safe_param_name = self.generate_safe_param_name(&param_snake);
 
@@ -2233,7 +2519,7 @@ impl GolangPlugin {
         // Generate return types
         let mut returns = Vec::new();
         for (i, output_token) in function.outputs.iter().enumerate() {
-            let go_type = self.token_to_go_type(output_token);
+            let go_type = self.token_to_go_type_with_context(output_token, Some(contract_name));
             if function.outputs.len() == 1 {
                 returns.push(go_type);
             } else {
@@ -2260,8 +2546,11 @@ impl GolangPlugin {
         );
 
         // Generate call method for view functions
-        func_def
-            .push_str(&self.generate_call_method(function, &receiver_name.to_case(Case::Snake)));
+        func_def.push_str(&self.generate_call_method(
+            function,
+            &receiver_name.to_case(Case::Snake),
+            contract_name,
+        ));
         func_def.push_str("}\n\n");
         func_def
     }
@@ -2279,7 +2568,8 @@ impl GolangPlugin {
 
         // Add contract function parameters
         for (param_name, param_token) in &function.inputs {
-            let go_type = self.token_to_go_param_type(param_token);
+            let go_type =
+                self.token_to_go_param_type_with_context(param_token, Some(contract_name));
             let param_snake = param_name.to_case(Case::Snake);
             let safe_param_name = self.generate_safe_param_name(&param_snake);
             params.push(format!("{} {}", safe_param_name, go_type));
@@ -2291,7 +2581,7 @@ impl GolangPlugin {
         // Generate return types - invoke functions can return values plus transaction hash
         let mut returns = Vec::new();
         for (i, output_token) in function.outputs.iter().enumerate() {
-            let go_type = self.token_to_go_type(output_token);
+            let go_type = self.token_to_go_type_with_context(output_token, Some(contract_name));
             if function.outputs.len() == 1 {
                 returns.push(go_type);
             } else {
@@ -2319,14 +2609,22 @@ impl GolangPlugin {
         );
 
         // Generate invoke method for state-changing functions
-        func_def
-            .push_str(&self.generate_invoke_method(function, &receiver_name.to_case(Case::Snake)));
+        func_def.push_str(&self.generate_invoke_method_with_context(
+            function,
+            &receiver_name.to_case(Case::Snake),
+            Some(contract_name),
+        ));
         func_def.push_str("}\n\n");
         func_def
     }
 
     /// Generate the body for a view function call
-    fn generate_call_method(&self, function: &Function, receiver_name: &str) -> String {
+    fn generate_call_method(
+        &self,
+        function: &Function,
+        receiver_name: &str,
+        contract_name: &str,
+    ) -> String {
         let mut method_body = String::new();
 
         // Special case: if function has no outputs, just return nil immediately
@@ -2465,7 +2763,8 @@ impl GolangPlugin {
         if function.outputs.is_empty() {
             method_body.push_str("\t\treturn err\n");
         } else if function.outputs.len() == 1 {
-            let return_type = self.token_to_go_type(&function.outputs[0]);
+            let return_type =
+                self.token_to_go_type_with_context(&function.outputs[0], Some(contract_name));
             let zero_value = self.generate_zero_value(&return_type);
             method_body.push_str(&format!("\t\treturn {}, err\n", zero_value));
         } else {
@@ -2474,7 +2773,8 @@ impl GolangPlugin {
                 .outputs
                 .iter()
                 .map(|output| {
-                    let return_type = self.token_to_go_type(output);
+                    let return_type =
+                        self.token_to_go_type_with_context(output, Some(contract_name));
                     self.generate_zero_value(&return_type)
                 })
                 .collect();
@@ -2488,7 +2788,8 @@ impl GolangPlugin {
         } else if function.outputs.len() == 1 {
             method_body.push_str("\t// Deserialize response to proper type\n");
             method_body.push_str("\tif len(response) == 0 {\n");
-            let return_type = self.token_to_go_type(&function.outputs[0]);
+            let return_type =
+                self.token_to_go_type_with_context(&function.outputs[0], Some(contract_name));
             let zero_value = self.generate_zero_value(&return_type);
             method_body.push_str(&format!(
                 "\t\treturn {}, fmt.Errorf(\"empty response\")\n",
@@ -2512,6 +2813,7 @@ impl GolangPlugin {
                     &return_type,
                     &enum_name,
                     &function.outputs[0],
+                    Some(contract_name),
                 );
                 method_body.push_str(&deserialization_code);
             } else if self.is_complex_type(&function.outputs[0]) {
@@ -2537,7 +2839,8 @@ impl GolangPlugin {
                 .outputs
                 .iter()
                 .map(|output| {
-                    let return_type = self.token_to_go_type(output);
+                    let return_type =
+                        self.token_to_go_type_with_context(output, Some(contract_name));
                     self.generate_zero_value(&return_type)
                 })
                 .collect();
@@ -2552,7 +2855,8 @@ impl GolangPlugin {
                 .iter()
                 .enumerate()
                 .map(|(i, output)| {
-                    let return_type = self.token_to_go_type(output);
+                    let return_type =
+                        self.token_to_go_type_with_context(output, Some(contract_name));
                     if return_type == "*felt.Felt" && i < function.outputs.len() && i < 10 {
                         // For felt types, use response elements directly (up to 10 elements)
                         format!("response[{}]", i)
@@ -3195,6 +3499,26 @@ impl GolangPlugin {
         returns.join(", ")
     }
 
+    /// Generate zero return values for invoke methods with contract context
+    fn generate_invoke_zero_returns_with_context(
+        &self,
+        function: &Function,
+        contract_name: &str,
+    ) -> String {
+        let mut returns = Vec::new();
+
+        // Add zero values for function outputs
+        for output in &function.outputs {
+            let return_type = self.token_to_go_type_with_context(output, Some(contract_name));
+            returns.push(self.generate_zero_value(&return_type));
+        }
+
+        // Add nil for transaction hash
+        returns.push("nil".to_string());
+
+        returns.join(", ")
+    }
+
     /// Generate success return values for invoke methods (includes function outputs + txHash)
     fn generate_invoke_success_returns(&self, function: &Function) -> String {
         let mut returns = Vec::new();
@@ -3202,6 +3526,26 @@ impl GolangPlugin {
         // For now, return zero values for function outputs (TODO: parse from transaction receipt)
         for output in &function.outputs {
             let return_type = self.token_to_go_type(output);
+            returns.push(self.generate_zero_value(&return_type));
+        }
+
+        // Add transaction hash
+        returns.push("txHash".to_string());
+
+        returns.join(", ")
+    }
+
+    /// Generate success return values for invoke methods with contract context
+    fn generate_invoke_success_returns_with_context(
+        &self,
+        function: &Function,
+        contract_name: &str,
+    ) -> String {
+        let mut returns = Vec::new();
+
+        // For now, return zero values for function outputs (TODO: parse from transaction receipt)
+        for output in &function.outputs {
+            let return_type = self.token_to_go_type_with_context(output, Some(contract_name));
             returns.push(self.generate_zero_value(&return_type));
         }
 
@@ -3435,8 +3779,13 @@ impl GolangPlugin {
         }
     }
 
-    /// Generate the body for a state-changing function invoke
-    fn generate_invoke_method(&self, function: &Function, receiver_name: &str) -> String {
+    /// Generate the body for a state-changing function invoke with contract context
+    fn generate_invoke_method_with_context(
+        &self,
+        function: &Function,
+        receiver_name: &str,
+        contract_name: Option<&str>,
+    ) -> String {
         let mut method_body = String::new();
 
         // Setup invoke options
@@ -3475,7 +3824,13 @@ impl GolangPlugin {
                                     "\t\tif {}_data, err := (*{}).MarshalCairo(); err != nil {{\n",
                                     safe_param_name, safe_param_name
                                 ));
-                                let zero_returns = self.generate_invoke_zero_returns(function);
+                                let zero_returns = if let Some(contract) = contract_name {
+                                    self.generate_invoke_zero_returns_with_context(
+                                        function, contract,
+                                    )
+                                } else {
+                                    self.generate_invoke_zero_returns(function)
+                                };
                                 method_body.push_str(&format!("\t\t\treturn {}, fmt.Errorf(\"failed to marshal {}: %w\", err)\n", zero_returns, safe_param_name));
                                 method_body.push_str("\t\t} else {\n");
                                 method_body.push_str(&format!(
@@ -3508,7 +3863,11 @@ impl GolangPlugin {
                             safe_param_name, safe_param_name
                         ));
                         // For invoke methods, generate appropriate zero returns based on function outputs
-                        let zero_returns = self.generate_invoke_zero_returns(function);
+                        let zero_returns = if let Some(contract) = contract_name {
+                            self.generate_invoke_zero_returns_with_context(function, contract)
+                        } else {
+                            self.generate_invoke_zero_returns(function)
+                        };
                         method_body.push_str(&format!(
                             "\t\treturn {}, fmt.Errorf(\"failed to marshal {}: %w\", err)\n",
                             zero_returns, safe_param_name
@@ -3541,7 +3900,11 @@ impl GolangPlugin {
             receiver_name, receiver_name, function.name
         ));
         method_body.push_str("\tif err != nil {\n");
-        let zero_returns = self.generate_invoke_zero_returns(function);
+        let zero_returns = if let Some(contract) = contract_name {
+            self.generate_invoke_zero_returns_with_context(function, contract)
+        } else {
+            self.generate_invoke_zero_returns(function)
+        };
         method_body.push_str(&format!(
             "\t\treturn {}, fmt.Errorf(\"failed to submit invoke transaction: %w\", err)\n",
             zero_returns
@@ -3549,7 +3912,11 @@ impl GolangPlugin {
         method_body.push_str("\t}\n\n");
 
         // Generate return based on function outputs
-        let success_returns = self.generate_invoke_success_returns(function);
+        let success_returns = if let Some(contract) = contract_name {
+            self.generate_invoke_success_returns_with_context(function, contract)
+        } else {
+            self.generate_invoke_success_returns(function)
+        };
         method_body.push_str(&format!("\treturn {}, nil\n", success_returns));
 
         method_body
@@ -3557,6 +3924,18 @@ impl GolangPlugin {
 
     /// Generates the main contract struct and constructor
     fn generate_contract(&self, contract_name: &str, functions: &[&Function]) -> String {
+        // Deduplicate functions by normalized name to handle snake_case/camelCase conflicts
+        let mut unique_functions = std::collections::HashMap::new();
+        for function in functions {
+            let normalized_name = function.name.to_case(Case::Pascal);
+            // Only keep the first function with this normalized name
+            unique_functions.entry(normalized_name).or_insert(*function);
+        }
+
+        // Convert back to vector and sort for deterministic output
+        let mut deduplicated_functions: Vec<&Function> =
+            unique_functions.values().cloned().collect();
+        deduplicated_functions.sort_by(|a, b| a.name.cmp(&b.name));
         let sanitized_contract_name = self.sanitize_go_identifier(contract_name);
         let struct_name = sanitized_contract_name.to_case(Case::Pascal);
         let mut contract_def = String::new();
@@ -3618,8 +3997,8 @@ impl GolangPlugin {
         contract_def.push_str("\t}\n");
         contract_def.push_str("}\n\n");
 
-        // Generate methods for each function
-        for function in functions {
+        // Generate methods for each function (using deduplicated list)
+        for function in &deduplicated_functions {
             contract_def.push_str(&self.generate_function(function, contract_name));
         }
 
@@ -3770,13 +4149,11 @@ impl BuiltinPlugin for GolangPlugin {
                     let mut struct_code = self.generate_struct(composite, Some(&contract_name));
 
                     // Compute the prefixed struct name (same logic as in generate_struct)
-                    let mut prefixed_struct_name = original_struct_name.clone();
-                    if self.is_event_struct(&original_struct_name) {
-                        let sanitized_contract = self.sanitize_go_identifier(&contract_name);
-                        let contract_pascal = sanitized_contract.to_case(Case::Pascal);
-                        prefixed_struct_name =
-                            format!("{}{}", contract_pascal, original_struct_name);
-                    }
+                    // All structs get prefixed with contract name to prevent namespace conflicts
+                    let sanitized_contract = self.sanitize_go_identifier(&contract_name);
+                    let contract_pascal = sanitized_contract.to_case(Case::Pascal);
+                    let prefixed_struct_name =
+                        format!("{}{}", contract_pascal, original_struct_name);
 
                     // Find matching event enum and generate interface implementations
                     for event_enum in &event_enums {

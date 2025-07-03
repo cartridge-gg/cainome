@@ -37,7 +37,7 @@ fn main() -> Result<()> {
 Add a `//go:generate` directive to your Go source file:
 
 ```go
-//go:generate go run -mod=mod github.com/cartridge-gg/cainome/src/bin/cainome-go --golang --golang-package mycontract --output-dir ./bindings ./contract.json
+//go:generate go run -mod=mod github.com/cainome/src/bin/cli/plugins/builtins/golang --execution-version v3 --golang --golang-package mycontract --output-dir ./bindings ./contract.json
 
 package main
 
@@ -52,6 +52,7 @@ func main() {
 ```
 
 Then run:
+
 ```bash
 go generate ./...
 ```
@@ -59,6 +60,7 @@ go generate ./...
 This will automatically download and run cainome to generate your bindings. The cainome binary will be installed via cargo if not already present.
 
 You can also set a specific version using the `CAINOME_VERSION` environment variable:
+
 ```bash
 CAINOME_VERSION=v0.3.0 go generate ./...
 ```
@@ -85,19 +87,19 @@ import (
 func main() {
     // Setup StarkNet provider and account
     provider := rpc.NewProvider("https://starknet-mainnet.public.blastapi.io")
-    
+
     // Create contract reader for view functions
     reader := mycontract.NewReader(contractAddress, provider)
-    
+
     // Call view functions
     result, err := reader.MyView(context.Background())
     if err != nil {
         panic(err)
     }
-    
+
     // Create contract writer for transactions
     writer := mycontract.NewWriter(contractAddress, account)
-    
+
     // Send transactions
     txResult, err := writer.MyFunc(context.Background(), feltValue)
     if err != nil {

@@ -14,31 +14,44 @@ import (
 	"math/big"
 )
 
-type GenericOne struct {
-	A *big.Int `json:"a"`
+type StructsGenericOne struct {
+	A []*felt.Felt `json:"a"`
 	B *felt.Felt `json:"b"`
 	C *big.Int `json:"c"`
 }
 
-// MarshalCairo serializes GenericOne to Cairo felt array
-func (s *GenericOne) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes StructsGenericOne to Cairo felt array
+func (s *StructsGenericOne) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	result = append(result, cainome.FeltFromBigInt(s.A))
+	// Array field A: serialize length then elements
+	result = append(result, cainome.FeltFromUint(uint64(len(s.A))))
+	for _, item := range s.A {
+		result = append(result, item)
+	}
 	result = append(result, s.B)
 	result = append(result, cainome.FeltFromBigInt(s.C))
 	return result, nil
 }
 
-// UnmarshalCairo deserializes GenericOne from Cairo felt array
-func (s *GenericOne) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes StructsGenericOne from Cairo felt array
+func (s *StructsGenericOne) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
+	// Array field A: read length then elements
 	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field A")
+		return fmt.Errorf("insufficient data for array length of A")
 	}
-	s.A = cainome.BigIntFromFelt(data[offset])
+	lengthA := cainome.UintFromFelt(data[offset])
 	offset++
+	s.A = make([]*felt.Felt, lengthA)
+	for i := uint64(0); i < lengthA; i++ {
+		if offset >= len(data) {
+			return fmt.Errorf("insufficient data for array element %d of A", i)
+		}
+		s.A[i] = data[offset]
+		offset++
+	}
 
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field B")
@@ -55,26 +68,26 @@ func (s *GenericOne) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for GenericOne
-func (s *GenericOne) CairoSize() int {
+// CairoSize returns the serialized size for StructsGenericOne
+func (s *StructsGenericOne) CairoSize() int {
 	return -1 // Dynamic size
 }
 
 
-type GenericTwo struct {
-	A uint64 `json:"a"`
+type StructsGenericTwo struct {
+	A *felt.Felt `json:"a"`
 	B uint64 `json:"b"`
 	C *felt.Felt `json:"c"`
-	D ToAlias `json:"d"`
-	E []ToAlias `json:"e"`
-	F GenericOne `json:"f"`
+	D StructsToAlias `json:"d"`
+	E []StructsToAlias `json:"e"`
+	F StructsGenericOne `json:"f"`
 }
 
-// MarshalCairo serializes GenericTwo to Cairo felt array
-func (s *GenericTwo) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes StructsGenericTwo to Cairo felt array
+func (s *StructsGenericTwo) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	result = append(result, cainome.FeltFromUint(uint64(s.A)))
+	result = append(result, s.A)
 	result = append(result, cainome.FeltFromUint(uint64(s.B)))
 	result = append(result, s.C)
 	// Struct field D: marshal using CairoMarshaler
@@ -101,14 +114,14 @@ func (s *GenericTwo) MarshalCairo() ([]*felt.Felt, error) {
 	return result, nil
 }
 
-// UnmarshalCairo deserializes GenericTwo from Cairo felt array
-func (s *GenericTwo) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes StructsGenericTwo from Cairo felt array
+func (s *StructsGenericTwo) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field A")
 	}
-	s.A = cainome.UintFromFelt(data[offset])
+	s.A = data[offset]
 	offset++
 
 	if offset >= len(data) {
@@ -135,9 +148,9 @@ func (s *GenericTwo) UnmarshalCairo(data []*felt.Felt) error {
 	}
 	lengthE := cainome.UintFromFelt(data[offset])
 	offset++
-	s.E = make([]ToAlias, lengthE)
+	s.E = make([]StructsToAlias, lengthE)
 	for i := uint64(0); i < lengthE; i++ {
-		var item ToAlias
+		var item StructsToAlias
 		if err := item.UnmarshalCairo(data[offset:]); err != nil {
 			return err
 		}
@@ -159,13 +172,13 @@ func (s *GenericTwo) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for GenericTwo
-func (s *GenericTwo) CairoSize() int {
+// CairoSize returns the serialized size for StructsGenericTwo
+func (s *StructsGenericTwo) CairoSize() int {
 	return -1 // Dynamic size
 }
 
 
-type Simple struct {
+type StructsSimple struct {
 	Address *felt.Felt `json:"address"`
 	ClassHash *felt.Felt `json:"class_hash"`
 	EthAddress [20]byte `json:"eth_address"`
@@ -179,8 +192,8 @@ type Simple struct {
 	Uint64 uint64 `json:"uint64"`
 }
 
-// MarshalCairo serializes Simple to Cairo felt array
-func (s *Simple) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes StructsSimple to Cairo felt array
+func (s *StructsSimple) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, s.Address)
@@ -200,8 +213,8 @@ func (s *Simple) MarshalCairo() ([]*felt.Felt, error) {
 	return result, nil
 }
 
-// UnmarshalCairo deserializes Simple from Cairo felt array
-func (s *Simple) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes StructsSimple from Cairo felt array
+func (s *StructsSimple) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
@@ -271,18 +284,18 @@ func (s *Simple) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for Simple
-func (s *Simple) CairoSize() int {
+// CairoSize returns the serialized size for StructsSimple
+func (s *StructsSimple) CairoSize() int {
 	return -1 // Dynamic size
 }
 
 
-type StructWithStruct struct {
-	Simple Simple `json:"simple"`
+type StructsStructWithStruct struct {
+	Simple StructsSimple `json:"simple"`
 }
 
-// MarshalCairo serializes StructWithStruct to Cairo felt array
-func (s *StructWithStruct) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes StructsStructWithStruct to Cairo felt array
+func (s *StructsStructWithStruct) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	// Struct field Simple: marshal using CairoMarshaler
@@ -294,8 +307,8 @@ func (s *StructWithStruct) MarshalCairo() ([]*felt.Felt, error) {
 	return result, nil
 }
 
-// UnmarshalCairo deserializes StructWithStruct from Cairo felt array
-func (s *StructWithStruct) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes StructsStructWithStruct from Cairo felt array
+func (s *StructsStructWithStruct) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	// Struct field Simple: unmarshal using CairoMarshaler
@@ -307,26 +320,26 @@ func (s *StructWithStruct) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for StructWithStruct
-func (s *StructWithStruct) CairoSize() int {
+// CairoSize returns the serialized size for StructsStructWithStruct
+func (s *StructsStructWithStruct) CairoSize() int {
 	return -1 // Dynamic size
 }
 
 
-type ToAlias struct {
+type StructsToAlias struct {
 	A uint32 `json:"a"`
 }
 
-// MarshalCairo serializes ToAlias to Cairo felt array
-func (s *ToAlias) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes StructsToAlias to Cairo felt array
+func (s *StructsToAlias) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, cainome.FeltFromUint(uint64(s.A)))
 	return result, nil
 }
 
-// UnmarshalCairo deserializes ToAlias from Cairo felt array
-func (s *ToAlias) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes StructsToAlias from Cairo felt array
+func (s *StructsToAlias) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
@@ -338,8 +351,8 @@ func (s *ToAlias) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for ToAlias
-func (s *ToAlias) CairoSize() int {
+// CairoSize returns the serialized size for StructsToAlias
+func (s *StructsToAlias) CairoSize() int {
 	return -1 // Dynamic size
 }
 
@@ -386,7 +399,7 @@ func NewStructs(contractAddress *felt.Felt, account *account.Account) *Structs {
 	}
 }
 
-func (structs_reader *StructsReader) GetGenericOne(ctx context.Context, opts *cainome.CallOpts) (GenericOne, error) {
+func (structs_reader *StructsReader) GetGenericOne(ctx context.Context, opts *cainome.CallOpts) (StructsGenericOne, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -410,21 +423,21 @@ func (structs_reader *StructsReader) GetGenericOne(ctx context.Context, opts *ca
 
 	response, err := structs_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
-		return GenericOne{}, err
+		return StructsGenericOne{}, err
 	}
 
 	// Deserialize response to proper type
 	if len(response) == 0 {
-		return GenericOne{}, fmt.Errorf("empty response")
+		return StructsGenericOne{}, fmt.Errorf("empty response")
 	}
-	var result GenericOne
+	var result StructsGenericOne
 	if err := result.UnmarshalCairo(response); err != nil {
-		return GenericOne{}, fmt.Errorf("failed to unmarshal response: %w", err)
+		return StructsGenericOne{}, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 	return result, nil
 }
 
-func (structs_reader *StructsReader) GetGenericOneArray(ctx context.Context, opts *cainome.CallOpts) (GenericOne, error) {
+func (structs_reader *StructsReader) GetGenericOneArray(ctx context.Context, opts *cainome.CallOpts) (StructsGenericOne, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -448,21 +461,21 @@ func (structs_reader *StructsReader) GetGenericOneArray(ctx context.Context, opt
 
 	response, err := structs_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
-		return GenericOne{}, err
+		return StructsGenericOne{}, err
 	}
 
 	// Deserialize response to proper type
 	if len(response) == 0 {
-		return GenericOne{}, fmt.Errorf("empty response")
+		return StructsGenericOne{}, fmt.Errorf("empty response")
 	}
-	var result GenericOne
+	var result StructsGenericOne
 	if err := result.UnmarshalCairo(response); err != nil {
-		return GenericOne{}, fmt.Errorf("failed to unmarshal response: %w", err)
+		return StructsGenericOne{}, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 	return result, nil
 }
 
-func (structs_reader *StructsReader) GetGenericTwo(ctx context.Context, opts *cainome.CallOpts) (GenericTwo, error) {
+func (structs_reader *StructsReader) GetGenericTwo(ctx context.Context, opts *cainome.CallOpts) (StructsGenericTwo, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -486,21 +499,21 @@ func (structs_reader *StructsReader) GetGenericTwo(ctx context.Context, opts *ca
 
 	response, err := structs_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
-		return GenericTwo{}, err
+		return StructsGenericTwo{}, err
 	}
 
 	// Deserialize response to proper type
 	if len(response) == 0 {
-		return GenericTwo{}, fmt.Errorf("empty response")
+		return StructsGenericTwo{}, fmt.Errorf("empty response")
 	}
-	var result GenericTwo
+	var result StructsGenericTwo
 	if err := result.UnmarshalCairo(response); err != nil {
-		return GenericTwo{}, fmt.Errorf("failed to unmarshal response: %w", err)
+		return StructsGenericTwo{}, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 	return result, nil
 }
 
-func (structs_reader *StructsReader) GetSimple(ctx context.Context, opts *cainome.CallOpts) (Simple, error) {
+func (structs_reader *StructsReader) GetSimple(ctx context.Context, opts *cainome.CallOpts) (StructsSimple, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -524,21 +537,21 @@ func (structs_reader *StructsReader) GetSimple(ctx context.Context, opts *cainom
 
 	response, err := structs_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
-		return Simple{}, err
+		return StructsSimple{}, err
 	}
 
 	// Deserialize response to proper type
 	if len(response) == 0 {
-		return Simple{}, fmt.Errorf("empty response")
+		return StructsSimple{}, fmt.Errorf("empty response")
 	}
-	var result Simple
+	var result StructsSimple
 	if err := result.UnmarshalCairo(response); err != nil {
-		return Simple{}, fmt.Errorf("failed to unmarshal response: %w", err)
+		return StructsSimple{}, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 	return result, nil
 }
 
-func (structs_reader *StructsReader) GetStructWStruct(ctx context.Context, opts *cainome.CallOpts) (StructWithStruct, error) {
+func (structs_reader *StructsReader) GetStructWStruct(ctx context.Context, opts *cainome.CallOpts) (StructsStructWithStruct, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -562,22 +575,22 @@ func (structs_reader *StructsReader) GetStructWStruct(ctx context.Context, opts 
 
 	response, err := structs_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
-		return StructWithStruct{}, err
+		return StructsStructWithStruct{}, err
 	}
 
 	// Deserialize response to proper type
 	if len(response) == 0 {
-		return StructWithStruct{}, fmt.Errorf("empty response")
+		return StructsStructWithStruct{}, fmt.Errorf("empty response")
 	}
-	var result StructWithStruct
+	var result StructsStructWithStruct
 	if err := result.UnmarshalCairo(response); err != nil {
-		return StructWithStruct{}, fmt.Errorf("failed to unmarshal response: %w", err)
+		return StructsStructWithStruct{}, fmt.Errorf("failed to unmarshal response: %w", err)
 	}
 	return result, nil
 }
 
 func (structs_reader *StructsReader) GetTupleOfArrayGeneric(ctx context.Context, opts *cainome.CallOpts) (struct {
-	Field0 []GenericOne
+	Field0 []StructsGenericOne
 	Field1 []*felt.Felt
 }, error) {
 	// Setup call options
@@ -604,7 +617,7 @@ func (structs_reader *StructsReader) GetTupleOfArrayGeneric(ctx context.Context,
 	response, err := structs_reader.provider.Call(ctx, functionCall, blockID)
 	if err != nil {
 		return struct {
-	Field0 []GenericOne
+	Field0 []StructsGenericOne
 	Field1 []*felt.Felt
 }{}, err
 	}
@@ -612,19 +625,19 @@ func (structs_reader *StructsReader) GetTupleOfArrayGeneric(ctx context.Context,
 	// Deserialize response to proper type
 	if len(response) == 0 {
 		return struct {
-	Field0 []GenericOne
+	Field0 []StructsGenericOne
 	Field1 []*felt.Felt
 }{}, fmt.Errorf("empty response")
 	}
 	var result struct {
-	Field0 []GenericOne
+	Field0 []StructsGenericOne
 	Field1 []*felt.Felt
 }
 	offset := 0
 
 	if offset >= len(response) {
 		return struct {
-	Field0 []GenericOne
+	Field0 []StructsGenericOne
 	Field1 []*felt.Felt
 }{}, fmt.Errorf("insufficient data for tuple field 0")
 	}
@@ -633,7 +646,7 @@ func (structs_reader *StructsReader) GetTupleOfArrayGeneric(ctx context.Context,
 
 	if offset >= len(response) {
 		return struct {
-	Field0 []GenericOne
+	Field0 []StructsGenericOne
 	Field1 []*felt.Felt
 }{}, fmt.Errorf("insufficient data for tuple field 1")
 	}
@@ -643,7 +656,7 @@ func (structs_reader *StructsReader) GetTupleOfArrayGeneric(ctx context.Context,
 	return result, nil
 }
 
-func (structs_writer *StructsWriter) SetFromAlias(ctx context.Context, value []*ToAlias, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+func (structs_writer *StructsWriter) SetFromAlias(ctx context.Context, value []*StructsToAlias, opts *cainome.InvokeOpts) (*felt.Felt, error) {
 	// Setup invoke options
 	if opts == nil {
 		opts = &cainome.InvokeOpts{}
@@ -670,7 +683,7 @@ func (structs_writer *StructsWriter) SetFromAlias(ctx context.Context, value []*
 	return txHash, nil
 }
 
-func (structs_writer *StructsWriter) SetGenericOne(ctx context.Context, generic *GenericOne, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+func (structs_writer *StructsWriter) SetGenericOne(ctx context.Context, generic *StructsGenericOne, opts *cainome.InvokeOpts) (*felt.Felt, error) {
 	// Setup invoke options
 	if opts == nil {
 		opts = &cainome.InvokeOpts{}
@@ -693,7 +706,7 @@ func (structs_writer *StructsWriter) SetGenericOne(ctx context.Context, generic 
 	return txHash, nil
 }
 
-func (structs_writer *StructsWriter) SetGenericTwo(ctx context.Context, generic *GenericTwo, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+func (structs_writer *StructsWriter) SetGenericTwo(ctx context.Context, generic *StructsGenericTwo, opts *cainome.InvokeOpts) (*felt.Felt, error) {
 	// Setup invoke options
 	if opts == nil {
 		opts = &cainome.InvokeOpts{}
@@ -716,7 +729,7 @@ func (structs_writer *StructsWriter) SetGenericTwo(ctx context.Context, generic 
 	return txHash, nil
 }
 
-func (structs_writer *StructsWriter) SetGenericTwo0(ctx context.Context, generic *GenericTwo, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+func (structs_writer *StructsWriter) SetGenericTwo0(ctx context.Context, generic *StructsGenericTwo, opts *cainome.InvokeOpts) (*felt.Felt, error) {
 	// Setup invoke options
 	if opts == nil {
 		opts = &cainome.InvokeOpts{}
@@ -739,7 +752,7 @@ func (structs_writer *StructsWriter) SetGenericTwo0(ctx context.Context, generic
 	return txHash, nil
 }
 
-func (structs_writer *StructsWriter) SetGenericTwo2(ctx context.Context, generic *GenericTwo, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+func (structs_writer *StructsWriter) SetGenericTwo2(ctx context.Context, generic *StructsGenericTwo, opts *cainome.InvokeOpts) (*felt.Felt, error) {
 	// Setup invoke options
 	if opts == nil {
 		opts = &cainome.InvokeOpts{}
@@ -762,7 +775,7 @@ func (structs_writer *StructsWriter) SetGenericTwo2(ctx context.Context, generic
 	return txHash, nil
 }
 
-func (structs_writer *StructsWriter) SetSimple(ctx context.Context, simple *Simple, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+func (structs_writer *StructsWriter) SetSimple(ctx context.Context, simple *StructsSimple, opts *cainome.InvokeOpts) (*felt.Felt, error) {
 	// Setup invoke options
 	if opts == nil {
 		opts = &cainome.InvokeOpts{}
@@ -785,7 +798,7 @@ func (structs_writer *StructsWriter) SetSimple(ctx context.Context, simple *Simp
 	return txHash, nil
 }
 
-func (structs_writer *StructsWriter) SetStructWOptionalStruct(ctx context.Context, sws *StructWithStruct, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+func (structs_writer *StructsWriter) SetStructWOptionalStruct(ctx context.Context, sws *StructsStructWithStruct, opts *cainome.InvokeOpts) (*felt.Felt, error) {
 	// Setup invoke options
 	if opts == nil {
 		opts = &cainome.InvokeOpts{}
@@ -815,7 +828,7 @@ func (structs_writer *StructsWriter) SetStructWOptionalStruct(ctx context.Contex
 	return txHash, nil
 }
 
-func (structs_writer *StructsWriter) SetStructWStruct(ctx context.Context, sws *StructWithStruct, opts *cainome.InvokeOpts) (*felt.Felt, error) {
+func (structs_writer *StructsWriter) SetStructWStruct(ctx context.Context, sws *StructsStructWithStruct, opts *cainome.InvokeOpts) (*felt.Felt, error) {
 	// Setup invoke options
 	if opts == nil {
 		opts = &cainome.InvokeOpts{}
@@ -839,8 +852,8 @@ func (structs_writer *StructsWriter) SetStructWStruct(ctx context.Context, sws *
 }
 
 func (structs_writer *StructsWriter) SetTupleGeneric(ctx context.Context, value struct {
-	Field0 *GenericOne
-	Field1 *GenericTwo
+	Field0 *StructsGenericOne
+	Field1 *StructsGenericTwo
 }, opts *cainome.InvokeOpts) (*felt.Felt, error) {
 	// Setup invoke options
 	if opts == nil {

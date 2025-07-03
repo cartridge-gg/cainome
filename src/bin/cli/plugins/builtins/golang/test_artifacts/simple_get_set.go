@@ -20,44 +20,44 @@ type SimpleGetSetSimpleGetSetEvent interface {
 }
 
 
-// TestEnum represents a Cairo enum type
-type TestEnum interface {
-	IsTestEnum() bool
+// SimpleGetSetTestEnum represents a Cairo enum type
+type SimpleGetSetTestEnum interface {
+	IsSimpleGetSetTestEnum() bool
 	MarshalCairo() ([]*felt.Felt, error)
 	UnmarshalCairo(data []*felt.Felt) error
 }
 
 const (
-	TestEnum_V1 = "V1"
-	TestEnum_V2 = "V2"
+	SimpleGetSetTestEnum_V1 = "V1"
+	SimpleGetSetTestEnum_V2 = "V2"
 )
 
-type TestEnumV1 struct {
+type SimpleGetSetTestEnumV1 struct {
 	Data *felt.Felt `json:"data"`
 }
 
-func NewTestEnumV1(data *felt.Felt) TestEnumV1 {
-	return TestEnumV1 {Data: data}
+func NewSimpleGetSetTestEnumV1(data *felt.Felt) SimpleGetSetTestEnumV1 {
+	return SimpleGetSetTestEnumV1 {Data: data}
 }
 
-// IsTestEnum implements the TestEnum interface
-func (v TestEnumV1) IsTestEnum() bool {
+// IsSimpleGetSetTestEnum implements the SimpleGetSetTestEnum interface
+func (v SimpleGetSetTestEnumV1) IsSimpleGetSetTestEnum() bool {
 	return true
 }
 
-// MarshalCairo serializes TestEnumV1 to Cairo felt array
-func (t *TestEnumV1) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes SimpleGetSetTestEnumV1 to Cairo felt array
+func (s *SimpleGetSetTestEnumV1) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	// Discriminant for variant
 	result = append(result, cainome.FeltFromUint(0))
-	result = append(result, t.Data)
+	result = append(result, s.Data)
 
 	return result, nil
 }
 
-// UnmarshalCairo deserializes TestEnumV1 from Cairo felt array
-func (t *TestEnumV1) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes SimpleGetSetTestEnumV1 from Cairo felt array
+func (s *SimpleGetSetTestEnumV1) UnmarshalCairo(data []*felt.Felt) error {
 	if len(data) == 0 {
 		return fmt.Errorf("insufficient data for enum discriminant")
 	}
@@ -71,29 +71,29 @@ func (t *TestEnumV1) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for variant data")
 	}
-	t.Data = data[offset]
+	s.Data = data[offset]
 	offset++
 	return nil
 }
 
-// CairoSize returns the serialized size for TestEnumV1
-func (t *TestEnumV1) CairoSize() int {
+// CairoSize returns the serialized size for SimpleGetSetTestEnumV1
+func (s *SimpleGetSetTestEnumV1) CairoSize() int {
 	return -1 // Dynamic size
 }
 
-type TestEnumV2 struct {}
+type SimpleGetSetTestEnumV2 struct {}
 
-func NewTestEnumV2() TestEnumV2 {
-	return TestEnumV2{}
+func NewSimpleGetSetTestEnumV2() SimpleGetSetTestEnumV2 {
+	return SimpleGetSetTestEnumV2{}
 }
 
-// IsTestEnum implements the TestEnum interface
-func (v TestEnumV2) IsTestEnum() bool {
+// IsSimpleGetSetTestEnum implements the SimpleGetSetTestEnum interface
+func (v SimpleGetSetTestEnumV2) IsSimpleGetSetTestEnum() bool {
 	return true
 }
 
-// MarshalCairo serializes TestEnumV2 to Cairo felt array
-func (t *TestEnumV2) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes SimpleGetSetTestEnumV2 to Cairo felt array
+func (s *SimpleGetSetTestEnumV2) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	// Discriminant for variant
@@ -103,8 +103,8 @@ func (t *TestEnumV2) MarshalCairo() ([]*felt.Felt, error) {
 	return result, nil
 }
 
-// UnmarshalCairo deserializes TestEnumV2 from Cairo felt array
-func (t *TestEnumV2) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes SimpleGetSetTestEnumV2 from Cairo felt array
+func (s *SimpleGetSetTestEnumV2) UnmarshalCairo(data []*felt.Felt) error {
 	if len(data) == 0 {
 		return fmt.Errorf("insufficient data for enum discriminant")
 	}
@@ -120,8 +120,8 @@ func (t *TestEnumV2) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for TestEnumV2
-func (t *TestEnumV2) CairoSize() int {
+// CairoSize returns the serialized size for SimpleGetSetTestEnumV2
+func (s *SimpleGetSetTestEnumV2) CairoSize() int {
 	return -1 // Dynamic size
 }
 
@@ -278,7 +278,7 @@ func (simple_get_set_reader *SimpleGetSetReader) GetB(ctx context.Context, opts 
 	return result, nil
 }
 
-func (simple_get_set_reader *SimpleGetSetReader) GetSetEnum(ctx context.Context, v TestEnum, opts *cainome.CallOpts) (TestEnum, error) {
+func (simple_get_set_reader *SimpleGetSetReader) GetSetEnum(ctx context.Context, v SimpleGetSetTestEnum, opts *cainome.CallOpts) (SimpleGetSetTestEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -323,13 +323,13 @@ func (simple_get_set_reader *SimpleGetSetReader) GetSetEnum(ctx context.Context,
 	
 	switch discriminant {
 	case 0:
-		var result TestEnumV1
+		var result SimpleGetSetTestEnumV1
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 1:
-		var result TestEnumV2
+		var result SimpleGetSetTestEnumV2
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}

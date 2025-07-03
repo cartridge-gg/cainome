@@ -46,13 +46,13 @@ func (e ComponentsOutterEvent) IsComponentsComponentsContractEvent() bool {
 }
 
 
-type MyStructSimple struct {
+type ComponentsMyStructSimple struct {
 	A *felt.Felt `json:"a"`
 	B *felt.Felt `json:"b"`
 }
 
-// MarshalCairo serializes MyStructSimple to Cairo felt array
-func (s *MyStructSimple) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes ComponentsMyStructSimple to Cairo felt array
+func (s *ComponentsMyStructSimple) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, s.A)
@@ -60,8 +60,8 @@ func (s *MyStructSimple) MarshalCairo() ([]*felt.Felt, error) {
 	return result, nil
 }
 
-// UnmarshalCairo deserializes MyStructSimple from Cairo felt array
-func (s *MyStructSimple) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes ComponentsMyStructSimple from Cairo felt array
+func (s *ComponentsMyStructSimple) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
@@ -79,19 +79,19 @@ func (s *MyStructSimple) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for MyStructSimple
-func (s *MyStructSimple) CairoSize() int {
+// CairoSize returns the serialized size for ComponentsMyStructSimple
+func (s *ComponentsMyStructSimple) CairoSize() int {
 	return -1 // Dynamic size
 }
 
 
-type SimpleWritten struct {
+type ComponentsSimpleWritten struct {
 	After *felt.Felt `json:"after"`
 	Before *felt.Felt `json:"before"`
 }
 
-// MarshalCairo serializes SimpleWritten to Cairo felt array
-func (s *SimpleWritten) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes ComponentsSimpleWritten to Cairo felt array
+func (s *ComponentsSimpleWritten) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, s.After)
@@ -99,8 +99,8 @@ func (s *SimpleWritten) MarshalCairo() ([]*felt.Felt, error) {
 	return result, nil
 }
 
-// UnmarshalCairo deserializes SimpleWritten from Cairo felt array
-func (s *SimpleWritten) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes ComponentsSimpleWritten from Cairo felt array
+func (s *ComponentsSimpleWritten) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
@@ -118,36 +118,36 @@ func (s *SimpleWritten) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for SimpleWritten
-func (s *SimpleWritten) CairoSize() int {
+// CairoSize returns the serialized size for ComponentsSimpleWritten
+func (s *ComponentsSimpleWritten) CairoSize() int {
 	return -1 // Dynamic size
 }
 
 // IsComponentsSimpleEvent implements the ComponentsSimpleEvent interface
-func (e SimpleWritten) IsComponentsSimpleEvent() bool {
+func (e ComponentsSimpleWritten) IsComponentsSimpleEvent() bool {
 	return true
 }
 
 // IsComponentsOtherEvent implements the ComponentsOtherEvent interface
-func (e SimpleWritten) IsComponentsOtherEvent() bool {
+func (e ComponentsSimpleWritten) IsComponentsOtherEvent() bool {
 	return true
 }
 
 
-type WrittenAb struct {
+type ComponentsWrittenAb struct {
 	Data *felt.Felt `json:"data"`
 }
 
-// MarshalCairo serializes WrittenAb to Cairo felt array
-func (s *WrittenAb) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes ComponentsWrittenAb to Cairo felt array
+func (s *ComponentsWrittenAb) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, s.Data)
 	return result, nil
 }
 
-// UnmarshalCairo deserializes WrittenAb from Cairo felt array
-func (s *WrittenAb) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes ComponentsWrittenAb from Cairo felt array
+func (s *ComponentsWrittenAb) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
@@ -159,31 +159,31 @@ func (s *WrittenAb) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for WrittenAb
-func (s *WrittenAb) CairoSize() int {
+// CairoSize returns the serialized size for ComponentsWrittenAb
+func (s *ComponentsWrittenAb) CairoSize() int {
 	return -1 // Dynamic size
 }
 
 // IsComponentsSimpleEvent implements the ComponentsSimpleEvent interface
-func (e WrittenAb) IsComponentsSimpleEvent() bool {
+func (e ComponentsWrittenAb) IsComponentsSimpleEvent() bool {
 	return true
 }
 
 
-type MyStructOther struct {
+type ComponentsMyStructOther struct {
 	Data *big.Int `json:"data"`
 }
 
-// MarshalCairo serializes MyStructOther to Cairo felt array
-func (s *MyStructOther) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes ComponentsMyStructOther to Cairo felt array
+func (s *ComponentsMyStructOther) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, cainome.FeltFromBigInt(s.Data))
 	return result, nil
 }
 
-// UnmarshalCairo deserializes MyStructOther from Cairo felt array
-func (s *MyStructOther) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes ComponentsMyStructOther from Cairo felt array
+func (s *ComponentsMyStructOther) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
@@ -195,26 +195,26 @@ func (s *MyStructOther) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for MyStructOther
-func (s *MyStructOther) CairoSize() int {
+// CairoSize returns the serialized size for ComponentsMyStructOther
+func (s *ComponentsMyStructOther) CairoSize() int {
 	return -1 // Dynamic size
 }
 
 
-type OtherWritten struct {
+type ComponentsOtherWritten struct {
 	Data *felt.Felt `json:"data"`
 }
 
-// MarshalCairo serializes OtherWritten to Cairo felt array
-func (s *OtherWritten) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes ComponentsOtherWritten to Cairo felt array
+func (s *ComponentsOtherWritten) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, s.Data)
 	return result, nil
 }
 
-// UnmarshalCairo deserializes OtherWritten from Cairo felt array
-func (s *OtherWritten) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes ComponentsOtherWritten from Cairo felt array
+func (s *ComponentsOtherWritten) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
 	if offset >= len(data) {
@@ -226,18 +226,18 @@ func (s *OtherWritten) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for OtherWritten
-func (s *OtherWritten) CairoSize() int {
+// CairoSize returns the serialized size for ComponentsOtherWritten
+func (s *ComponentsOtherWritten) CairoSize() int {
 	return -1 // Dynamic size
 }
 
 // IsComponentsSimpleEvent implements the ComponentsSimpleEvent interface
-func (e OtherWritten) IsComponentsSimpleEvent() bool {
+func (e ComponentsOtherWritten) IsComponentsSimpleEvent() bool {
 	return true
 }
 
 // IsComponentsOtherEvent implements the ComponentsOtherEvent interface
-func (e OtherWritten) IsComponentsOtherEvent() bool {
+func (e ComponentsOtherWritten) IsComponentsOtherEvent() bool {
 	return true
 }
 
@@ -311,7 +311,7 @@ func NewComponents(contractAddress *felt.Felt, account *account.Account) *Compon
 	}
 }
 
-func (components_writer *ComponentsWriter) ArrayStructSimple(ctx context.Context, opts *cainome.InvokeOpts) ([]MyStructSimple, *felt.Felt, error) {
+func (components_writer *ComponentsWriter) ArrayStructSimple(ctx context.Context, opts *cainome.InvokeOpts) ([]ComponentsMyStructSimple, *felt.Felt, error) {
 	// Setup invoke options
 	if opts == nil {
 		opts = &cainome.InvokeOpts{}
@@ -329,7 +329,7 @@ func (components_writer *ComponentsWriter) ArrayStructSimple(ctx context.Context
 	return nil, txHash, nil
 }
 
-func (components_writer *ComponentsWriter) ArrayStructSimpleOther(ctx context.Context, opts *cainome.InvokeOpts) ([]MyStructOther, *felt.Felt, error) {
+func (components_writer *ComponentsWriter) ArrayStructSimpleOther(ctx context.Context, opts *cainome.InvokeOpts) ([]ComponentsMyStructOther, *felt.Felt, error) {
 	// Setup invoke options
 	if opts == nil {
 		opts = &cainome.InvokeOpts{}
@@ -418,8 +418,8 @@ func (components_writer *ComponentsWriter) SimpleOther(ctx context.Context, opts
 }
 
 func (components_writer *ComponentsWriter) TupleEvents(ctx context.Context, opts *cainome.InvokeOpts) (struct {
-	Field0 MyStructSimple
-	Field1 MyStructOther
+	Field0 ComponentsMyStructSimple
+	Field1 ComponentsMyStructOther
 }, *felt.Felt, error) {
 	// Setup invoke options
 	if opts == nil {
@@ -433,14 +433,14 @@ func (components_writer *ComponentsWriter) TupleEvents(ctx context.Context, opts
 	txHash, err := cainome.BuildAndSendInvokeTxn(ctx, components_writer.account, components_writer.contractAddress, utils.GetSelectorFromNameFelt("tuple_events"), calldata, opts)
 	if err != nil {
 		return struct {
-	Field0 MyStructSimple
-	Field1 MyStructOther
+	Field0 ComponentsMyStructSimple
+	Field1 ComponentsMyStructOther
 }{}, nil, fmt.Errorf("failed to submit invoke transaction: %w", err)
 	}
 
 	return struct {
-	Field0 MyStructSimple
-	Field1 MyStructOther
+	Field0 ComponentsMyStructSimple
+	Field1 ComponentsMyStructOther
 }{}, txHash, nil
 }
 

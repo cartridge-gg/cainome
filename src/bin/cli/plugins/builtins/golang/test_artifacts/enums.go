@@ -14,44 +14,135 @@ import (
 	"math/big"
 )
 
-// MixedEnum represents a Cairo enum type
-type MixedEnum interface {
-	IsMixedEnum() bool
+type EnumsSimple struct {
+	Address *felt.Felt `json:"address"`
+	Felt *felt.Felt `json:"felt"`
+	Uint256 *big.Int `json:"uint256"`
+	Uint64 uint64 `json:"uint64"`
+}
+
+// MarshalCairo serializes EnumsSimple to Cairo felt array
+func (s *EnumsSimple) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Address)
+	result = append(result, s.Felt)
+	result = append(result, cainome.FeltFromBigInt(s.Uint256))
+	result = append(result, cainome.FeltFromUint(uint64(s.Uint64)))
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsSimple from Cairo felt array
+func (s *EnumsSimple) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Address")
+	}
+	s.Address = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Felt")
+	}
+	s.Felt = data[offset]
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Uint256")
+	}
+	s.Uint256 = cainome.BigIntFromFelt(data[offset])
+	offset++
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Uint64")
+	}
+	s.Uint64 = cainome.UintFromFelt(data[offset])
+	offset++
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsSimple
+func (s *EnumsSimple) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+type EnumsStructWithStruct struct {
+	Simple EnumsSimple `json:"simple"`
+}
+
+// MarshalCairo serializes EnumsStructWithStruct to Cairo felt array
+func (s *EnumsStructWithStruct) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Struct field Simple: marshal using CairoMarshaler
+	if fieldData, err := s.Simple.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsStructWithStruct from Cairo felt array
+func (s *EnumsStructWithStruct) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Struct field Simple: unmarshal using CairoMarshaler
+	if err := s.Simple.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsStructWithStruct
+func (s *EnumsStructWithStruct) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+
+// EnumsMixedEnum represents a Cairo enum type
+type EnumsMixedEnum interface {
+	IsEnumsMixedEnum() bool
 	MarshalCairo() ([]*felt.Felt, error)
 	UnmarshalCairo(data []*felt.Felt) error
 }
 
 const (
-	MixedEnum_Variant1 = "Variant1"
-	MixedEnum_Variant2 = "Variant2"
+	EnumsMixedEnum_Variant1 = "Variant1"
+	EnumsMixedEnum_Variant2 = "Variant2"
 )
 
-type MixedEnumVariant1 struct {
+type EnumsMixedEnumVariant1 struct {
 	Data *felt.Felt `json:"data"`
 }
 
-func NewMixedEnumVariant1(data *felt.Felt) MixedEnumVariant1 {
-	return MixedEnumVariant1 {Data: data}
+func NewEnumsMixedEnumVariant1(data *felt.Felt) EnumsMixedEnumVariant1 {
+	return EnumsMixedEnumVariant1 {Data: data}
 }
 
-// IsMixedEnum implements the MixedEnum interface
-func (v MixedEnumVariant1) IsMixedEnum() bool {
+// IsEnumsMixedEnum implements the EnumsMixedEnum interface
+func (v EnumsMixedEnumVariant1) IsEnumsMixedEnum() bool {
 	return true
 }
 
-// MarshalCairo serializes MixedEnumVariant1 to Cairo felt array
-func (m *MixedEnumVariant1) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes EnumsMixedEnumVariant1 to Cairo felt array
+func (e *EnumsMixedEnumVariant1) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	// Discriminant for variant
 	result = append(result, cainome.FeltFromUint(0))
-	result = append(result, m.Data)
+	result = append(result, e.Data)
 
 	return result, nil
 }
 
-// UnmarshalCairo deserializes MixedEnumVariant1 from Cairo felt array
-func (m *MixedEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes EnumsMixedEnumVariant1 from Cairo felt array
+func (e *EnumsMixedEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
 	if len(data) == 0 {
 		return fmt.Errorf("insufficient data for enum discriminant")
 	}
@@ -65,29 +156,29 @@ func (m *MixedEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for variant data")
 	}
-	m.Data = data[offset]
+	e.Data = data[offset]
 	offset++
 	return nil
 }
 
-// CairoSize returns the serialized size for MixedEnumVariant1
-func (m *MixedEnumVariant1) CairoSize() int {
+// CairoSize returns the serialized size for EnumsMixedEnumVariant1
+func (e *EnumsMixedEnumVariant1) CairoSize() int {
 	return -1 // Dynamic size
 }
 
-type MixedEnumVariant2 struct {}
+type EnumsMixedEnumVariant2 struct {}
 
-func NewMixedEnumVariant2() MixedEnumVariant2 {
-	return MixedEnumVariant2{}
+func NewEnumsMixedEnumVariant2() EnumsMixedEnumVariant2 {
+	return EnumsMixedEnumVariant2{}
 }
 
-// IsMixedEnum implements the MixedEnum interface
-func (v MixedEnumVariant2) IsMixedEnum() bool {
+// IsEnumsMixedEnum implements the EnumsMixedEnum interface
+func (v EnumsMixedEnumVariant2) IsEnumsMixedEnum() bool {
 	return true
 }
 
-// MarshalCairo serializes MixedEnumVariant2 to Cairo felt array
-func (m *MixedEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes EnumsMixedEnumVariant2 to Cairo felt array
+func (e *EnumsMixedEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	// Discriminant for variant
@@ -97,8 +188,8 @@ func (m *MixedEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
 	return result, nil
 }
 
-// UnmarshalCairo deserializes MixedEnumVariant2 from Cairo felt array
-func (m *MixedEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes EnumsMixedEnumVariant2 from Cairo felt array
+func (e *EnumsMixedEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
 	if len(data) == 0 {
 		return fmt.Errorf("insufficient data for enum discriminant")
 	}
@@ -114,37 +205,37 @@ func (m *MixedEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for MixedEnumVariant2
-func (m *MixedEnumVariant2) CairoSize() int {
+// CairoSize returns the serialized size for EnumsMixedEnumVariant2
+func (e *EnumsMixedEnumVariant2) CairoSize() int {
 	return -1 // Dynamic size
 }
 
 
-// SimpleEnum represents a Cairo enum type
-type SimpleEnum interface {
-	IsSimpleEnum() bool
+// EnumsSimpleEnum represents a Cairo enum type
+type EnumsSimpleEnum interface {
+	IsEnumsSimpleEnum() bool
 	MarshalCairo() ([]*felt.Felt, error)
 	UnmarshalCairo(data []*felt.Felt) error
 }
 
 const (
-	SimpleEnum_Variant1 = "Variant1"
-	SimpleEnum_Variant2 = "Variant2"
+	EnumsSimpleEnum_Variant1 = "Variant1"
+	EnumsSimpleEnum_Variant2 = "Variant2"
 )
 
-type SimpleEnumVariant1 struct {}
+type EnumsSimpleEnumVariant1 struct {}
 
-func NewSimpleEnumVariant1() SimpleEnumVariant1 {
-	return SimpleEnumVariant1{}
+func NewEnumsSimpleEnumVariant1() EnumsSimpleEnumVariant1 {
+	return EnumsSimpleEnumVariant1{}
 }
 
-// IsSimpleEnum implements the SimpleEnum interface
-func (v SimpleEnumVariant1) IsSimpleEnum() bool {
+// IsEnumsSimpleEnum implements the EnumsSimpleEnum interface
+func (v EnumsSimpleEnumVariant1) IsEnumsSimpleEnum() bool {
 	return true
 }
 
-// MarshalCairo serializes SimpleEnumVariant1 to Cairo felt array
-func (s *SimpleEnumVariant1) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes EnumsSimpleEnumVariant1 to Cairo felt array
+func (e *EnumsSimpleEnumVariant1) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	// Discriminant for variant
@@ -154,8 +245,8 @@ func (s *SimpleEnumVariant1) MarshalCairo() ([]*felt.Felt, error) {
 	return result, nil
 }
 
-// UnmarshalCairo deserializes SimpleEnumVariant1 from Cairo felt array
-func (s *SimpleEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes EnumsSimpleEnumVariant1 from Cairo felt array
+func (e *EnumsSimpleEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
 	if len(data) == 0 {
 		return fmt.Errorf("insufficient data for enum discriminant")
 	}
@@ -171,24 +262,24 @@ func (s *SimpleEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for SimpleEnumVariant1
-func (s *SimpleEnumVariant1) CairoSize() int {
+// CairoSize returns the serialized size for EnumsSimpleEnumVariant1
+func (e *EnumsSimpleEnumVariant1) CairoSize() int {
 	return -1 // Dynamic size
 }
 
-type SimpleEnumVariant2 struct {}
+type EnumsSimpleEnumVariant2 struct {}
 
-func NewSimpleEnumVariant2() SimpleEnumVariant2 {
-	return SimpleEnumVariant2{}
+func NewEnumsSimpleEnumVariant2() EnumsSimpleEnumVariant2 {
+	return EnumsSimpleEnumVariant2{}
 }
 
-// IsSimpleEnum implements the SimpleEnum interface
-func (v SimpleEnumVariant2) IsSimpleEnum() bool {
+// IsEnumsSimpleEnum implements the EnumsSimpleEnum interface
+func (v EnumsSimpleEnumVariant2) IsEnumsSimpleEnum() bool {
 	return true
 }
 
-// MarshalCairo serializes SimpleEnumVariant2 to Cairo felt array
-func (s *SimpleEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes EnumsSimpleEnumVariant2 to Cairo felt array
+func (e *EnumsSimpleEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	// Discriminant for variant
@@ -198,8 +289,8 @@ func (s *SimpleEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
 	return result, nil
 }
 
-// UnmarshalCairo deserializes SimpleEnumVariant2 from Cairo felt array
-func (s *SimpleEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes EnumsSimpleEnumVariant2 from Cairo felt array
+func (e *EnumsSimpleEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
 	if len(data) == 0 {
 		return fmt.Errorf("insufficient data for enum discriminant")
 	}
@@ -215,52 +306,54 @@ func (s *SimpleEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
 	return nil
 }
 
-// CairoSize returns the serialized size for SimpleEnumVariant2
-func (s *SimpleEnumVariant2) CairoSize() int {
+// CairoSize returns the serialized size for EnumsSimpleEnumVariant2
+func (e *EnumsSimpleEnumVariant2) CairoSize() int {
 	return -1 // Dynamic size
 }
 
 
-// TypedEnum represents a Cairo enum type
-type TypedEnum interface {
-	IsTypedEnum() bool
+// EnumsTypedEnum represents a Cairo enum type
+type EnumsTypedEnum interface {
+	IsEnumsTypedEnum() bool
 	MarshalCairo() ([]*felt.Felt, error)
 	UnmarshalCairo(data []*felt.Felt) error
 }
 
 const (
-	TypedEnum_Variant1 = "Variant1"
-	TypedEnum_Variant2 = "Variant2"
-	TypedEnum_Variant3 = "Variant3"
-	TypedEnum_Variant4 = "Variant4"
+	EnumsTypedEnum_Variant1 = "Variant1"
+	EnumsTypedEnum_Variant2 = "Variant2"
+	EnumsTypedEnum_Variant3 = "Variant3"
+	EnumsTypedEnum_Variant4 = "Variant4"
+	EnumsTypedEnum_Variant5 = "Variant5"
+	EnumsTypedEnum_Variant6 = "Variant6"
 )
 
-type TypedEnumVariant1 struct {
+type EnumsTypedEnumVariant1 struct {
 	Data *felt.Felt `json:"data"`
 }
 
-func NewTypedEnumVariant1(data *felt.Felt) TypedEnumVariant1 {
-	return TypedEnumVariant1 {Data: data}
+func NewEnumsTypedEnumVariant1(data *felt.Felt) EnumsTypedEnumVariant1 {
+	return EnumsTypedEnumVariant1 {Data: data}
 }
 
-// IsTypedEnum implements the TypedEnum interface
-func (v TypedEnumVariant1) IsTypedEnum() bool {
+// IsEnumsTypedEnum implements the EnumsTypedEnum interface
+func (v EnumsTypedEnumVariant1) IsEnumsTypedEnum() bool {
 	return true
 }
 
-// MarshalCairo serializes TypedEnumVariant1 to Cairo felt array
-func (t *TypedEnumVariant1) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes EnumsTypedEnumVariant1 to Cairo felt array
+func (e *EnumsTypedEnumVariant1) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	// Discriminant for variant
 	result = append(result, cainome.FeltFromUint(0))
-	result = append(result, t.Data)
+	result = append(result, e.Data)
 
 	return result, nil
 }
 
-// UnmarshalCairo deserializes TypedEnumVariant1 from Cairo felt array
-func (t *TypedEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes EnumsTypedEnumVariant1 from Cairo felt array
+func (e *EnumsTypedEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
 	if len(data) == 0 {
 		return fmt.Errorf("insufficient data for enum discriminant")
 	}
@@ -274,42 +367,42 @@ func (t *TypedEnumVariant1) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for variant data")
 	}
-	t.Data = data[offset]
+	e.Data = data[offset]
 	offset++
 	return nil
 }
 
-// CairoSize returns the serialized size for TypedEnumVariant1
-func (t *TypedEnumVariant1) CairoSize() int {
+// CairoSize returns the serialized size for EnumsTypedEnumVariant1
+func (e *EnumsTypedEnumVariant1) CairoSize() int {
 	return -1 // Dynamic size
 }
 
-type TypedEnumVariant2 struct {
+type EnumsTypedEnumVariant2 struct {
 	Data *big.Int `json:"data"`
 }
 
-func NewTypedEnumVariant2(data *big.Int) TypedEnumVariant2 {
-	return TypedEnumVariant2 {Data: data}
+func NewEnumsTypedEnumVariant2(data *big.Int) EnumsTypedEnumVariant2 {
+	return EnumsTypedEnumVariant2 {Data: data}
 }
 
-// IsTypedEnum implements the TypedEnum interface
-func (v TypedEnumVariant2) IsTypedEnum() bool {
+// IsEnumsTypedEnum implements the EnumsTypedEnum interface
+func (v EnumsTypedEnumVariant2) IsEnumsTypedEnum() bool {
 	return true
 }
 
-// MarshalCairo serializes TypedEnumVariant2 to Cairo felt array
-func (t *TypedEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes EnumsTypedEnumVariant2 to Cairo felt array
+func (e *EnumsTypedEnumVariant2) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	// Discriminant for variant
 	result = append(result, cainome.FeltFromUint(1))
-	result = append(result, cainome.FeltFromBigInt(t.Data))
+	result = append(result, cainome.FeltFromBigInt(e.Data))
 
 	return result, nil
 }
 
-// UnmarshalCairo deserializes TypedEnumVariant2 from Cairo felt array
-func (t *TypedEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes EnumsTypedEnumVariant2 from Cairo felt array
+func (e *EnumsTypedEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
 	if len(data) == 0 {
 		return fmt.Errorf("insufficient data for enum discriminant")
 	}
@@ -323,49 +416,49 @@ func (t *TypedEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for variant data")
 	}
-	t.Data = cainome.BigIntFromFelt(data[offset])
+	e.Data = cainome.BigIntFromFelt(data[offset])
 	offset++
 	return nil
 }
 
-// CairoSize returns the serialized size for TypedEnumVariant2
-func (t *TypedEnumVariant2) CairoSize() int {
+// CairoSize returns the serialized size for EnumsTypedEnumVariant2
+func (e *EnumsTypedEnumVariant2) CairoSize() int {
 	return -1 // Dynamic size
 }
 
-type TypedEnumVariant3 struct {
+type EnumsTypedEnumVariant3 struct {
 	Data struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
 } `json:"data"`
 }
 
-func NewTypedEnumVariant3(data struct {
+func NewEnumsTypedEnumVariant3(data struct {
 	Field0 *felt.Felt
 	Field1 *big.Int
-}) TypedEnumVariant3 {
-	return TypedEnumVariant3 {Data: data}
+}) EnumsTypedEnumVariant3 {
+	return EnumsTypedEnumVariant3 {Data: data}
 }
 
-// IsTypedEnum implements the TypedEnum interface
-func (v TypedEnumVariant3) IsTypedEnum() bool {
+// IsEnumsTypedEnum implements the EnumsTypedEnum interface
+func (v EnumsTypedEnumVariant3) IsEnumsTypedEnum() bool {
 	return true
 }
 
-// MarshalCairo serializes TypedEnumVariant3 to Cairo felt array
-func (t *TypedEnumVariant3) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes EnumsTypedEnumVariant3 to Cairo felt array
+func (e *EnumsTypedEnumVariant3) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	// Discriminant for variant
 	result = append(result, cainome.FeltFromUint(2))
-	result = append(result, t.Data.Field0)
-	result = append(result, cainome.FeltFromBigInt(t.Data.Field1))
+	result = append(result, e.Data.Field0)
+	result = append(result, cainome.FeltFromBigInt(e.Data.Field1))
 
 	return result, nil
 }
 
-// UnmarshalCairo deserializes TypedEnumVariant3 from Cairo felt array
-func (t *TypedEnumVariant3) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes EnumsTypedEnumVariant3 from Cairo felt array
+func (e *EnumsTypedEnumVariant3) UnmarshalCairo(data []*felt.Felt) error {
 	if len(data) == 0 {
 		return fmt.Errorf("insufficient data for enum discriminant")
 	}
@@ -379,47 +472,47 @@ func (t *TypedEnumVariant3) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for tuple field 0")
 	}
-	t.Data.Field0 = data[offset]
+	e.Data.Field0 = data[offset]
 	offset++
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for tuple field 1")
 	}
-	t.Data.Field1 = cainome.BigIntFromFelt(data[offset])
+	e.Data.Field1 = cainome.BigIntFromFelt(data[offset])
 	offset++
 	return nil
 }
 
-// CairoSize returns the serialized size for TypedEnumVariant3
-func (t *TypedEnumVariant3) CairoSize() int {
+// CairoSize returns the serialized size for EnumsTypedEnumVariant3
+func (e *EnumsTypedEnumVariant3) CairoSize() int {
 	return -1 // Dynamic size
 }
 
-type TypedEnumVariant4 struct {
+type EnumsTypedEnumVariant4 struct {
 	Data *felt.Felt `json:"data"`
 }
 
-func NewTypedEnumVariant4(data *felt.Felt) TypedEnumVariant4 {
-	return TypedEnumVariant4 {Data: data}
+func NewEnumsTypedEnumVariant4(data *felt.Felt) EnumsTypedEnumVariant4 {
+	return EnumsTypedEnumVariant4 {Data: data}
 }
 
-// IsTypedEnum implements the TypedEnum interface
-func (v TypedEnumVariant4) IsTypedEnum() bool {
+// IsEnumsTypedEnum implements the EnumsTypedEnum interface
+func (v EnumsTypedEnumVariant4) IsEnumsTypedEnum() bool {
 	return true
 }
 
-// MarshalCairo serializes TypedEnumVariant4 to Cairo felt array
-func (t *TypedEnumVariant4) MarshalCairo() ([]*felt.Felt, error) {
+// MarshalCairo serializes EnumsTypedEnumVariant4 to Cairo felt array
+func (e *EnumsTypedEnumVariant4) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	// Discriminant for variant
 	result = append(result, cainome.FeltFromUint(3))
-	result = append(result, t.Data)
+	result = append(result, e.Data)
 
 	return result, nil
 }
 
-// UnmarshalCairo deserializes TypedEnumVariant4 from Cairo felt array
-func (t *TypedEnumVariant4) UnmarshalCairo(data []*felt.Felt) error {
+// UnmarshalCairo deserializes EnumsTypedEnumVariant4 from Cairo felt array
+func (e *EnumsTypedEnumVariant4) UnmarshalCairo(data []*felt.Felt) error {
 	if len(data) == 0 {
 		return fmt.Errorf("insufficient data for enum discriminant")
 	}
@@ -433,13 +526,117 @@ func (t *TypedEnumVariant4) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for variant data")
 	}
-	t.Data = data[offset]
+	e.Data = data[offset]
 	offset++
 	return nil
 }
 
-// CairoSize returns the serialized size for TypedEnumVariant4
-func (t *TypedEnumVariant4) CairoSize() int {
+// CairoSize returns the serialized size for EnumsTypedEnumVariant4
+func (e *EnumsTypedEnumVariant4) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EnumsTypedEnumVariant5 struct {
+	Data EnumsSimple `json:"data"`
+}
+
+func NewEnumsTypedEnumVariant5(data EnumsSimple) EnumsTypedEnumVariant5 {
+	return EnumsTypedEnumVariant5 {Data: data}
+}
+
+// IsEnumsTypedEnum implements the EnumsTypedEnum interface
+func (v EnumsTypedEnumVariant5) IsEnumsTypedEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes EnumsTypedEnumVariant5 to Cairo felt array
+func (e *EnumsTypedEnumVariant5) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(4))
+	if valueData, err := e.Data.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, valueData...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsTypedEnumVariant5 from Cairo felt array
+func (e *EnumsTypedEnumVariant5) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 4 {
+		return fmt.Errorf("expected discriminant 4, got %d", discriminant)
+	}
+	offset := 1
+
+	if err := e.Data.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsTypedEnumVariant5
+func (e *EnumsTypedEnumVariant5) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EnumsTypedEnumVariant6 struct {
+	Data EnumsStructWithStruct `json:"data"`
+}
+
+func NewEnumsTypedEnumVariant6(data EnumsStructWithStruct) EnumsTypedEnumVariant6 {
+	return EnumsTypedEnumVariant6 {Data: data}
+}
+
+// IsEnumsTypedEnum implements the EnumsTypedEnum interface
+func (v EnumsTypedEnumVariant6) IsEnumsTypedEnum() bool {
+	return true
+}
+
+// MarshalCairo serializes EnumsTypedEnumVariant6 to Cairo felt array
+func (e *EnumsTypedEnumVariant6) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Discriminant for variant
+	result = append(result, cainome.FeltFromUint(5))
+	if valueData, err := e.Data.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, valueData...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsTypedEnumVariant6 from Cairo felt array
+func (e *EnumsTypedEnumVariant6) UnmarshalCairo(data []*felt.Felt) error {
+	if len(data) == 0 {
+		return fmt.Errorf("insufficient data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+	if discriminant != 5 {
+		return fmt.Errorf("expected discriminant 5, got %d", discriminant)
+	}
+	offset := 1
+
+	if err := e.Data.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsTypedEnumVariant6
+func (e *EnumsTypedEnumVariant6) CairoSize() int {
 	return -1 // Dynamic size
 }
 
@@ -486,7 +683,7 @@ func NewEnums(contractAddress *felt.Felt, account *account.Account) *Enums {
 	}
 }
 
-func (enums_reader *EnumsReader) GetMixed1(ctx context.Context, opts *cainome.CallOpts) (MixedEnum, error) {
+func (enums_reader *EnumsReader) GetMixed1(ctx context.Context, opts *cainome.CallOpts) (EnumsMixedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -526,13 +723,13 @@ func (enums_reader *EnumsReader) GetMixed1(ctx context.Context, opts *cainome.Ca
 	
 	switch discriminant {
 	case 0:
-		var result MixedEnumVariant1
+		var result EnumsMixedEnumVariant1
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 1:
-		var result MixedEnumVariant2
+		var result EnumsMixedEnumVariant2
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
@@ -542,7 +739,7 @@ func (enums_reader *EnumsReader) GetMixed1(ctx context.Context, opts *cainome.Ca
 	}
 }
 
-func (enums_reader *EnumsReader) GetMixed2(ctx context.Context, opts *cainome.CallOpts) (MixedEnum, error) {
+func (enums_reader *EnumsReader) GetMixed2(ctx context.Context, opts *cainome.CallOpts) (EnumsMixedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -582,13 +779,13 @@ func (enums_reader *EnumsReader) GetMixed2(ctx context.Context, opts *cainome.Ca
 	
 	switch discriminant {
 	case 0:
-		var result MixedEnumVariant1
+		var result EnumsMixedEnumVariant1
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 1:
-		var result MixedEnumVariant2
+		var result EnumsMixedEnumVariant2
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
@@ -598,7 +795,7 @@ func (enums_reader *EnumsReader) GetMixed2(ctx context.Context, opts *cainome.Ca
 	}
 }
 
-func (enums_reader *EnumsReader) GetSimple1(ctx context.Context, opts *cainome.CallOpts) (SimpleEnum, error) {
+func (enums_reader *EnumsReader) GetSimple1(ctx context.Context, opts *cainome.CallOpts) (EnumsSimpleEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -638,13 +835,13 @@ func (enums_reader *EnumsReader) GetSimple1(ctx context.Context, opts *cainome.C
 	
 	switch discriminant {
 	case 0:
-		var result SimpleEnumVariant1
+		var result EnumsSimpleEnumVariant1
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 1:
-		var result SimpleEnumVariant2
+		var result EnumsSimpleEnumVariant2
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
@@ -654,7 +851,7 @@ func (enums_reader *EnumsReader) GetSimple1(ctx context.Context, opts *cainome.C
 	}
 }
 
-func (enums_reader *EnumsReader) GetSimple2(ctx context.Context, opts *cainome.CallOpts) (SimpleEnum, error) {
+func (enums_reader *EnumsReader) GetSimple2(ctx context.Context, opts *cainome.CallOpts) (EnumsSimpleEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -694,13 +891,13 @@ func (enums_reader *EnumsReader) GetSimple2(ctx context.Context, opts *cainome.C
 	
 	switch discriminant {
 	case 0:
-		var result SimpleEnumVariant1
+		var result EnumsSimpleEnumVariant1
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 1:
-		var result SimpleEnumVariant2
+		var result EnumsSimpleEnumVariant2
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
@@ -710,7 +907,7 @@ func (enums_reader *EnumsReader) GetSimple2(ctx context.Context, opts *cainome.C
 	}
 }
 
-func (enums_reader *EnumsReader) GetTyped1(ctx context.Context, opts *cainome.CallOpts) (TypedEnum, error) {
+func (enums_reader *EnumsReader) GetTyped1(ctx context.Context, opts *cainome.CallOpts) (EnumsTypedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -750,25 +947,37 @@ func (enums_reader *EnumsReader) GetTyped1(ctx context.Context, opts *cainome.Ca
 	
 	switch discriminant {
 	case 0:
-		var result TypedEnumVariant1
+		var result EnumsTypedEnumVariant1
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 1:
-		var result TypedEnumVariant2
+		var result EnumsTypedEnumVariant2
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 2:
-		var result TypedEnumVariant3
+		var result EnumsTypedEnumVariant3
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 3:
-		var result TypedEnumVariant4
+		var result EnumsTypedEnumVariant4
+		if err := result.UnmarshalCairo(response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 4:
+		var result EnumsTypedEnumVariant5
+		if err := result.UnmarshalCairo(response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 5:
+		var result EnumsTypedEnumVariant6
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
@@ -778,7 +987,7 @@ func (enums_reader *EnumsReader) GetTyped1(ctx context.Context, opts *cainome.Ca
 	}
 }
 
-func (enums_reader *EnumsReader) GetTyped2(ctx context.Context, opts *cainome.CallOpts) (TypedEnum, error) {
+func (enums_reader *EnumsReader) GetTyped2(ctx context.Context, opts *cainome.CallOpts) (EnumsTypedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -818,25 +1027,37 @@ func (enums_reader *EnumsReader) GetTyped2(ctx context.Context, opts *cainome.Ca
 	
 	switch discriminant {
 	case 0:
-		var result TypedEnumVariant1
+		var result EnumsTypedEnumVariant1
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 1:
-		var result TypedEnumVariant2
+		var result EnumsTypedEnumVariant2
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 2:
-		var result TypedEnumVariant3
+		var result EnumsTypedEnumVariant3
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 3:
-		var result TypedEnumVariant4
+		var result EnumsTypedEnumVariant4
+		if err := result.UnmarshalCairo(response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 4:
+		var result EnumsTypedEnumVariant5
+		if err := result.UnmarshalCairo(response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 5:
+		var result EnumsTypedEnumVariant6
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
@@ -846,7 +1067,7 @@ func (enums_reader *EnumsReader) GetTyped2(ctx context.Context, opts *cainome.Ca
 	}
 }
 
-func (enums_reader *EnumsReader) GetTyped3(ctx context.Context, opts *cainome.CallOpts) (TypedEnum, error) {
+func (enums_reader *EnumsReader) GetTyped3(ctx context.Context, opts *cainome.CallOpts) (EnumsTypedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -886,25 +1107,37 @@ func (enums_reader *EnumsReader) GetTyped3(ctx context.Context, opts *cainome.Ca
 	
 	switch discriminant {
 	case 0:
-		var result TypedEnumVariant1
+		var result EnumsTypedEnumVariant1
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 1:
-		var result TypedEnumVariant2
+		var result EnumsTypedEnumVariant2
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 2:
-		var result TypedEnumVariant3
+		var result EnumsTypedEnumVariant3
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 3:
-		var result TypedEnumVariant4
+		var result EnumsTypedEnumVariant4
+		if err := result.UnmarshalCairo(response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 4:
+		var result EnumsTypedEnumVariant5
+		if err := result.UnmarshalCairo(response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 5:
+		var result EnumsTypedEnumVariant6
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
@@ -914,7 +1147,7 @@ func (enums_reader *EnumsReader) GetTyped3(ctx context.Context, opts *cainome.Ca
 	}
 }
 
-func (enums_reader *EnumsReader) GetTyped4(ctx context.Context, opts *cainome.CallOpts) (TypedEnum, error) {
+func (enums_reader *EnumsReader) GetTyped4(ctx context.Context, opts *cainome.CallOpts) (EnumsTypedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -954,25 +1187,37 @@ func (enums_reader *EnumsReader) GetTyped4(ctx context.Context, opts *cainome.Ca
 	
 	switch discriminant {
 	case 0:
-		var result TypedEnumVariant1
+		var result EnumsTypedEnumVariant1
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 1:
-		var result TypedEnumVariant2
+		var result EnumsTypedEnumVariant2
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 2:
-		var result TypedEnumVariant3
+		var result EnumsTypedEnumVariant3
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 3:
-		var result TypedEnumVariant4
+		var result EnumsTypedEnumVariant4
+		if err := result.UnmarshalCairo(response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 4:
+		var result EnumsTypedEnumVariant5
+		if err := result.UnmarshalCairo(response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 5:
+		var result EnumsTypedEnumVariant6
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
@@ -982,7 +1227,7 @@ func (enums_reader *EnumsReader) GetTyped4(ctx context.Context, opts *cainome.Ca
 	}
 }
 
-func (enums_reader *EnumsReader) GetTypedWithArg(ctx context.Context, e TypedEnum, opts *cainome.CallOpts) (TypedEnum, error) {
+func (enums_reader *EnumsReader) GetTypedWithArg(ctx context.Context, e EnumsTypedEnum, opts *cainome.CallOpts) (EnumsTypedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -1027,25 +1272,37 @@ func (enums_reader *EnumsReader) GetTypedWithArg(ctx context.Context, e TypedEnu
 	
 	switch discriminant {
 	case 0:
-		var result TypedEnumVariant1
+		var result EnumsTypedEnumVariant1
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 1:
-		var result TypedEnumVariant2
+		var result EnumsTypedEnumVariant2
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 2:
-		var result TypedEnumVariant3
+		var result EnumsTypedEnumVariant3
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
 		return &result, nil
 	case 3:
-		var result TypedEnumVariant4
+		var result EnumsTypedEnumVariant4
+		if err := result.UnmarshalCairo(response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 4:
+		var result EnumsTypedEnumVariant5
+		if err := result.UnmarshalCairo(response); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 5:
+		var result EnumsTypedEnumVariant6
 		if err := result.UnmarshalCairo(response); err != nil {
 			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
 		}
@@ -1055,7 +1312,7 @@ func (enums_reader *EnumsReader) GetTypedWithArg(ctx context.Context, e TypedEnu
 	}
 }
 
-func (enums_reader *EnumsReader) GetTypedWithOptionArg(ctx context.Context, e *TypedEnum, opts *cainome.CallOpts) (*TypedEnum, error) {
+func (enums_reader *EnumsReader) GetTypedWithOptionArg(ctx context.Context, e *EnumsTypedEnum, opts *cainome.CallOpts) (*EnumsTypedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
