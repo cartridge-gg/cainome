@@ -125,14 +125,50 @@ func (s *SimpleGetSetTestEnumV2) CairoSize() int {
 	return -1 // Dynamic size
 }
 
+// UnmarshalSimpleGetSetTestEnumFromCairo deserializes SimpleGetSetTestEnum from Cairo felt array
+func UnmarshalSimpleGetSetTestEnumFromCairo(data []*felt.Felt) (SimpleGetSetTestEnum, error) {
+	if len(data) == 0 {
+		return nil, fmt.Errorf("empty data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+
+	switch discriminant {
+	case 0:
+		var result SimpleGetSetTestEnumV1
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 1:
+		var result SimpleGetSetTestEnumV2
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	default:
+		return nil, fmt.Errorf("unknown enum discriminant: %d", discriminant)
+	}
+}
+
+
+type SimpleGetSetContract struct {
+	contractAddress *felt.Felt
+}
+
+func NewSimpleGetSetContract(contractAddress *felt.Felt) *SimpleGetSetContract {
+	return &SimpleGetSetContract {
+		contractAddress: contractAddress,
+	}
+}
 
 type SimpleGetSetReader struct {
-	contractAddress *felt.Felt
+	*SimpleGetSetContract
 	provider rpc.RpcProvider
 }
 
 type SimpleGetSetWriter struct {
-	contractAddress *felt.Felt
+	*SimpleGetSetContract
 	account *account.Account
 }
 
@@ -143,14 +179,14 @@ type SimpleGetSet struct {
 
 func NewSimpleGetSetReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *SimpleGetSetReader {
 	return &SimpleGetSetReader {
-		contractAddress: contractAddress,
+		SimpleGetSetContract: NewSimpleGetSetContract(contractAddress),
 		provider: provider,
 	}
 }
 
 func NewSimpleGetSetWriter(contractAddress *felt.Felt, account *account.Account) *SimpleGetSetWriter {
 	return &SimpleGetSetWriter {
-		contractAddress: contractAddress,
+		SimpleGetSetContract: NewSimpleGetSetContract(contractAddress),
 		account: account,
 	}
 }
@@ -160,6 +196,595 @@ func NewSimpleGetSet(contractAddress *felt.Felt, account *account.Account) *Simp
 		SimpleGetSetReader: NewSimpleGetSetReader(contractAddress, account.Provider),
 		SimpleGetSetWriter: NewSimpleGetSetWriter(contractAddress, account),
 	}
+}
+
+type SimpleGetSetGetAResponse struct {
+	Value *felt.Felt `json:"value"`
+}
+
+func NewSimpleGetSetGetAResponse(value *felt.Felt) *SimpleGetSetGetAResponse {
+	return &SimpleGetSetGetAResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes SimpleGetSetGetAResponse to Cairo felt array
+func (s *SimpleGetSetGetAResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Value)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleGetSetGetAResponse from Cairo felt array
+func (s *SimpleGetSetGetAResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Value")
+	}
+	s.Value = data[offset]
+	offset++
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleGetSetGetAResponse
+func (s *SimpleGetSetGetAResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleGetSetGetArrayResponse struct {
+	Value []*felt.Felt `json:"value"`
+}
+
+func NewSimpleGetSetGetArrayResponse(value []*felt.Felt) *SimpleGetSetGetArrayResponse {
+	return &SimpleGetSetGetArrayResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes SimpleGetSetGetArrayResponse to Cairo felt array
+func (s *SimpleGetSetGetArrayResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Array of felts: serialize length + elements
+	result = append(result, cainome.FeltFromUint(uint64(len(s.Value))))
+	result = append(result, s.Value...)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleGetSetGetArrayResponse from Cairo felt array
+func (s *SimpleGetSetGetArrayResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Array of felts: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of field Value")
+	}
+	length := cainome.UintFromFelt(data[offset])
+	offset++
+
+	if offset + int(length) > len(data) {
+		return fmt.Errorf("insufficient data for array elements of field Value")
+	}
+	s.Value = data[offset:offset+int(length)]
+	offset += int(length)
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleGetSetGetArrayResponse
+func (s *SimpleGetSetGetArrayResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleGetSetGetBResponse struct {
+	Value *big.Int `json:"value"`
+}
+
+func NewSimpleGetSetGetBResponse(value *big.Int) *SimpleGetSetGetBResponse {
+	return &SimpleGetSetGetBResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes SimpleGetSetGetBResponse to Cairo felt array
+func (s *SimpleGetSetGetBResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, cainome.FeltFromBigInt(s.Value))
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleGetSetGetBResponse from Cairo felt array
+func (s *SimpleGetSetGetBResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Value")
+	}
+	s.Value = cainome.BigIntFromFelt(data[offset])
+	offset++
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleGetSetGetBResponse
+func (s *SimpleGetSetGetBResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleGetSetGetSetEnumInput struct {
+	V SimpleGetSetTestEnum `json:"v"`
+}
+
+func NewSimpleGetSetGetSetEnumInput(v SimpleGetSetTestEnum) *SimpleGetSetGetSetEnumInput {
+	return &SimpleGetSetGetSetEnumInput {
+		V: v,
+	}
+}
+
+// MarshalCairo serializes SimpleGetSetGetSetEnumInput to Cairo felt array
+func (s *SimpleGetSetGetSetEnumInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if V_data, err := s.V.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, V_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleGetSetGetSetEnumInput from Cairo felt array
+func (s *SimpleGetSetGetSetEnumInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field V: unmarshal using CairoMarshaler
+	if err := s.V.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleGetSetGetSetEnumInput
+func (s *SimpleGetSetGetSetEnumInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleGetSetGetSetEnumResponse struct {
+	Value SimpleGetSetTestEnum `json:"value"`
+}
+
+func NewSimpleGetSetGetSetEnumResponse(value SimpleGetSetTestEnum) *SimpleGetSetGetSetEnumResponse {
+	return &SimpleGetSetGetSetEnumResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes SimpleGetSetGetSetEnumResponse to Cairo felt array
+func (s *SimpleGetSetGetSetEnumResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleGetSetGetSetEnumResponse from Cairo felt array
+func (s *SimpleGetSetGetSetEnumResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleGetSetGetSetEnumResponse
+func (s *SimpleGetSetGetSetEnumResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleGetSetSetAInput struct {
+	A *felt.Felt `json:"a"`
+}
+
+func NewSimpleGetSetSetAInput(a *felt.Felt) *SimpleGetSetSetAInput {
+	return &SimpleGetSetSetAInput {
+		A: a,
+	}
+}
+
+// MarshalCairo serializes SimpleGetSetSetAInput to Cairo felt array
+func (s *SimpleGetSetSetAInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.A)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleGetSetSetAInput from Cairo felt array
+func (s *SimpleGetSetSetAInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field A")
+	}
+	s.A = data[offset]
+	offset++
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleGetSetSetAInput
+func (s *SimpleGetSetSetAInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleGetSetSetAResponse struct {
+	// This function has no return values
+}
+
+func NewSimpleGetSetSetAResponse() *SimpleGetSetSetAResponse {
+	return &SimpleGetSetSetAResponse{}
+}
+
+// MarshalCairo serializes SimpleGetSetSetAResponse to Cairo felt array
+func (s *SimpleGetSetSetAResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleGetSetSetAResponse from Cairo felt array
+func (s *SimpleGetSetSetAResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleGetSetSetAResponse
+func (s *SimpleGetSetSetAResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleGetSetSetArrayInput struct {
+	Data []*felt.Felt `json:"data"`
+}
+
+func NewSimpleGetSetSetArrayInput(data []*felt.Felt) *SimpleGetSetSetArrayInput {
+	return &SimpleGetSetSetArrayInput {
+		Data: data,
+	}
+}
+
+// MarshalCairo serializes SimpleGetSetSetArrayInput to Cairo felt array
+func (s *SimpleGetSetSetArrayInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Array of felts: serialize length + elements
+	result = append(result, cainome.FeltFromUint(uint64(len(s.Data))))
+	result = append(result, s.Data...)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleGetSetSetArrayInput from Cairo felt array
+func (s *SimpleGetSetSetArrayInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Array of felts: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of field Data")
+	}
+	length := cainome.UintFromFelt(data[offset])
+	offset++
+
+	if offset + int(length) > len(data) {
+		return fmt.Errorf("insufficient data for array elements of field Data")
+	}
+	s.Data = data[offset:offset+int(length)]
+	offset += int(length)
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleGetSetSetArrayInput
+func (s *SimpleGetSetSetArrayInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleGetSetSetArrayResponse struct {
+	// This function has no return values
+}
+
+func NewSimpleGetSetSetArrayResponse() *SimpleGetSetSetArrayResponse {
+	return &SimpleGetSetSetArrayResponse{}
+}
+
+// MarshalCairo serializes SimpleGetSetSetArrayResponse to Cairo felt array
+func (s *SimpleGetSetSetArrayResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleGetSetSetArrayResponse from Cairo felt array
+func (s *SimpleGetSetSetArrayResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleGetSetSetArrayResponse
+func (s *SimpleGetSetSetArrayResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleGetSetSetBInput struct {
+	B *big.Int `json:"b"`
+}
+
+func NewSimpleGetSetSetBInput(b *big.Int) *SimpleGetSetSetBInput {
+	return &SimpleGetSetSetBInput {
+		B: b,
+	}
+}
+
+// MarshalCairo serializes SimpleGetSetSetBInput to Cairo felt array
+func (s *SimpleGetSetSetBInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, cainome.FeltFromBigInt(s.B))
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleGetSetSetBInput from Cairo felt array
+func (s *SimpleGetSetSetBInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field B")
+	}
+	s.B = cainome.BigIntFromFelt(data[offset])
+	offset++
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleGetSetSetBInput
+func (s *SimpleGetSetSetBInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleGetSetSetBResponse struct {
+	// This function has no return values
+}
+
+func NewSimpleGetSetSetBResponse() *SimpleGetSetSetBResponse {
+	return &SimpleGetSetSetBResponse{}
+}
+
+// MarshalCairo serializes SimpleGetSetSetBResponse to Cairo felt array
+func (s *SimpleGetSetSetBResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleGetSetSetBResponse from Cairo felt array
+func (s *SimpleGetSetSetBResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleGetSetSetBResponse
+func (s *SimpleGetSetSetBResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) GetA() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_a"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) GetALegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_a"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) GetArray() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_array"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) GetArrayLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_array"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) GetB() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_b"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) GetBLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_b"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) GetSetEnum(input *SimpleGetSetGetSetEnumInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_set_enum"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) GetSetEnumLegacy(v SimpleGetSetTestEnum) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if v_data, err := v.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, v_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_set_enum"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) SetA(input *SimpleGetSetSetAInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_a"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) SetALegacy(a *felt.Felt) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	calldata = append(calldata, a)
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_a"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) SetArray(input *SimpleGetSetSetArrayInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_array"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) SetArrayLegacy(data []*felt.Felt) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if data_data, err := cainome.NewCairoFeltArray(data).MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, data_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_array"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) SetB(input *SimpleGetSetSetBInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_b"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_get_set_contract *SimpleGetSetContract) SetBLegacy(b *big.Int) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	calldata = append(calldata, cainome.FeltFromBigInt(b))
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_get_set_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_b"),
+		Calldata:           calldata,
+	}, nil
 }
 
 func (simple_get_set_reader *SimpleGetSetReader) GetA(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {

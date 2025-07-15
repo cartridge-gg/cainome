@@ -94,7 +94,7 @@ func (s *EventsEventMultiple) MarshalCairo() ([]*felt.Felt, error) {
 
 	result = append(result, s.Data1)
 	result = append(result, cainome.FeltFromBigInt(s.Data2))
-	// Tuple field Data3: marshal each sub-field
+	// Tuple field Data3: marshal each sub-field (tuple has 2 elements)
 	result = append(result, s.Data3.Field0)
 	result = append(result, s.Data3.Field1)
 	result = append(result, s.Key1)
@@ -335,13 +335,23 @@ const (
 )
 
 
-type EventsReader struct {
+type EventsContract struct {
 	contractAddress *felt.Felt
+}
+
+func NewEventsContract(contractAddress *felt.Felt) *EventsContract {
+	return &EventsContract {
+		contractAddress: contractAddress,
+	}
+}
+
+type EventsReader struct {
+	*EventsContract
 	provider rpc.RpcProvider
 }
 
 type EventsWriter struct {
-	contractAddress *felt.Felt
+	*EventsContract
 	account *account.Account
 }
 
@@ -352,14 +362,14 @@ type Events struct {
 
 func NewEventsReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *EventsReader {
 	return &EventsReader {
-		contractAddress: contractAddress,
+		EventsContract: NewEventsContract(contractAddress),
 		provider: provider,
 	}
 }
 
 func NewEventsWriter(contractAddress *felt.Felt, account *account.Account) *EventsWriter {
 	return &EventsWriter {
-		contractAddress: contractAddress,
+		EventsContract: NewEventsContract(contractAddress),
 		account: account,
 	}
 }
@@ -369,6 +379,300 @@ func NewEvents(contractAddress *felt.Felt, account *account.Account) *Events {
 		EventsReader: NewEventsReader(contractAddress, account.Provider),
 		EventsWriter: NewEventsWriter(contractAddress, account),
 	}
+}
+
+type EventsEmitAllResponse struct {
+	// This function has no return values
+}
+
+func NewEventsEmitAllResponse() *EventsEmitAllResponse {
+	return &EventsEmitAllResponse{}
+}
+
+// MarshalCairo serializes EventsEmitAllResponse to Cairo felt array
+func (s *EventsEmitAllResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EventsEmitAllResponse from Cairo felt array
+func (s *EventsEmitAllResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EventsEmitAllResponse
+func (s *EventsEmitAllResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EventsEmitMultipleResponse struct {
+	// This function has no return values
+}
+
+func NewEventsEmitMultipleResponse() *EventsEmitMultipleResponse {
+	return &EventsEmitMultipleResponse{}
+}
+
+// MarshalCairo serializes EventsEmitMultipleResponse to Cairo felt array
+func (s *EventsEmitMultipleResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EventsEmitMultipleResponse from Cairo felt array
+func (s *EventsEmitMultipleResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EventsEmitMultipleResponse
+func (s *EventsEmitMultipleResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EventsEmitNothingResponse struct {
+	// This function has no return values
+}
+
+func NewEventsEmitNothingResponse() *EventsEmitNothingResponse {
+	return &EventsEmitNothingResponse{}
+}
+
+// MarshalCairo serializes EventsEmitNothingResponse to Cairo felt array
+func (s *EventsEmitNothingResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EventsEmitNothingResponse from Cairo felt array
+func (s *EventsEmitNothingResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EventsEmitNothingResponse
+func (s *EventsEmitNothingResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EventsEmitOnlyDataResponse struct {
+	// This function has no return values
+}
+
+func NewEventsEmitOnlyDataResponse() *EventsEmitOnlyDataResponse {
+	return &EventsEmitOnlyDataResponse{}
+}
+
+// MarshalCairo serializes EventsEmitOnlyDataResponse to Cairo felt array
+func (s *EventsEmitOnlyDataResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EventsEmitOnlyDataResponse from Cairo felt array
+func (s *EventsEmitOnlyDataResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EventsEmitOnlyDataResponse
+func (s *EventsEmitOnlyDataResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EventsEmitOnlyKeyResponse struct {
+	// This function has no return values
+}
+
+func NewEventsEmitOnlyKeyResponse() *EventsEmitOnlyKeyResponse {
+	return &EventsEmitOnlyKeyResponse{}
+}
+
+// MarshalCairo serializes EventsEmitOnlyKeyResponse to Cairo felt array
+func (s *EventsEmitOnlyKeyResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EventsEmitOnlyKeyResponse from Cairo felt array
+func (s *EventsEmitOnlyKeyResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EventsEmitOnlyKeyResponse
+func (s *EventsEmitOnlyKeyResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EventsEmitSuperResponse struct {
+	// This function has no return values
+}
+
+func NewEventsEmitSuperResponse() *EventsEmitSuperResponse {
+	return &EventsEmitSuperResponse{}
+}
+
+// MarshalCairo serializes EventsEmitSuperResponse to Cairo felt array
+func (s *EventsEmitSuperResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EventsEmitSuperResponse from Cairo felt array
+func (s *EventsEmitSuperResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EventsEmitSuperResponse
+func (s *EventsEmitSuperResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+func (events_contract *EventsContract) EmitAll() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_all"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (events_contract *EventsContract) EmitAllLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_all"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (events_contract *EventsContract) EmitMultiple() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_multiple"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (events_contract *EventsContract) EmitMultipleLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_multiple"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (events_contract *EventsContract) EmitNothing() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_nothing"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (events_contract *EventsContract) EmitNothingLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_nothing"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (events_contract *EventsContract) EmitOnlyData() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_only_data"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (events_contract *EventsContract) EmitOnlyDataLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_only_data"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (events_contract *EventsContract) EmitOnlyKey() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_only_key"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (events_contract *EventsContract) EmitOnlyKeyLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_only_key"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (events_contract *EventsContract) EmitSuper() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_super"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (events_contract *EventsContract) EmitSuperLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_super"),
+		Calldata:           calldata,
+	}, nil
 }
 
 func (events_writer *EventsWriter) EmitAll(ctx context.Context, opts *cainome.InvokeOpts) (*felt.Felt, error) {

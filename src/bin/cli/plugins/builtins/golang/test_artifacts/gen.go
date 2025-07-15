@@ -73,7 +73,7 @@ func (e GenE1) IsGenGenEvent() bool {
 
 type GenMyStructGen struct {
 	F1 *felt.Felt `json:"f1"`
-	F2 *big.Int `json:"f2"`
+	F2 *felt.Felt `json:"f2"`
 	F3 *felt.Felt `json:"f3"`
 }
 
@@ -82,7 +82,7 @@ func (s *GenMyStructGen) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, s.F1)
-	result = append(result, cainome.FeltFromBigInt(s.F2))
+	result = append(result, s.F2)
 	result = append(result, s.F3)
 	return result, nil
 }
@@ -100,7 +100,7 @@ func (s *GenMyStructGen) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field F2")
 	}
-	s.F2 = cainome.BigIntFromFelt(data[offset])
+	s.F2 = data[offset]
 	offset++
 
 	if offset >= len(data) {
@@ -195,7 +195,7 @@ func (s *GenPlainStruct) MarshalCairo() ([]*felt.Felt, error) {
 	result = append(result, cainome.FeltFromUint(uint64(s.F4)))
 	result = append(result, cainome.FeltFromBigInt(s.F5))
 	result = append(result, s.F6)
-	// Tuple field F7: marshal each sub-field
+	// Tuple field F7: marshal each sub-field (tuple has 2 elements)
 	result = append(result, s.F7.Field0)
 	result = append(result, cainome.FeltFromUint(uint64(s.F7.Field1)))
 	// Array field F8: serialize length then elements
@@ -904,14 +904,104 @@ func (g *GenMyEnumTwo) CairoSize() int {
 	return -1 // Dynamic size
 }
 
+// UnmarshalGenMyEnumFromCairo deserializes GenMyEnum from Cairo felt array
+func UnmarshalGenMyEnumFromCairo(data []*felt.Felt) (GenMyEnum, error) {
+	if len(data) == 0 {
+		return nil, fmt.Errorf("empty data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+
+	switch discriminant {
+	case 7:
+		var result GenMyEnumEight
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 10:
+		var result GenMyEnumEleven
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 4:
+		var result GenMyEnumFive
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 3:
+		var result GenMyEnumFour
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 8:
+		var result GenMyEnumNine
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 0:
+		var result GenMyEnumOne
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 6:
+		var result GenMyEnumSeven
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 5:
+		var result GenMyEnumSix
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 9:
+		var result GenMyEnumTen
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 2:
+		var result GenMyEnumThree
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 1:
+		var result GenMyEnumTwo
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	default:
+		return nil, fmt.Errorf("unknown enum discriminant: %d", discriminant)
+	}
+}
+
+
+type GenContract struct {
+	contractAddress *felt.Felt
+}
+
+func NewGenContract(contractAddress *felt.Felt) *GenContract {
+	return &GenContract {
+		contractAddress: contractAddress,
+	}
+}
 
 type GenReader struct {
-	contractAddress *felt.Felt
+	*GenContract
 	provider rpc.RpcProvider
 }
 
 type GenWriter struct {
-	contractAddress *felt.Felt
+	*GenContract
 	account *account.Account
 }
 
@@ -922,14 +1012,14 @@ type Gen struct {
 
 func NewGenReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *GenReader {
 	return &GenReader {
-		contractAddress: contractAddress,
+		GenContract: NewGenContract(contractAddress),
 		provider: provider,
 	}
 }
 
 func NewGenWriter(contractAddress *felt.Felt, account *account.Account) *GenWriter {
 	return &GenWriter {
-		contractAddress: contractAddress,
+		GenContract: NewGenContract(contractAddress),
 		account: account,
 	}
 }
@@ -939,6 +1029,533 @@ func NewGen(contractAddress *felt.Felt, account *account.Account) *Gen {
 		GenReader: NewGenReader(contractAddress, account.Provider),
 		GenWriter: NewGenWriter(contractAddress, account),
 	}
+}
+
+type GenFunc1Input struct {
+	A *GenMyStructGen `json:"a"`
+}
+
+func NewGenFunc1Input(a *GenMyStructGen) *GenFunc1Input {
+	return &GenFunc1Input {
+		A: a,
+	}
+}
+
+// MarshalCairo serializes GenFunc1Input to Cairo felt array
+func (s *GenFunc1Input) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if A_data, err := s.A.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, A_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes GenFunc1Input from Cairo felt array
+func (s *GenFunc1Input) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Pointer field A: initialize and unmarshal
+	if s.A == nil {
+		s.A = &GenMyStructGen{}
+	}
+	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for GenFunc1Input
+func (s *GenFunc1Input) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type GenFunc1Response struct {
+	// This function has no return values
+}
+
+func NewGenFunc1Response() *GenFunc1Response {
+	return &GenFunc1Response{}
+}
+
+// MarshalCairo serializes GenFunc1Response to Cairo felt array
+func (s *GenFunc1Response) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes GenFunc1Response from Cairo felt array
+func (s *GenFunc1Response) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for GenFunc1Response
+func (s *GenFunc1Response) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type GenFunc2Input struct {
+	A *GenMyStructGen `json:"a"`
+}
+
+func NewGenFunc2Input(a *GenMyStructGen) *GenFunc2Input {
+	return &GenFunc2Input {
+		A: a,
+	}
+}
+
+// MarshalCairo serializes GenFunc2Input to Cairo felt array
+func (s *GenFunc2Input) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if A_data, err := s.A.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, A_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes GenFunc2Input from Cairo felt array
+func (s *GenFunc2Input) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Pointer field A: initialize and unmarshal
+	if s.A == nil {
+		s.A = &GenMyStructGen{}
+	}
+	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for GenFunc2Input
+func (s *GenFunc2Input) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type GenFunc2Response struct {
+	// This function has no return values
+}
+
+func NewGenFunc2Response() *GenFunc2Response {
+	return &GenFunc2Response{}
+}
+
+// MarshalCairo serializes GenFunc2Response to Cairo felt array
+func (s *GenFunc2Response) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes GenFunc2Response from Cairo felt array
+func (s *GenFunc2Response) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for GenFunc2Response
+func (s *GenFunc2Response) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type GenFunc3Input struct {
+	A *GenPlainStruct `json:"a"`
+}
+
+func NewGenFunc3Input(a *GenPlainStruct) *GenFunc3Input {
+	return &GenFunc3Input {
+		A: a,
+	}
+}
+
+// MarshalCairo serializes GenFunc3Input to Cairo felt array
+func (s *GenFunc3Input) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if A_data, err := s.A.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, A_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes GenFunc3Input from Cairo felt array
+func (s *GenFunc3Input) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Pointer field A: initialize and unmarshal
+	if s.A == nil {
+		s.A = &GenPlainStruct{}
+	}
+	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for GenFunc3Input
+func (s *GenFunc3Input) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type GenFunc4Input struct {
+	A GenMyEnum `json:"a"`
+}
+
+func NewGenFunc4Input(a GenMyEnum) *GenFunc4Input {
+	return &GenFunc4Input {
+		A: a,
+	}
+}
+
+// MarshalCairo serializes GenFunc4Input to Cairo felt array
+func (s *GenFunc4Input) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if A_data, err := s.A.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, A_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes GenFunc4Input from Cairo felt array
+func (s *GenFunc4Input) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field A: unmarshal using CairoMarshaler
+	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for GenFunc4Input
+func (s *GenFunc4Input) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type GenFunc5Input struct {
+	A *GenMyStructInnerGeneric `json:"a"`
+}
+
+func NewGenFunc5Input(a *GenMyStructInnerGeneric) *GenFunc5Input {
+	return &GenFunc5Input {
+		A: a,
+	}
+}
+
+// MarshalCairo serializes GenFunc5Input to Cairo felt array
+func (s *GenFunc5Input) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if A_data, err := s.A.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, A_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes GenFunc5Input from Cairo felt array
+func (s *GenFunc5Input) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Pointer field A: initialize and unmarshal
+	if s.A == nil {
+		s.A = &GenMyStructInnerGeneric{}
+	}
+	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for GenFunc5Input
+func (s *GenFunc5Input) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type GenFunc5Response struct {
+	// This function has no return values
+}
+
+func NewGenFunc5Response() *GenFunc5Response {
+	return &GenFunc5Response{}
+}
+
+// MarshalCairo serializes GenFunc5Response to Cairo felt array
+func (s *GenFunc5Response) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes GenFunc5Response from Cairo felt array
+func (s *GenFunc5Response) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for GenFunc5Response
+func (s *GenFunc5Response) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type GenReadResponse struct {
+	Value struct {
+	Field0 *felt.Felt
+	Field1 *felt.Felt
+} `json:"value"`
+}
+
+func NewGenReadResponse(value struct {
+	Field0 *felt.Felt
+	Field1 *felt.Felt
+}) *GenReadResponse {
+	return &GenReadResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes GenReadResponse to Cairo felt array
+func (s *GenReadResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Tuple field Value: marshal each sub-field (tuple has 2 elements)
+	result = append(result, s.Value.Field0)
+	result = append(result, s.Value.Field1)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes GenReadResponse from Cairo felt array
+func (s *GenReadResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Tuple field Value: unmarshal each sub-field
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for tuple field Value element 0")
+	}
+	s.Value.Field0 = data[offset]
+	offset++
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for tuple field Value element 1")
+	}
+	s.Value.Field1 = data[offset]
+	offset++
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for GenReadResponse
+func (s *GenReadResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+func (gen_contract *GenContract) Func1(input *GenFunc1Input) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    gen_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("func1"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (gen_contract *GenContract) Func1Legacy(a *GenMyStructGen) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if a_data, err := a.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, a_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    gen_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("func1"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (gen_contract *GenContract) Func2(input *GenFunc2Input) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    gen_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("func2"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (gen_contract *GenContract) Func2Legacy(a *GenMyStructGen) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if a_data, err := a.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, a_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    gen_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("func2"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (gen_contract *GenContract) Func3(input *GenFunc3Input) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    gen_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("func3"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (gen_contract *GenContract) Func3Legacy(a *GenPlainStruct) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if a_data, err := a.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, a_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    gen_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("func3"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (gen_contract *GenContract) Func4(input *GenFunc4Input) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    gen_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("func4"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (gen_contract *GenContract) Func4Legacy(a GenMyEnum) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if a_data, err := a.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, a_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    gen_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("func4"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (gen_contract *GenContract) Func5(input *GenFunc5Input) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    gen_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("func5"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (gen_contract *GenContract) Func5Legacy(a *GenMyStructInnerGeneric) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if a_data, err := a.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, a_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    gen_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("func5"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (gen_contract *GenContract) Read() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    gen_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("read"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (gen_contract *GenContract) ReadLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    gen_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("read"),
+		Calldata:           calldata,
+	}, nil
 }
 
 func (gen_writer *GenWriter) Func1(ctx context.Context, a *GenMyStructGen, opts *cainome.InvokeOpts) (*felt.Felt, error) {

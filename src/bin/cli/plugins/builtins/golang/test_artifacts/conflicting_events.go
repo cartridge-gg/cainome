@@ -59,13 +59,23 @@ const (
 )
 
 
-type ConflictingEventsReader struct {
+type ConflictingEventsContract struct {
 	contractAddress *felt.Felt
+}
+
+func NewConflictingEventsContract(contractAddress *felt.Felt) *ConflictingEventsContract {
+	return &ConflictingEventsContract {
+		contractAddress: contractAddress,
+	}
+}
+
+type ConflictingEventsReader struct {
+	*ConflictingEventsContract
 	provider rpc.RpcProvider
 }
 
 type ConflictingEventsWriter struct {
-	contractAddress *felt.Felt
+	*ConflictingEventsContract
 	account *account.Account
 }
 
@@ -76,14 +86,14 @@ type ConflictingEvents struct {
 
 func NewConflictingEventsReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *ConflictingEventsReader {
 	return &ConflictingEventsReader {
-		contractAddress: contractAddress,
+		ConflictingEventsContract: NewConflictingEventsContract(contractAddress),
 		provider: provider,
 	}
 }
 
 func NewConflictingEventsWriter(contractAddress *felt.Felt, account *account.Account) *ConflictingEventsWriter {
 	return &ConflictingEventsWriter {
-		contractAddress: contractAddress,
+		ConflictingEventsContract: NewConflictingEventsContract(contractAddress),
 		account: account,
 	}
 }
@@ -93,6 +103,55 @@ func NewConflictingEvents(contractAddress *felt.Felt, account *account.Account) 
 		ConflictingEventsReader: NewConflictingEventsReader(contractAddress, account.Provider),
 		ConflictingEventsWriter: NewConflictingEventsWriter(contractAddress, account),
 	}
+}
+
+type ConflictingEventsEmitSuperResponse struct {
+	// This function has no return values
+}
+
+func NewConflictingEventsEmitSuperResponse() *ConflictingEventsEmitSuperResponse {
+	return &ConflictingEventsEmitSuperResponse{}
+}
+
+// MarshalCairo serializes ConflictingEventsEmitSuperResponse to Cairo felt array
+func (s *ConflictingEventsEmitSuperResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ConflictingEventsEmitSuperResponse from Cairo felt array
+func (s *ConflictingEventsEmitSuperResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ConflictingEventsEmitSuperResponse
+func (s *ConflictingEventsEmitSuperResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+func (conflicting_events_contract *ConflictingEventsContract) EmitSuper() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    conflicting_events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_super"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (conflicting_events_contract *ConflictingEventsContract) EmitSuperLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    conflicting_events_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("emit_super"),
+		Calldata:           calldata,
+	}, nil
 }
 
 func (conflicting_events_writer *ConflictingEventsWriter) EmitSuper(ctx context.Context, opts *cainome.InvokeOpts) (*felt.Felt, error) {

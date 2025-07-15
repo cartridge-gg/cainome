@@ -6,6 +6,7 @@ package abigen
 import (
 	"context"
 	"fmt"
+
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/account"
 	"github.com/NethermindEth/starknet.go/rpc"
@@ -18,14 +19,23 @@ type ByteArrayByteArrayEvent interface {
 	IsByteArrayByteArrayEvent() bool
 }
 
+type ByteArrayContract struct {
+	contractAddress *felt.Felt
+}
+
+func NewByteArrayContract(contractAddress *felt.Felt) *ByteArrayContract {
+	return &ByteArrayContract{
+		contractAddress: contractAddress,
+	}
+}
 
 type ByteArrayReader struct {
-	contractAddress *felt.Felt
+	*ByteArrayContract
 	provider rpc.RpcProvider
 }
 
 type ByteArrayWriter struct {
-	contractAddress *felt.Felt
+	*ByteArrayContract
 	account *account.Account
 }
 
@@ -35,24 +45,277 @@ type ByteArray struct {
 }
 
 func NewByteArrayReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *ByteArrayReader {
-	return &ByteArrayReader {
-		contractAddress: contractAddress,
-		provider: provider,
+	return &ByteArrayReader{
+		ByteArrayContract: NewByteArrayContract(contractAddress),
+		provider:          provider,
 	}
 }
 
 func NewByteArrayWriter(contractAddress *felt.Felt, account *account.Account) *ByteArrayWriter {
-	return &ByteArrayWriter {
-		contractAddress: contractAddress,
-		account: account,
+	return &ByteArrayWriter{
+		ByteArrayContract: NewByteArrayContract(contractAddress),
+		account:           account,
 	}
 }
 
 func NewByteArray(contractAddress *felt.Felt, account *account.Account) *ByteArray {
-	return &ByteArray {
+	return &ByteArray{
 		ByteArrayReader: NewByteArrayReader(contractAddress, account.Provider),
 		ByteArrayWriter: NewByteArrayWriter(contractAddress, account),
 	}
+}
+
+type ByteArrayGetByteArrayResponse struct {
+	Value []byte `json:"value"`
+}
+
+func NewByteArrayGetByteArrayResponse(value []byte) *ByteArrayGetByteArrayResponse {
+	return &ByteArrayGetByteArrayResponse{
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes ByteArrayGetByteArrayResponse to Cairo felt array
+func (s *ByteArrayGetByteArrayResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := cainome.NewCairoByteArray(s.Value).MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ByteArrayGetByteArrayResponse from Cairo felt array
+func (s *ByteArrayGetByteArrayResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// ByteArray unmarshaling for field Value
+	if byteArrayLength := len(data) - offset; byteArrayLength > 0 {
+		byteArray := &cainome.CairoByteArray{}
+		if err := byteArray.UnmarshalCairo(data[offset:]); err != nil {
+			return fmt.Errorf("failed to unmarshal ByteArray field Value: %w", err)
+		} else {
+			s.Value = byteArray.Value
+			// Calculate consumed felts to update offset
+			if byteArrayData, err := byteArray.MarshalCairo(); err != nil {
+				return err
+			} else {
+				offset += len(byteArrayData)
+			}
+		}
+	}
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ByteArrayGetByteArrayResponse
+func (s *ByteArrayGetByteArrayResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type ByteArrayGetByteArrayStorageResponse struct {
+	Value []byte `json:"value"`
+}
+
+func NewByteArrayGetByteArrayStorageResponse(value []byte) *ByteArrayGetByteArrayStorageResponse {
+	return &ByteArrayGetByteArrayStorageResponse{
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes ByteArrayGetByteArrayStorageResponse to Cairo felt array
+func (s *ByteArrayGetByteArrayStorageResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := cainome.NewCairoByteArray(s.Value).MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ByteArrayGetByteArrayStorageResponse from Cairo felt array
+func (s *ByteArrayGetByteArrayStorageResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// ByteArray unmarshaling for field Value
+	if byteArrayLength := len(data) - offset; byteArrayLength > 0 {
+		byteArray := &cainome.CairoByteArray{}
+		if err := byteArray.UnmarshalCairo(data[offset:]); err != nil {
+			return fmt.Errorf("failed to unmarshal ByteArray field Value: %w", err)
+		} else {
+			s.Value = byteArray.Value
+			// Calculate consumed felts to update offset
+			if byteArrayData, err := byteArray.MarshalCairo(); err != nil {
+				return err
+			} else {
+				offset += len(byteArrayData)
+			}
+		}
+	}
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ByteArrayGetByteArrayStorageResponse
+func (s *ByteArrayGetByteArrayStorageResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type ByteArraySetByteArrayInput struct {
+	V []byte `json:"v"`
+}
+
+func NewByteArraySetByteArrayInput(v []byte) *ByteArraySetByteArrayInput {
+	return &ByteArraySetByteArrayInput{
+		V: v,
+	}
+}
+
+// MarshalCairo serializes ByteArraySetByteArrayInput to Cairo felt array
+func (s *ByteArraySetByteArrayInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_V_data, err := cainome.NewCairoByteArray(s.V).MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_V_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ByteArraySetByteArrayInput from Cairo felt array
+func (s *ByteArraySetByteArrayInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// ByteArray unmarshaling for field V
+	if byteArrayLength := len(data) - offset; byteArrayLength > 0 {
+		byteArray := &cainome.CairoByteArray{}
+		if err := byteArray.UnmarshalCairo(data[offset:]); err != nil {
+			return fmt.Errorf("failed to unmarshal ByteArray field V: %w", err)
+		} else {
+			s.V = byteArray.Value
+			// Calculate consumed felts to update offset
+			if byteArrayData, err := byteArray.MarshalCairo(); err != nil {
+				return err
+			} else {
+				offset += len(byteArrayData)
+			}
+		}
+	}
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ByteArraySetByteArrayInput
+func (s *ByteArraySetByteArrayInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type ByteArraySetByteArrayResponse struct {
+	// This function has no return values
+}
+
+func NewByteArraySetByteArrayResponse() *ByteArraySetByteArrayResponse {
+	return &ByteArraySetByteArrayResponse{}
+}
+
+// MarshalCairo serializes ByteArraySetByteArrayResponse to Cairo felt array
+func (s *ByteArraySetByteArrayResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ByteArraySetByteArrayResponse from Cairo felt array
+func (s *ByteArraySetByteArrayResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ByteArraySetByteArrayResponse
+func (s *ByteArraySetByteArrayResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+func (byte_array_contract *ByteArrayContract) GetByteArray() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    byte_array_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_byte_array"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (byte_array_contract *ByteArrayContract) GetByteArrayLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    byte_array_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_byte_array"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (byte_array_contract *ByteArrayContract) GetByteArrayStorage() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    byte_array_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_byte_array_storage"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (byte_array_contract *ByteArrayContract) GetByteArrayStorageLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    byte_array_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_byte_array_storage"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (byte_array_contract *ByteArrayContract) SetByteArray(input *ByteArraySetByteArrayInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    byte_array_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_byte_array"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (byte_array_contract *ByteArrayContract) SetByteArrayLegacy(v []byte) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if v_data, err := cainome.NewCairoByteArray(v).MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, v_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    byte_array_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_byte_array"),
+		Calldata:           calldata,
+	}, nil
 }
 
 func (byte_array_reader *ByteArrayReader) GetByteArray(ctx context.Context, opts *cainome.CallOpts) ([]byte, error) {
@@ -151,4 +414,3 @@ func (byte_array_writer *ByteArrayWriter) SetByteArray(ctx context.Context, v []
 
 	return txHash, nil
 }
-

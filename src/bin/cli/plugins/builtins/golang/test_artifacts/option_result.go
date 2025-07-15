@@ -67,13 +67,23 @@ type OptionResultOptionResultEvent interface {
 }
 
 
-type OptionResultReader struct {
+type OptionResultContract struct {
 	contractAddress *felt.Felt
+}
+
+func NewOptionResultContract(contractAddress *felt.Felt) *OptionResultContract {
+	return &OptionResultContract {
+		contractAddress: contractAddress,
+	}
+}
+
+type OptionResultReader struct {
+	*OptionResultContract
 	provider rpc.RpcProvider
 }
 
 type OptionResultWriter struct {
-	contractAddress *felt.Felt
+	*OptionResultContract
 	account *account.Account
 }
 
@@ -84,14 +94,14 @@ type OptionResult struct {
 
 func NewOptionResultReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *OptionResultReader {
 	return &OptionResultReader {
-		contractAddress: contractAddress,
+		OptionResultContract: NewOptionResultContract(contractAddress),
 		provider: provider,
 	}
 }
 
 func NewOptionResultWriter(contractAddress *felt.Felt, account *account.Account) *OptionResultWriter {
 	return &OptionResultWriter {
-		contractAddress: contractAddress,
+		OptionResultContract: NewOptionResultContract(contractAddress),
 		account: account,
 	}
 }
@@ -103,7 +113,892 @@ func NewOptionResult(contractAddress *felt.Felt, account *account.Account) *Opti
 	}
 }
 
-func (option_result_reader *OptionResultReader) OptionNone(ctx context.Context, opt **felt.Felt, opts *cainome.CallOpts) (*uint64, error) {
+type OptionResultOptionNoneInput struct {
+	Opt *felt.Felt `json:"opt"`
+}
+
+func NewOptionResultOptionNoneInput(opt *felt.Felt) *OptionResultOptionNoneInput {
+	return &OptionResultOptionNoneInput {
+		Opt: opt,
+	}
+}
+
+// MarshalCairo serializes OptionResultOptionNoneInput to Cairo felt array
+func (s *OptionResultOptionNoneInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Option field Opt: check for nil and marshal accordingly
+	if s.Opt != nil {
+		// Some variant: discriminant 0 + value
+		result = append(result, cainome.FeltFromUint(0))
+		result = append(result, s.Opt)
+	} else {
+		// None variant: discriminant 1 (no additional data)
+		result = append(result, cainome.FeltFromUint(1))
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultOptionNoneInput from Cairo felt array
+func (s *OptionResultOptionNoneInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Option field Opt: read discriminant then value if Some
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for Option field Opt discriminant")
+	}
+	discriminant := cainome.UintFromFelt(data[offset])
+	offset++
+	if discriminant == 0 {
+		// Some variant: read the value
+		var value *felt.Felt
+		if offset >= len(data) {
+			return fmt.Errorf("insufficient data for Option field Opt value")
+		}
+		value = data[offset]
+		offset++
+		s.Opt = value
+	} else {
+		// None variant
+		s.Opt = nil
+	}
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultOptionNoneInput
+func (s *OptionResultOptionNoneInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type OptionResultOptionNoneResponse struct {
+	Value *uint64 `json:"value"`
+}
+
+func NewOptionResultOptionNoneResponse(value *uint64) *OptionResultOptionNoneResponse {
+	return &OptionResultOptionNoneResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes OptionResultOptionNoneResponse to Cairo felt array
+func (s *OptionResultOptionNoneResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Option field: check for nil and marshal accordingly
+	if s.Value != nil {
+		// Some variant: discriminant 0 + value
+		result = append(result, cainome.FeltFromUint(0))
+		result = append(result, cainome.FeltFromUint(*s.Value))
+	} else {
+		// None variant: discriminant 1 (no additional data)
+		result = append(result, cainome.FeltFromUint(1))
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultOptionNoneResponse from Cairo felt array
+func (s *OptionResultOptionNoneResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Option field Value: read discriminant then value if Some
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for Option field Value discriminant")
+	}
+	discriminant := cainome.UintFromFelt(data[offset])
+	offset++
+	if discriminant == 0 {
+		// Some variant: read the value
+		if offset >= len(data) {
+			return fmt.Errorf("insufficient data for Option field Value value")
+		}
+		value := cainome.UintFromFelt(data[offset])
+		offset++
+		s.Value = &value
+	} else {
+		// None variant
+		s.Value = nil
+	}
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultOptionNoneResponse
+func (s *OptionResultOptionNoneResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type OptionResultOptionSomeInput struct {
+	Opt *felt.Felt `json:"opt"`
+}
+
+func NewOptionResultOptionSomeInput(opt *felt.Felt) *OptionResultOptionSomeInput {
+	return &OptionResultOptionSomeInput {
+		Opt: opt,
+	}
+}
+
+// MarshalCairo serializes OptionResultOptionSomeInput to Cairo felt array
+func (s *OptionResultOptionSomeInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Option field Opt: check for nil and marshal accordingly
+	if s.Opt != nil {
+		// Some variant: discriminant 0 + value
+		result = append(result, cainome.FeltFromUint(0))
+		result = append(result, s.Opt)
+	} else {
+		// None variant: discriminant 1 (no additional data)
+		result = append(result, cainome.FeltFromUint(1))
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultOptionSomeInput from Cairo felt array
+func (s *OptionResultOptionSomeInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Option field Opt: read discriminant then value if Some
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for Option field Opt discriminant")
+	}
+	discriminant := cainome.UintFromFelt(data[offset])
+	offset++
+	if discriminant == 0 {
+		// Some variant: read the value
+		var value *felt.Felt
+		if offset >= len(data) {
+			return fmt.Errorf("insufficient data for Option field Opt value")
+		}
+		value = data[offset]
+		offset++
+		s.Opt = value
+	} else {
+		// None variant
+		s.Opt = nil
+	}
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultOptionSomeInput
+func (s *OptionResultOptionSomeInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type OptionResultOptionSomeResponse struct {
+	Value *[]*felt.Felt `json:"value"`
+}
+
+func NewOptionResultOptionSomeResponse(value *[]*felt.Felt) *OptionResultOptionSomeResponse {
+	return &OptionResultOptionSomeResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes OptionResultOptionSomeResponse to Cairo felt array
+func (s *OptionResultOptionSomeResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Option field: check for nil and marshal accordingly
+	if s.Value != nil {
+		// Some variant: discriminant 0 + value
+		result = append(result, cainome.FeltFromUint(0))
+		result = append(result, cainome.FeltFromUint(uint64(len(*s.Value))))
+		result = append(result, (*s.Value)...)
+	} else {
+		// None variant: discriminant 1 (no additional data)
+		result = append(result, cainome.FeltFromUint(1))
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultOptionSomeResponse from Cairo felt array
+func (s *OptionResultOptionSomeResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Option field Value: read discriminant then value if Some
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for Option field Value discriminant")
+	}
+	discriminant := cainome.UintFromFelt(data[offset])
+	offset++
+	if discriminant == 0 {
+		// Some variant: read the value
+		if offset >= len(data) {
+			return fmt.Errorf("insufficient data for Option field Value array length")
+		}
+		length := cainome.UintFromFelt(data[offset])
+		offset++
+		if offset + int(length) > len(data) {
+			return fmt.Errorf("insufficient data for Option field Value array elements")
+		}
+		value := data[offset:offset+int(length)]
+		s.Value = &value
+		offset += int(length)
+	} else {
+		// None variant
+		s.Value = nil
+	}
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultOptionSomeResponse
+func (s *OptionResultOptionSomeResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type OptionResultResultErrInput struct {
+	Res cainome.Result[*felt.Felt, *felt.Felt] `json:"res"`
+}
+
+func NewOptionResultResultErrInput(res cainome.Result[*felt.Felt, *felt.Felt]) *OptionResultResultErrInput {
+	return &OptionResultResultErrInput {
+		Res: res,
+	}
+}
+
+// MarshalCairo serializes OptionResultResultErrInput to Cairo felt array
+func (s *OptionResultResultErrInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if Res_data, err := s.Res.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, Res_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultResultErrInput from Cairo felt array
+func (s *OptionResultResultErrInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Res: unmarshal using CairoMarshaler
+	if err := s.Res.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultResultErrInput
+func (s *OptionResultResultErrInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type OptionResultResultErrResponse struct {
+	Value cainome.Result[*felt.Felt, *big.Int] `json:"value"`
+}
+
+func NewOptionResultResultErrResponse(value cainome.Result[*felt.Felt, *big.Int]) *OptionResultResultErrResponse {
+	return &OptionResultResultErrResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes OptionResultResultErrResponse to Cairo felt array
+func (s *OptionResultResultErrResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultResultErrResponse from Cairo felt array
+func (s *OptionResultResultErrResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// TODO: Handle token type Result(Result { type_path: "core::result::Result::<core::felt252, core::integer::u256>", inner: CoreBasic(CoreBasic { type_path: "core::felt252" }), error: Composite(Composite { type_path: "core::integer::u256", inners: [], generic_args: [], type: Unknown, is_event: false, alias: None }) }) for response struct field Value
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultResultErrResponse
+func (s *OptionResultResultErrResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type OptionResultResultOkInput struct {
+	Res cainome.Result[*felt.Felt, *big.Int] `json:"res"`
+}
+
+func NewOptionResultResultOkInput(res cainome.Result[*felt.Felt, *big.Int]) *OptionResultResultOkInput {
+	return &OptionResultResultOkInput {
+		Res: res,
+	}
+}
+
+// MarshalCairo serializes OptionResultResultOkInput to Cairo felt array
+func (s *OptionResultResultOkInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if Res_data, err := s.Res.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, Res_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultResultOkInput from Cairo felt array
+func (s *OptionResultResultOkInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Res: unmarshal using CairoMarshaler
+	if err := s.Res.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultResultOkInput
+func (s *OptionResultResultOkInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type OptionResultResultOkResponse struct {
+	Value cainome.Result[uint64, *felt.Felt] `json:"value"`
+}
+
+func NewOptionResultResultOkResponse(value cainome.Result[uint64, *felt.Felt]) *OptionResultResultOkResponse {
+	return &OptionResultResultOkResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes OptionResultResultOkResponse to Cairo felt array
+func (s *OptionResultResultOkResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultResultOkResponse from Cairo felt array
+func (s *OptionResultResultOkResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// TODO: Handle token type Result(Result { type_path: "core::result::Result::<core::integer::u64, core::felt252>", inner: CoreBasic(CoreBasic { type_path: "core::integer::u64" }), error: CoreBasic(CoreBasic { type_path: "core::felt252" }) }) for response struct field Value
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultResultOkResponse
+func (s *OptionResultResultOkResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type OptionResultResultOkStructInput struct {
+	Res cainome.Result[*OptionResultGenericOneOptionResult, *felt.Felt] `json:"res"`
+}
+
+func NewOptionResultResultOkStructInput(res cainome.Result[*OptionResultGenericOneOptionResult, *felt.Felt]) *OptionResultResultOkStructInput {
+	return &OptionResultResultOkStructInput {
+		Res: res,
+	}
+}
+
+// MarshalCairo serializes OptionResultResultOkStructInput to Cairo felt array
+func (s *OptionResultResultOkStructInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if Res_data, err := s.Res.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, Res_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultResultOkStructInput from Cairo felt array
+func (s *OptionResultResultOkStructInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Res: unmarshal using CairoMarshaler
+	if err := s.Res.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultResultOkStructInput
+func (s *OptionResultResultOkStructInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type OptionResultResultOkStructResponse struct {
+	Value cainome.Result[uint64, *felt.Felt] `json:"value"`
+}
+
+func NewOptionResultResultOkStructResponse(value cainome.Result[uint64, *felt.Felt]) *OptionResultResultOkStructResponse {
+	return &OptionResultResultOkStructResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes OptionResultResultOkStructResponse to Cairo felt array
+func (s *OptionResultResultOkStructResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultResultOkStructResponse from Cairo felt array
+func (s *OptionResultResultOkStructResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// TODO: Handle token type Result(Result { type_path: "core::result::Result::<core::integer::u64, core::felt252>", inner: CoreBasic(CoreBasic { type_path: "core::integer::u64" }), error: CoreBasic(CoreBasic { type_path: "core::felt252" }) }) for response struct field Value
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultResultOkStructResponse
+func (s *OptionResultResultOkStructResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type OptionResultResultOkTupleStructInput struct {
+	Res cainome.Result[struct {
+	Field0 *OptionResultGenericOneOptionResult
+	Field1 *felt.Felt
+}, *felt.Felt] `json:"res"`
+}
+
+func NewOptionResultResultOkTupleStructInput(res cainome.Result[struct {
+	Field0 *OptionResultGenericOneOptionResult
+	Field1 *felt.Felt
+}, *felt.Felt]) *OptionResultResultOkTupleStructInput {
+	return &OptionResultResultOkTupleStructInput {
+		Res: res,
+	}
+}
+
+// MarshalCairo serializes OptionResultResultOkTupleStructInput to Cairo felt array
+func (s *OptionResultResultOkTupleStructInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if Res_data, err := s.Res.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, Res_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultResultOkTupleStructInput from Cairo felt array
+func (s *OptionResultResultOkTupleStructInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Res: unmarshal using CairoMarshaler
+	if err := s.Res.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultResultOkTupleStructInput
+func (s *OptionResultResultOkTupleStructInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type OptionResultResultOkTupleStructResponse struct {
+	Value cainome.Result[uint64, *felt.Felt] `json:"value"`
+}
+
+func NewOptionResultResultOkTupleStructResponse(value cainome.Result[uint64, *felt.Felt]) *OptionResultResultOkTupleStructResponse {
+	return &OptionResultResultOkTupleStructResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes OptionResultResultOkTupleStructResponse to Cairo felt array
+func (s *OptionResultResultOkTupleStructResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultResultOkTupleStructResponse from Cairo felt array
+func (s *OptionResultResultOkTupleStructResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// TODO: Handle token type Result(Result { type_path: "core::result::Result::<core::integer::u64, core::felt252>", inner: CoreBasic(CoreBasic { type_path: "core::integer::u64" }), error: CoreBasic(CoreBasic { type_path: "core::felt252" }) }) for response struct field Value
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultResultOkTupleStructResponse
+func (s *OptionResultResultOkTupleStructResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type OptionResultResultOkUnitInput struct {
+	Res cainome.Result[struct{}, *felt.Felt] `json:"res"`
+}
+
+func NewOptionResultResultOkUnitInput(res cainome.Result[struct{}, *felt.Felt]) *OptionResultResultOkUnitInput {
+	return &OptionResultResultOkUnitInput {
+		Res: res,
+	}
+}
+
+// MarshalCairo serializes OptionResultResultOkUnitInput to Cairo felt array
+func (s *OptionResultResultOkUnitInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if Res_data, err := s.Res.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, Res_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultResultOkUnitInput from Cairo felt array
+func (s *OptionResultResultOkUnitInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Res: unmarshal using CairoMarshaler
+	if err := s.Res.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultResultOkUnitInput
+func (s *OptionResultResultOkUnitInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type OptionResultResultOkUnitResponse struct {
+	Value cainome.Result[uint64, *felt.Felt] `json:"value"`
+}
+
+func NewOptionResultResultOkUnitResponse(value cainome.Result[uint64, *felt.Felt]) *OptionResultResultOkUnitResponse {
+	return &OptionResultResultOkUnitResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes OptionResultResultOkUnitResponse to Cairo felt array
+func (s *OptionResultResultOkUnitResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes OptionResultResultOkUnitResponse from Cairo felt array
+func (s *OptionResultResultOkUnitResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// TODO: Handle token type Result(Result { type_path: "core::result::Result::<core::integer::u64, core::felt252>", inner: CoreBasic(CoreBasic { type_path: "core::integer::u64" }), error: CoreBasic(CoreBasic { type_path: "core::felt252" }) }) for response struct field Value
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for OptionResultResultOkUnitResponse
+func (s *OptionResultResultOkUnitResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+func (option_result_contract *OptionResultContract) OptionNone(input *OptionResultOptionNoneInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("option_none"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_contract *OptionResultContract) OptionNoneLegacy(opt *felt.Felt) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if opt != nil {
+		calldata = append(calldata, cainome.FeltFromUint(0)) // Some variant
+		calldata = append(calldata, opt)
+	} else {
+		calldata = append(calldata, cainome.FeltFromUint(1)) // None variant
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("option_none"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_contract *OptionResultContract) OptionSome(input *OptionResultOptionSomeInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("option_some"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_contract *OptionResultContract) OptionSomeLegacy(opt *felt.Felt) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if opt != nil {
+		calldata = append(calldata, cainome.FeltFromUint(0)) // Some variant
+		calldata = append(calldata, opt)
+	} else {
+		calldata = append(calldata, cainome.FeltFromUint(1)) // None variant
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("option_some"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_contract *OptionResultContract) ResultErr(input *OptionResultResultErrInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_err"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_contract *OptionResultContract) ResultErrLegacy(res cainome.Result[*felt.Felt, *felt.Felt]) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if res_data, err := res.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, res_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_err"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_contract *OptionResultContract) ResultOk(input *OptionResultResultOkInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_contract *OptionResultContract) ResultOkLegacy(res cainome.Result[*felt.Felt, *big.Int]) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if res_data, err := res.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, res_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_contract *OptionResultContract) ResultOkStruct(input *OptionResultResultOkStructInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_struct"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_contract *OptionResultContract) ResultOkStructLegacy(res cainome.Result[*OptionResultGenericOneOptionResult, *felt.Felt]) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if res_data, err := res.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, res_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_struct"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_contract *OptionResultContract) ResultOkTupleStruct(input *OptionResultResultOkTupleStructInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_tuple_struct"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_contract *OptionResultContract) ResultOkTupleStructLegacy(res cainome.Result[struct {
+	Field0 *OptionResultGenericOneOptionResult
+	Field1 *felt.Felt
+}, *felt.Felt]) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if res_data, err := res.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, res_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_tuple_struct"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_contract *OptionResultContract) ResultOkUnit(input *OptionResultResultOkUnitInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_unit"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_contract *OptionResultContract) ResultOkUnitLegacy(res cainome.Result[struct{}, *felt.Felt]) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if res_data, err := res.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, res_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    option_result_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("result_ok_unit"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (option_result_reader *OptionResultReader) OptionNone(ctx context.Context, opt *felt.Felt, opts *cainome.CallOpts) (*uint64, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -118,10 +1013,10 @@ func (option_result_reader *OptionResultReader) OptionNone(ctx context.Context, 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	if opt != nil {
-		calldata = append(calldata, cainome.FeltFromUint(1)) // Some variant
-		calldata = append(calldata, *opt)
+		calldata = append(calldata, cainome.FeltFromUint(0)) // Some variant
+		calldata = append(calldata, opt)
 	} else {
-		calldata = append(calldata, cainome.FeltFromUint(0)) // None variant
+		calldata = append(calldata, cainome.FeltFromUint(1)) // None variant
 	}
 
 	// Make the contract call
@@ -157,7 +1052,7 @@ func (option_result_reader *OptionResultReader) OptionNone(ctx context.Context, 
 	}
 }
 
-func (option_result_reader *OptionResultReader) OptionSome(ctx context.Context, opt **felt.Felt, opts *cainome.CallOpts) (*[]*felt.Felt, error) {
+func (option_result_reader *OptionResultReader) OptionSome(ctx context.Context, opt *felt.Felt, opts *cainome.CallOpts) (*[]*felt.Felt, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -172,10 +1067,10 @@ func (option_result_reader *OptionResultReader) OptionSome(ctx context.Context, 
 	// Serialize parameters to calldata
 	calldata := []*felt.Felt{}
 	if opt != nil {
-		calldata = append(calldata, cainome.FeltFromUint(1)) // Some variant
-		calldata = append(calldata, *opt)
+		calldata = append(calldata, cainome.FeltFromUint(0)) // Some variant
+		calldata = append(calldata, opt)
 	} else {
-		calldata = append(calldata, cainome.FeltFromUint(0)) // None variant
+		calldata = append(calldata, cainome.FeltFromUint(1)) // None variant
 	}
 
 	// Make the contract call

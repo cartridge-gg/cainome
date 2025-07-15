@@ -15,7 +15,7 @@ import (
 )
 
 type StructsGenericOne struct {
-	A []*felt.Felt `json:"a"`
+	A StructsToAlias `json:"a"`
 	B *felt.Felt `json:"b"`
 	C *big.Int `json:"c"`
 }
@@ -24,10 +24,11 @@ type StructsGenericOne struct {
 func (s *StructsGenericOne) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	// Array field A: serialize length then elements
-	result = append(result, cainome.FeltFromUint(uint64(len(s.A))))
-	for _, item := range s.A {
-		result = append(result, item)
+	// Struct field A: marshal using CairoMarshaler
+	if fieldData, err := s.A.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
 	}
 	result = append(result, s.B)
 	result = append(result, cainome.FeltFromBigInt(s.C))
@@ -38,20 +39,11 @@ func (s *StructsGenericOne) MarshalCairo() ([]*felt.Felt, error) {
 func (s *StructsGenericOne) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Array field A: read length then elements
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for array length of A")
+	// Struct field A: unmarshal using CairoMarshaler
+	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
+		return err
 	}
-	lengthA := cainome.UintFromFelt(data[offset])
-	offset++
-	s.A = make([]*felt.Felt, lengthA)
-	for i := uint64(0); i < lengthA; i++ {
-		if offset >= len(data) {
-			return fmt.Errorf("insufficient data for array element %d of A", i)
-		}
-		s.A[i] = data[offset]
-		offset++
-	}
+	// TODO: Update offset based on consumed data
 
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field B")
@@ -205,7 +197,7 @@ func (s *StructsSimple) MarshalCairo() ([]*felt.Felt, error) {
 	for _, item := range s.Span {
 		result = append(result, item)
 	}
-	// Tuple field Tuple: marshal each sub-field
+	// Tuple field Tuple: marshal each sub-field (tuple has 2 elements)
 	result = append(result, s.Tuple.Field0)
 	result = append(result, cainome.FeltFromBigInt(s.Tuple.Field1))
 	result = append(result, cainome.FeltFromBigInt(s.Uint256))
@@ -363,13 +355,23 @@ type StructsStructsEvent interface {
 }
 
 
-type StructsReader struct {
+type StructsContract struct {
 	contractAddress *felt.Felt
+}
+
+func NewStructsContract(contractAddress *felt.Felt) *StructsContract {
+	return &StructsContract {
+		contractAddress: contractAddress,
+	}
+}
+
+type StructsReader struct {
+	*StructsContract
 	provider rpc.RpcProvider
 }
 
 type StructsWriter struct {
-	contractAddress *felt.Felt
+	*StructsContract
 	account *account.Account
 }
 
@@ -380,14 +382,14 @@ type Structs struct {
 
 func NewStructsReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *StructsReader {
 	return &StructsReader {
-		contractAddress: contractAddress,
+		StructsContract: NewStructsContract(contractAddress),
 		provider: provider,
 	}
 }
 
 func NewStructsWriter(contractAddress *felt.Felt, account *account.Account) *StructsWriter {
 	return &StructsWriter {
-		contractAddress: contractAddress,
+		StructsContract: NewStructsContract(contractAddress),
 		account: account,
 	}
 }
@@ -397,6 +399,1387 @@ func NewStructs(contractAddress *felt.Felt, account *account.Account) *Structs {
 		StructsReader: NewStructsReader(contractAddress, account.Provider),
 		StructsWriter: NewStructsWriter(contractAddress, account),
 	}
+}
+
+type StructsGetGenericOneResponse struct {
+	Value StructsGenericOne `json:"value"`
+}
+
+func NewStructsGetGenericOneResponse(value StructsGenericOne) *StructsGetGenericOneResponse {
+	return &StructsGetGenericOneResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes StructsGetGenericOneResponse to Cairo felt array
+func (s *StructsGetGenericOneResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsGetGenericOneResponse from Cairo felt array
+func (s *StructsGetGenericOneResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsGetGenericOneResponse
+func (s *StructsGetGenericOneResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsGetGenericOneArrayResponse struct {
+	Value StructsGenericOne `json:"value"`
+}
+
+func NewStructsGetGenericOneArrayResponse(value StructsGenericOne) *StructsGetGenericOneArrayResponse {
+	return &StructsGetGenericOneArrayResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes StructsGetGenericOneArrayResponse to Cairo felt array
+func (s *StructsGetGenericOneArrayResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsGetGenericOneArrayResponse from Cairo felt array
+func (s *StructsGetGenericOneArrayResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsGetGenericOneArrayResponse
+func (s *StructsGetGenericOneArrayResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsGetGenericTwoResponse struct {
+	Value StructsGenericTwo `json:"value"`
+}
+
+func NewStructsGetGenericTwoResponse(value StructsGenericTwo) *StructsGetGenericTwoResponse {
+	return &StructsGetGenericTwoResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes StructsGetGenericTwoResponse to Cairo felt array
+func (s *StructsGetGenericTwoResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsGetGenericTwoResponse from Cairo felt array
+func (s *StructsGetGenericTwoResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsGetGenericTwoResponse
+func (s *StructsGetGenericTwoResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsGetSimpleResponse struct {
+	Value StructsSimple `json:"value"`
+}
+
+func NewStructsGetSimpleResponse(value StructsSimple) *StructsGetSimpleResponse {
+	return &StructsGetSimpleResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes StructsGetSimpleResponse to Cairo felt array
+func (s *StructsGetSimpleResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsGetSimpleResponse from Cairo felt array
+func (s *StructsGetSimpleResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsGetSimpleResponse
+func (s *StructsGetSimpleResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsGetStructWStructResponse struct {
+	Value StructsStructWithStruct `json:"value"`
+}
+
+func NewStructsGetStructWStructResponse(value StructsStructWithStruct) *StructsGetStructWStructResponse {
+	return &StructsGetStructWStructResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes StructsGetStructWStructResponse to Cairo felt array
+func (s *StructsGetStructWStructResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsGetStructWStructResponse from Cairo felt array
+func (s *StructsGetStructWStructResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsGetStructWStructResponse
+func (s *StructsGetStructWStructResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsGetTupleOfArrayGenericResponse struct {
+	Value struct {
+	Field0 []StructsGenericOne
+	Field1 []*felt.Felt
+} `json:"value"`
+}
+
+func NewStructsGetTupleOfArrayGenericResponse(value struct {
+	Field0 []StructsGenericOne
+	Field1 []*felt.Felt
+}) *StructsGetTupleOfArrayGenericResponse {
+	return &StructsGetTupleOfArrayGenericResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes StructsGetTupleOfArrayGenericResponse to Cairo felt array
+func (s *StructsGetTupleOfArrayGenericResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Tuple field Value: marshal each sub-field (tuple has 2 elements)
+	// TODO: Handle array type in tuple field 0
+	// TODO: Handle array type in tuple field 1
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsGetTupleOfArrayGenericResponse from Cairo felt array
+func (s *StructsGetTupleOfArrayGenericResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Tuple field Value: unmarshal each sub-field
+	// TODO: Handle array type in tuple field Value element 0
+	_ = offset // Suppress unused variable warning
+	// TODO: Handle array type in tuple field Value element 1
+	_ = offset // Suppress unused variable warning
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsGetTupleOfArrayGenericResponse
+func (s *StructsGetTupleOfArrayGenericResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetFromAliasInput struct {
+	Value []*StructsToAlias `json:"value"`
+}
+
+func NewStructsSetFromAliasInput(value []*StructsToAlias) *StructsSetFromAliasInput {
+	return &StructsSetFromAliasInput {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes StructsSetFromAliasInput to Cairo felt array
+func (s *StructsSetFromAliasInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Array serialization: length first, then elements
+	result = append(result, cainome.FeltFromUint(uint64(len(s.Value))))
+	for _, elem := range s.Value {
+		if elemData, err := elem.MarshalCairo(); err != nil {
+			return nil, err
+		} else {
+			result = append(result, elemData...)
+		}
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetFromAliasInput from Cairo felt array
+func (s *StructsSetFromAliasInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Array field Value: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of Value")
+	}
+	lengthValue := cainome.UintFromFelt(data[offset])
+	offset++
+	s.Value = make([]*StructsToAlias, lengthValue)
+	for i := uint64(0); i < lengthValue; i++ {
+		var item StructsToAlias
+		if err := item.UnmarshalCairo(data[offset:]); err != nil {
+			return err
+		}
+		s.Value[i] = &item
+		// Calculate consumed felts to update offset
+		if itemData, err := item.MarshalCairo(); err != nil {
+			return err
+		} else {
+			offset += len(itemData)
+		}
+	}
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetFromAliasInput
+func (s *StructsSetFromAliasInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetFromAliasResponse struct {
+	// This function has no return values
+}
+
+func NewStructsSetFromAliasResponse() *StructsSetFromAliasResponse {
+	return &StructsSetFromAliasResponse{}
+}
+
+// MarshalCairo serializes StructsSetFromAliasResponse to Cairo felt array
+func (s *StructsSetFromAliasResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetFromAliasResponse from Cairo felt array
+func (s *StructsSetFromAliasResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetFromAliasResponse
+func (s *StructsSetFromAliasResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetGenericOneInput struct {
+	Generic *StructsGenericOne `json:"generic"`
+}
+
+func NewStructsSetGenericOneInput(generic *StructsGenericOne) *StructsSetGenericOneInput {
+	return &StructsSetGenericOneInput {
+		Generic: generic,
+	}
+}
+
+// MarshalCairo serializes StructsSetGenericOneInput to Cairo felt array
+func (s *StructsSetGenericOneInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if Generic_data, err := s.Generic.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, Generic_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetGenericOneInput from Cairo felt array
+func (s *StructsSetGenericOneInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Pointer field Generic: initialize and unmarshal
+	if s.Generic == nil {
+		s.Generic = &StructsGenericOne{}
+	}
+	if err := s.Generic.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetGenericOneInput
+func (s *StructsSetGenericOneInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetGenericOneResponse struct {
+	// This function has no return values
+}
+
+func NewStructsSetGenericOneResponse() *StructsSetGenericOneResponse {
+	return &StructsSetGenericOneResponse{}
+}
+
+// MarshalCairo serializes StructsSetGenericOneResponse to Cairo felt array
+func (s *StructsSetGenericOneResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetGenericOneResponse from Cairo felt array
+func (s *StructsSetGenericOneResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetGenericOneResponse
+func (s *StructsSetGenericOneResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetGenericTwoInput struct {
+	Generic *StructsGenericTwo `json:"generic"`
+}
+
+func NewStructsSetGenericTwoInput(generic *StructsGenericTwo) *StructsSetGenericTwoInput {
+	return &StructsSetGenericTwoInput {
+		Generic: generic,
+	}
+}
+
+// MarshalCairo serializes StructsSetGenericTwoInput to Cairo felt array
+func (s *StructsSetGenericTwoInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if Generic_data, err := s.Generic.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, Generic_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetGenericTwoInput from Cairo felt array
+func (s *StructsSetGenericTwoInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Pointer field Generic: initialize and unmarshal
+	if s.Generic == nil {
+		s.Generic = &StructsGenericTwo{}
+	}
+	if err := s.Generic.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetGenericTwoInput
+func (s *StructsSetGenericTwoInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetGenericTwoResponse struct {
+	// This function has no return values
+}
+
+func NewStructsSetGenericTwoResponse() *StructsSetGenericTwoResponse {
+	return &StructsSetGenericTwoResponse{}
+}
+
+// MarshalCairo serializes StructsSetGenericTwoResponse to Cairo felt array
+func (s *StructsSetGenericTwoResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetGenericTwoResponse from Cairo felt array
+func (s *StructsSetGenericTwoResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetGenericTwoResponse
+func (s *StructsSetGenericTwoResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetGenericTwo0Input struct {
+	Generic *StructsGenericTwo `json:"generic"`
+}
+
+func NewStructsSetGenericTwo0Input(generic *StructsGenericTwo) *StructsSetGenericTwo0Input {
+	return &StructsSetGenericTwo0Input {
+		Generic: generic,
+	}
+}
+
+// MarshalCairo serializes StructsSetGenericTwo0Input to Cairo felt array
+func (s *StructsSetGenericTwo0Input) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if Generic_data, err := s.Generic.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, Generic_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetGenericTwo0Input from Cairo felt array
+func (s *StructsSetGenericTwo0Input) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Pointer field Generic: initialize and unmarshal
+	if s.Generic == nil {
+		s.Generic = &StructsGenericTwo{}
+	}
+	if err := s.Generic.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetGenericTwo0Input
+func (s *StructsSetGenericTwo0Input) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetGenericTwo0Response struct {
+	// This function has no return values
+}
+
+func NewStructsSetGenericTwo0Response() *StructsSetGenericTwo0Response {
+	return &StructsSetGenericTwo0Response{}
+}
+
+// MarshalCairo serializes StructsSetGenericTwo0Response to Cairo felt array
+func (s *StructsSetGenericTwo0Response) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetGenericTwo0Response from Cairo felt array
+func (s *StructsSetGenericTwo0Response) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetGenericTwo0Response
+func (s *StructsSetGenericTwo0Response) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetGenericTwo2Input struct {
+	Generic *StructsGenericTwo `json:"generic"`
+}
+
+func NewStructsSetGenericTwo2Input(generic *StructsGenericTwo) *StructsSetGenericTwo2Input {
+	return &StructsSetGenericTwo2Input {
+		Generic: generic,
+	}
+}
+
+// MarshalCairo serializes StructsSetGenericTwo2Input to Cairo felt array
+func (s *StructsSetGenericTwo2Input) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if Generic_data, err := s.Generic.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, Generic_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetGenericTwo2Input from Cairo felt array
+func (s *StructsSetGenericTwo2Input) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Pointer field Generic: initialize and unmarshal
+	if s.Generic == nil {
+		s.Generic = &StructsGenericTwo{}
+	}
+	if err := s.Generic.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetGenericTwo2Input
+func (s *StructsSetGenericTwo2Input) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetGenericTwo2Response struct {
+	// This function has no return values
+}
+
+func NewStructsSetGenericTwo2Response() *StructsSetGenericTwo2Response {
+	return &StructsSetGenericTwo2Response{}
+}
+
+// MarshalCairo serializes StructsSetGenericTwo2Response to Cairo felt array
+func (s *StructsSetGenericTwo2Response) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetGenericTwo2Response from Cairo felt array
+func (s *StructsSetGenericTwo2Response) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetGenericTwo2Response
+func (s *StructsSetGenericTwo2Response) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetSimpleInput struct {
+	Simple *StructsSimple `json:"simple"`
+}
+
+func NewStructsSetSimpleInput(simple *StructsSimple) *StructsSetSimpleInput {
+	return &StructsSetSimpleInput {
+		Simple: simple,
+	}
+}
+
+// MarshalCairo serializes StructsSetSimpleInput to Cairo felt array
+func (s *StructsSetSimpleInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if Simple_data, err := s.Simple.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, Simple_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetSimpleInput from Cairo felt array
+func (s *StructsSetSimpleInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Pointer field Simple: initialize and unmarshal
+	if s.Simple == nil {
+		s.Simple = &StructsSimple{}
+	}
+	if err := s.Simple.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetSimpleInput
+func (s *StructsSetSimpleInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetSimpleResponse struct {
+	// This function has no return values
+}
+
+func NewStructsSetSimpleResponse() *StructsSetSimpleResponse {
+	return &StructsSetSimpleResponse{}
+}
+
+// MarshalCairo serializes StructsSetSimpleResponse to Cairo felt array
+func (s *StructsSetSimpleResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetSimpleResponse from Cairo felt array
+func (s *StructsSetSimpleResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetSimpleResponse
+func (s *StructsSetSimpleResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetStructWOptionalStructInput struct {
+	Sws *StructsStructWithStruct `json:"sws"`
+}
+
+func NewStructsSetStructWOptionalStructInput(sws *StructsStructWithStruct) *StructsSetStructWOptionalStructInput {
+	return &StructsSetStructWOptionalStructInput {
+		Sws: sws,
+	}
+}
+
+// MarshalCairo serializes StructsSetStructWOptionalStructInput to Cairo felt array
+func (s *StructsSetStructWOptionalStructInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Option field Sws: check for nil and marshal accordingly
+	if s.Sws != nil {
+		// Some variant: discriminant 0 + value
+		result = append(result, cainome.FeltFromUint(0))
+		if fieldData, err := s.Sws.MarshalCairo(); err != nil {
+			return nil, err
+		} else {
+			result = append(result, fieldData...)
+		}
+	} else {
+		// None variant: discriminant 1 (no additional data)
+		result = append(result, cainome.FeltFromUint(1))
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetStructWOptionalStructInput from Cairo felt array
+func (s *StructsSetStructWOptionalStructInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Option field Sws: read discriminant then value if Some
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for Option field Sws discriminant")
+	}
+	discriminant := cainome.UintFromFelt(data[offset])
+	offset++
+	if discriminant == 0 {
+		// Some variant: read the value
+		var value StructsStructWithStruct
+		if err := value.UnmarshalCairo(data[offset:]); err != nil {
+			return err
+		}
+		// Calculate consumed felts to update offset
+		if itemData, err := value.MarshalCairo(); err != nil {
+			return err
+		} else {
+			offset += len(itemData)
+		}
+		s.Sws = &value
+	} else {
+		// None variant
+		s.Sws = nil
+	}
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetStructWOptionalStructInput
+func (s *StructsSetStructWOptionalStructInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetStructWOptionalStructResponse struct {
+	// This function has no return values
+}
+
+func NewStructsSetStructWOptionalStructResponse() *StructsSetStructWOptionalStructResponse {
+	return &StructsSetStructWOptionalStructResponse{}
+}
+
+// MarshalCairo serializes StructsSetStructWOptionalStructResponse to Cairo felt array
+func (s *StructsSetStructWOptionalStructResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetStructWOptionalStructResponse from Cairo felt array
+func (s *StructsSetStructWOptionalStructResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetStructWOptionalStructResponse
+func (s *StructsSetStructWOptionalStructResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetStructWStructInput struct {
+	Sws *StructsStructWithStruct `json:"sws"`
+}
+
+func NewStructsSetStructWStructInput(sws *StructsStructWithStruct) *StructsSetStructWStructInput {
+	return &StructsSetStructWStructInput {
+		Sws: sws,
+	}
+}
+
+// MarshalCairo serializes StructsSetStructWStructInput to Cairo felt array
+func (s *StructsSetStructWStructInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if Sws_data, err := s.Sws.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, Sws_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetStructWStructInput from Cairo felt array
+func (s *StructsSetStructWStructInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Pointer field Sws: initialize and unmarshal
+	if s.Sws == nil {
+		s.Sws = &StructsStructWithStruct{}
+	}
+	if err := s.Sws.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetStructWStructInput
+func (s *StructsSetStructWStructInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetStructWStructResponse struct {
+	// This function has no return values
+}
+
+func NewStructsSetStructWStructResponse() *StructsSetStructWStructResponse {
+	return &StructsSetStructWStructResponse{}
+}
+
+// MarshalCairo serializes StructsSetStructWStructResponse to Cairo felt array
+func (s *StructsSetStructWStructResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetStructWStructResponse from Cairo felt array
+func (s *StructsSetStructWStructResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetStructWStructResponse
+func (s *StructsSetStructWStructResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetTupleGenericInput struct {
+	Value struct {
+	Field0 *StructsGenericOne
+	Field1 *StructsGenericTwo
+} `json:"value"`
+}
+
+func NewStructsSetTupleGenericInput(value struct {
+	Field0 *StructsGenericOne
+	Field1 *StructsGenericTwo
+}) *StructsSetTupleGenericInput {
+	return &StructsSetTupleGenericInput {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes StructsSetTupleGenericInput to Cairo felt array
+func (s *StructsSetTupleGenericInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Tuple field Value: marshal each sub-field (tuple has 2 elements)
+	if fieldData, err := s.Value.Field0.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
+	if fieldData, err := s.Value.Field1.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetTupleGenericInput from Cairo felt array
+func (s *StructsSetTupleGenericInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Tuple field Value: unmarshal each sub-field
+	if err := s.Value.Field0.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// Calculate consumed felts to update offset
+	if itemData, err := s.Value.Field0.MarshalCairo(); err != nil {
+		return err
+	} else {
+		offset += len(itemData)
+	}
+	if err := s.Value.Field1.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// Calculate consumed felts to update offset
+	if itemData, err := s.Value.Field1.MarshalCairo(); err != nil {
+		return err
+	} else {
+		offset += len(itemData)
+	}
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetTupleGenericInput
+func (s *StructsSetTupleGenericInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type StructsSetTupleGenericResponse struct {
+	// This function has no return values
+}
+
+func NewStructsSetTupleGenericResponse() *StructsSetTupleGenericResponse {
+	return &StructsSetTupleGenericResponse{}
+}
+
+// MarshalCairo serializes StructsSetTupleGenericResponse to Cairo felt array
+func (s *StructsSetTupleGenericResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes StructsSetTupleGenericResponse from Cairo felt array
+func (s *StructsSetTupleGenericResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for StructsSetTupleGenericResponse
+func (s *StructsSetTupleGenericResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+func (structs_contract *StructsContract) GetGenericOne() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_generic_one"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) GetGenericOneLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_generic_one"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) GetGenericOneArray() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_generic_one_array"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) GetGenericOneArrayLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_generic_one_array"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) GetGenericTwo() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_generic_two"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) GetGenericTwoLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_generic_two"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) GetSimple() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_simple"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) GetSimpleLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_simple"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) GetStructWStruct() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_struct_w_struct"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) GetStructWStructLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_struct_w_struct"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) GetTupleOfArrayGeneric() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_tuple_of_array_generic"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) GetTupleOfArrayGenericLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_tuple_of_array_generic"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetFromAlias(input *StructsSetFromAliasInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_from_alias"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetFromAliasLegacy(value []*StructsToAlias) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	// Array field value: serialize length then elements
+	calldata = append(calldata, cainome.FeltFromUint(uint64(len(value))))
+	for _, item := range value {
+		if item_data, err := item.MarshalCairo(); err != nil {
+			return rpc.FunctionCall{}, err
+		} else {
+			calldata = append(calldata, item_data...)
+		}
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_from_alias"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetGenericOne(input *StructsSetGenericOneInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_generic_one"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetGenericOneLegacy(generic *StructsGenericOne) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if generic_data, err := generic.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, generic_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_generic_one"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetGenericTwo(input *StructsSetGenericTwoInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_generic_two"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetGenericTwoLegacy(generic *StructsGenericTwo) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if generic_data, err := generic.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, generic_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_generic_two"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetGenericTwo0(input *StructsSetGenericTwo0Input) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_generic_two_0"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetGenericTwo0Legacy(generic *StructsGenericTwo) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if generic_data, err := generic.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, generic_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_generic_two_0"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetGenericTwo2(input *StructsSetGenericTwo2Input) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_generic_two_2"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetGenericTwo2Legacy(generic *StructsGenericTwo) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if generic_data, err := generic.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, generic_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_generic_two_2"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetSimple(input *StructsSetSimpleInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_simple"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetSimpleLegacy(simple *StructsSimple) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if simple_data, err := simple.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, simple_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_simple"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetStructWOptionalStruct(input *StructsSetStructWOptionalStructInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_struct_w_optional_struct"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetStructWOptionalStructLegacy(sws *StructsStructWithStruct) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if sws_data, err := sws.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, sws_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_struct_w_optional_struct"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetStructWStruct(input *StructsSetStructWStructInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_struct_w_struct"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetStructWStructLegacy(sws *StructsStructWithStruct) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if sws_data, err := sws.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, sws_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_struct_w_struct"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetTupleGeneric(input *StructsSetTupleGenericInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_tuple_generic"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (structs_contract *StructsContract) SetTupleGenericLegacy(value struct {
+	Field0 *StructsGenericOne
+	Field1 *StructsGenericTwo
+}) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	// Tuple field value: serialize each element
+	if field0_data, err := value.Field0.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, field0_data...)
+	}
+	if field1_data, err := value.Field1.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, field1_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    structs_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_tuple_generic"),
+		Calldata:           calldata,
+	}, nil
 }
 
 func (structs_reader *StructsReader) GetGenericOne(ctx context.Context, opts *cainome.CallOpts) (StructsGenericOne, error) {

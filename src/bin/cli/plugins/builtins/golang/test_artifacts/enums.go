@@ -210,6 +210,32 @@ func (e *EnumsMixedEnumVariant2) CairoSize() int {
 	return -1 // Dynamic size
 }
 
+// UnmarshalEnumsMixedEnumFromCairo deserializes EnumsMixedEnum from Cairo felt array
+func UnmarshalEnumsMixedEnumFromCairo(data []*felt.Felt) (EnumsMixedEnum, error) {
+	if len(data) == 0 {
+		return nil, fmt.Errorf("empty data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+
+	switch discriminant {
+	case 0:
+		var result EnumsMixedEnumVariant1
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 1:
+		var result EnumsMixedEnumVariant2
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	default:
+		return nil, fmt.Errorf("unknown enum discriminant: %d", discriminant)
+	}
+}
+
 
 // EnumsSimpleEnum represents a Cairo enum type
 type EnumsSimpleEnum interface {
@@ -309,6 +335,32 @@ func (e *EnumsSimpleEnumVariant2) UnmarshalCairo(data []*felt.Felt) error {
 // CairoSize returns the serialized size for EnumsSimpleEnumVariant2
 func (e *EnumsSimpleEnumVariant2) CairoSize() int {
 	return -1 // Dynamic size
+}
+
+// UnmarshalEnumsSimpleEnumFromCairo deserializes EnumsSimpleEnum from Cairo felt array
+func UnmarshalEnumsSimpleEnumFromCairo(data []*felt.Felt) (EnumsSimpleEnum, error) {
+	if len(data) == 0 {
+		return nil, fmt.Errorf("empty data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+
+	switch discriminant {
+	case 0:
+		var result EnumsSimpleEnumVariant1
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 1:
+		var result EnumsSimpleEnumVariant2
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	default:
+		return nil, fmt.Errorf("unknown enum discriminant: %d", discriminant)
+	}
 }
 
 
@@ -640,6 +692,56 @@ func (e *EnumsTypedEnumVariant6) CairoSize() int {
 	return -1 // Dynamic size
 }
 
+// UnmarshalEnumsTypedEnumFromCairo deserializes EnumsTypedEnum from Cairo felt array
+func UnmarshalEnumsTypedEnumFromCairo(data []*felt.Felt) (EnumsTypedEnum, error) {
+	if len(data) == 0 {
+		return nil, fmt.Errorf("empty data for enum discriminant")
+	}
+
+	discriminant := cainome.UintFromFelt(data[0])
+
+	switch discriminant {
+	case 0:
+		var result EnumsTypedEnumVariant1
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 1:
+		var result EnumsTypedEnumVariant2
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 2:
+		var result EnumsTypedEnumVariant3
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 3:
+		var result EnumsTypedEnumVariant4
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 4:
+		var result EnumsTypedEnumVariant5
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	case 5:
+		var result EnumsTypedEnumVariant6
+		if err := result.UnmarshalCairo(data); err != nil {
+			return nil, fmt.Errorf("failed to unmarshal variant: %w", err)
+		}
+		return &result, nil
+	default:
+		return nil, fmt.Errorf("unknown enum discriminant: %d", discriminant)
+	}
+}
+
 
 // EnumsEnumsEvent represents a contract event
 type EnumsEnumsEvent interface {
@@ -647,13 +749,23 @@ type EnumsEnumsEvent interface {
 }
 
 
-type EnumsReader struct {
+type EnumsContract struct {
 	contractAddress *felt.Felt
+}
+
+func NewEnumsContract(contractAddress *felt.Felt) *EnumsContract {
+	return &EnumsContract {
+		contractAddress: contractAddress,
+	}
+}
+
+type EnumsReader struct {
+	*EnumsContract
 	provider rpc.RpcProvider
 }
 
 type EnumsWriter struct {
-	contractAddress *felt.Felt
+	*EnumsContract
 	account *account.Account
 }
 
@@ -664,14 +776,14 @@ type Enums struct {
 
 func NewEnumsReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *EnumsReader {
 	return &EnumsReader {
-		contractAddress: contractAddress,
+		EnumsContract: NewEnumsContract(contractAddress),
 		provider: provider,
 	}
 }
 
 func NewEnumsWriter(contractAddress *felt.Felt, account *account.Account) *EnumsWriter {
 	return &EnumsWriter {
-		contractAddress: contractAddress,
+		EnumsContract: NewEnumsContract(contractAddress),
 		account: account,
 	}
 }
@@ -681,6 +793,790 @@ func NewEnums(contractAddress *felt.Felt, account *account.Account) *Enums {
 		EnumsReader: NewEnumsReader(contractAddress, account.Provider),
 		EnumsWriter: NewEnumsWriter(contractAddress, account),
 	}
+}
+
+type EnumsGetMixed1Response struct {
+	Value EnumsMixedEnum `json:"value"`
+}
+
+func NewEnumsGetMixed1Response(value EnumsMixedEnum) *EnumsGetMixed1Response {
+	return &EnumsGetMixed1Response {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes EnumsGetMixed1Response to Cairo felt array
+func (s *EnumsGetMixed1Response) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsGetMixed1Response from Cairo felt array
+func (s *EnumsGetMixed1Response) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsGetMixed1Response
+func (s *EnumsGetMixed1Response) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EnumsGetMixed2Response struct {
+	Value EnumsMixedEnum `json:"value"`
+}
+
+func NewEnumsGetMixed2Response(value EnumsMixedEnum) *EnumsGetMixed2Response {
+	return &EnumsGetMixed2Response {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes EnumsGetMixed2Response to Cairo felt array
+func (s *EnumsGetMixed2Response) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsGetMixed2Response from Cairo felt array
+func (s *EnumsGetMixed2Response) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsGetMixed2Response
+func (s *EnumsGetMixed2Response) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EnumsGetSimple1Response struct {
+	Value EnumsSimpleEnum `json:"value"`
+}
+
+func NewEnumsGetSimple1Response(value EnumsSimpleEnum) *EnumsGetSimple1Response {
+	return &EnumsGetSimple1Response {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes EnumsGetSimple1Response to Cairo felt array
+func (s *EnumsGetSimple1Response) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsGetSimple1Response from Cairo felt array
+func (s *EnumsGetSimple1Response) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsGetSimple1Response
+func (s *EnumsGetSimple1Response) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EnumsGetSimple2Response struct {
+	Value EnumsSimpleEnum `json:"value"`
+}
+
+func NewEnumsGetSimple2Response(value EnumsSimpleEnum) *EnumsGetSimple2Response {
+	return &EnumsGetSimple2Response {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes EnumsGetSimple2Response to Cairo felt array
+func (s *EnumsGetSimple2Response) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsGetSimple2Response from Cairo felt array
+func (s *EnumsGetSimple2Response) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsGetSimple2Response
+func (s *EnumsGetSimple2Response) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EnumsGetTyped1Response struct {
+	Value EnumsTypedEnum `json:"value"`
+}
+
+func NewEnumsGetTyped1Response(value EnumsTypedEnum) *EnumsGetTyped1Response {
+	return &EnumsGetTyped1Response {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes EnumsGetTyped1Response to Cairo felt array
+func (s *EnumsGetTyped1Response) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsGetTyped1Response from Cairo felt array
+func (s *EnumsGetTyped1Response) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsGetTyped1Response
+func (s *EnumsGetTyped1Response) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EnumsGetTyped2Response struct {
+	Value EnumsTypedEnum `json:"value"`
+}
+
+func NewEnumsGetTyped2Response(value EnumsTypedEnum) *EnumsGetTyped2Response {
+	return &EnumsGetTyped2Response {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes EnumsGetTyped2Response to Cairo felt array
+func (s *EnumsGetTyped2Response) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsGetTyped2Response from Cairo felt array
+func (s *EnumsGetTyped2Response) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsGetTyped2Response
+func (s *EnumsGetTyped2Response) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EnumsGetTyped3Response struct {
+	Value EnumsTypedEnum `json:"value"`
+}
+
+func NewEnumsGetTyped3Response(value EnumsTypedEnum) *EnumsGetTyped3Response {
+	return &EnumsGetTyped3Response {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes EnumsGetTyped3Response to Cairo felt array
+func (s *EnumsGetTyped3Response) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsGetTyped3Response from Cairo felt array
+func (s *EnumsGetTyped3Response) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsGetTyped3Response
+func (s *EnumsGetTyped3Response) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EnumsGetTyped4Response struct {
+	Value EnumsTypedEnum `json:"value"`
+}
+
+func NewEnumsGetTyped4Response(value EnumsTypedEnum) *EnumsGetTyped4Response {
+	return &EnumsGetTyped4Response {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes EnumsGetTyped4Response to Cairo felt array
+func (s *EnumsGetTyped4Response) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsGetTyped4Response from Cairo felt array
+func (s *EnumsGetTyped4Response) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsGetTyped4Response
+func (s *EnumsGetTyped4Response) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EnumsGetTypedWithArgInput struct {
+	E EnumsTypedEnum `json:"e"`
+}
+
+func NewEnumsGetTypedWithArgInput(e EnumsTypedEnum) *EnumsGetTypedWithArgInput {
+	return &EnumsGetTypedWithArgInput {
+		E: e,
+	}
+}
+
+// MarshalCairo serializes EnumsGetTypedWithArgInput to Cairo felt array
+func (s *EnumsGetTypedWithArgInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if E_data, err := s.E.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, E_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsGetTypedWithArgInput from Cairo felt array
+func (s *EnumsGetTypedWithArgInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field E: unmarshal using CairoMarshaler
+	if err := s.E.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsGetTypedWithArgInput
+func (s *EnumsGetTypedWithArgInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EnumsGetTypedWithArgResponse struct {
+	Value EnumsTypedEnum `json:"value"`
+}
+
+func NewEnumsGetTypedWithArgResponse(value EnumsTypedEnum) *EnumsGetTypedWithArgResponse {
+	return &EnumsGetTypedWithArgResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes EnumsGetTypedWithArgResponse to Cairo felt array
+func (s *EnumsGetTypedWithArgResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if s_Value_data, err := s.Value.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, s_Value_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsGetTypedWithArgResponse from Cairo felt array
+func (s *EnumsGetTypedWithArgResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Complex field Value: unmarshal using CairoMarshaler
+	if err := s.Value.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsGetTypedWithArgResponse
+func (s *EnumsGetTypedWithArgResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EnumsGetTypedWithOptionArgInput struct {
+	E EnumsTypedEnum `json:"e"`
+}
+
+func NewEnumsGetTypedWithOptionArgInput(e EnumsTypedEnum) *EnumsGetTypedWithOptionArgInput {
+	return &EnumsGetTypedWithOptionArgInput {
+		E: e,
+	}
+}
+
+// MarshalCairo serializes EnumsGetTypedWithOptionArgInput to Cairo felt array
+func (s *EnumsGetTypedWithOptionArgInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Option field E: check for nil and marshal accordingly
+	if s.E != nil {
+		// Some variant: discriminant 0 + value
+		result = append(result, cainome.FeltFromUint(0))
+		if fieldData, err := s.E.MarshalCairo(); err != nil {
+			return nil, err
+		} else {
+			result = append(result, fieldData...)
+		}
+	} else {
+		// None variant: discriminant 1 (no additional data)
+		result = append(result, cainome.FeltFromUint(1))
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsGetTypedWithOptionArgInput from Cairo felt array
+func (s *EnumsGetTypedWithOptionArgInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Option field E: read discriminant then value if Some
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for Option field E discriminant")
+	}
+	discriminant := cainome.UintFromFelt(data[offset])
+	offset++
+	if discriminant == 0 {
+		// Some variant: read the value
+		var value EnumsTypedEnum
+		if enumValue, err := UnmarshalEnumsTypedEnumFromCairo(data[offset:]); err != nil {
+			return err
+		} else {
+			value = enumValue
+			// TODO: Update offset based on consumed data
+		}
+		s.E = value
+	} else {
+		// None variant
+		s.E = nil
+	}
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsGetTypedWithOptionArgInput
+func (s *EnumsGetTypedWithOptionArgInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type EnumsGetTypedWithOptionArgResponse struct {
+	Value EnumsTypedEnum `json:"value"`
+}
+
+func NewEnumsGetTypedWithOptionArgResponse(value EnumsTypedEnum) *EnumsGetTypedWithOptionArgResponse {
+	return &EnumsGetTypedWithOptionArgResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes EnumsGetTypedWithOptionArgResponse to Cairo felt array
+func (s *EnumsGetTypedWithOptionArgResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Option field: check for nil and marshal accordingly
+	if s.Value != nil {
+		// Some variant: discriminant 0 + value
+		result = append(result, cainome.FeltFromUint(0))
+		if fieldData, err := s.Value.MarshalCairo(); err != nil {
+			return nil, err
+		} else {
+			result = append(result, fieldData...)
+		}
+	} else {
+		// None variant: discriminant 1 (no additional data)
+		result = append(result, cainome.FeltFromUint(1))
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes EnumsGetTypedWithOptionArgResponse from Cairo felt array
+func (s *EnumsGetTypedWithOptionArgResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Option field Value: read discriminant then value if Some
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for Option field Value discriminant")
+	}
+	discriminant := cainome.UintFromFelt(data[offset])
+	offset++
+	if discriminant == 0 {
+		// Some variant: read the value
+		if enumValue, err := UnmarshalEnumsTypedEnumFromCairo(data[offset:]); err != nil {
+			return err
+		} else {
+			s.Value = enumValue
+			// TODO: Update offset based on consumed data
+		}
+	} else {
+		// None variant
+		s.Value = nil
+	}
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for EnumsGetTypedWithOptionArgResponse
+func (s *EnumsGetTypedWithOptionArgResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+func (enums_contract *EnumsContract) GetMixed1() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_mixed_1"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetMixed1Legacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_mixed_1"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetMixed2() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_mixed_2"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetMixed2Legacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_mixed_2"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetSimple1() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_simple_1"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetSimple1Legacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_simple_1"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetSimple2() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_simple_2"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetSimple2Legacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_simple_2"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetTyped1() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_1"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetTyped1Legacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_1"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetTyped2() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_2"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetTyped2Legacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_2"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetTyped3() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_3"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetTyped3Legacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_3"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetTyped4() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_4"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetTyped4Legacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_4"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetTypedWithArg(input *EnumsGetTypedWithArgInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_with_arg"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetTypedWithArgLegacy(e EnumsTypedEnum) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if e_data, err := e.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, e_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_with_arg"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetTypedWithOptionArg(input *EnumsGetTypedWithOptionArgInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_with_option_arg"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (enums_contract *EnumsContract) GetTypedWithOptionArgLegacy(e EnumsTypedEnum) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if e_data, err := e.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, e_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    enums_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_typed_with_option_arg"),
+		Calldata:           calldata,
+	}, nil
 }
 
 func (enums_reader *EnumsReader) GetMixed1(ctx context.Context, opts *cainome.CallOpts) (EnumsMixedEnum, error) {
@@ -1312,7 +2208,7 @@ func (enums_reader *EnumsReader) GetTypedWithArg(ctx context.Context, e EnumsTyp
 	}
 }
 
-func (enums_reader *EnumsReader) GetTypedWithOptionArg(ctx context.Context, e *EnumsTypedEnum, opts *cainome.CallOpts) (*EnumsTypedEnum, error) {
+func (enums_reader *EnumsReader) GetTypedWithOptionArg(ctx context.Context, e EnumsTypedEnum, opts *cainome.CallOpts) (*EnumsTypedEnum, error) {
 	// Setup call options
 	if opts == nil {
 		opts = &cainome.CallOpts{}
@@ -1329,7 +2225,7 @@ func (enums_reader *EnumsReader) GetTypedWithOptionArg(ctx context.Context, e *E
 	if e != nil {
 		// Some variant
 		calldata = append(calldata, cainome.FeltFromUint(0))
-		if e_data, err := (*e).MarshalCairo(); err != nil {
+		if e_data, err := e.MarshalCairo(); err != nil {
 			return nil, err
 		} else {
 			calldata = append(calldata, e_data...)

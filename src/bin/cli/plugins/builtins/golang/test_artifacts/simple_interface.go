@@ -19,13 +19,23 @@ type SimpleInterfaceSimpleInterfaceEvent interface {
 }
 
 
-type SimpleInterfaceReader struct {
+type SimpleInterfaceContract struct {
 	contractAddress *felt.Felt
+}
+
+func NewSimpleInterfaceContract(contractAddress *felt.Felt) *SimpleInterfaceContract {
+	return &SimpleInterfaceContract {
+		contractAddress: contractAddress,
+	}
+}
+
+type SimpleInterfaceReader struct {
+	*SimpleInterfaceContract
 	provider rpc.RpcProvider
 }
 
 type SimpleInterfaceWriter struct {
-	contractAddress *felt.Felt
+	*SimpleInterfaceContract
 	account *account.Account
 }
 
@@ -36,14 +46,14 @@ type SimpleInterface struct {
 
 func NewSimpleInterfaceReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *SimpleInterfaceReader {
 	return &SimpleInterfaceReader {
-		contractAddress: contractAddress,
+		SimpleInterfaceContract: NewSimpleInterfaceContract(contractAddress),
 		provider: provider,
 	}
 }
 
 func NewSimpleInterfaceWriter(contractAddress *felt.Felt, account *account.Account) *SimpleInterfaceWriter {
 	return &SimpleInterfaceWriter {
-		contractAddress: contractAddress,
+		SimpleInterfaceContract: NewSimpleInterfaceContract(contractAddress),
 		account: account,
 	}
 }
@@ -53,6 +63,157 @@ func NewSimpleInterface(contractAddress *felt.Felt, account *account.Account) *S
 		SimpleInterfaceReader: NewSimpleInterfaceReader(contractAddress, account.Provider),
 		SimpleInterfaceWriter: NewSimpleInterfaceWriter(contractAddress, account),
 	}
+}
+
+type SimpleInterfaceGetValueResponse struct {
+	Value *felt.Felt `json:"value"`
+}
+
+func NewSimpleInterfaceGetValueResponse(value *felt.Felt) *SimpleInterfaceGetValueResponse {
+	return &SimpleInterfaceGetValueResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes SimpleInterfaceGetValueResponse to Cairo felt array
+func (s *SimpleInterfaceGetValueResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Value)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleInterfaceGetValueResponse from Cairo felt array
+func (s *SimpleInterfaceGetValueResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Value")
+	}
+	s.Value = data[offset]
+	offset++
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleInterfaceGetValueResponse
+func (s *SimpleInterfaceGetValueResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleInterfaceSetValueInput struct {
+	Value *felt.Felt `json:"value"`
+}
+
+func NewSimpleInterfaceSetValueInput(value *felt.Felt) *SimpleInterfaceSetValueInput {
+	return &SimpleInterfaceSetValueInput {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes SimpleInterfaceSetValueInput to Cairo felt array
+func (s *SimpleInterfaceSetValueInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Value)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleInterfaceSetValueInput from Cairo felt array
+func (s *SimpleInterfaceSetValueInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Value")
+	}
+	s.Value = data[offset]
+	offset++
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleInterfaceSetValueInput
+func (s *SimpleInterfaceSetValueInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type SimpleInterfaceSetValueResponse struct {
+	// This function has no return values
+}
+
+func NewSimpleInterfaceSetValueResponse() *SimpleInterfaceSetValueResponse {
+	return &SimpleInterfaceSetValueResponse{}
+}
+
+// MarshalCairo serializes SimpleInterfaceSetValueResponse to Cairo felt array
+func (s *SimpleInterfaceSetValueResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes SimpleInterfaceSetValueResponse from Cairo felt array
+func (s *SimpleInterfaceSetValueResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for SimpleInterfaceSetValueResponse
+func (s *SimpleInterfaceSetValueResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+func (simple_interface_contract *SimpleInterfaceContract) GetValue() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_interface_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_value"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_interface_contract *SimpleInterfaceContract) GetValueLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_interface_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("get_value"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_interface_contract *SimpleInterfaceContract) SetValue(input *SimpleInterfaceSetValueInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_interface_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_value"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (simple_interface_contract *SimpleInterfaceContract) SetValueLegacy(value *felt.Felt) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	calldata = append(calldata, value)
+
+	return rpc.FunctionCall{
+		ContractAddress:    simple_interface_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("set_value"),
+		Calldata:           calldata,
+	}, nil
 }
 
 func (simple_interface_reader *SimpleInterfaceReader) GetValue(ctx context.Context, opts *cainome.CallOpts) (*felt.Felt, error) {

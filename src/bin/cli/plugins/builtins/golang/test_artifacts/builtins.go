@@ -50,13 +50,23 @@ type BuiltinsBuiltinsEvent interface {
 }
 
 
-type BuiltinsReader struct {
+type BuiltinsContract struct {
 	contractAddress *felt.Felt
+}
+
+func NewBuiltinsContract(contractAddress *felt.Felt) *BuiltinsContract {
+	return &BuiltinsContract {
+		contractAddress: contractAddress,
+	}
+}
+
+type BuiltinsReader struct {
+	*BuiltinsContract
 	provider rpc.RpcProvider
 }
 
 type BuiltinsWriter struct {
-	contractAddress *felt.Felt
+	*BuiltinsContract
 	account *account.Account
 }
 
@@ -67,14 +77,14 @@ type Builtins struct {
 
 func NewBuiltinsReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *BuiltinsReader {
 	return &BuiltinsReader {
-		contractAddress: contractAddress,
+		BuiltinsContract: NewBuiltinsContract(contractAddress),
 		provider: provider,
 	}
 }
 
 func NewBuiltinsWriter(contractAddress *felt.Felt, account *account.Account) *BuiltinsWriter {
 	return &BuiltinsWriter {
-		contractAddress: contractAddress,
+		BuiltinsContract: NewBuiltinsContract(contractAddress),
 		account: account,
 	}
 }
@@ -84,6 +94,221 @@ func NewBuiltins(contractAddress *felt.Felt, account *account.Account) *Builtins
 		BuiltinsReader: NewBuiltinsReader(contractAddress, account.Provider),
 		BuiltinsWriter: NewBuiltinsWriter(contractAddress, account),
 	}
+}
+
+type BuiltinsNonZeroInput struct {
+	Res *felt.Felt `json:"res"`
+}
+
+func NewBuiltinsNonZeroInput(res *felt.Felt) *BuiltinsNonZeroInput {
+	return &BuiltinsNonZeroInput {
+		Res: res,
+	}
+}
+
+// MarshalCairo serializes BuiltinsNonZeroInput to Cairo felt array
+func (s *BuiltinsNonZeroInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Res)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes BuiltinsNonZeroInput from Cairo felt array
+func (s *BuiltinsNonZeroInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Res")
+	}
+	s.Res = data[offset]
+	offset++
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for BuiltinsNonZeroInput
+func (s *BuiltinsNonZeroInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type BuiltinsNonZeroResponse struct {
+	Value *felt.Felt `json:"value"`
+}
+
+func NewBuiltinsNonZeroResponse(value *felt.Felt) *BuiltinsNonZeroResponse {
+	return &BuiltinsNonZeroResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes BuiltinsNonZeroResponse to Cairo felt array
+func (s *BuiltinsNonZeroResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Value)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes BuiltinsNonZeroResponse from Cairo felt array
+func (s *BuiltinsNonZeroResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Value")
+	}
+	s.Value = data[offset]
+	offset++
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for BuiltinsNonZeroResponse
+func (s *BuiltinsNonZeroResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type BuiltinsStructNonZeroInput struct {
+	Res *BuiltinsMyStructBuiltins `json:"res"`
+}
+
+func NewBuiltinsStructNonZeroInput(res *BuiltinsMyStructBuiltins) *BuiltinsStructNonZeroInput {
+	return &BuiltinsStructNonZeroInput {
+		Res: res,
+	}
+}
+
+// MarshalCairo serializes BuiltinsStructNonZeroInput to Cairo felt array
+func (s *BuiltinsStructNonZeroInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	if Res_data, err := s.Res.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, Res_data...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes BuiltinsStructNonZeroInput from Cairo felt array
+func (s *BuiltinsStructNonZeroInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Pointer field Res: initialize and unmarshal
+	if s.Res == nil {
+		s.Res = &BuiltinsMyStructBuiltins{}
+	}
+	if err := s.Res.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// TODO: Update offset based on consumed data
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for BuiltinsStructNonZeroInput
+func (s *BuiltinsStructNonZeroInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type BuiltinsStructNonZeroResponse struct {
+	Value *felt.Felt `json:"value"`
+}
+
+func NewBuiltinsStructNonZeroResponse(value *felt.Felt) *BuiltinsStructNonZeroResponse {
+	return &BuiltinsStructNonZeroResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes BuiltinsStructNonZeroResponse to Cairo felt array
+func (s *BuiltinsStructNonZeroResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Value)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes BuiltinsStructNonZeroResponse from Cairo felt array
+func (s *BuiltinsStructNonZeroResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Value")
+	}
+	s.Value = data[offset]
+	offset++
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for BuiltinsStructNonZeroResponse
+func (s *BuiltinsStructNonZeroResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+func (builtins_contract *BuiltinsContract) NonZero(input *BuiltinsNonZeroInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    builtins_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("non_zero"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (builtins_contract *BuiltinsContract) NonZeroLegacy(res *felt.Felt) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	calldata = append(calldata, res)
+
+	return rpc.FunctionCall{
+		ContractAddress:    builtins_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("non_zero"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (builtins_contract *BuiltinsContract) StructNonZero(input *BuiltinsStructNonZeroInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    builtins_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("struct_non_zero"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (builtins_contract *BuiltinsContract) StructNonZeroLegacy(res *BuiltinsMyStructBuiltins) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	if res_data, err := res.MarshalCairo(); err != nil {
+		return rpc.FunctionCall{}, err
+	} else {
+		calldata = append(calldata, res_data...)
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    builtins_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("struct_non_zero"),
+		Calldata:           calldata,
+	}, nil
 }
 
 func (builtins_reader *BuiltinsReader) NonZero(ctx context.Context, res *felt.Felt, opts *cainome.CallOpts) (*felt.Felt, error) {

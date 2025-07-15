@@ -275,13 +275,23 @@ const (
 )
 
 
-type ComponentsReader struct {
+type ComponentsContract struct {
 	contractAddress *felt.Felt
+}
+
+func NewComponentsContract(contractAddress *felt.Felt) *ComponentsContract {
+	return &ComponentsContract {
+		contractAddress: contractAddress,
+	}
+}
+
+type ComponentsReader struct {
+	*ComponentsContract
 	provider rpc.RpcProvider
 }
 
 type ComponentsWriter struct {
-	contractAddress *felt.Felt
+	*ComponentsContract
 	account *account.Account
 }
 
@@ -292,14 +302,14 @@ type Components struct {
 
 func NewComponentsReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *ComponentsReader {
 	return &ComponentsReader {
-		contractAddress: contractAddress,
+		ComponentsContract: NewComponentsContract(contractAddress),
 		provider: provider,
 	}
 }
 
 func NewComponentsWriter(contractAddress *felt.Felt, account *account.Account) *ComponentsWriter {
 	return &ComponentsWriter {
-		contractAddress: contractAddress,
+		ComponentsContract: NewComponentsContract(contractAddress),
 		account: account,
 	}
 }
@@ -309,6 +319,511 @@ func NewComponents(contractAddress *felt.Felt, account *account.Account) *Compon
 		ComponentsReader: NewComponentsReader(contractAddress, account.Provider),
 		ComponentsWriter: NewComponentsWriter(contractAddress, account),
 	}
+}
+
+type ComponentsArrayStructSimpleResponse struct {
+	Value []ComponentsMyStructSimple `json:"value"`
+}
+
+func NewComponentsArrayStructSimpleResponse(value []ComponentsMyStructSimple) *ComponentsArrayStructSimpleResponse {
+	return &ComponentsArrayStructSimpleResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes ComponentsArrayStructSimpleResponse to Cairo felt array
+func (s *ComponentsArrayStructSimpleResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Array serialization: length first, then elements
+	result = append(result, cainome.FeltFromUint(uint64(len(s.Value))))
+	for _, elem := range s.Value {
+		if elemData, err := elem.MarshalCairo(); err != nil {
+			return nil, err
+		} else {
+			result = append(result, elemData...)
+		}
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ComponentsArrayStructSimpleResponse from Cairo felt array
+func (s *ComponentsArrayStructSimpleResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Array field Value: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of Value")
+	}
+	lengthValue := cainome.UintFromFelt(data[offset])
+	offset++
+	s.Value = make([]ComponentsMyStructSimple, lengthValue)
+	for i := uint64(0); i < lengthValue; i++ {
+		var item ComponentsMyStructSimple
+		if err := item.UnmarshalCairo(data[offset:]); err != nil {
+			return err
+		}
+		s.Value[i] = item
+		// Calculate consumed felts to update offset
+		if itemData, err := item.MarshalCairo(); err != nil {
+			return err
+		} else {
+			offset += len(itemData)
+		}
+	}
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ComponentsArrayStructSimpleResponse
+func (s *ComponentsArrayStructSimpleResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type ComponentsArrayStructSimpleOtherResponse struct {
+	Value []ComponentsMyStructOther `json:"value"`
+}
+
+func NewComponentsArrayStructSimpleOtherResponse(value []ComponentsMyStructOther) *ComponentsArrayStructSimpleOtherResponse {
+	return &ComponentsArrayStructSimpleOtherResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes ComponentsArrayStructSimpleOtherResponse to Cairo felt array
+func (s *ComponentsArrayStructSimpleOtherResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Array serialization: length first, then elements
+	result = append(result, cainome.FeltFromUint(uint64(len(s.Value))))
+	for _, elem := range s.Value {
+		if elemData, err := elem.MarshalCairo(); err != nil {
+			return nil, err
+		} else {
+			result = append(result, elemData...)
+		}
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ComponentsArrayStructSimpleOtherResponse from Cairo felt array
+func (s *ComponentsArrayStructSimpleOtherResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Array field Value: read length then elements
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for array length of Value")
+	}
+	lengthValue := cainome.UintFromFelt(data[offset])
+	offset++
+	s.Value = make([]ComponentsMyStructOther, lengthValue)
+	for i := uint64(0); i < lengthValue; i++ {
+		var item ComponentsMyStructOther
+		if err := item.UnmarshalCairo(data[offset:]); err != nil {
+			return err
+		}
+		s.Value[i] = item
+		// Calculate consumed felts to update offset
+		if itemData, err := item.MarshalCairo(); err != nil {
+			return err
+		} else {
+			offset += len(itemData)
+		}
+	}
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ComponentsArrayStructSimpleOtherResponse
+func (s *ComponentsArrayStructSimpleOtherResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type ComponentsReadDataResponse struct {
+	Value *felt.Felt `json:"value"`
+}
+
+func NewComponentsReadDataResponse(value *felt.Felt) *ComponentsReadDataResponse {
+	return &ComponentsReadDataResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes ComponentsReadDataResponse to Cairo felt array
+func (s *ComponentsReadDataResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Value)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ComponentsReadDataResponse from Cairo felt array
+func (s *ComponentsReadDataResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Value")
+	}
+	s.Value = data[offset]
+	offset++
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ComponentsReadDataResponse
+func (s *ComponentsReadDataResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type ComponentsSimpleResponse struct {
+	// This function has no return values
+}
+
+func NewComponentsSimpleResponse() *ComponentsSimpleResponse {
+	return &ComponentsSimpleResponse{}
+}
+
+// MarshalCairo serializes ComponentsSimpleResponse to Cairo felt array
+func (s *ComponentsSimpleResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ComponentsSimpleResponse from Cairo felt array
+func (s *ComponentsSimpleResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ComponentsSimpleResponse
+func (s *ComponentsSimpleResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type ComponentsSimpleOtherResponse struct {
+	// This function has no return values
+}
+
+func NewComponentsSimpleOtherResponse() *ComponentsSimpleOtherResponse {
+	return &ComponentsSimpleOtherResponse{}
+}
+
+// MarshalCairo serializes ComponentsSimpleOtherResponse to Cairo felt array
+func (s *ComponentsSimpleOtherResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ComponentsSimpleOtherResponse from Cairo felt array
+func (s *ComponentsSimpleOtherResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ComponentsSimpleOtherResponse
+func (s *ComponentsSimpleOtherResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type ComponentsTupleEventsResponse struct {
+	Value struct {
+	Field0 ComponentsMyStructSimple
+	Field1 ComponentsMyStructOther
+} `json:"value"`
+}
+
+func NewComponentsTupleEventsResponse(value struct {
+	Field0 ComponentsMyStructSimple
+	Field1 ComponentsMyStructOther
+}) *ComponentsTupleEventsResponse {
+	return &ComponentsTupleEventsResponse {
+		Value: value,
+	}
+}
+
+// MarshalCairo serializes ComponentsTupleEventsResponse to Cairo felt array
+func (s *ComponentsTupleEventsResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	// Tuple field Value: marshal each sub-field (tuple has 2 elements)
+	if fieldData, err := s.Value.Field0.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
+	if fieldData, err := s.Value.Field1.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ComponentsTupleEventsResponse from Cairo felt array
+func (s *ComponentsTupleEventsResponse) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	// Tuple field Value: unmarshal each sub-field
+	if err := s.Value.Field0.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// Calculate consumed felts to update offset
+	if itemData, err := s.Value.Field0.MarshalCairo(); err != nil {
+		return err
+	} else {
+		offset += len(itemData)
+	}
+	if err := s.Value.Field1.UnmarshalCairo(data[offset:]); err != nil {
+		return err
+	}
+	// Calculate consumed felts to update offset
+	if itemData, err := s.Value.Field1.MarshalCairo(); err != nil {
+		return err
+	} else {
+		offset += len(itemData)
+	}
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ComponentsTupleEventsResponse
+func (s *ComponentsTupleEventsResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type ComponentsWriteDataInput struct {
+	Data *felt.Felt `json:"data"`
+}
+
+func NewComponentsWriteDataInput(data *felt.Felt) *ComponentsWriteDataInput {
+	return &ComponentsWriteDataInput {
+		Data: data,
+	}
+}
+
+// MarshalCairo serializes ComponentsWriteDataInput to Cairo felt array
+func (s *ComponentsWriteDataInput) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+	result = append(result, s.Data)
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ComponentsWriteDataInput from Cairo felt array
+func (s *ComponentsWriteDataInput) UnmarshalCairo(data []*felt.Felt) error {
+	offset := 0
+
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field Data")
+	}
+	s.Data = data[offset]
+	offset++
+
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ComponentsWriteDataInput
+func (s *ComponentsWriteDataInput) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+type ComponentsWriteDataResponse struct {
+	// This function has no return values
+}
+
+func NewComponentsWriteDataResponse() *ComponentsWriteDataResponse {
+	return &ComponentsWriteDataResponse{}
+}
+
+// MarshalCairo serializes ComponentsWriteDataResponse to Cairo felt array
+func (s *ComponentsWriteDataResponse) MarshalCairo() ([]*felt.Felt, error) {
+	var result []*felt.Felt
+
+
+	return result, nil
+}
+
+// UnmarshalCairo deserializes ComponentsWriteDataResponse from Cairo felt array
+func (s *ComponentsWriteDataResponse) UnmarshalCairo(data []*felt.Felt) error {
+
+	return nil
+}
+
+// CairoSize returns the serialized size for ComponentsWriteDataResponse
+func (s *ComponentsWriteDataResponse) CairoSize() int {
+	return -1 // Dynamic size
+}
+
+func (components_contract *ComponentsContract) ArrayStructSimple() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("array_struct_simple"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (components_contract *ComponentsContract) ArrayStructSimpleLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("array_struct_simple"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (components_contract *ComponentsContract) ArrayStructSimpleOther() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("array_struct_simple_other"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (components_contract *ComponentsContract) ArrayStructSimpleOtherLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("array_struct_simple_other"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (components_contract *ComponentsContract) ReadData() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("read_data"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (components_contract *ComponentsContract) ReadDataLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("read_data"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (components_contract *ComponentsContract) Simple() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("simple"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (components_contract *ComponentsContract) SimpleLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("simple"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (components_contract *ComponentsContract) SimpleOther() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("simple_other"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (components_contract *ComponentsContract) SimpleOtherLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("simple_other"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (components_contract *ComponentsContract) TupleEvents() (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("tuple_events"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (components_contract *ComponentsContract) TupleEventsLegacy() (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("tuple_events"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (components_contract *ComponentsContract) WriteData(input *ComponentsWriteDataInput) (rpc.FunctionCall, error) {
+	// Serialize input to calldata
+	calldata, err := input.MarshalCairo()
+	if err != nil {
+		return rpc.FunctionCall{}, err
+	}
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("write_data"),
+		Calldata:           calldata,
+	}, nil
+}
+
+func (components_contract *ComponentsContract) WriteDataLegacy(data *felt.Felt) (rpc.FunctionCall, error) {
+	// Serialize parameters to calldata
+	calldata := []*felt.Felt{}
+	calldata = append(calldata, data)
+
+	return rpc.FunctionCall{
+		ContractAddress:    components_contract.contractAddress,
+		EntryPointSelector: utils.GetSelectorFromNameFelt("write_data"),
+		Calldata:           calldata,
+	}, nil
 }
 
 func (components_writer *ComponentsWriter) ArrayStructSimple(ctx context.Context, opts *cainome.InvokeOpts) ([]ComponentsMyStructSimple, *felt.Felt, error) {
