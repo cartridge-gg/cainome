@@ -582,7 +582,7 @@ impl GolangPlugin {
                 }
                 CompositeInnerKind::Data => {
                     // Data variant - struct with data field
-                    let data_type = self.token_to_go_type(&inner.token);
+                    let data_type = self.token_to_go_type_with_context(&inner.token, contract_name);
                     enum_def.push_str(&format!(
                         "type {} struct {{\n\tData {} `json:\"data\"`\n}}\n\n",
                         variant_type_name, data_type
@@ -882,12 +882,19 @@ impl GolangPlugin {
                 // Handle tuple variant data marshalling
                 let mut marshal_code = String::new();
                 for (i, inner_token) in tuple.inners.iter().enumerate() {
+                    let field_access = format!("{}.Data.Field{}", receiver_var, i);
                     match inner_token {
                         Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
                             "felt" | "core::felt252" => {
                                 marshal_code.push_str(&format!(
-                                    "\tresult = append(result, {}.Data.Field{})\n",
-                                    receiver_var, i
+                                    "\tresult = append(result, {})\n",
+                                    field_access
+                                ));
+                            }
+                            "core::bool" => {
+                                marshal_code.push_str(&format!(
+                                    "\tresult = append(result, cainome.FeltFromBool({}))\n",
+                                    field_access
                                 ));
                             }
                             "core::integer::u8"
@@ -895,19 +902,35 @@ impl GolangPlugin {
                             | "core::integer::u32"
                             | "core::integer::u64"
                             | "core::integer::usize" => {
-                                marshal_code.push_str(&format!("\tresult = append(result, cainome.FeltFromUint(uint64({}.Data.Field{})))\n", receiver_var, i));
+                                marshal_code.push_str(&format!(
+                                    "\tresult = append(result, cainome.FeltFromUint(uint64({})))\n",
+                                    field_access
+                                ));
                             }
                             "core::integer::u128" | "core::integer::i128" => {
-                                marshal_code.push_str(&format!("\tresult = append(result, cainome.FeltFromBigInt({}.Data.Field{}))\n", receiver_var, i));
+                                marshal_code.push_str(&format!(
+                                    "\tresult = append(result, cainome.FeltFromBigInt({}))\n",
+                                    field_access
+                                ));
                             }
                             "core::integer::i8" | "core::integer::i16" | "core::integer::i32"
                             | "core::integer::i64" => {
-                                marshal_code.push_str(&format!("\tresult = append(result, cainome.FeltFromInt(int64({}.Data.Field{})))\n", receiver_var, i));
+                                marshal_code.push_str(&format!(
+                                    "\tresult = append(result, cainome.FeltFromInt(int64({})))\n",
+                                    field_access
+                                ));
+                            }
+                            "core::starknet::contract_address::ContractAddress"
+                            | "core::starknet::class_hash::ClassHash" => {
+                                marshal_code.push_str(&format!(
+                                    "\tresult = append(result, {})\n",
+                                    field_access
+                                ));
                             }
                             _ => {
                                 marshal_code.push_str(&format!(
-                                    "\t// TODO: Handle unknown core basic type {} in tuple\n",
-                                    core_basic.type_path
+                                    "\t// TODO: Handle unknown basic type in tuple field {}\n",
+                                    i
                                 ));
                             }
                         },
@@ -1554,7 +1577,11 @@ impl GolangPlugin {
         field_name: &str,
         tuple: &cainome_parser::tokens::Tuple,
     ) -> String {
-        let mut code = format!("\t// Tuple field {}: marshal each sub-field\n", field_name);
+        let mut code = format!(
+            "\t// Tuple field {}: marshal each sub-field (tuple has {} elements)\n",
+            field_name,
+            tuple.inners.len()
+        );
 
         for (index, inner_token) in tuple.inners.iter().enumerate() {
             let field_access = format!("s.{}.Field{}", field_name, index);
@@ -1588,7 +1615,7 @@ impl GolangPlugin {
                     "core::integer::i8" | "core::integer::i16" | "core::integer::i32"
                     | "core::integer::i64" => {
                         code.push_str(&format!(
-                            "\tresult = append(result, cainome.FeltFromUint(uint64({})))\n",
+                            "\tresult = append(result, cainome.FeltFromInt(int64({})))\n",
                             field_access
                         ));
                     }
@@ -1638,6 +1665,31 @@ impl GolangPlugin {
                         code.push_str("\t} else {\n");
                         code.push_str("\t\tresult = append(result, fieldData...)\n");
                         code.push_str("\t}\n");
+                    }
+                }
+                Token::NonZero(non_zero) => {
+                    // NonZero types are just wrappers, marshal the inner type
+                    match non_zero.inner.as_ref() {
+                        Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                            "felt" | "core::felt252" => {
+                                code.push_str(&format!(
+                                    "\tresult = append(result, {})\n",
+                                    field_access
+                                ));
+                            }
+                            _ => {
+                                code.push_str(&format!(
+                                    "\t// TODO: Handle NonZero<{}> in tuple field {}\n",
+                                    core_basic.type_path, index
+                                ));
+                            }
+                        },
+                        _ => {
+                            code.push_str(&format!(
+                                "\t// TODO: Handle NonZero with non-basic inner type in tuple field {}\n",
+                                index
+                            ));
+                        }
                     }
                 }
                 Token::Array(_) => {
@@ -1746,7 +1798,7 @@ impl GolangPlugin {
                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
                             code.push_str("\t}\n");
                             code.push_str(&format!(
-                                "\t{} = int8(cainome.UintFromFelt(data[offset]))\n",
+                                "\t{} = int8(cainome.IntFromFelt(data[offset]))\n",
                                 field_access
                             ));
                             code.push_str("\toffset++\n");
@@ -1756,7 +1808,7 @@ impl GolangPlugin {
                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
                             code.push_str("\t}\n");
                             code.push_str(&format!(
-                                "\t{} = int16(cainome.UintFromFelt(data[offset]))\n",
+                                "\t{} = int16(cainome.IntFromFelt(data[offset]))\n",
                                 field_access
                             ));
                             code.push_str("\toffset++\n");
@@ -1766,7 +1818,7 @@ impl GolangPlugin {
                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
                             code.push_str("\t}\n");
                             code.push_str(&format!(
-                                "\t{} = int32(cainome.UintFromFelt(data[offset]))\n",
+                                "\t{} = int32(cainome.IntFromFelt(data[offset]))\n",
                                 field_access
                             ));
                             code.push_str("\toffset++\n");
@@ -1776,7 +1828,7 @@ impl GolangPlugin {
                             code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
                             code.push_str("\t}\n");
                             code.push_str(&format!(
-                                "\t{} = int64(cainome.UintFromFelt(data[offset]))\n",
+                                "\t{} = int64(cainome.IntFromFelt(data[offset]))\n",
                                 field_access
                             ));
                             code.push_str("\toffset++\n");
@@ -1844,6 +1896,26 @@ impl GolangPlugin {
                         code.push_str("\t} else {\n");
                         code.push_str("\t\toffset += len(itemData)\n");
                         code.push_str("\t}\n");
+                    }
+                }
+                Token::NonZero(non_zero) => {
+                    // NonZero types are just wrappers, unmarshal the inner type
+                    match non_zero.inner.as_ref() {
+                        Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                            "felt" | "core::felt252" => {
+                                code.push_str("\tif offset >= len(data) {\n");
+                                code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
+                                code.push_str("\t}\n");
+                                code.push_str(&format!("\t{} = data[offset]\n", field_access));
+                                code.push_str("\toffset++\n");
+                            }
+                            _ => {
+                                code.push_str(&format!("\t// TODO: Handle NonZero<{}> unmarshal in tuple field {} element {}\n", core_basic.type_path, field_name, index));
+                            }
+                        },
+                        _ => {
+                            code.push_str(&format!("\t// TODO: Handle NonZero with non-basic inner type unmarshal in tuple field {} element {}\n", field_name, index));
+                        }
                     }
                 }
                 Token::Array(_) => {
@@ -2226,7 +2298,7 @@ impl GolangPlugin {
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
                         "core::integer::u256" => {
-                            code.push_str("\t\tif offset >= len(data) {\n");
+                            code.push_str("\tif offset >= len(data) {\n");
                             code.push_str(&format!("\t\t\treturn fmt.Errorf(\"insufficient data for Option field {} value\")\n", field_name));
                             code.push_str("\t\t}\n");
                             code.push_str("\t\tvalue = cainome.BigIntFromFelt(data[offset])\n");
@@ -2428,10 +2500,10 @@ impl GolangPlugin {
                     format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = int16(cainome.UintFromFelt(data[offset]))\n\toffset++\n\n", field_name, field_name)
                 }
                 "core::integer::i32" => {
-                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = int32(cainome.UintFromFelt(data[offset]))\n\toffset++\n\n", field_name, field_name)
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = int32(cainome.IntFromFelt(data[offset]))\n\toffset++\n\n", field_name, field_name)
                 }
                 "core::integer::i64" => {
-                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = int64(cainome.UintFromFelt(data[offset]))\n\toffset++\n\n", field_name, field_name)
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = int64(cainome.IntFromFelt(data[offset]))\n\toffset++\n\n", field_name, field_name)
                 }
                 "core::starknet::contract_address::ContractAddress" | "core::starknet::class_hash::ClassHash" => {
                     format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = data[offset]\n\toffset++\n\n", field_name, field_name)
@@ -2459,7 +2531,25 @@ impl GolangPlugin {
                         _ => format!("\t// TODO: Handle builtin composite {} for field {} unmarshal\n\t_ = offset // Suppress unused variable warning\n", composite.type_path_no_generic(), field_name),
                     }
                 } else {
-                    format!("\t// Struct field {}: unmarshal using CairoMarshaler\n\tif err := s.{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data\n\n", field_name, field_name)
+                    // Custom struct/enum - check if it's a pointer type
+                    let go_type = self.token_to_go_param_type_with_context(token, contract_name);
+                    if go_type.starts_with("*") {
+                        // This is a pointer type
+                        if composite.r#type == CompositeType::Enum {
+                            // For enum interfaces, we need to unmarshal into the interface directly
+                            // Generate the enum unmarshal function name
+                            let enum_name = self.get_prefixed_type_name(composite, contract_name);
+                            let unmarshal_func = format!("Unmarshal{}FromCairo", enum_name);
+                            format!("\t// Pointer to enum interface {}: use enum unmarshal function\n\tif enumValue, err := {}(data[offset:]); err != nil {{\n\t\treturn err\n\t}} else {{\n\t\ts.{} = enumValue\n\t\t// TODO: Update offset based on consumed data\n\t}}\n\n", field_name, unmarshal_func, field_name)
+                        } else {
+                            // For structs, we can initialize
+                            let base_type = go_type.trim_start_matches('*');
+                            format!("\t// Pointer field {}: initialize and unmarshal\n\tif s.{} == nil {{\n\t\ts.{} = &{}{{}}\n\t}}\n\tif err := s.{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data\n\n", field_name, field_name, field_name, base_type, field_name)
+                        }
+                    } else {
+                        // Non-pointer type - unmarshal directly
+                        format!("\t// Struct field {}: unmarshal using CairoMarshaler\n\tif err := s.{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data\n\n", field_name, field_name)
+                    }
                 }
             }
             Token::Option(option) => {
@@ -2616,6 +2706,171 @@ impl GolangPlugin {
         ));
         func_def.push_str("}\n\n");
         func_def
+    }
+
+    /// Generate base contract method that returns rpc.FunctionCall using input struct
+    fn generate_base_contract_method(&self, function: &Function, contract_name: &str) -> String {
+        let mut method_def = String::new();
+        let sanitized_contract_name = self.sanitize_go_identifier(contract_name);
+        let struct_name = sanitized_contract_name.to_case(Case::Pascal);
+        let func_name = function.name.to_case(Case::Pascal);
+        let receiver_name = format!("{}_contract", struct_name.to_case(Case::Snake));
+        let input_struct_name = format!("{}{}Input", struct_name, func_name);
+
+        // Generate function signature with input struct
+        method_def.push_str(&format!(
+            "func ({} *{}Contract) {}(",
+            receiver_name, struct_name, func_name
+        ));
+
+        if function.inputs.is_empty() {
+            // No input parameters
+            method_def.push_str(") (rpc.FunctionCall, error) {\n");
+        } else {
+            // Use input struct
+            method_def.push_str(&format!(
+                "input *{}) (rpc.FunctionCall, error) {{\n",
+                input_struct_name
+            ));
+        }
+
+        // Serialize input struct to calldata
+        method_def.push_str("\t// Serialize input to calldata\n");
+        if function.inputs.is_empty() {
+            method_def.push_str("\tcalldata := []*felt.Felt{}\n");
+        } else {
+            method_def.push_str("\tcalldata, err := input.MarshalCairo()\n");
+            method_def.push_str("\tif err != nil {\n");
+            method_def.push_str("\t\treturn rpc.FunctionCall{}, err\n");
+            method_def.push_str("\t}\n");
+        }
+
+        // Return the function call
+        method_def.push_str("\n\treturn rpc.FunctionCall{\n");
+        method_def.push_str(&format!(
+            "\t\tContractAddress:    {}.contractAddress,\n",
+            receiver_name
+        ));
+        method_def.push_str(&format!(
+            "\t\tEntryPointSelector: utils.GetSelectorFromNameFelt(\"{}\"),\n",
+            function.name
+        ));
+        method_def.push_str("\t\tCalldata:           calldata,\n");
+        method_def.push_str("\t}, nil\n");
+        method_def.push_str("}\n\n");
+
+        method_def
+    }
+
+    /// Generate legacy base contract method that maintains backward compatibility
+    fn generate_legacy_base_contract_method(
+        &self,
+        function: &Function,
+        contract_name: &str,
+    ) -> String {
+        let mut method_def = String::new();
+        let sanitized_contract_name = self.sanitize_go_identifier(contract_name);
+        let struct_name = sanitized_contract_name.to_case(Case::Pascal);
+        let func_name = function.name.to_case(Case::Pascal);
+        let receiver_name = format!("{}_contract", struct_name.to_case(Case::Snake));
+
+        // Generate function signature with individual parameters (legacy)
+        method_def.push_str(&format!(
+            "func ({} *{}Contract) {}Legacy(",
+            receiver_name, struct_name, func_name
+        ));
+
+        // Add parameters
+        let mut param_parts = Vec::new();
+        for (param_name, param_token) in &function.inputs {
+            let param_snake = param_name.to_case(Case::Snake);
+            let safe_param_name = self.generate_safe_param_name(&param_snake);
+            let param_type =
+                self.token_to_go_param_type_with_context(param_token, Some(contract_name));
+            param_parts.push(format!("{} {}", safe_param_name, param_type));
+        }
+        method_def.push_str(&param_parts.join(", "));
+
+        // Return type is always rpc.FunctionCall and error
+        method_def.push_str(") (rpc.FunctionCall, error) {\n");
+
+        // Build calldata array using existing serialization logic
+        method_def.push_str("\t// Serialize parameters to calldata\n");
+        method_def.push_str("\tcalldata := []*felt.Felt{}\n");
+        for (param_name, param_token) in &function.inputs {
+            let param_snake = param_name.to_case(Case::Snake);
+            let safe_param_name = self.generate_safe_param_name(&param_snake);
+
+            // Use the existing serialization logic from the call method
+            if self.is_complex_type(param_token) {
+                // Check if this is a pointer to an interface (Option types)
+                let go_type =
+                    self.token_to_go_param_type_with_context(param_token, Some(contract_name));
+                if go_type.starts_with("*") && go_type.contains("Enum") {
+                    // This is likely a pointer to an enum interface - dereference it
+                    method_def.push_str(&format!(
+                        "\tif {}_data, err := (*{}).MarshalCairo(); err != nil {{\n",
+                        safe_param_name, safe_param_name
+                    ));
+                    method_def.push_str("\t\treturn rpc.FunctionCall{}, err\n");
+                    method_def.push_str("\t} else {\n");
+                    method_def.push_str(&format!(
+                        "\t\tcalldata = append(calldata, {}_data...)\n",
+                        safe_param_name
+                    ));
+                    method_def.push_str("\t}\n");
+                } else {
+                    method_def.push_str(&format!(
+                        "\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n",
+                        safe_param_name, safe_param_name
+                    ));
+                    method_def.push_str("\t\treturn rpc.FunctionCall{}, err\n");
+                    method_def.push_str("\t} else {\n");
+                    method_def.push_str(&format!(
+                        "\t\tcalldata = append(calldata, {}_data...)\n",
+                        safe_param_name
+                    ));
+                    method_def.push_str("\t}\n");
+                }
+            } else {
+                // For basic types, use the basic type serialization logic
+                let serialization_code = self.generate_basic_type_serialization_with_context(
+                    param_token,
+                    &safe_param_name,
+                    function,
+                );
+                // Fix error returns to match base contract signature
+                let fixed_code =
+                    serialization_code.replace("return err", "return rpc.FunctionCall{}, err");
+
+                // Only replace the specific error return pattern if there are return values
+                let fixed_code = if !function.outputs.is_empty() {
+                    fixed_code.replace(
+                        &format!("return {}, err", self.generate_zero_returns(function)),
+                        "return rpc.FunctionCall{}, err",
+                    )
+                } else {
+                    fixed_code
+                };
+                method_def.push_str(&fixed_code);
+            }
+        }
+
+        // Return the function call
+        method_def.push_str("\n\treturn rpc.FunctionCall{\n");
+        method_def.push_str(&format!(
+            "\t\tContractAddress:    {}.contractAddress,\n",
+            receiver_name
+        ));
+        method_def.push_str(&format!(
+            "\t\tEntryPointSelector: utils.GetSelectorFromNameFelt(\"{}\"),\n",
+            function.name
+        ));
+        method_def.push_str("\t\tCalldata:           calldata,\n");
+        method_def.push_str("\t}, nil\n");
+        method_def.push_str("}\n\n");
+
+        method_def
     }
 
     /// Generate the body for a view function call
@@ -3940,15 +4195,30 @@ impl GolangPlugin {
         let struct_name = sanitized_contract_name.to_case(Case::Pascal);
         let mut contract_def = String::new();
 
+        // Generate base contract struct that only holds the contract address
+        contract_def.push_str(&format!("type {}Contract struct {{\n", struct_name));
+        contract_def.push_str("\tcontractAddress *felt.Felt\n");
+        contract_def.push_str("}\n\n");
+
+        // Generate base contract constructor
+        contract_def.push_str(&format!(
+            "func New{}Contract(contractAddress *felt.Felt) *{}Contract {{\n",
+            struct_name, struct_name
+        ));
+        contract_def.push_str(&format!("\treturn &{}Contract {{\n", struct_name));
+        contract_def.push_str("\t\tcontractAddress: contractAddress,\n");
+        contract_def.push_str("\t}\n");
+        contract_def.push_str("}\n\n");
+
         // Generate reader struct for view functions
         contract_def.push_str(&format!("type {}Reader struct {{\n", struct_name));
-        contract_def.push_str("\tcontractAddress *felt.Felt\n");
+        contract_def.push_str(&format!("\t*{}Contract\n", struct_name));
         contract_def.push_str("\tprovider rpc.RpcProvider\n");
         contract_def.push_str("}\n\n");
 
         // Generate writer struct for invoke functions
         contract_def.push_str(&format!("type {}Writer struct {{\n", struct_name));
-        contract_def.push_str("\tcontractAddress *felt.Felt\n");
+        contract_def.push_str(&format!("\t*{}Contract\n", struct_name));
         contract_def.push_str("\taccount *account.Account\n");
         contract_def.push_str("}\n\n");
 
@@ -3964,7 +4234,10 @@ impl GolangPlugin {
             struct_name, struct_name
         ));
         contract_def.push_str(&format!("\treturn &{}Reader {{\n", struct_name));
-        contract_def.push_str("\t\tcontractAddress: contractAddress,\n");
+        contract_def.push_str(&format!(
+            "\t\t{}Contract: New{}Contract(contractAddress),\n",
+            struct_name, struct_name
+        ));
         contract_def.push_str("\t\tprovider: provider,\n");
         contract_def.push_str("\t}\n");
         contract_def.push_str("}\n\n");
@@ -3975,7 +4248,10 @@ impl GolangPlugin {
             struct_name, struct_name
         ));
         contract_def.push_str(&format!("\treturn &{}Writer {{\n", struct_name));
-        contract_def.push_str("\t\tcontractAddress: contractAddress,\n");
+        contract_def.push_str(&format!(
+            "\t\t{}Contract: New{}Contract(contractAddress),\n",
+            struct_name, struct_name
+        ));
         contract_def.push_str("\t\taccount: account,\n");
         contract_def.push_str("\t}\n");
         contract_def.push_str("}\n\n");
@@ -3996,6 +4272,26 @@ impl GolangPlugin {
         ));
         contract_def.push_str("\t}\n");
         contract_def.push_str("}\n\n");
+
+        // Generate input and response structs for each function
+        for function in &deduplicated_functions {
+            if !function.inputs.is_empty() {
+                contract_def
+                    .push_str(&self.generate_function_input_struct(function, contract_name));
+            }
+            if !function.outputs.is_empty() || function.state_mutability != StateMutability::View {
+                contract_def
+                    .push_str(&self.generate_function_response_struct(function, contract_name));
+            }
+        }
+
+        // Generate base contract methods for each function (using deduplicated list)
+        for function in &deduplicated_functions {
+            contract_def.push_str(&self.generate_base_contract_method(function, contract_name));
+            // Also generate legacy methods for backward compatibility
+            contract_def
+                .push_str(&self.generate_legacy_base_contract_method(function, contract_name));
+        }
 
         // Generate methods for each function (using deduplicated list)
         for function in &deduplicated_functions {
@@ -4046,6 +4342,610 @@ package {}
 "#,
             package_name, imports
         )
+    }
+
+    /// Generates input struct for a function in protobuf style
+    fn generate_function_input_struct(&self, function: &Function, contract_name: &str) -> String {
+        let func_name = function.name.to_case(Case::Pascal);
+        let sanitized_contract_name = self.sanitize_go_identifier(contract_name);
+        let contract_pascal = sanitized_contract_name.to_case(Case::Pascal);
+        let struct_name = format!("{}{}Input", contract_pascal, func_name);
+
+        let mut struct_def = format!("type {} struct {{\n", struct_name);
+
+        // Add fields for each function parameter
+        for (param_name, param_token) in &function.inputs {
+            let field_name = param_name.to_case(Case::Pascal);
+            let go_type =
+                self.token_to_go_param_type_with_context(param_token, Some(contract_name));
+            let safe_field_name = self.generate_safe_field_name(&field_name);
+
+            // Add JSON tag for field
+            struct_def.push_str(&format!(
+                "\t{} {} `json:\"{}\"`\n",
+                safe_field_name,
+                go_type,
+                param_name.to_case(Case::Snake)
+            ));
+        }
+
+        struct_def.push_str("}\n\n");
+
+        // Add constructor function
+        struct_def.push_str(&format!("func New{}(", struct_name));
+        let mut constructor_params = Vec::new();
+        for (param_name, param_token) in &function.inputs {
+            let param_snake = param_name.to_case(Case::Snake);
+            let safe_param_name = self.generate_safe_param_name(&param_snake);
+            let go_type =
+                self.token_to_go_param_type_with_context(param_token, Some(contract_name));
+            constructor_params.push(format!("{} {}", safe_param_name, go_type));
+        }
+        struct_def.push_str(&constructor_params.join(", "));
+        struct_def.push_str(&format!(") *{} {{\n", struct_name));
+        struct_def.push_str(&format!("\treturn &{} {{\n", struct_name));
+        for (param_name, _) in &function.inputs {
+            let field_name = param_name.to_case(Case::Pascal);
+            let param_snake = param_name.to_case(Case::Snake);
+            let safe_field_name = self.generate_safe_field_name(&field_name);
+            let safe_param_name = self.generate_safe_param_name(&param_snake);
+            struct_def.push_str(&format!("\t\t{}: {},\n", safe_field_name, safe_param_name));
+        }
+        struct_def.push_str("\t}\n");
+        struct_def.push_str("}\n\n");
+
+        // Add MarshalCairo method
+        struct_def.push_str(&format!(
+            "// MarshalCairo serializes {} to Cairo felt array\n",
+            struct_name
+        ));
+        struct_def.push_str(&format!(
+            "func (s *{}) MarshalCairo() ([]*felt.Felt, error) {{\n",
+            struct_name
+        ));
+        struct_def.push_str("\tvar result []*felt.Felt\n\n");
+
+        // Generate serialization code for each field
+        for (param_name, param_token) in &function.inputs {
+            let field_name = param_name.to_case(Case::Pascal);
+            let safe_field_name = self.generate_safe_field_name(&field_name);
+            let field_access = format!("s.{}", safe_field_name);
+
+            if self.is_complex_type(param_token) {
+                // Check if this is a pointer to an interface (Option types)
+                let go_type =
+                    self.token_to_go_param_type_with_context(param_token, Some(contract_name));
+                if go_type.starts_with("*") && go_type.contains("Enum") {
+                    // This is likely a pointer to an enum interface - dereference it
+                    struct_def.push_str(&format!(
+                        "\tif {}_data, err := (*{}).MarshalCairo(); err != nil {{\n",
+                        safe_field_name, field_access
+                    ));
+                    struct_def.push_str("\t\treturn nil, err\n");
+                    struct_def.push_str("\t} else {\n");
+                    struct_def.push_str(&format!(
+                        "\t\tresult = append(result, {}_data...)\n",
+                        safe_field_name
+                    ));
+                    struct_def.push_str("\t}\n");
+                } else {
+                    struct_def.push_str(&format!(
+                        "\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n",
+                        safe_field_name, field_access
+                    ));
+                    struct_def.push_str("\t\treturn nil, err\n");
+                    struct_def.push_str("\t} else {\n");
+                    struct_def.push_str(&format!(
+                        "\t\tresult = append(result, {}_data...)\n",
+                        safe_field_name
+                    ));
+                    struct_def.push_str("\t}\n");
+                }
+            } else {
+                // For basic types, use existing serialization logic
+                let serialization_code = self
+                    .generate_basic_type_serialization_for_input_struct(param_token, &field_access);
+                struct_def.push_str(&serialization_code);
+            }
+        }
+
+        struct_def.push_str("\n\treturn result, nil\n");
+        struct_def.push_str("}\n\n");
+
+        // Add UnmarshalCairo method
+        struct_def.push_str(&format!(
+            "// UnmarshalCairo deserializes {} from Cairo felt array\n",
+            struct_name
+        ));
+        struct_def.push_str(&format!(
+            "func (s *{}) UnmarshalCairo(data []*felt.Felt) error {{\n",
+            struct_name
+        ));
+        struct_def.push_str("\toffset := 0\n\n");
+
+        // Generate deserialization code for each field
+        for (param_name, param_token) in &function.inputs {
+            let field_name = param_name.to_case(Case::Pascal);
+            let safe_field_name = self.generate_safe_field_name(&field_name);
+
+            let unmarshal_code = self.generate_field_unmarshal_code_for_input_struct(
+                &safe_field_name,
+                param_token,
+                Some(contract_name),
+            );
+            struct_def.push_str(&unmarshal_code);
+        }
+
+        struct_def.push_str("\n\treturn nil\n");
+        struct_def.push_str("}\n\n");
+
+        // Add CairoSize method
+        struct_def.push_str(&format!(
+            "// CairoSize returns the serialized size for {}\n",
+            struct_name
+        ));
+        struct_def.push_str(&format!("func (s *{}) CairoSize() int {{\n", struct_name));
+        struct_def.push_str("\treturn -1 // Dynamic size\n");
+        struct_def.push_str("}\n\n");
+
+        struct_def
+    }
+
+    /// Generates response struct for a function in protobuf style
+    fn generate_function_response_struct(
+        &self,
+        function: &Function,
+        contract_name: &str,
+    ) -> String {
+        let func_name = function.name.to_case(Case::Pascal);
+        let sanitized_contract_name = self.sanitize_go_identifier(contract_name);
+        let contract_pascal = sanitized_contract_name.to_case(Case::Pascal);
+        let struct_name = format!("{}{}Response", contract_pascal, func_name);
+
+        let mut struct_def = format!("type {} struct {{\n", struct_name);
+
+        // Add fields for each function output
+        if function.outputs.is_empty() {
+            // For functions with no outputs, add a placeholder field
+            struct_def.push_str("\t// This function has no return values\n");
+        } else if function.outputs.len() == 1 {
+            // Single return value - name it "Value"
+            let go_type =
+                self.token_to_go_type_with_context(&function.outputs[0], Some(contract_name));
+            struct_def.push_str(&format!("\tValue {} `json:\"value\"`\n", go_type));
+        } else {
+            // Multiple return values - name them Ret0, Ret1, etc.
+            for (i, output_token) in function.outputs.iter().enumerate() {
+                let go_type = self.token_to_go_type_with_context(output_token, Some(contract_name));
+                struct_def.push_str(&format!("\tRet{} {} `json:\"ret{}\"`\n", i, go_type, i));
+            }
+        }
+
+        struct_def.push_str("}\n\n");
+
+        // Add constructor function
+        struct_def.push_str(&format!("func New{}(", struct_name));
+        if function.outputs.is_empty() {
+            struct_def.push_str(&format!(") *{} {{\n", struct_name));
+            struct_def.push_str(&format!("\treturn &{}{{}}\n", struct_name));
+        } else if function.outputs.len() == 1 {
+            let go_type =
+                self.token_to_go_type_with_context(&function.outputs[0], Some(contract_name));
+            struct_def.push_str(&format!("value {}) *{} {{\n", go_type, struct_name));
+            struct_def.push_str(&format!("\treturn &{} {{\n", struct_name));
+            struct_def.push_str("\t\tValue: value,\n");
+            struct_def.push_str("\t}\n");
+        } else {
+            let mut constructor_params = Vec::new();
+            for (i, output_token) in function.outputs.iter().enumerate() {
+                let go_type = self.token_to_go_type_with_context(output_token, Some(contract_name));
+                constructor_params.push(format!("ret{} {}", i, go_type));
+            }
+            struct_def.push_str(&constructor_params.join(", "));
+            struct_def.push_str(&format!(") *{} {{\n", struct_name));
+            struct_def.push_str(&format!("\treturn &{} {{\n", struct_name));
+            for i in 0..function.outputs.len() {
+                struct_def.push_str(&format!("\t\tRet{}: ret{},\n", i, i));
+            }
+            struct_def.push_str("\t}\n");
+        }
+        struct_def.push_str("}\n\n");
+
+        // Add MarshalCairo method
+        struct_def.push_str(&format!(
+            "// MarshalCairo serializes {} to Cairo felt array\n",
+            struct_name
+        ));
+        struct_def.push_str(&format!(
+            "func (s *{}) MarshalCairo() ([]*felt.Felt, error) {{\n",
+            struct_name
+        ));
+        struct_def.push_str("\tvar result []*felt.Felt\n\n");
+
+        // Generate serialization code for each output field
+        if !function.outputs.is_empty() {
+            if function.outputs.len() == 1 {
+                let serialization_code = self
+                    .generate_basic_type_serialization_for_response_struct(
+                        &function.outputs[0],
+                        "s.Value",
+                    );
+                struct_def.push_str(&serialization_code);
+            } else {
+                for (i, output_token) in function.outputs.iter().enumerate() {
+                    let field_access = format!("s.Ret{}", i);
+                    let serialization_code = self
+                        .generate_basic_type_serialization_for_response_struct(
+                            output_token,
+                            &field_access,
+                        );
+                    struct_def.push_str(&serialization_code);
+                }
+            }
+        }
+
+        struct_def.push_str("\n\treturn result, nil\n");
+        struct_def.push_str("}\n\n");
+
+        // Add UnmarshalCairo method
+        struct_def.push_str(&format!(
+            "// UnmarshalCairo deserializes {} from Cairo felt array\n",
+            struct_name
+        ));
+        struct_def.push_str(&format!(
+            "func (s *{}) UnmarshalCairo(data []*felt.Felt) error {{\n",
+            struct_name
+        ));
+
+        // Generate deserialization code for each output field
+        if !function.outputs.is_empty() {
+            struct_def.push_str("\toffset := 0\n\n");
+            if function.outputs.len() == 1 {
+                let unmarshal_code = self.generate_field_unmarshal_code_for_response_struct(
+                    "Value",
+                    &function.outputs[0],
+                    Some(contract_name),
+                );
+                struct_def.push_str(&unmarshal_code);
+            } else {
+                for (i, output_token) in function.outputs.iter().enumerate() {
+                    let field_name = format!("Ret{}", i);
+                    let unmarshal_code = self.generate_field_unmarshal_code_for_response_struct(
+                        &field_name,
+                        output_token,
+                        Some(contract_name),
+                    );
+                    struct_def.push_str(&unmarshal_code);
+                }
+            }
+        }
+
+        struct_def.push_str("\n\treturn nil\n");
+        struct_def.push_str("}\n\n");
+
+        // Add CairoSize method
+        struct_def.push_str(&format!(
+            "// CairoSize returns the serialized size for {}\n",
+            struct_name
+        ));
+        struct_def.push_str(&format!("func (s *{}) CairoSize() int {{\n", struct_name));
+        struct_def.push_str("\treturn -1 // Dynamic size\n");
+        struct_def.push_str("}\n\n");
+
+        struct_def
+    }
+
+    /// Generate safe field name for struct fields (avoid Go keywords)
+    fn generate_safe_field_name(&self, name: &str) -> String {
+        // Go struct field names must be capitalized to be exported
+        let safe_name = name.to_case(Case::Pascal);
+
+        // Handle Go keywords by appending underscore
+        match safe_name.as_str() {
+            "Type" | "Interface" | "Package" | "Import" | "Var" | "Const" | "Func" | "Return"
+            | "If" | "Else" | "For" | "Range" | "Switch" | "Case" | "Default" | "Go" | "Chan"
+            | "Select" | "Defer" | "Map" | "Struct" | "Break" | "Continue" | "Fallthrough"
+            | "Goto" => format!("{}_", safe_name),
+            _ => safe_name,
+        }
+    }
+
+    /// Generate basic type serialization code for input struct fields
+    fn generate_basic_type_serialization_for_input_struct(
+        &self,
+        token: &Token,
+        field_access: &str,
+    ) -> String {
+        match token {
+            Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                "felt" | "core::felt252" => {
+                    format!("\tresult = append(result, {})\n", field_access)
+                }
+                "core::bool" => {
+                    format!("\tif {} {{\n\t\tresult = append(result, cainome.FeltFromUint(1))\n\t}} else {{\n\t\tresult = append(result, cainome.FeltFromUint(0))\n\t}}\n", field_access)
+                }
+                "core::integer::u8"
+                | "core::integer::u16"
+                | "core::integer::u32"
+                | "core::integer::u64"
+                | "core::integer::usize" => {
+                    format!(
+                        "\tresult = append(result, cainome.FeltFromUint(uint64({})))\n",
+                        field_access
+                    )
+                }
+                "core::integer::u128" | "core::integer::i128" | "core::integer::u256" => {
+                    format!(
+                        "\tresult = append(result, cainome.FeltFromBigInt({}))\n",
+                        field_access
+                    )
+                }
+                "core::integer::i8" | "core::integer::i16" | "core::integer::i32"
+                | "core::integer::i64" => {
+                    format!(
+                        "\tresult = append(result, cainome.FeltFromInt(int64({})))\n",
+                        field_access
+                    )
+                }
+                "core::starknet::contract_address::ContractAddress"
+                | "core::starknet::class_hash::ClassHash" => {
+                    format!("\tresult = append(result, {})\n", field_access)
+                }
+                "core::starknet::eth_address::EthAddress" => {
+                    format!(
+                        "\tresult = append(result, cainome.FeltFromBytes({}[:]))\n",
+                        field_access
+                    )
+                }
+                "core::byte_array::ByteArray" => {
+                    format!("\tif {}_data, err := cainome.NewCairoByteArray({}).MarshalCairo(); err != nil {{\n\t\treturn nil, err\n\t}} else {{\n\t\tresult = append(result, {}_data...)\n\t}}\n", field_access.replace(".", "_"), field_access, field_access.replace(".", "_"))
+                }
+                _ => {
+                    format!(
+                        "\t// TODO: Add serialization for {}\n\tresult = append(result, {})\n",
+                        core_basic.type_path, field_access
+                    )
+                }
+            },
+            Token::Composite(composite) => {
+                if composite.is_builtin() {
+                    match composite.type_path_no_generic().as_str() {
+                        "core::integer::u256" => {
+                            format!(
+                                "\tresult = append(result, cainome.FeltFromBigInt({}))\n",
+                                field_access
+                            )
+                        }
+                        "core::starknet::eth_address::EthAddress" => {
+                            format!(
+                                "\tresult = append(result, cainome.FeltFromBytes({}[:]))\n",
+                                field_access
+                            )
+                        }
+                        "core::byte_array::ByteArray" => {
+                            format!("\tif {}_data, err := cainome.NewCairoByteArray({}).MarshalCairo(); err != nil {{\n\t\treturn nil, err\n\t}} else {{\n\t\tresult = append(result, {}_data...)\n\t}}\n", field_access.replace(".", "_"), field_access, field_access.replace(".", "_"))
+                        }
+                        _ => {
+                            format!(
+                                "\t// TODO: Handle builtin composite {} for field {}\n",
+                                composite.type_path_no_generic(),
+                                field_access
+                            )
+                        }
+                    }
+                } else {
+                    // Custom struct/enum - use CairoMarshaler
+                    format!("\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n\t\treturn nil, err\n\t}} else {{\n\t\tresult = append(result, {}_data...)\n\t}}\n", field_access.replace(".", "_"), field_access, field_access.replace(".", "_"))
+                }
+            }
+            Token::Array(array) => {
+                // Check if this is an array of felts
+                if let Token::CoreBasic(basic) = array.inner.as_ref() {
+                    if basic.type_path == "felt" || basic.type_path == "core::felt252" {
+                        // Special handling for []*felt.Felt arrays
+                        format!("\t// Array of felts: serialize length + elements\n\tresult = append(result, cainome.FeltFromUint(uint64(len({}))))\n\tresult = append(result, {}...)\n", field_access, field_access)
+                    } else {
+                        // For other array types, we need to iterate and marshal each element
+                        format!("\t// Array serialization: length first, then elements\n\tresult = append(result, cainome.FeltFromUint(uint64(len({}))))\n\tfor _, elem := range {} {{\n\t\tif elemData, err := elem.MarshalCairo(); err != nil {{\n\t\t\treturn nil, err\n\t\t}} else {{\n\t\t\tresult = append(result, elemData...)\n\t\t}}\n\t}}\n", field_access, field_access)
+                    }
+                } else {
+                    // For complex element types, iterate and marshal
+                    format!("\t// Array serialization: length first, then elements\n\tresult = append(result, cainome.FeltFromUint(uint64(len({}))))\n\tfor _, elem := range {} {{\n\t\tif elemData, err := elem.MarshalCairo(); err != nil {{\n\t\t\treturn nil, err\n\t\t}} else {{\n\t\t\tresult = append(result, elemData...)\n\t\t}}\n\t}}\n", field_access, field_access)
+                }
+            }
+            Token::Tuple(tuple) => {
+                // For tuple types, use the tuple marshaling logic
+                // Extract the field name from field_access (e.g., "s.Value" -> "Value")
+                let field_name = field_access.trim_start_matches("s.");
+                self.generate_tuple_marshal_code(field_name, tuple)
+            }
+            Token::NonZero(non_zero) => {
+                // NonZero types are just wrappers, serialize the inner type
+                self.generate_basic_type_serialization_for_input_struct(
+                    &non_zero.inner,
+                    field_access,
+                )
+            }
+            _ => {
+                format!("\tif {}_data, err := {}.MarshalCairo(); err != nil {{\n\t\treturn nil, err\n\t}} else {{\n\t\tresult = append(result, {}_data...)\n\t}}\n", field_access.replace(".", "_"), field_access, field_access.replace(".", "_"))
+            }
+        }
+    }
+
+    /// Generate basic type serialization code for response struct fields
+    fn generate_basic_type_serialization_for_response_struct(
+        &self,
+        token: &Token,
+        field_access: &str,
+    ) -> String {
+        // Same as input struct serialization for now
+        self.generate_basic_type_serialization_for_input_struct(token, field_access)
+    }
+
+    /// Generate field unmarshal code for input struct fields
+    fn generate_field_unmarshal_code_for_input_struct(
+        &self,
+        field_name: &str,
+        token: &Token,
+        contract_name: Option<&str>,
+    ) -> String {
+        match token {
+            Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                "felt" | "core::felt252" => {
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = data[offset]\n\toffset++\n\n", field_name, field_name)
+                }
+                "core::bool" => {
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = cainome.UintFromFelt(data[offset]) != 0\n\toffset++\n\n", field_name, field_name)
+                }
+                "core::integer::u8"
+                | "core::integer::u16"
+                | "core::integer::u32"
+                | "core::integer::u64"
+                | "core::integer::usize" => {
+                    let go_type = match core_basic.type_path.as_str() {
+                        "core::integer::u8" => "uint8",
+                        "core::integer::u16" => "uint16",
+                        "core::integer::u32" => "uint32",
+                        "core::integer::u64" | "core::integer::usize" => "uint64",
+                        _ => "uint64",
+                    };
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = {}(cainome.UintFromFelt(data[offset]))\n\toffset++\n\n", field_name, field_name, go_type)
+                }
+                "core::integer::u128" | "core::integer::i128" | "core::integer::u256" => {
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = cainome.BigIntFromFelt(data[offset])\n\toffset++\n\n", field_name, field_name)
+                }
+                "core::integer::i8" | "core::integer::i16" | "core::integer::i32"
+                | "core::integer::i64" => {
+                    let go_type = match core_basic.type_path.as_str() {
+                        "core::integer::i8" => "int8",
+                        "core::integer::i16" => "int16",
+                        "core::integer::i32" => "int32",
+                        "core::integer::i64" => "int64",
+                        _ => "int64",
+                    };
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = {}(cainome.IntFromFelt(data[offset]))\n\toffset++\n\n", field_name, field_name, go_type)
+                }
+                "core::starknet::contract_address::ContractAddress"
+                | "core::starknet::class_hash::ClassHash" => {
+                    format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = data[offset]\n\toffset++\n\n", field_name, field_name)
+                }
+                _ => {
+                    format!("\t// TODO: Handle {} unmarshal for field {}\n\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = data[offset]\n\toffset++\n\n", core_basic.type_path, field_name, field_name, field_name)
+                }
+            },
+            Token::Composite(composite) => {
+                if composite.is_builtin() {
+                    match composite.type_path_no_generic().as_str() {
+                        "core::integer::u256" => {
+                            format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = cainome.BigIntFromFelt(data[offset])\n\toffset++\n\n", field_name, field_name)
+                        }
+                        "core::starknet::eth_address::EthAddress" => {
+                            format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\tethBytes := data[offset].Bytes()\n\tcopy(s.{}[:], ethBytes[:])\n\toffset++\n\n", field_name, field_name)
+                        }
+                        "core::byte_array::ByteArray" => {
+                            format!("\t// ByteArray unmarshaling for field {}\n\tif byteArrayLength := len(data) - offset; byteArrayLength > 0 {{\n\t\tbyteArray := &cainome.CairoByteArray{{}}\n\t\tif consumed, err := byteArray.UnmarshalCairoWithLength(data[offset:]); err != nil {{\n\t\t\treturn fmt.Errorf(\"failed to unmarshal ByteArray field {}: %w\", err)\n\t\t}} else {{\n\t\t\ts.{} = byteArray.ToBytes()\n\t\t\toffset += consumed\n\t\t}}\n\t}}\n\n", field_name, field_name, field_name)
+                        }
+                        _ => {
+                            format!("\t// TODO: Handle builtin composite {} for field {} unmarshal\n\t_ = offset // Suppress unused variable warning\n", composite.type_path_no_generic(), field_name)
+                        }
+                    }
+                } else {
+                    // Custom struct/enum - check if it's a pointer type
+                    let go_type = self.token_to_go_param_type_with_context(token, contract_name);
+                    if go_type.starts_with("*") {
+                        // This is a pointer type
+                        if composite.r#type == CompositeType::Enum {
+                            // For enum interfaces, we need to unmarshal into the interface directly
+                            // Generate the enum unmarshal function name
+                            let enum_name = self.get_prefixed_type_name(composite, contract_name);
+                            let unmarshal_func = format!("Unmarshal{}FromCairo", enum_name);
+                            format!("\t// Pointer to enum interface {}: use enum unmarshal function\n\tif enumValue, err := {}(data[offset:]); err != nil {{\n\t\treturn err\n\t}} else {{\n\t\ts.{} = enumValue\n\t\t// TODO: Update offset based on consumed data\n\t}}\n\n", field_name, unmarshal_func, field_name)
+                        } else {
+                            // For structs, we can initialize
+                            let base_type = go_type.trim_start_matches('*');
+                            format!("\t// Pointer field {}: initialize and unmarshal\n\tif s.{} == nil {{\n\t\ts.{} = &{}{{}}\n\t}}\n\tif err := s.{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data\n\n", field_name, field_name, field_name, base_type, field_name)
+                        }
+                    } else {
+                        // Non-pointer type - unmarshal directly
+                        format!("\t// Complex field {}: unmarshal using CairoMarshaler\n\tif err := s.{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data\n\n", field_name, field_name)
+                    }
+                }
+            }
+            Token::Tuple(tuple) => {
+                // For tuple types, use the tuple unmarshaling logic
+                self.generate_tuple_unmarshal_code(field_name, tuple)
+            }
+            Token::Array(array) => {
+                // Check if this is an array of felts
+                if let Token::CoreBasic(basic) = array.inner.as_ref() {
+                    if basic.type_path == "felt" || basic.type_path == "core::felt252" {
+                        // Special handling for []*felt.Felt arrays
+                        format!("\t// Array of felts: read length then elements\n\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for array length of field {}\")\n\t}}\n\tlength := cainome.UintFromFelt(data[offset])\n\toffset++\n\n\tif offset + int(length) > len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for array elements of field {}\")\n\t}}\n\ts.{} = data[offset:offset+int(length)]\n\toffset += int(length)\n\n", field_name, field_name, field_name)
+                    } else {
+                        // For other array types, generate the array unmarshal code
+                        self.generate_array_unmarshal_code_with_context(
+                            field_name,
+                            &array.inner,
+                            contract_name,
+                        )
+                    }
+                } else {
+                    // For complex element types, use the array unmarshal code
+                    self.generate_array_unmarshal_code_with_context(
+                        field_name,
+                        &array.inner,
+                        contract_name,
+                    )
+                }
+            }
+            Token::NonZero(non_zero) => {
+                // NonZero types are just wrappers, unmarshal the inner type
+                self.generate_field_unmarshal_code_for_input_struct(
+                    field_name,
+                    &non_zero.inner,
+                    contract_name,
+                )
+            }
+            _ => {
+                // Check if this is a pointer type
+                let go_type = self.token_to_go_param_type_with_context(token, contract_name);
+                if go_type.starts_with("*") {
+                    // This is a pointer type
+                    // Check if it's an enum by trying to match the token
+                    if let Token::Composite(composite) = token {
+                        if composite.r#type == CompositeType::Enum {
+                            // For enum interfaces, we need to unmarshal into the interface directly
+                            // Generate the enum unmarshal function name
+                            let enum_name = self.get_prefixed_type_name(composite, contract_name);
+                            let unmarshal_func = format!("Unmarshal{}FromCairo", enum_name);
+                            format!("\t// Pointer to enum interface {}: use enum unmarshal function\n\tif enumValue, err := {}(data[offset:]); err != nil {{\n\t\treturn err\n\t}} else {{\n\t\ts.{} = enumValue\n\t\t// TODO: Update offset based on consumed data\n\t}}\n\n", field_name, unmarshal_func, field_name)
+                        } else {
+                            // For structs, we can initialize
+                            let base_type = go_type.trim_start_matches('*');
+                            format!("\t// Pointer field {}: initialize and unmarshal\n\tif s.{} == nil {{\n\t\ts.{} = &{}{{}}\n\t}}\n\tif err := s.{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data\n\n", field_name, field_name, field_name, base_type, field_name)
+                        }
+                    } else {
+                        // Not a composite type, just initialize and unmarshal
+                        let base_type = go_type.trim_start_matches('*');
+                        format!("\t// Pointer field {}: initialize and unmarshal\n\tif s.{} == nil {{\n\t\ts.{} = &{}{{}}\n\t}}\n\tif err := s.{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data\n\n", field_name, field_name, field_name, base_type, field_name)
+                    }
+                } else {
+                    // Non-pointer type - unmarshal directly
+                    format!("\t// Complex field {}: unmarshal using CairoMarshaler\n\tif err := s.{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data\n\n", field_name, field_name)
+                }
+            }
+        }
+    }
+
+    /// Generate field unmarshal code for response struct fields
+    fn generate_field_unmarshal_code_for_response_struct(
+        &self,
+        field_name: &str,
+        token: &Token,
+        contract_name: Option<&str>,
+    ) -> String {
+        // Same as input struct unmarshaling for now
+        self.generate_field_unmarshal_code_for_input_struct(field_name, token, contract_name)
     }
 }
 
