@@ -79,3 +79,8 @@ build-binary = ["tokio"]
 name = "cainome"
 path = "src/bin/cli/main.rs"
 required-features = ["build-binary"]
+
+[[example]]
+name = "test_go_generation"
+path = "test_go_generation.rs"
+required-features = ["build-binary"]

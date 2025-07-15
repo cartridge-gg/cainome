@@ -1,5 +1,5 @@
 {
-    "sierra_extension": ".contract_class.json",
+    "sierra_extension": ".abi.json",
     "contract_aliases": {},
     "type_aliases": {}
 }
