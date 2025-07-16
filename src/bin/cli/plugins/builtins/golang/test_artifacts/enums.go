@@ -2255,7 +2255,7 @@ func (enums_reader *EnumsReader) GetTypedWithOptionArg(ctx context.Context, e En
 		return nil, fmt.Errorf("empty response")
 	}
 	// Check Option discriminant
-	if cainome.UintFromFelt(response[0]) == 0 {
+	if cainome.UintFromFelt(response[0]) == 1 {
 		// None variant
 		return nil, nil
 	} else {
