@@ -838,10 +838,7 @@ impl GolangPlugin {
         let mut code = String::new();
 
         if let Token::Composite(composite) = token {
-            code.push_str("\tif len(response) == 0 {\n");
-            code.push_str("\t\treturn nil, fmt.Errorf(\"empty response\")\n");
-            code.push_str("\t}\n");
-            code.push_str("\t\n");
+            // Note: Response length check is already done in the calling function
             code.push_str("\t// Read discriminant to determine variant\n");
             code.push_str("\tdiscriminant := cainome.UintFromFelt(response[0])\n");
             code.push_str("\t\n");
