@@ -3968,6 +3968,22 @@ impl GolangPlugin {
                 }
             }
             Token::Tuple(tuple) => self.generate_tuple_response_deserialization(tuple, go_type),
+            Token::Composite(composite) => {
+                // Handle composite builtin types
+                match composite.type_path_no_generic().as_str() {
+                    "core::integer::u256" => {
+                        // u256 is serialized as two felts (low, high)
+                        "\tif len(response) < 2 {\n\t\treturn nil, fmt.Errorf(\"insufficient response data for u256\")\n\t}\n\tu256 := &cainome.CairoUint256{}\n\tif err := u256.UnmarshalCairo(response); err != nil {\n\t\treturn nil, fmt.Errorf(\"failed to unmarshal u256: %w\", err)\n\t}\n\tresult := u256.ToBigInt()\n\treturn result, nil\n".to_string()
+                    }
+                    "core::byte_array::ByteArray" => {
+                        // ByteArray is serialized as a composite structure
+                        "\tif len(response) == 0 {\n\t\treturn nil, fmt.Errorf(\"empty response\")\n\t}\n\tbyteArray := &cainome.CairoByteArray{}\n\tif err := byteArray.UnmarshalCairo(response); err != nil {\n\t\treturn nil, fmt.Errorf(\"failed to unmarshal ByteArray: %w\", err)\n\t}\n\treturn byteArray.Value, nil\n".to_string()
+                    }
+                    _ => {
+                        format!("\tvar result {}\n\t// TODO: Convert felt to Composite {}\n\t_ = response\n\treturn result, nil\n", go_type, composite.type_path)
+                    }
+                }
+            }
             _ => {
                 format!("\tvar result {}\n\t// TODO: Convert felt to {:?}\n\t_ = response\n\treturn result, nil\n", go_type, token)
             }
