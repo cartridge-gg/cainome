@@ -893,7 +893,8 @@ func (components_reader *ComponentsReader) ReadData(ctx context.Context, opts *c
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	return response[0], nil
+	result := response[0]
+	return result, nil
 }
 
 func (components_writer *ComponentsWriter) Simple(ctx context.Context, opts *cainome.InvokeOpts) (*felt.Felt, error) {

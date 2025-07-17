@@ -2450,15 +2450,13 @@ impl GolangPlugin {
                         ));
                     }
                 } else {
-                    code.push_str(&format!(
-                        "\t\t// TODO: Handle Option<Array> marshal for complex element type\n"
-                    ));
+                    code.push_str(
+                        "\t\t// TODO: Handle Option<Array> marshal for complex element type\n",
+                    );
                 }
             }
             _ => {
-                code.push_str(&format!(
-                    "\t\t// TODO: Handle Option marshal for complex type\n"
-                ));
+                code.push_str("\t\t// TODO: Handle Option marshal for complex type\n");
             }
         }
 
@@ -3306,7 +3304,7 @@ impl GolangPlugin {
 
             // Handle deserialization based on output type
             if return_type == "*felt.Felt" {
-                method_body.push_str("\treturn response[0], nil\n");
+                method_body.push_str("\tresult := response[0]\n\treturn result, nil\n");
             } else if matches!(&function.outputs[0], Token::Option(_)) {
                 // Option types always use their specific deserialization logic
                 let deserialization_code =
@@ -3850,6 +3848,9 @@ impl GolangPlugin {
         match token {
             Token::CoreBasic(core_basic) => {
                 match core_basic.type_path.as_str() {
+                    "felt" | "core::felt252" => {
+                        "\tresult := response[0]\n\treturn result, nil\n".to_string()
+                    }
                     "core::bool" => {
                         "\tresult := cainome.UintFromFelt(response[0]) != 0\n\treturn result, nil\n"
                             .to_string()
@@ -3865,6 +3866,10 @@ impl GolangPlugin {
                         "\tresult := cainome.BigIntFromFelt(response[0])\n\treturn result, nil\n"
                             .to_string()
                     }
+                    "core::integer::u256" => {
+                        "\tresult := cainome.BigIntFromFelt(response[0])\n\treturn result, nil\n"
+                            .to_string()
+                    }
                     "core::integer::i8" | "core::integer::i16" | "core::integer::i32"
                     | "core::integer::i64" => {
                         format!(
@@ -3873,7 +3878,7 @@ impl GolangPlugin {
                         )
                     }
                     "core::bytes_31::bytes31" => {
-                        "\tresult := BytesFromFelt(response[0])\n\treturn result, nil\n".to_string()
+                        "\tresult := cainome.BytesFromFelt(response[0])\n\treturn result, nil\n".to_string()
                     }
                     "()" => "\treturn struct{}{}, nil\n".to_string(),
                     "core::starknet::contract_address::ContractAddress"
@@ -3881,11 +3886,36 @@ impl GolangPlugin {
                         "\tresult := response[0]\n\treturn result, nil\n".to_string()
                     }
                     "core::starknet::eth_address::EthAddress" => {
-                        "\tresult := BytesFromFelt(response[0])\n\treturn result, nil\n".to_string()
+                        "\tbytes := cainome.BytesFromFelt(response[0])\n\tvar result [20]byte\n\tcopy(result[:], bytes)\n\treturn result, nil\n".to_string()
                     }
                     _ => {
                         format!("\tvar result {}\n\t// TODO: Convert felt to {}\n\t_ = response\n\treturn result, nil\n", go_type, core_basic.type_path)
                     }
+                }
+            }
+            Token::Composite(composite) => {
+                // Handle composite types
+                if composite.is_builtin() {
+                    match composite.type_path_no_generic().as_str() {
+                        "core::integer::u256" => {
+                            "\tresult := cainome.BigIntFromFelt(response[0])\n\treturn result, nil\n"
+                                .to_string()
+                        }
+                        "core::byte_array::ByteArray" => {
+                            "\tbyteArray := &cainome.CairoByteArray{}\n\tif err := byteArray.UnmarshalCairo(response); err != nil {\n\t\treturn nil, fmt.Errorf(\"failed to unmarshal ByteArray: %w\", err)\n\t}\n\tresult := byteArray.Value\n\treturn result, nil\n"
+                                .to_string()
+                        }
+                        "core::starknet::eth_address::EthAddress" => {
+                            "\tbytes := cainome.BytesFromFelt(response[0])\n\tvar result [20]byte\n\tcopy(result[:], bytes)\n\treturn result, nil\n".to_string()
+                        }
+                        _ => {
+                            // For other composite types, try using UnmarshalCairo
+                            format!("\tvar result {}\n\tif err := result.UnmarshalCairo(response); err != nil {{\n\t\treturn {}, fmt.Errorf(\"failed to unmarshal response: %w\", err)\n\t}}\n\treturn result, nil\n", go_type, self.generate_zero_value(go_type))
+                        }
+                    }
+                } else {
+                    // For non-builtin composite types, use UnmarshalCairo
+                    format!("\tvar result {}\n\tif err := result.UnmarshalCairo(response); err != nil {{\n\t\treturn {}, fmt.Errorf(\"failed to unmarshal response: %w\", err)\n\t}}\n\treturn result, nil\n", go_type, self.generate_zero_value(go_type))
                 }
             }
             Token::Array(array) => {
@@ -5106,7 +5136,7 @@ package {}
             Token::Option(option) => {
                 // Handle Option types specially for response structs
                 let mut code =
-                    format!("\t// Option field: check for nil and marshal accordingly\n");
+                    "\t// Option field: check for nil and marshal accordingly\n".to_string();
                 let _field_name = field_access.trim_start_matches("s.");
                 code.push_str(&format!("\tif {} != nil {{\n", field_access));
                 code.push_str("\t\t// Some variant: discriminant 0 + value\n");
@@ -5168,14 +5198,12 @@ package {}
                                 ));
                             }
                         } else {
-                            code.push_str(&format!("\t\t// TODO: Handle Option<Array> marshal for complex element type\n"));
+                            code.push_str("\t\t// TODO: Handle Option<Array> marshal for complex element type\n");
                         }
                     }
                     _ => {
                         // For other types
-                        code.push_str(&format!(
-                            "\t\t// TODO: Handle Option marshal for complex type\n"
-                        ));
+                        code.push_str("\t\t// TODO: Handle Option marshal for complex type\n");
                     }
                 }
 
@@ -5243,63 +5271,6 @@ package {}
                     format!("\t// TODO: Handle {} unmarshal for field {}\n\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = data[offset]\n\toffset++\n\n", core_basic.type_path, field_name, field_name, field_name)
                 }
             },
-            Token::Composite(composite) => {
-                if composite.is_builtin() {
-                    match composite.type_path_no_generic().as_str() {
-                        "core::integer::u256" => {
-                            format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = cainome.BigIntFromFelt(data[offset])\n\toffset++\n\n", field_name, field_name)
-                        }
-                        "core::starknet::eth_address::EthAddress" => {
-                            format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\tethBytes := data[offset].Bytes()\n\tcopy(s.{}[:], ethBytes[:])\n\toffset++\n\n", field_name, field_name)
-                        }
-                        "core::byte_array::ByteArray" => {
-                            format!("\t// ByteArray unmarshaling for field {}\n\tif byteArrayLength := len(data) - offset; byteArrayLength > 0 {{\n\t\tbyteArray := &cainome.CairoByteArray{{}}\n\t\tif err := byteArray.UnmarshalCairo(data[offset:]); err != nil {{\n\t\t\treturn fmt.Errorf(\"failed to unmarshal ByteArray field {}: %w\", err)\n\t\t}} else {{\n\t\t\ts.{} = byteArray.Value\n\t\t\t// Calculate consumed felts to update offset\n\t\t\tif byteArrayData, err := byteArray.MarshalCairo(); err != nil {{\n\t\t\t\treturn err\n\t\t\t}} else {{\n\t\t\t\toffset += len(byteArrayData)\n\t\t\t}}\n\t\t}}\n\t}}\n\n", field_name, field_name, field_name)
-                        }
-                        _ => {
-                            format!("\t// TODO: Handle builtin composite {} for field {} unmarshal\n\t_ = offset // Suppress unused variable warning\n", composite.type_path_no_generic(), field_name)
-                        }
-                    }
-                } else {
-                    // For input structs, we use token_to_go_param_type_with_context which adds pointers
-                    let go_type = self.token_to_go_param_type_with_context(token, contract_name);
-                    if go_type.starts_with("*") {
-                        // This is a pointer type - check if it's a pointer to a basic type
-                        let base_type = go_type.trim_start_matches('*');
-                        if base_type == "felt.Felt"
-                            || base_type == "big.Int"
-                            || base_type == "uint8"
-                            || base_type == "uint16"
-                            || base_type == "uint32"
-                            || base_type == "uint64"
-                            || base_type == "int8"
-                            || base_type == "int16"
-                            || base_type == "int32"
-                            || base_type == "int64"
-                            || base_type == "bool"
-                        {
-                            // This is a pointer to a basic type (likely from an Option)
-                            // Handle as basic type unmarshal
-                            if base_type == "felt.Felt" {
-                                format!("\t// Pointer to felt (from Option): unmarshal directly\n\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = data[offset]\n\toffset++\n\n", field_name, field_name)
-                            } else {
-                                format!("\t// Pointer to basic type {}: handle specially\n\t// TODO: Handle pointer to basic type unmarshal\n\n", field_name)
-                            }
-                        } else if composite.r#type == CompositeType::Enum {
-                            // For enum interfaces, we need to unmarshal into the interface directly
-                            // Generate the enum unmarshal function name
-                            let enum_name = self.get_prefixed_type_name(composite, contract_name);
-                            let unmarshal_func = format!("Unmarshal{}FromCairo", enum_name);
-                            format!("\t// Pointer to enum interface {}: use enum unmarshal function\n\tif enumValue, err := {}(data[offset:]); err != nil {{\n\t\treturn err\n\t}} else {{\n\t\ts.{} = enumValue\n\t\t// TODO: Update offset based on consumed data\n\t}}\n\n", field_name, unmarshal_func, field_name)
-                        } else {
-                            // For structs, we can initialize
-                            format!("\t// Pointer field {}: initialize and unmarshal\n\tif s.{} == nil {{\n\t\ts.{} = &{}{{}}\n\t}}\n\tif err := s.{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data\n\n", field_name, field_name, field_name, base_type, field_name)
-                        }
-                    } else {
-                        // Non-pointer type - unmarshal directly
-                        format!("\t// Complex field {}: unmarshal using CairoMarshaler\n\tif err := s.{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data\n\n", field_name, field_name)
-                    }
-                }
-            }
             Token::Tuple(tuple) => {
                 // For tuple types, use the tuple unmarshaling logic
                 self.generate_tuple_unmarshal_code(field_name, tuple)
@@ -5327,6 +5298,29 @@ package {}
                     )
                 }
             }
+            Token::Composite(composite) => {
+                // Handle composite types properly
+                if composite.is_builtin() {
+                    match composite.type_path_no_generic().as_str() {
+                        "core::integer::u256" => {
+                            format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = cainome.BigIntFromFelt(data[offset])\n\toffset++\n\n", field_name, field_name)
+                        }
+                        "core::byte_array::ByteArray" => {
+                            format!("\t// ByteArray unmarshaling for field {}\n\tif byteArrayLength := len(data) - offset; byteArrayLength > 0 {{\n\t\tbyteArray := &cainome.CairoByteArray{{}}\n\t\tif err := byteArray.UnmarshalCairo(data[offset:]); err != nil {{\n\t\t\treturn fmt.Errorf(\"failed to unmarshal ByteArray field {}: %w\", err)\n\t\t}} else {{\n\t\t\ts.{} = byteArray.Value\n\t\t\t// Calculate consumed felts to update offset\n\t\t\tif byteArrayData, err := byteArray.MarshalCairo(); err != nil {{\n\t\t\t\treturn err\n\t\t\t}} else {{\n\t\t\t\toffset += len(byteArrayData)\n\t\t\t}}\n\t\t}}\n\t}}\n\n", field_name, field_name, field_name)
+                        }
+                        "core::starknet::eth_address::EthAddress" => {
+                            format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\tethBytes := data[offset].Bytes()\n\tcopy(s.{}[:], ethBytes[:])\n\toffset++\n\n", field_name, field_name)
+                        }
+                        _ => {
+                            // For other builtin composites, use UnmarshalCairo
+                            format!("\t// Builtin composite field {}: unmarshal using CairoMarshaler\n\tif err := s.{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data\n\n", field_name, field_name)
+                        }
+                    }
+                } else {
+                    // For non-builtin composite types, use UnmarshalCairo
+                    format!("\t// Custom composite field {}: unmarshal using CairoMarshaler\n\tif err := s.{}.UnmarshalCairo(data[offset:]); err != nil {{\n\t\treturn err\n\t}}\n\t// TODO: Update offset based on consumed data\n\n", field_name, field_name)
+                }
+            }
             Token::NonZero(non_zero) => {
                 // NonZero types are just wrappers, unmarshal the inner type
                 self.generate_field_unmarshal_code_for_input_struct(
@@ -5336,7 +5330,7 @@ package {}
                 )
             }
             _ => {
-                // For input structs, we use token_to_go_param_type_with_context which adds pointers for structs
+                // For input structs, we use token_to_go_param_type_with_context which adds pointers
                 let go_type = self.token_to_go_param_type_with_context(token, contract_name);
                 if go_type.starts_with("*") {
                     // This is a pointer type
@@ -5481,13 +5475,11 @@ package {}
                                 ));
                             }
                         } else {
-                            code.push_str(&format!("\t\t// TODO: Handle Option<Array> unmarshal for complex element type\n"));
+                            code.push_str("\t\t// TODO: Handle Option<Array> unmarshal for complex element type\n");
                         }
                     }
                     _ => {
-                        code.push_str(&format!(
-                            "\t\t// TODO: Handle Option unmarshal for complex type\n"
-                        ));
+                        code.push_str("\t\t// TODO: Handle Option unmarshal for complex type\n");
                     }
                 }
 

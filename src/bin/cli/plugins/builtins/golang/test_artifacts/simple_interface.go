@@ -247,7 +247,8 @@ func (simple_interface_reader *SimpleInterfaceReader) GetValue(ctx context.Conte
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	return response[0], nil
+	result := response[0]
+	return result, nil
 }
 
 func (simple_interface_writer *SimpleInterfaceWriter) SetValue(ctx context.Context, value *felt.Felt, opts *cainome.InvokeOpts) (*felt.Felt, error) {

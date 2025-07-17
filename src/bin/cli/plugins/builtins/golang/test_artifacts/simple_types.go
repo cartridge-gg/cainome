@@ -1652,7 +1652,8 @@ func (simple_types_reader *SimpleTypesReader) GetAddress(ctx context.Context, op
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	return response[0], nil
+	result := response[0]
+	return result, nil
 }
 
 func (simple_types_reader *SimpleTypesReader) GetArray(ctx context.Context, opts *cainome.CallOpts) ([]*felt.Felt, error) {
@@ -1807,7 +1808,8 @@ func (simple_types_reader *SimpleTypesReader) GetClassHash(ctx context.Context, 
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	return response[0], nil
+	result := response[0]
+	return result, nil
 }
 
 func (simple_types_reader *SimpleTypesReader) GetEthAddress(ctx context.Context, opts *cainome.CallOpts) ([20]byte, error) {
@@ -1841,9 +1843,9 @@ func (simple_types_reader *SimpleTypesReader) GetEthAddress(ctx context.Context,
 	if len(response) == 0 {
 		return [20]byte{}, fmt.Errorf("empty response")
 	}
+	bytes := cainome.BytesFromFelt(response[0])
 	var result [20]byte
-	// TODO: Convert felt to Composite(Composite { type_path: "core::starknet::eth_address::EthAddress", inners: [CompositeInner { index: 0, name: "address", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::felt252" }) }], generic_args: [], type: Struct, is_event: false, alias: None })
-	_ = response
+	copy(result[:], bytes)
 	return result, nil
 }
 
@@ -1878,7 +1880,8 @@ func (simple_types_reader *SimpleTypesReader) GetFelt(ctx context.Context, opts 
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	return response[0], nil
+	result := response[0]
+	return result, nil
 }
 
 func (simple_types_reader *SimpleTypesReader) GetTuple(ctx context.Context, opts *cainome.CallOpts) (struct {
@@ -1979,9 +1982,7 @@ func (simple_types_reader *SimpleTypesReader) GetU256(ctx context.Context, opts 
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	var result *big.Int
-	// TODO: Convert felt to Composite(Composite { type_path: "core::integer::u256", inners: [CompositeInner { index: 0, name: "low", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u128" }) }, CompositeInner { index: 1, name: "high", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u128" }) }], generic_args: [], type: Struct, is_event: false, alias: None })
-	_ = response
+	result := cainome.BigIntFromFelt(response[0])
 	return result, nil
 }
 

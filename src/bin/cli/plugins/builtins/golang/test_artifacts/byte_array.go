@@ -6,7 +6,6 @@ package abigen
 import (
 	"context"
 	"fmt"
-
 	"github.com/NethermindEth/juno/core/felt"
 	"github.com/NethermindEth/starknet.go/account"
 	"github.com/NethermindEth/starknet.go/rpc"
@@ -19,12 +18,13 @@ type ByteArrayByteArrayEvent interface {
 	IsByteArrayByteArrayEvent() bool
 }
 
+
 type ByteArrayContract struct {
 	contractAddress *felt.Felt
 }
 
 func NewByteArrayContract(contractAddress *felt.Felt) *ByteArrayContract {
-	return &ByteArrayContract{
+	return &ByteArrayContract {
 		contractAddress: contractAddress,
 	}
 }
@@ -45,21 +45,21 @@ type ByteArray struct {
 }
 
 func NewByteArrayReader(contractAddress *felt.Felt, provider rpc.RpcProvider) *ByteArrayReader {
-	return &ByteArrayReader{
+	return &ByteArrayReader {
 		ByteArrayContract: NewByteArrayContract(contractAddress),
-		provider:          provider,
+		provider: provider,
 	}
 }
 
 func NewByteArrayWriter(contractAddress *felt.Felt, account *account.Account) *ByteArrayWriter {
-	return &ByteArrayWriter{
+	return &ByteArrayWriter {
 		ByteArrayContract: NewByteArrayContract(contractAddress),
-		account:           account,
+		account: account,
 	}
 }
 
 func NewByteArray(contractAddress *felt.Felt, account *account.Account) *ByteArray {
-	return &ByteArray{
+	return &ByteArray {
 		ByteArrayReader: NewByteArrayReader(contractAddress, account.Provider),
 		ByteArrayWriter: NewByteArrayWriter(contractAddress, account),
 	}
@@ -70,7 +70,7 @@ type ByteArrayGetByteArrayResponse struct {
 }
 
 func NewByteArrayGetByteArrayResponse(value []byte) *ByteArrayGetByteArrayResponse {
-	return &ByteArrayGetByteArrayResponse{
+	return &ByteArrayGetByteArrayResponse {
 		Value: value,
 	}
 }
@@ -108,6 +108,7 @@ func (s *ByteArrayGetByteArrayResponse) UnmarshalCairo(data []*felt.Felt) error 
 		}
 	}
 
+
 	return nil
 }
 
@@ -121,7 +122,7 @@ type ByteArrayGetByteArrayStorageResponse struct {
 }
 
 func NewByteArrayGetByteArrayStorageResponse(value []byte) *ByteArrayGetByteArrayStorageResponse {
-	return &ByteArrayGetByteArrayStorageResponse{
+	return &ByteArrayGetByteArrayStorageResponse {
 		Value: value,
 	}
 }
@@ -159,6 +160,7 @@ func (s *ByteArrayGetByteArrayStorageResponse) UnmarshalCairo(data []*felt.Felt)
 		}
 	}
 
+
 	return nil
 }
 
@@ -172,7 +174,7 @@ type ByteArraySetByteArrayInput struct {
 }
 
 func NewByteArraySetByteArrayInput(v []byte) *ByteArraySetByteArrayInput {
-	return &ByteArraySetByteArrayInput{
+	return &ByteArraySetByteArrayInput {
 		V: v,
 	}
 }
@@ -210,6 +212,7 @@ func (s *ByteArraySetByteArrayInput) UnmarshalCairo(data []*felt.Felt) error {
 		}
 	}
 
+
 	return nil
 }
 
@@ -229,6 +232,7 @@ func NewByteArraySetByteArrayResponse() *ByteArraySetByteArrayResponse {
 // MarshalCairo serializes ByteArraySetByteArrayResponse to Cairo felt array
 func (s *ByteArraySetByteArrayResponse) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
+
 
 	return result, nil
 }
@@ -349,9 +353,11 @@ func (byte_array_reader *ByteArrayReader) GetByteArray(ctx context.Context, opts
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	var result []byte
-	// TODO: Convert felt to Composite(Composite { type_path: "core::byte_array::ByteArray", inners: [CompositeInner { index: 0, name: "data", kind: NotUsed, token: Array(Array { type_path: "core::array::Array::<core::bytes_31::bytes31>", inner: CoreBasic(CoreBasic { type_path: "core::bytes_31::bytes31" }), is_legacy: false }) }, CompositeInner { index: 1, name: "pending_word", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::felt252" }) }, CompositeInner { index: 2, name: "pending_word_len", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u32" }) }], generic_args: [], type: Struct, is_event: false, alias: None })
-	_ = response
+	byteArray := &cainome.CairoByteArray{}
+	if err := byteArray.UnmarshalCairo(response); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal ByteArray: %w", err)
+	}
+	result := byteArray.Value
 	return result, nil
 }
 
@@ -386,9 +392,11 @@ func (byte_array_reader *ByteArrayReader) GetByteArrayStorage(ctx context.Contex
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	var result []byte
-	// TODO: Convert felt to Composite(Composite { type_path: "core::byte_array::ByteArray", inners: [CompositeInner { index: 0, name: "data", kind: NotUsed, token: Array(Array { type_path: "core::array::Array::<core::bytes_31::bytes31>", inner: CoreBasic(CoreBasic { type_path: "core::bytes_31::bytes31" }), is_legacy: false }) }, CompositeInner { index: 1, name: "pending_word", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::felt252" }) }, CompositeInner { index: 2, name: "pending_word_len", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u32" }) }], generic_args: [], type: Struct, is_event: false, alias: None })
-	_ = response
+	byteArray := &cainome.CairoByteArray{}
+	if err := byteArray.UnmarshalCairo(response); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal ByteArray: %w", err)
+	}
+	result := byteArray.Value
 	return result, nil
 }
 
@@ -414,3 +422,4 @@ func (byte_array_writer *ByteArrayWriter) SetByteArray(ctx context.Context, v []
 
 	return txHash, nil
 }
+

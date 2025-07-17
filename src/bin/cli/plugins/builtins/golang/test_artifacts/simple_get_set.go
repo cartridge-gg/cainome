@@ -348,7 +348,7 @@ func (s *SimpleGetSetGetSetEnumInput) MarshalCairo() ([]*felt.Felt, error) {
 func (s *SimpleGetSetGetSetEnumInput) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Complex field V: unmarshal using CairoMarshaler
+	// Custom composite field V: unmarshal using CairoMarshaler
 	if err := s.V.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}
@@ -818,7 +818,8 @@ func (simple_get_set_reader *SimpleGetSetReader) GetA(ctx context.Context, opts 
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	return response[0], nil
+	result := response[0]
+	return result, nil
 }
 
 func (simple_get_set_reader *SimpleGetSetReader) GetArray(ctx context.Context, opts *cainome.CallOpts) ([]*felt.Felt, error) {
@@ -897,9 +898,7 @@ func (simple_get_set_reader *SimpleGetSetReader) GetB(ctx context.Context, opts 
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	var result *big.Int
-	// TODO: Convert felt to Composite(Composite { type_path: "core::integer::u256", inners: [CompositeInner { index: 0, name: "low", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u128" }) }, CompositeInner { index: 1, name: "high", kind: NotUsed, token: CoreBasic(CoreBasic { type_path: "core::integer::u128" }) }], generic_args: [], type: Struct, is_event: false, alias: None })
-	_ = response
+	result := cainome.BigIntFromFelt(response[0])
 	return result, nil
 }
 

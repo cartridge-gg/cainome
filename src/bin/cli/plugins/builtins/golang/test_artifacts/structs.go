@@ -15,7 +15,7 @@ import (
 )
 
 type StructsGenericOne struct {
-	A StructsToAlias `json:"a"`
+	A *big.Int `json:"a"`
 	B *felt.Felt `json:"b"`
 	C *big.Int `json:"c"`
 }
@@ -24,12 +24,7 @@ type StructsGenericOne struct {
 func (s *StructsGenericOne) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	// Struct field A: marshal using CairoMarshaler
-	if fieldData, err := s.A.MarshalCairo(); err != nil {
-		return nil, err
-	} else {
-		result = append(result, fieldData...)
-	}
+	result = append(result, cainome.FeltFromBigInt(s.A))
 	result = append(result, s.B)
 	result = append(result, cainome.FeltFromBigInt(s.C))
 	return result, nil
@@ -39,11 +34,11 @@ func (s *StructsGenericOne) MarshalCairo() ([]*felt.Felt, error) {
 func (s *StructsGenericOne) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Struct field A: unmarshal using CairoMarshaler
-	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
-		return err
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field A")
 	}
-	// TODO: Update offset based on consumed data
+	s.A = cainome.BigIntFromFelt(data[offset])
+	offset++
 
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field B")
@@ -772,10 +767,7 @@ func (s *StructsSetGenericOneInput) MarshalCairo() ([]*felt.Felt, error) {
 func (s *StructsSetGenericOneInput) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Pointer field Generic: initialize and unmarshal
-	if s.Generic == nil {
-		s.Generic = &StructsGenericOne{}
-	}
+	// Custom composite field Generic: unmarshal using CairoMarshaler
 	if err := s.Generic.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}
@@ -844,10 +836,7 @@ func (s *StructsSetGenericTwoInput) MarshalCairo() ([]*felt.Felt, error) {
 func (s *StructsSetGenericTwoInput) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Pointer field Generic: initialize and unmarshal
-	if s.Generic == nil {
-		s.Generic = &StructsGenericTwo{}
-	}
+	// Custom composite field Generic: unmarshal using CairoMarshaler
 	if err := s.Generic.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}
@@ -916,10 +905,7 @@ func (s *StructsSetGenericTwo0Input) MarshalCairo() ([]*felt.Felt, error) {
 func (s *StructsSetGenericTwo0Input) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Pointer field Generic: initialize and unmarshal
-	if s.Generic == nil {
-		s.Generic = &StructsGenericTwo{}
-	}
+	// Custom composite field Generic: unmarshal using CairoMarshaler
 	if err := s.Generic.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}
@@ -988,10 +974,7 @@ func (s *StructsSetGenericTwo2Input) MarshalCairo() ([]*felt.Felt, error) {
 func (s *StructsSetGenericTwo2Input) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Pointer field Generic: initialize and unmarshal
-	if s.Generic == nil {
-		s.Generic = &StructsGenericTwo{}
-	}
+	// Custom composite field Generic: unmarshal using CairoMarshaler
 	if err := s.Generic.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}
@@ -1060,10 +1043,7 @@ func (s *StructsSetSimpleInput) MarshalCairo() ([]*felt.Felt, error) {
 func (s *StructsSetSimpleInput) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Pointer field Simple: initialize and unmarshal
-	if s.Simple == nil {
-		s.Simple = &StructsSimple{}
-	}
+	// Custom composite field Simple: unmarshal using CairoMarshaler
 	if err := s.Simple.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}
@@ -1227,10 +1207,7 @@ func (s *StructsSetStructWStructInput) MarshalCairo() ([]*felt.Felt, error) {
 func (s *StructsSetStructWStructInput) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Pointer field Sws: initialize and unmarshal
-	if s.Sws == nil {
-		s.Sws = &StructsStructWithStruct{}
-	}
+	// Custom composite field Sws: unmarshal using CairoMarshaler
 	if err := s.Sws.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}

@@ -1058,10 +1058,7 @@ func (s *GenFunc1Input) MarshalCairo() ([]*felt.Felt, error) {
 func (s *GenFunc1Input) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Pointer field A: initialize and unmarshal
-	if s.A == nil {
-		s.A = &GenMyStructGen{}
-	}
+	// Custom composite field A: unmarshal using CairoMarshaler
 	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}
@@ -1130,10 +1127,7 @@ func (s *GenFunc2Input) MarshalCairo() ([]*felt.Felt, error) {
 func (s *GenFunc2Input) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Pointer field A: initialize and unmarshal
-	if s.A == nil {
-		s.A = &GenMyStructGen{}
-	}
+	// Custom composite field A: unmarshal using CairoMarshaler
 	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}
@@ -1202,10 +1196,7 @@ func (s *GenFunc3Input) MarshalCairo() ([]*felt.Felt, error) {
 func (s *GenFunc3Input) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Pointer field A: initialize and unmarshal
-	if s.A == nil {
-		s.A = &GenPlainStruct{}
-	}
+	// Custom composite field A: unmarshal using CairoMarshaler
 	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}
@@ -1247,7 +1238,7 @@ func (s *GenFunc4Input) MarshalCairo() ([]*felt.Felt, error) {
 func (s *GenFunc4Input) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Complex field A: unmarshal using CairoMarshaler
+	// Custom composite field A: unmarshal using CairoMarshaler
 	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}
@@ -1289,10 +1280,7 @@ func (s *GenFunc5Input) MarshalCairo() ([]*felt.Felt, error) {
 func (s *GenFunc5Input) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Pointer field A: initialize and unmarshal
-	if s.A == nil {
-		s.A = &GenMyStructInnerGeneric{}
-	}
+	// Custom composite field A: unmarshal using CairoMarshaler
 	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}

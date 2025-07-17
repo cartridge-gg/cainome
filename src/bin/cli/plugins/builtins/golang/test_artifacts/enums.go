@@ -1158,7 +1158,7 @@ func (s *EnumsGetTypedWithArgInput) MarshalCairo() ([]*felt.Felt, error) {
 func (s *EnumsGetTypedWithArgInput) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Complex field E: unmarshal using CairoMarshaler
+	// Custom composite field E: unmarshal using CairoMarshaler
 	if err := s.E.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}

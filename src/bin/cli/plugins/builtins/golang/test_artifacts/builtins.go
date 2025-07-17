@@ -199,10 +199,7 @@ func (s *BuiltinsStructNonZeroInput) MarshalCairo() ([]*felt.Felt, error) {
 func (s *BuiltinsStructNonZeroInput) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Pointer field Res: initialize and unmarshal
-	if s.Res == nil {
-		s.Res = &BuiltinsMyStructBuiltins{}
-	}
+	// Custom composite field Res: unmarshal using CairoMarshaler
 	if err := s.Res.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}
@@ -343,7 +340,8 @@ func (builtins_reader *BuiltinsReader) NonZero(ctx context.Context, res *felt.Fe
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	return response[0], nil
+	result := response[0]
+	return result, nil
 }
 
 func (builtins_reader *BuiltinsReader) StructNonZero(ctx context.Context, res *BuiltinsMyStructBuiltins, opts *cainome.CallOpts) (*felt.Felt, error) {
@@ -382,6 +380,7 @@ func (builtins_reader *BuiltinsReader) StructNonZero(ctx context.Context, res *B
 	if len(response) == 0 {
 		return nil, fmt.Errorf("empty response")
 	}
-	return response[0], nil
+	result := response[0]
+	return result, nil
 }
 
