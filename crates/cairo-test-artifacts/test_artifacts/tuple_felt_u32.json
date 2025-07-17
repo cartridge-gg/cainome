@@ -1,0 +1,18 @@
+{
+  "abi_type": {
+    "name": "(core::felt252, core::integer::u32)",
+    "type": "tuple",
+    "types": [
+      "core::felt252",
+      "core::integer::u32"
+    ]
+  },
+  "cairo_serialized": [
+    "0x7b",
+    "0x1c8"
+  ],
+  "cairo_serialized_size": 2,
+  "description": "Tuple of felt252 and u32",
+  "test_value": "(0x7b, 456)",
+  "type_name": "tuple_felt_u32"
+}

@@ -1,0 +1,42 @@
+{
+  "abi_type": {
+    "name": "contracts::abicov::enums::TypedEnum",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "Variant1",
+        "type": "core::felt252"
+      },
+      {
+        "name": "Variant2",
+        "type": "core::integer::u256"
+      },
+      {
+        "name": "Variant3",
+        "type": "(core::felt252, core::integer::u256)"
+      },
+      {
+        "name": "Variant4",
+        "type": "core::starknet::contract_address::ContractAddress"
+      },
+      {
+        "name": "Variant5",
+        "type": "contracts::abicov::enums::Simple"
+      },
+      {
+        "name": "Variant6",
+        "type": "contracts::abicov::enums::StructWithStruct"
+      }
+    ]
+  },
+  "cairo_serialized": [
+    "0x2",
+    "0x7b",
+    "0x1c8",
+    "0x0"
+  ],
+  "cairo_serialized_size": 4,
+  "description": "TypedEnum with tuple variant",
+  "test_value": "TypedEnum::Variant3((0x7b, U256 { low: 456, high: 0 }))",
+  "type_name": "typed_enum_variant3"
+}

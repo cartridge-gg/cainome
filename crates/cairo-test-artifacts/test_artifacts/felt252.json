@@ -1,0 +1,13 @@
+{
+  "abi_type": {
+    "name": "core::felt252",
+    "type": "felt252"
+  },
+  "cairo_serialized": [
+    "0x1234567890abcdef"
+  ],
+  "cairo_serialized_size": 1,
+  "description": "Basic felt252 value",
+  "test_value": "0x1234567890abcdef",
+  "type_name": "felt252"
+}

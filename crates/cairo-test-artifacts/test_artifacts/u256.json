@@ -1,0 +1,24 @@
+{
+  "abi_type": {
+    "members": [
+      {
+        "name": "low",
+        "type": "core::integer::u128"
+      },
+      {
+        "name": "high",
+        "type": "core::integer::u128"
+      }
+    ],
+    "name": "core::integer::u256",
+    "type": "struct"
+  },
+  "cairo_serialized": [
+    "0x123456789abcdef123456789abcdef12",
+    "0x0"
+  ],
+  "cairo_serialized_size": 2,
+  "description": "U256 struct with low and high fields",
+  "test_value": "U256 { low: 0x123456789abcdef123456789abcdef12, high: 0 }",
+  "type_name": "u256"
+}

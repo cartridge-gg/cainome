@@ -1,0 +1,23 @@
+{
+  "abi_type": {
+    "name": "core::bool",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "False",
+        "type": "()"
+      },
+      {
+        "name": "True",
+        "type": "()"
+      }
+    ]
+  },
+  "cairo_serialized": [
+    "0x1"
+  ],
+  "cairo_serialized_size": 1,
+  "description": "Boolean true value",
+  "test_value": "true",
+  "type_name": "bool_true"
+}

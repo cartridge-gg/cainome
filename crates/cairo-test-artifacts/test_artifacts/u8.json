@@ -1,0 +1,13 @@
+{
+  "abi_type": {
+    "name": "core::integer::u8",
+    "type": "u8"
+  },
+  "cairo_serialized": [
+    "0xff"
+  ],
+  "cairo_serialized_size": 1,
+  "description": "Maximum u8 value",
+  "test_value": "255",
+  "type_name": "u8"
+}

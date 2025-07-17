@@ -1,0 +1,24 @@
+{
+  "abi_type": {
+    "name": "contracts::abicov::enums::MixedEnum",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "Variant1",
+        "type": "core::felt252"
+      },
+      {
+        "name": "Variant2",
+        "type": "()"
+      }
+    ]
+  },
+  "cairo_serialized": [
+    "0x0",
+    "0x789"
+  ],
+  "cairo_serialized_size": 2,
+  "description": "MixedEnum with felt252 variant",
+  "test_value": "MixedEnum::Variant1(0x789)",
+  "type_name": "mixed_enum_variant1"
+}
