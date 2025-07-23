@@ -77,6 +77,14 @@ pub struct PluginOptions {
     #[command(flatten)]
     #[command(next_help_heading = "Rust plugin options")]
     pub rust_options: RustPluginOptions,
+
+    #[arg(long)]
+    #[arg(help = "Generate bindings for golang (built-in).")]
+    pub golang: bool,
+
+    #[command(flatten)]
+    #[command(next_help_heading = "Golang plugin options")]
+    pub golang_options: GolangPluginOptions,
     // TODO: For custom plugin, we can add a vector of strings,
     // where the user provides the name of the plugin.
     // Then cainome like protobuf will attempt to execute cainome_plugin_<NAME>.
@@ -95,6 +103,15 @@ pub struct RustPluginOptions {
     pub contract_derives: Option<Vec<String>>,
 }
 
+#[derive(Debug, Args, Clone)]
+pub struct GolangPluginOptions {
+    #[arg(long = "golang-package")]
+    #[arg(value_name = "PACKAGE_NAME")]
+    #[arg(default_value = "abigen")]
+    #[arg(help = "Go package name for generated bindings (Golang plugin).")]
+    pub package_name: String,
+}
+
 impl From<PluginOptions> for PluginManager {
     fn from(options: PluginOptions) -> Self {
         let mut builtin_plugins: Vec<Box<dyn crate::plugins::builtins::BuiltinPlugin>> = vec![];
@@ -104,6 +121,12 @@ impl From<PluginOptions> for PluginManager {
         if options.rust {
             builtin_plugins.push(Box::new(crate::plugins::builtins::RustPlugin::new(
                 options.rust_options,
+            )));
+        }
+
+        if options.golang {
+            builtin_plugins.push(Box::new(crate::plugins::builtins::GolangPlugin::new(
+                options.golang_options,
             )));
         }
 
