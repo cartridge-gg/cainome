@@ -1,0 +1,23 @@
+{
+  "abi_type": {
+    "name": "contracts::abicov::enums::SimpleEnum",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "Variant1",
+        "type": "()"
+      },
+      {
+        "name": "Variant2",
+        "type": "()"
+      }
+    ]
+  },
+  "cairo_serialized": [
+    "0x0"
+  ],
+  "cairo_serialized_size": 1,
+  "description": "SimpleEnum with first variant",
+  "test_value": "SimpleEnum::Variant1",
+  "type_name": "simple_enum_variant1"
+}

@@ -1,0 +1,13 @@
+{
+  "abi_type": {
+    "name": "core::integer::u64",
+    "type": "u64"
+  },
+  "cairo_serialized": [
+    "0xffffffffffffffff"
+  ],
+  "cairo_serialized_size": 1,
+  "description": "Maximum u64 value",
+  "test_value": "18446744073709551615",
+  "type_name": "u64"
+}

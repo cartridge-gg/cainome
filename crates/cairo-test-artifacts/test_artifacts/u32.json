@@ -1,0 +1,13 @@
+{
+  "abi_type": {
+    "name": "core::integer::u32",
+    "type": "u32"
+  },
+  "cairo_serialized": [
+    "0xffffffff"
+  ],
+  "cairo_serialized_size": 1,
+  "description": "Maximum u32 value",
+  "test_value": "4294967295",
+  "type_name": "u32"
+}

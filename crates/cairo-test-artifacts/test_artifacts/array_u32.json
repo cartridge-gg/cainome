@@ -1,0 +1,17 @@
+{
+  "abi_type": {
+    "element_type": "core::integer::u32",
+    "name": "core::array::Array::<core::integer::u32>",
+    "type": "array"
+  },
+  "cairo_serialized": [
+    "0x3",
+    "0x1",
+    "0x2",
+    "0x3"
+  ],
+  "cairo_serialized_size": 4,
+  "description": "Array of u32 values",
+  "test_value": "[1, 2, 3]",
+  "type_name": "array_u32"
+}

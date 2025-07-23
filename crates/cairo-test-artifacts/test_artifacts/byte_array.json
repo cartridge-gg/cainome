@@ -1,0 +1,29 @@
+{
+  "abi_type": {
+    "members": [
+      {
+        "name": "data",
+        "type": "core::array::Array::<core::bytes_31::bytes31>"
+      },
+      {
+        "name": "pending_word",
+        "type": "core::felt252"
+      },
+      {
+        "name": "pending_word_len",
+        "type": "core::integer::u32"
+      }
+    ],
+    "name": "core::byte_array::ByteArray",
+    "type": "struct"
+  },
+  "cairo_serialized": [
+    "0x0",
+    "0x48656c6c6f2c20436169726f21",
+    "0xd"
+  ],
+  "cairo_serialized_size": 3,
+  "description": "ByteArray with string data",
+  "test_value": "\"Hello, Cairo!\"",
+  "type_name": "byte_array"
+}

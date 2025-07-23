@@ -1,0 +1,13 @@
+{
+  "abi_type": {
+    "name": "core::integer::u128",
+    "type": "u128"
+  },
+  "cairo_serialized": [
+    "0x112210f47de98115"
+  ],
+  "cairo_serialized_size": 1,
+  "description": "Large u128 value",
+  "test_value": "1234567890123456789",
+  "type_name": "u128"
+}

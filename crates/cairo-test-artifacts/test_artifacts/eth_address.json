@@ -1,0 +1,19 @@
+{
+  "abi_type": {
+    "members": [
+      {
+        "name": "address",
+        "type": "core::felt252"
+      }
+    ],
+    "name": "core::starknet::eth_address::EthAddress",
+    "type": "struct"
+  },
+  "cairo_serialized": [
+    "0x1234567890abcdef1234567890abcdef12345678"
+  ],
+  "cairo_serialized_size": 1,
+  "description": "EthAddress value",
+  "test_value": "EthAddress(0x1234567890abcdef1234567890abcdef12345678)",
+  "type_name": "eth_address"
+}

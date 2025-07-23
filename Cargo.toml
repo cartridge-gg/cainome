@@ -21,6 +21,7 @@ members = [
     "crates/parser",
     "crates/rs",
     "crates/rs-macro",
+    "crates/cairo-test-artifacts",
 ]
 
 [workspace.dependencies]

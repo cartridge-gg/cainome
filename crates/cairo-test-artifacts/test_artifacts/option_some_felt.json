@@ -1,0 +1,24 @@
+{
+  "abi_type": {
+    "name": "core::option::Option::<core::felt252>",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "Some",
+        "type": "core::felt252"
+      },
+      {
+        "name": "None",
+        "type": "()"
+      }
+    ]
+  },
+  "cairo_serialized": [
+    "0x0",
+    "0x2a"
+  ],
+  "cairo_serialized_size": 2,
+  "description": "Option with Some(felt252)",
+  "test_value": "Some(0x2a)",
+  "type_name": "option_some_felt"
+}

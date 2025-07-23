@@ -1,0 +1,24 @@
+{
+  "abi_type": {
+    "name": "core::result::Result::<core::felt252, core::integer::u32>",
+    "type": "enum",
+    "variants": [
+      {
+        "name": "Ok",
+        "type": "core::felt252"
+      },
+      {
+        "name": "Err",
+        "type": "core::integer::u32"
+      }
+    ]
+  },
+  "cairo_serialized": [
+    "0x1",
+    "0x1c8"
+  ],
+  "cairo_serialized_size": 2,
+  "description": "Result with Err(u32)",
+  "test_value": "Err(456)",
+  "type_name": "result_err_u32"
+}
