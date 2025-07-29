@@ -42,7 +42,8 @@ thiserror = "2"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 url = "2.5"
-starknet = "0.15.1"
+# temp: change this to proper crates.io version
+starknet = { git = "https://github.com/xJonathanLEI/starknet-rs", rev = "993a708551f87bcfbf7fdf33f796b01f7521a634" }
 starknet-types-core = "0.1"
 
 [dependencies]
