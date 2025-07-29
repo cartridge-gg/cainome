@@ -20,7 +20,7 @@ where
     pub fn new(call_raw: FunctionCall, provider: &'p P) -> Self {
         Self {
             call_raw,
-            block_id: BlockId::Tag(BlockTag::Pending),
+            block_id: BlockId::Tag(BlockTag::PreConfirmed),
             provider,
             rust_type: PhantomData,
         }

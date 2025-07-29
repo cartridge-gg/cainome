@@ -116,7 +116,7 @@ The expansion of the macros generates the following:
   let contract_reader = MyContractReader::new(contract_address, &provider);
   ```
 - For each **view**, the contract type and the contract reader type contain a function with the exact same arguments. Calling the function returns a `cainome_cairo_serde::call::FCall` struct to allow you to customize how you want the function to be called. Currently, the only setting is the `block_id`. Finally, to actually do the RPC call, you have to use `call()` method on the `FCall` struct.
-  The default `block_id` value is `BlockTag::Pending`.
+  The default `block_id` value is `BlockTag::PreConfirmed`.
   ```rust
   let my_struct = contract
       .get_my_struct()
