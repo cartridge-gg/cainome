@@ -31,7 +31,7 @@ impl CairoContract {
 
             impl<A: #snrs_accounts::ConnectedAccount + Sync> #contract_name<A> {
                 pub fn new(address: #snrs_types::Felt, account: A) -> Self {
-                    Self { address, account, block_id: #snrs_types::BlockId::Tag(#snrs_types::BlockTag::Pending) }
+                    Self { address, account, block_id: #snrs_types::BlockId::Tag(#snrs_types::BlockTag::PreConfirmed) }
                 }
 
                 pub fn set_contract_address(&mut self, address: #snrs_types::Felt) {
@@ -63,7 +63,7 @@ impl CairoContract {
                     address: #snrs_types::Felt,
                     provider: P,
                 ) -> Self {
-                    Self { address, provider, block_id: #snrs_types::BlockId::Tag(#snrs_types::BlockTag::Pending) }
+                    Self { address, provider, block_id: #snrs_types::BlockId::Tag(#snrs_types::BlockTag::PreConfirmed) }
                 }
 
                 pub fn set_contract_address(&mut self, address: #snrs_types::Felt) {

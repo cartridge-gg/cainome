@@ -62,7 +62,7 @@ async fn main() {
 
     let contract_address = declare_deploy_contract(&katana).await;
     let mut account = katana.account(1);
-    account.set_block_id(BlockId::Tag(BlockTag::Pending));
+    account.set_block_id(BlockId::Tag(BlockTag::PreConfirmed));
 
     let contract = MyContract::new(contract_address, account);
 
@@ -77,7 +77,7 @@ async fn main() {
 /*
 async fn declare_deploy_contract(katana: &KatanaRunner) -> Felt {
     let mut account = katana.account(1);
-    account.set_block_id(BlockId::Tag(BlockTag::Pending));
+    account.set_block_id(BlockId::Tag(BlockTag::PreConfirmed));
 
     let contract_artifact: SierraClass = serde_json::from_reader(
         std::fs::File::open("./contracts/target/dev/contracts_structs.contract_class.json")
