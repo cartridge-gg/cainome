@@ -1,6 +1,6 @@
 [package]
 name = "cainome"
-version = "0.8.1"
+version = "0.9.0"
 edition = "2021"
 authors = ["glihm <dev@glihm.net>"]
 license = "MIT OR Apache-2.0"
@@ -26,10 +26,10 @@ members = [
 
 [workspace.dependencies]
 # workspace crates
-cainome-cairo-serde = { version = "0.2.1", path = "crates/cairo-serde" }
+cainome-cairo-serde = { version = "0.3.0", path = "crates/cairo-serde" }
 cainome-cairo-serde-derive = { version = "0.1.0", path = "crates/cairo-serde-derive" }
-cainome-parser = { version = "0.4.0", path = "crates/parser" }
-cainome-rs = { version = "0.3.1", path = "crates/rs" }
+cainome-parser = { version = "0.5.0", path = "crates/parser" }
+cainome-rs = { version = "0.4.0", path = "crates/rs" }
 
 anyhow = "1.0"
 async-trait = "0.1"
@@ -51,7 +51,7 @@ cainome-parser.workspace = true
 cainome-cairo-serde.workspace = true
 cainome-cairo-serde-derive.workspace = true
 cainome-rs.workspace = true
-cainome-rs-macro = { version = "0.3.0", path = "crates/rs-macro", optional = true }
+cainome-rs-macro = { version = "0.4.0", path = "crates/rs-macro", optional = true }
 
 async-trait.workspace = true
 anyhow.workspace = true
