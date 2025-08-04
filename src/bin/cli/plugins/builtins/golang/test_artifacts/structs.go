@@ -15,7 +15,7 @@ import (
 )
 
 type StructsGenericOne struct {
-	A uint64 `json:"a"`
+	A *big.Int `json:"a"`
 	B *felt.Felt `json:"b"`
 	C *big.Int `json:"c"`
 }
@@ -24,7 +24,7 @@ type StructsGenericOne struct {
 func (s *StructsGenericOne) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	result = append(result, cainome.FeltFromUint(uint64(s.A)))
+	result = append(result, cainome.FeltFromBigInt(s.A))
 	result = append(result, s.B)
 	result = append(result, cainome.FeltFromBigInt(s.C))
 	return result, nil
@@ -37,7 +37,7 @@ func (s *StructsGenericOne) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field A")
 	}
-	s.A = cainome.UintFromFelt(data[offset])
+	s.A = cainome.BigIntFromFelt(data[offset])
 	offset++
 
 	if offset >= len(data) {

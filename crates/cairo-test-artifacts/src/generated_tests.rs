@@ -1,30 +1,115 @@
 // Generated test file - do not edit manually
-use cainome_cairo_serde::CairoSerde;
-use starknet::core::types::Felt;
 use cainome::rs::abigen;
+use cainome_cairo_serde::CairoSerde;
 #[allow(unused_imports)]
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use starknet::core::types::Felt;
 
-abigen!(TestSimpleEnumVariant1, r#"[{"name":"contracts::abicov::enums::SimpleEnum","type":"enum","variants":[{"name":"Variant1","type":"()"},{"name":"Variant2","type":"()"}]}]"#, derives(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize));
-abigen!(TestResultErrU32, r#"[{"name":"core::result::Result::<core::felt252, core::integer::u32>","type":"enum","variants":[{"name":"Ok","type":"core::felt252"},{"name":"Err","type":"core::integer::u32"}]}]"#, derives(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize));
-abigen!(TestOptionSomeFelt, r#"[{"name":"core::option::Option::<core::felt252>","type":"enum","variants":[{"name":"Some","type":"core::felt252"},{"name":"None","type":"()"}]}]"#, derives(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize));
-abigen!(TestOptionNoneFelt, r#"[{"name":"core::option::Option::<core::felt252>","type":"enum","variants":[{"name":"Some","type":"core::felt252"},{"name":"None","type":"()"}]}]"#, derives(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize));
-abigen!(TestBoolFalse, r#"[{"name":"core::bool","type":"enum","variants":[{"name":"False","type":"()"},{"name":"True","type":"()"}]}]"#, derives(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize));
-abigen!(TestBoolTrue, r#"[{"name":"core::bool","type":"enum","variants":[{"name":"False","type":"()"},{"name":"True","type":"()"}]}]"#, derives(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize));
-abigen!(TestMixedEnumVariant1, r#"[{"name":"contracts::abicov::enums::MixedEnum","type":"enum","variants":[{"name":"Variant1","type":"core::felt252"},{"name":"Variant2","type":"()"}]}]"#, derives(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize));
-abigen!(TestStructWithStruct, r#"[{"members":[{"name":"felt","type":"core::felt252"},{"name":"uint256","type":"core::integer::u256"},{"name":"uint64","type":"core::integer::u64"},{"name":"address","type":"core::starknet::contract_address::ContractAddress"},{"name":"class_hash","type":"core::starknet::class_hash::ClassHash"},{"name":"eth_address","type":"core::starknet::eth_address::EthAddress"},{"name":"tuple","type":"(core::felt252, core::integer::u256)"},{"name":"span","type":"core::array::Span::<core::felt252>"}],"name":"contracts::abicov::structs::Simple","type":"struct"},{"members":[{"name":"simple","type":"contracts::abicov::structs::Simple"}],"name":"contracts::abicov::structs::StructWithStruct","type":"struct"}]"#, derives(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize));
-abigen!(TestResultOkFelt, r#"[{"name":"core::result::Result::<core::felt252, core::integer::u32>","type":"enum","variants":[{"name":"Ok","type":"core::felt252"},{"name":"Err","type":"core::integer::u32"}]}]"#, derives(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize));
+abigen!(
+    TestSimpleEnumVariant1,
+    r#"[{"name":"contracts::abicov::enums::SimpleEnum","type":"enum","variants":[{"name":"Variant1","type":"()"},{"name":"Variant2","type":"()"}]}]"#,
+    derives(
+        Debug,
+        Clone,
+        PartialEq,
+        serde::Serialize,
+        serde::Deserialize
+    )
+);
+abigen!(
+    TestResultErrU32,
+    r#"[{"name":"core::result::Result::<core::felt252, core::integer::u32>","type":"enum","variants":[{"name":"Ok","type":"core::felt252"},{"name":"Err","type":"core::integer::u32"}]}]"#,
+    derives(
+        Debug,
+        Clone,
+        PartialEq,
+        serde::Serialize,
+        serde::Deserialize
+    )
+);
+abigen!(
+    TestOptionSomeFelt,
+    r#"[{"name":"core::option::Option::<core::felt252>","type":"enum","variants":[{"name":"Some","type":"core::felt252"},{"name":"None","type":"()"}]}]"#,
+    derives(
+        Debug,
+        Clone,
+        PartialEq,
+        serde::Serialize,
+        serde::Deserialize
+    )
+);
+abigen!(
+    TestOptionNoneFelt,
+    r#"[{"name":"core::option::Option::<core::felt252>","type":"enum","variants":[{"name":"Some","type":"core::felt252"},{"name":"None","type":"()"}]}]"#,
+    derives(
+        Debug,
+        Clone,
+        PartialEq,
+        serde::Serialize,
+        serde::Deserialize
+    )
+);
+abigen!(
+    TestBoolFalse,
+    r#"[{"name":"core::bool","type":"enum","variants":[{"name":"False","type":"()"},{"name":"True","type":"()"}]}]"#,
+    derives(
+        Debug,
+        Clone,
+        PartialEq,
+        serde::Serialize,
+        serde::Deserialize
+    )
+);
+abigen!(
+    TestBoolTrue,
+    r#"[{"name":"core::bool","type":"enum","variants":[{"name":"False","type":"()"},{"name":"True","type":"()"}]}]"#,
+    derives(
+        Debug,
+        Clone,
+        PartialEq,
+        serde::Serialize,
+        serde::Deserialize
+    )
+);
+abigen!(
+    TestMixedEnumVariant1,
+    r#"[{"name":"contracts::abicov::enums::MixedEnum","type":"enum","variants":[{"name":"Variant1","type":"core::felt252"},{"name":"Variant2","type":"()"}]}]"#,
+    derives(
+        Debug,
+        Clone,
+        PartialEq,
+        serde::Serialize,
+        serde::Deserialize
+    )
+);
+abigen!(
+    TestStructWithStruct,
+    r#"[{"members":[{"name":"felt","type":"core::felt252"},{"name":"uint256","type":"core::integer::u256"},{"name":"uint64","type":"core::integer::u64"},{"name":"address","type":"core::starknet::contract_address::ContractAddress"},{"name":"class_hash","type":"core::starknet::class_hash::ClassHash"},{"name":"eth_address","type":"core::starknet::eth_address::EthAddress"},{"name":"tuple","type":"(core::felt252, core::integer::u256)"},{"name":"span","type":"core::array::Span::<core::felt252>"}],"name":"contracts::abicov::structs::Simple","type":"struct"},{"members":[{"name":"simple","type":"contracts::abicov::structs::Simple"}],"name":"contracts::abicov::structs::StructWithStruct","type":"struct"}]"#,
+    derives(
+        Debug,
+        Clone,
+        PartialEq,
+        serde::Serialize,
+        serde::Deserialize
+    )
+);
+abigen!(
+    TestResultOkFelt,
+    r#"[{"name":"core::result::Result::<core::felt252, core::integer::u32>","type":"enum","variants":[{"name":"Ok","type":"core::felt252"},{"name":"Err","type":"core::integer::u32"}]}]"#,
+    derives(
+        Debug,
+        Clone,
+        PartialEq,
+        serde::Serialize,
+        serde::Deserialize
+    )
+);
 
 #[test]
 fn test_array_felt() {
     let description = r#"Array of felt252 values"#;
 
-    let expected_serialized = [
-        "0x3",
-        "0x1",
-        "0x2",
-        "0x3",
-    ];
+    let expected_serialized = ["0x3", "0x1", "0x2", "0x3"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -36,7 +121,11 @@ fn test_array_felt() {
 
     // Direct cairo-serde roundtrip test using test artifact data
     // Using actual test data from artifact
-    let test_instance = vec![Felt::from_hex("0x1").unwrap(), Felt::from_hex("0x2").unwrap(), Felt::from_hex("0x3").unwrap()];
+    let test_instance = vec![
+        Felt::from_hex("0x1").unwrap(),
+        Felt::from_hex("0x2").unwrap(),
+        Felt::from_hex("0x3").unwrap(),
+    ];
 
     // Test serialization
     let serialized = Vec::<Felt>::cairo_serialize(&test_instance);
@@ -44,22 +133,30 @@ fn test_array_felt() {
     println!("Actual:   {:?}", serialized);
 
     // Verify serialization matches expected
-    assert_eq!(serialized.len(), expected_felt_values.len(), "Serialized length mismatch");
-    assert_eq!(serialized, expected_felt_values, "Serialized values mismatch");
+    assert_eq!(
+        serialized.len(),
+        expected_felt_values.len(),
+        "Serialized length mismatch"
+    );
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Serialized values mismatch"
+    );
 
     // Test roundtrip deserialization
     let deserialize_ptr = 0;
     let deserialized = Vec::<Felt>::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Roundtrip deserialization failed");
+    assert_eq!(
+        test_instance, deserialized,
+        "Roundtrip deserialization failed"
+    );
 }
 
 #[test]
 fn test_simple_enum_variant1() {
     let description = r#"SimpleEnum with first variant"#;
 
-    let expected_serialized = [
-        "0x0",
-    ];
+    let expected_serialized = ["0x0"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -76,22 +173,25 @@ fn test_simple_enum_variant1() {
     // Using actual abigen!-generated enum type
     let test_instance = SimpleEnum::Variant1;
     let serialized = SimpleEnum::cairo_serialize(&test_instance);
-    assert_eq!(serialized, expected_felt_values, "Enum serialization mismatch");
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Enum serialization mismatch"
+    );
     // Verify deserialization works by checking it produces the same serialization
     let deserialize_ptr = 0;
     let deserialized = SimpleEnum::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
     let reserialized = SimpleEnum::cairo_serialize(&deserialized);
-    assert_eq!(serialized, reserialized, "Enum roundtrip serialization failed");
+    assert_eq!(
+        serialized, reserialized,
+        "Enum roundtrip serialization failed"
+    );
 }
 
 #[test]
 fn test_result_err_u32() {
     let description = r#"Result with Err(u32)"#;
 
-    let expected_serialized = [
-        "0x1",
-        "0x1c8",
-    ];
+    let expected_serialized = ["0x1", "0x1c8"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -107,21 +207,24 @@ fn test_result_err_u32() {
     // Using built-in Result<Felt, u32> (equivalent to abigen!-generated type)
     let test_instance = Err::<Felt, u32>(456_u32);
     let serialized = Result::<Felt, u32>::cairo_serialize(&test_instance);
-    assert_eq!(serialized, expected_felt_values, "Result<Felt, u32> Err serialization mismatch");
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Result<Felt, u32> Err serialization mismatch"
+    );
     let deserialize_ptr = 0;
-    let deserialized = Result::<Felt, u32>::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Result<Felt, u32> Err roundtrip failed");
+    let deserialized =
+        Result::<Felt, u32>::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
+    assert_eq!(
+        test_instance, deserialized,
+        "Result<Felt, u32> Err roundtrip failed"
+    );
 }
 
 #[test]
 fn test_byte_array() {
     let description = r#"ByteArray with string data"#;
 
-    let expected_serialized = [
-        "0x0",
-        "0x48656c6c6f2c20436169726f21",
-        "0xd",
-    ];
+    let expected_serialized = ["0x0", "0x48656c6c6f2c20436169726f21", "0xd"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -141,23 +244,31 @@ fn test_byte_array() {
     println!("Actual:   {:?}", serialized);
 
     // Verify serialization matches expected
-    assert_eq!(serialized.len(), expected_felt_values.len(), "Serialized length mismatch");
-    assert_eq!(serialized, expected_felt_values, "Serialized values mismatch");
+    assert_eq!(
+        serialized.len(),
+        expected_felt_values.len(),
+        "Serialized length mismatch"
+    );
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Serialized values mismatch"
+    );
 
     // Test roundtrip deserialization
     let deserialize_ptr = 0;
-    let deserialized = cainome_cairo_serde::ByteArray::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Roundtrip deserialization failed");
+    let deserialized =
+        cainome_cairo_serde::ByteArray::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
+    assert_eq!(
+        test_instance, deserialized,
+        "Roundtrip deserialization failed"
+    );
 }
 
 #[test]
 fn test_option_some_felt() {
     let description = r#"Option with Some(felt252)"#;
 
-    let expected_serialized = [
-        "0x0",
-        "0x2a",
-    ];
+    let expected_serialized = ["0x0", "0x2a"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -173,19 +284,23 @@ fn test_option_some_felt() {
     // Using built-in Option<Felt> (equivalent to abigen!-generated type)
     let test_instance = Some(Felt::from_hex("0x2a").unwrap());
     let serialized = Option::<Felt>::cairo_serialize(&test_instance);
-    assert_eq!(serialized, expected_felt_values, "Option<Felt> Some serialization mismatch");
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Option<Felt> Some serialization mismatch"
+    );
     let deserialize_ptr = 0;
     let deserialized = Option::<Felt>::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Option<Felt> Some roundtrip failed");
+    assert_eq!(
+        test_instance, deserialized,
+        "Option<Felt> Some roundtrip failed"
+    );
 }
 
 #[test]
 fn test_option_none_felt() {
     let description = r#"Option with None"#;
 
-    let expected_serialized = [
-        "0x1",
-    ];
+    let expected_serialized = ["0x1"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -201,19 +316,23 @@ fn test_option_none_felt() {
     // Using built-in Option<Felt> (equivalent to abigen!-generated type)
     let test_instance = None::<Felt>;
     let serialized = Option::<Felt>::cairo_serialize(&test_instance);
-    assert_eq!(serialized, expected_felt_values, "Option<Felt> None serialization mismatch");
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Option<Felt> None serialization mismatch"
+    );
     let deserialize_ptr = 0;
     let deserialized = Option::<Felt>::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Option<Felt> None roundtrip failed");
+    assert_eq!(
+        test_instance, deserialized,
+        "Option<Felt> None roundtrip failed"
+    );
 }
 
 #[test]
 fn test_bool_false() {
     let description = r#"Boolean false value"#;
 
-    let expected_serialized = [
-        "0x0",
-    ];
+    let expected_serialized = ["0x0"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -229,7 +348,10 @@ fn test_bool_false() {
     // Using built-in bool (equivalent to abigen!-generated Bool)
     let test_instance = false;
     let serialized = bool::cairo_serialize(&test_instance);
-    assert_eq!(serialized, expected_felt_values, "Bool serialization mismatch");
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Bool serialization mismatch"
+    );
     let deserialize_ptr = 0;
     let deserialized = bool::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
     assert_eq!(test_instance, deserialized, "Bool roundtrip failed");
@@ -239,9 +361,7 @@ fn test_bool_false() {
 fn test_u32() {
     let description = r#"Maximum u32 value"#;
 
-    let expected_serialized = [
-        "0xffffffff",
-    ];
+    let expected_serialized = ["0xffffffff"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -261,23 +381,30 @@ fn test_u32() {
     println!("Actual:   {:?}", serialized);
 
     // Verify serialization matches expected
-    assert_eq!(serialized.len(), expected_felt_values.len(), "Serialized length mismatch");
-    assert_eq!(serialized, expected_felt_values, "Serialized values mismatch");
+    assert_eq!(
+        serialized.len(),
+        expected_felt_values.len(),
+        "Serialized length mismatch"
+    );
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Serialized values mismatch"
+    );
 
     // Test roundtrip deserialization
     let deserialize_ptr = 0;
     let deserialized = u32::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Roundtrip deserialization failed");
+    assert_eq!(
+        test_instance, deserialized,
+        "Roundtrip deserialization failed"
+    );
 }
 
 #[test]
 fn test_tuple_felt_u32() {
     let description = r#"Tuple of felt252 and u32"#;
 
-    let expected_serialized = [
-        "0x7b",
-        "0x1c8",
-    ];
+    let expected_serialized = ["0x7b", "0x1c8"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -297,13 +424,23 @@ fn test_tuple_felt_u32() {
     println!("Actual:   {:?}", serialized);
 
     // Verify serialization matches expected
-    assert_eq!(serialized.len(), expected_felt_values.len(), "Serialized length mismatch");
-    assert_eq!(serialized, expected_felt_values, "Serialized values mismatch");
+    assert_eq!(
+        serialized.len(),
+        expected_felt_values.len(),
+        "Serialized length mismatch"
+    );
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Serialized values mismatch"
+    );
 
     // Test roundtrip deserialization
     let deserialize_ptr = 0;
     let deserialized = <(Felt, u32)>::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Roundtrip deserialization failed");
+    assert_eq!(
+        test_instance, deserialized,
+        "Roundtrip deserialization failed"
+    );
 }
 
 #[test]
@@ -325,7 +462,10 @@ fn test_u256_large() {
 
     // Direct cairo-serde roundtrip test using test artifact data
     // Using actual test data from artifact
-    let test_instance = cainome_cairo_serde::U256 { low: 0xffffffffffffffffffffffffffffffff_u128, high: 0x123456789abcdef123456789abcdef12_u128 };
+    let test_instance = cainome_cairo_serde::U256 {
+        low: 0xffffffffffffffffffffffffffffffff_u128,
+        high: 0x123456789abcdef123456789abcdef12_u128,
+    };
 
     // Test serialization
     let serialized = cainome_cairo_serde::U256::cairo_serialize(&test_instance);
@@ -333,22 +473,31 @@ fn test_u256_large() {
     println!("Actual:   {:?}", serialized);
 
     // Verify serialization matches expected
-    assert_eq!(serialized.len(), expected_felt_values.len(), "Serialized length mismatch");
-    assert_eq!(serialized, expected_felt_values, "Serialized values mismatch");
+    assert_eq!(
+        serialized.len(),
+        expected_felt_values.len(),
+        "Serialized length mismatch"
+    );
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Serialized values mismatch"
+    );
 
     // Test roundtrip deserialization
     let deserialize_ptr = 0;
-    let deserialized = cainome_cairo_serde::U256::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Roundtrip deserialization failed");
+    let deserialized =
+        cainome_cairo_serde::U256::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
+    assert_eq!(
+        test_instance, deserialized,
+        "Roundtrip deserialization failed"
+    );
 }
 
 #[test]
 fn test_u64() {
     let description = r#"Maximum u64 value"#;
 
-    let expected_serialized = [
-        "0xffffffffffffffff",
-    ];
+    let expected_serialized = ["0xffffffffffffffff"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -368,22 +517,30 @@ fn test_u64() {
     println!("Actual:   {:?}", serialized);
 
     // Verify serialization matches expected
-    assert_eq!(serialized.len(), expected_felt_values.len(), "Serialized length mismatch");
-    assert_eq!(serialized, expected_felt_values, "Serialized values mismatch");
+    assert_eq!(
+        serialized.len(),
+        expected_felt_values.len(),
+        "Serialized length mismatch"
+    );
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Serialized values mismatch"
+    );
 
     // Test roundtrip deserialization
     let deserialize_ptr = 0;
     let deserialized = u64::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Roundtrip deserialization failed");
+    assert_eq!(
+        test_instance, deserialized,
+        "Roundtrip deserialization failed"
+    );
 }
 
 #[test]
 fn test_bool_true() {
     let description = r#"Boolean true value"#;
 
-    let expected_serialized = [
-        "0x1",
-    ];
+    let expected_serialized = ["0x1"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -399,7 +556,10 @@ fn test_bool_true() {
     // Using built-in bool (equivalent to abigen!-generated Bool)
     let test_instance = true;
     let serialized = bool::cairo_serialize(&test_instance);
-    assert_eq!(serialized, expected_felt_values, "Bool serialization mismatch");
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Bool serialization mismatch"
+    );
     let deserialize_ptr = 0;
     let deserialized = bool::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
     assert_eq!(test_instance, deserialized, "Bool roundtrip failed");
@@ -409,10 +569,7 @@ fn test_bool_true() {
 fn test_mixed_enum_variant1() {
     let description = r#"MixedEnum with felt252 variant"#;
 
-    let expected_serialized = [
-        "0x0",
-        "0x789",
-    ];
+    let expected_serialized = ["0x0", "0x789"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -429,21 +586,25 @@ fn test_mixed_enum_variant1() {
     // Using actual abigen!-generated enum type with data
     let test_instance = MixedEnum::Variant1(Felt::from_hex("0x789").unwrap());
     let serialized = MixedEnum::cairo_serialize(&test_instance);
-    assert_eq!(serialized, expected_felt_values, "Enum serialization mismatch");
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Enum serialization mismatch"
+    );
     // Verify deserialization works by checking it produces the same serialization
     let deserialize_ptr = 0;
     let deserialized = MixedEnum::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
     let reserialized = MixedEnum::cairo_serialize(&deserialized);
-    assert_eq!(serialized, reserialized, "Enum roundtrip serialization failed");
+    assert_eq!(
+        serialized, reserialized,
+        "Enum roundtrip serialization failed"
+    );
 }
 
 #[test]
 fn test_felt252() {
     let description = r#"Basic felt252 value"#;
 
-    let expected_serialized = [
-        "0x1234567890abcdef",
-    ];
+    let expected_serialized = ["0x1234567890abcdef"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -463,23 +624,30 @@ fn test_felt252() {
     println!("Actual:   {:?}", serialized);
 
     // Verify serialization matches expected
-    assert_eq!(serialized.len(), expected_felt_values.len(), "Serialized length mismatch");
-    assert_eq!(serialized, expected_felt_values, "Serialized values mismatch");
+    assert_eq!(
+        serialized.len(),
+        expected_felt_values.len(),
+        "Serialized length mismatch"
+    );
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Serialized values mismatch"
+    );
 
     // Test roundtrip deserialization
     let deserialize_ptr = 0;
     let deserialized = Felt::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Roundtrip deserialization failed");
+    assert_eq!(
+        test_instance, deserialized,
+        "Roundtrip deserialization failed"
+    );
 }
 
 #[test]
 fn test_u256() {
     let description = r#"U256 struct with low and high fields"#;
 
-    let expected_serialized = [
-        "0x123456789abcdef123456789abcdef12",
-        "0x0",
-    ];
+    let expected_serialized = ["0x123456789abcdef123456789abcdef12", "0x0"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -491,7 +659,10 @@ fn test_u256() {
 
     // Direct cairo-serde roundtrip test using test artifact data
     // Using actual test data from artifact
-    let test_instance = cainome_cairo_serde::U256 { low: 0x123456789abcdef123456789abcdef12_u128, high: 0_u128 };
+    let test_instance = cainome_cairo_serde::U256 {
+        low: 0x123456789abcdef123456789abcdef12_u128,
+        high: 0_u128,
+    };
 
     // Test serialization
     let serialized = cainome_cairo_serde::U256::cairo_serialize(&test_instance);
@@ -499,22 +670,31 @@ fn test_u256() {
     println!("Actual:   {:?}", serialized);
 
     // Verify serialization matches expected
-    assert_eq!(serialized.len(), expected_felt_values.len(), "Serialized length mismatch");
-    assert_eq!(serialized, expected_felt_values, "Serialized values mismatch");
+    assert_eq!(
+        serialized.len(),
+        expected_felt_values.len(),
+        "Serialized length mismatch"
+    );
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Serialized values mismatch"
+    );
 
     // Test roundtrip deserialization
     let deserialize_ptr = 0;
-    let deserialized = cainome_cairo_serde::U256::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Roundtrip deserialization failed");
+    let deserialized =
+        cainome_cairo_serde::U256::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
+    assert_eq!(
+        test_instance, deserialized,
+        "Roundtrip deserialization failed"
+    );
 }
 
 #[test]
 fn test_u128() {
     let description = r#"Large u128 value"#;
 
-    let expected_serialized = [
-        "0x112210f47de98115",
-    ];
+    let expected_serialized = ["0x112210f47de98115"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -534,13 +714,23 @@ fn test_u128() {
     println!("Actual:   {:?}", serialized);
 
     // Verify serialization matches expected
-    assert_eq!(serialized.len(), expected_felt_values.len(), "Serialized length mismatch");
-    assert_eq!(serialized, expected_felt_values, "Serialized values mismatch");
+    assert_eq!(
+        serialized.len(),
+        expected_felt_values.len(),
+        "Serialized length mismatch"
+    );
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Serialized values mismatch"
+    );
 
     // Test roundtrip deserialization
     let deserialize_ptr = 0;
     let deserialized = u128::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Roundtrip deserialization failed");
+    assert_eq!(
+        test_instance, deserialized,
+        "Roundtrip deserialization failed"
+    );
 }
 
 #[test]
@@ -581,7 +771,10 @@ fn test_struct_with_struct() {
     let test_instance = StructWithStruct::cairo_deserialize(&expected_felt_values, 0).unwrap();
     // Test serialization using abigen!-generated type (tests serialization)
     let serialized = StructWithStruct::cairo_serialize(&test_instance);
-    assert_eq!(serialized, expected_felt_values, "Struct round-trip serialization failed");
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Struct round-trip serialization failed"
+    );
     // Verify we can deserialize again (double round-trip)
     let deserialized_again = StructWithStruct::cairo_deserialize(&serialized, 0).unwrap();
     let reserialized = StructWithStruct::cairo_serialize(&deserialized_again);
@@ -592,9 +785,7 @@ fn test_struct_with_struct() {
 fn test_u8() {
     let description = r#"Maximum u8 value"#;
 
-    let expected_serialized = [
-        "0xff",
-    ];
+    let expected_serialized = ["0xff"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -614,24 +805,30 @@ fn test_u8() {
     println!("Actual:   {:?}", serialized);
 
     // Verify serialization matches expected
-    assert_eq!(serialized.len(), expected_felt_values.len(), "Serialized length mismatch");
-    assert_eq!(serialized, expected_felt_values, "Serialized values mismatch");
+    assert_eq!(
+        serialized.len(),
+        expected_felt_values.len(),
+        "Serialized length mismatch"
+    );
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Serialized values mismatch"
+    );
 
     // Test roundtrip deserialization
     let deserialize_ptr = 0;
     let deserialized = u8::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Roundtrip deserialization failed");
+    assert_eq!(
+        test_instance, deserialized,
+        "Roundtrip deserialization failed"
+    );
 }
 
 #[test]
 fn test_byte_array_empty() {
     let description = r#"Empty ByteArray"#;
 
-    let expected_serialized = [
-        "0x0",
-        "0x0",
-        "0x0",
-    ];
+    let expected_serialized = ["0x0", "0x0", "0x0"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -651,23 +848,31 @@ fn test_byte_array_empty() {
     println!("Actual:   {:?}", serialized);
 
     // Verify serialization matches expected
-    assert_eq!(serialized.len(), expected_felt_values.len(), "Serialized length mismatch");
-    assert_eq!(serialized, expected_felt_values, "Serialized values mismatch");
+    assert_eq!(
+        serialized.len(),
+        expected_felt_values.len(),
+        "Serialized length mismatch"
+    );
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Serialized values mismatch"
+    );
 
     // Test roundtrip deserialization
     let deserialize_ptr = 0;
-    let deserialized = cainome_cairo_serde::ByteArray::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Roundtrip deserialization failed");
+    let deserialized =
+        cainome_cairo_serde::ByteArray::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
+    assert_eq!(
+        test_instance, deserialized,
+        "Roundtrip deserialization failed"
+    );
 }
 
 #[test]
 fn test_result_ok_felt() {
     let description = r#"Result with Ok(felt252)"#;
 
-    let expected_serialized = [
-        "0x0",
-        "0x7b",
-    ];
+    let expected_serialized = ["0x0", "0x7b"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -683,19 +888,24 @@ fn test_result_ok_felt() {
     // Using built-in Result<Felt, u32> (equivalent to abigen!-generated type)
     let test_instance = Ok::<Felt, u32>(Felt::from_hex("0x7b").unwrap());
     let serialized = Result::<Felt, u32>::cairo_serialize(&test_instance);
-    assert_eq!(serialized, expected_felt_values, "Result<Felt, u32> Ok serialization mismatch");
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Result<Felt, u32> Ok serialization mismatch"
+    );
     let deserialize_ptr = 0;
-    let deserialized = Result::<Felt, u32>::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Result<Felt, u32> Ok roundtrip failed");
+    let deserialized =
+        Result::<Felt, u32>::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
+    assert_eq!(
+        test_instance, deserialized,
+        "Result<Felt, u32> Ok roundtrip failed"
+    );
 }
 
 #[test]
 fn test_eth_address() {
     let description = r#"EthAddress value"#;
 
-    let expected_serialized = [
-        "0x1234567890abcdef1234567890abcdef12345678",
-    ];
+    let expected_serialized = ["0x1234567890abcdef1234567890abcdef12345678"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -707,7 +917,9 @@ fn test_eth_address() {
 
     // Direct cairo-serde roundtrip test using test artifact data
     // Using actual test data from artifact
-    let test_instance = cainome_cairo_serde::EthAddress::from(Felt::from_hex("0x1234567890abcdef1234567890abcdef12345678").unwrap());
+    let test_instance = cainome_cairo_serde::EthAddress::from(
+        Felt::from_hex("0x1234567890abcdef1234567890abcdef12345678").unwrap(),
+    );
 
     // Test serialization
     let serialized = cainome_cairo_serde::EthAddress::cairo_serialize(&test_instance);
@@ -715,25 +927,31 @@ fn test_eth_address() {
     println!("Actual:   {:?}", serialized);
 
     // Verify serialization matches expected
-    assert_eq!(serialized.len(), expected_felt_values.len(), "Serialized length mismatch");
-    assert_eq!(serialized, expected_felt_values, "Serialized values mismatch");
+    assert_eq!(
+        serialized.len(),
+        expected_felt_values.len(),
+        "Serialized length mismatch"
+    );
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Serialized values mismatch"
+    );
 
     // Test roundtrip deserialization
     let deserialize_ptr = 0;
-    let deserialized = cainome_cairo_serde::EthAddress::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Roundtrip deserialization failed");
+    let deserialized =
+        cainome_cairo_serde::EthAddress::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
+    assert_eq!(
+        test_instance, deserialized,
+        "Roundtrip deserialization failed"
+    );
 }
 
 #[test]
 fn test_array_u32() {
     let description = r#"Array of u32 values"#;
 
-    let expected_serialized = [
-        "0x3",
-        "0x1",
-        "0x2",
-        "0x3",
-    ];
+    let expected_serialized = ["0x3", "0x1", "0x2", "0x3"];
 
     let expected_felt_values: Vec<Felt> = expected_serialized
         .iter()
@@ -753,12 +971,21 @@ fn test_array_u32() {
     println!("Actual:   {:?}", serialized);
 
     // Verify serialization matches expected
-    assert_eq!(serialized.len(), expected_felt_values.len(), "Serialized length mismatch");
-    assert_eq!(serialized, expected_felt_values, "Serialized values mismatch");
+    assert_eq!(
+        serialized.len(),
+        expected_felt_values.len(),
+        "Serialized length mismatch"
+    );
+    assert_eq!(
+        serialized, expected_felt_values,
+        "Serialized values mismatch"
+    );
 
     // Test roundtrip deserialization
     let deserialize_ptr = 0;
     let deserialized = Vec::<u32>::cairo_deserialize(&serialized, deserialize_ptr).unwrap();
-    assert_eq!(test_instance, deserialized, "Roundtrip deserialization failed");
+    assert_eq!(
+        test_instance, deserialized,
+        "Roundtrip deserialization failed"
+    );
 }
-
