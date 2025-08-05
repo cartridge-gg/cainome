@@ -88,6 +88,14 @@ jobs:
       - name: "Setup stable toolchain"
         uses: dtolnay/rust-toolchain@stable
 
+      - name: "Compile contracts"
+        uses: software-mansion/setup-scarb@v1
+        if: needs.crate-info.outputs.crate == 'cainome'
+        with:
+          scarb-lock: contracts
+          scarb-version: "2.11.4"
+      - run: make -C contracts generate_artifacts
+
       - name: "Build crate"
         run: |
           cargo build --package ${{ needs.crate-info.outputs.crate }} --all-targets --all-features
