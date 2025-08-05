@@ -15,7 +15,7 @@ import (
 )
 
 type StructsGenericOne struct {
-	A *big.Int `json:"a"`
+	A StructsToAlias `json:"a"`
 	B *felt.Felt `json:"b"`
 	C *big.Int `json:"c"`
 }
@@ -24,7 +24,12 @@ type StructsGenericOne struct {
 func (s *StructsGenericOne) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	result = append(result, cainome.FeltFromBigInt(s.A))
+	// Struct field A: marshal using CairoMarshaler
+	if fieldData, err := s.A.MarshalCairo(); err != nil {
+		return nil, err
+	} else {
+		result = append(result, fieldData...)
+	}
 	result = append(result, s.B)
 	result = append(result, cainome.FeltFromBigInt(s.C))
 	return result, nil
@@ -34,11 +39,11 @@ func (s *StructsGenericOne) MarshalCairo() ([]*felt.Felt, error) {
 func (s *StructsGenericOne) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	if offset >= len(data) {
-		return fmt.Errorf("insufficient data for field A")
+	// Struct field A: unmarshal using CairoMarshaler
+	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
+		return err
 	}
-	s.A = cainome.BigIntFromFelt(data[offset])
-	offset++
+	// TODO: Update offset based on consumed data
 
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field B")

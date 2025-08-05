@@ -269,7 +269,7 @@ dependencies = [
 
 [[package]]
 name = "cainome-parser"
-version = "0.5.0"
+version = "0.5.1"
 dependencies = [
  "convert_case",
  "quote",
