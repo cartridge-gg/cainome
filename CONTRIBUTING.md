@@ -216,6 +216,12 @@ git tag -a cainome-parser/v0.5.2 -m "cainome-parser/v0.5.2"
 git push origin main --follow-tags
 ```
 
+On github, a release must currently be created manually on the tags that have been pushed.
+
+The releases of each crate may not deserve a stable release since Github is not meant to be a package manager. However this may change in the future.
+
+Currently, the release is only containing the version of the latest stable cainome crate, without the `cainome/` prefix.
+
 ### Tag Format
 
 The release system supports two tag formats:
