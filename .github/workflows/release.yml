@@ -90,7 +90,7 @@ jobs:
 
       - name: "Build crate"
         run: |
-          cargo build --package ${{ needs.crate-info.outputs.crate }} --all-targets
+          cargo build --package ${{ needs.crate-info.outputs.crate }} --all-targets --all-features
 
   crates-io-release:
     name: "Release to crates.io"
