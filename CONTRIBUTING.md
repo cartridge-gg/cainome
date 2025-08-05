@@ -66,29 +66,6 @@ This command will:
 2. Execute Go examples to verify generated code works correctly
 3. Test the serde implementation with various examples
 
-### Comprehensive Local Testing
-
-For a more thorough local test that includes all checks, you can use the comprehensive test script:
-
-```bash
-# Run comprehensive local tests
-./bin/test-local
-```
-
-This script will:
-
-1. Check if all required tools are installed (Rust, Go, Scarb, Prettier)
-2. Run linting and formatting checks
-3. Build all crates with all features
-4. Run all Rust tests
-5. Execute Go examples (if Go is installed)
-6. Test the CLI functionality
-7. Test individual crates
-8. Check for uncommitted changes
-9. Provide a summary and next steps
-
-**Note**: Go is required for the full test suite. If Go is not installed, some tests will be skipped with a warning.
-
 ### Individual Test Commands
 
 You can also run specific test categories:
@@ -148,6 +125,10 @@ cainome-rs-macro (depends on rs + parser + cairo-serde)
 
 ### Release Process
 
+The release process is automated by the `.github/workflows/release.yml` workflow.
+
+Only maintainers with write on `main` branch can release.
+
 #### 1. Single Crate Release
 
 To release a single crate (e.g., `cainome-parser`):
@@ -171,7 +152,7 @@ To release a single crate (e.g., `cainome-parser`):
    ```bash
    git add .
    git commit -m "release(cainome-parser): bump to v0.5.2"
-   git tag -a cainome-parser/v0.5.2 -m "cainome-parser v0.5.2"
+   git tag -a cainome-parser/v0.5.2 -m "cainome-parser/v0.5.2"
    git push origin main --follow-tags
    ```
 
@@ -193,7 +174,7 @@ To release the entire cainome project:
    ```bash
    git add .
    git commit -m "release(cainome): bump to v0.10.0"
-   git tag -a cainome/v0.10.0 -m "cainome v0.10.0"
+   git tag -a cainome/v0.10.0 -m "cainome/v0.10.0"
    git push origin main --follow-tags
    ```
 
@@ -231,7 +212,7 @@ To release, you must push a tag to the repository with the following format:
 The changes must be done in the `main` branch.
 
 ```bash
-git tag -a cainome-parser/v0.5.2 -m "cainome-parser v0.5.2"
+git tag -a cainome-parser/v0.5.2 -m "cainome-parser/v0.5.2"
 git push origin main --follow-tags
 ```
 
@@ -242,52 +223,10 @@ The release system supports two tag formats:
 - **Single crate**: `cainome-parser/v0.5.2`
 - **Full project**: `cainome/v0.9.1`
 
-### Example Release Scenarios
+### Pre-commit Hooks
 
-#### Scenario 1: Bug Fix in Parser
-
-```bash
-# 1. Update version in crates/parser/Cargo.toml
-# 2. Update workspace dependency in root Cargo.toml
-# 3. Test changes
-./bin/test
-
-# 4. Commit and tag
-git add .
-git commit -m "fix: resolve parser issue with complex types"
-git tag cainome-parser/v0.5.2
-git push origin main
-git push origin cainome-parser/v0.5.2
-```
-
-#### Scenario 2: New Feature in RS Crate
+If it's not to heavy for you to have hooks running on each commit, you can install them with:
 
 ```bash
-# 1. Update version in crates/rs/Cargo.toml
-# 2. Update workspace dependency in root Cargo.toml
-# 3. Test changes
-./bin/test
-
-# 4. Commit and tag
-git add .
-git commit -m "feat: add support for new Cairo types"
-git tag cainome-rs/v0.4.1
-git push origin main
-git push origin cainome-rs/v0.4.1
-```
-
-#### Scenario 3: Major Version Release
-
-```bash
-# 1. Update all crate versions
-# 2. Update workspace dependencies
-# 3. Test thoroughly
-./bin/test
-
-# 4. Commit and tag
-git add .
-git commit -m "feat: major release with breaking changes"
-git tag cainome/v1.0.0
-git push origin main
-git push origin cainome/v1.0.0
+./bin/setup-pre-commit
 ```

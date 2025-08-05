@@ -112,4 +112,4 @@ jobs:
 
       - name: "Public crate"
         run: |
-          cargo publish --dry-run --package ${{ needs.crate-info.outputs.crate }}
+          cargo publish --package ${{ needs.crate-info.outputs.crate }}
