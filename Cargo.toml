@@ -33,7 +33,7 @@ cainome-rs = { version = "0.4.0", path = "crates/rs" }
 
 anyhow = "1.0"
 async-trait = "0.1"
-num-bigint = "0.4.6"
+num = "0.4.3"
 camino = { version = "1.1", features = ["serde1"] }
 convert_case = "0.8"
 serde = { version = "1.0", default-features = false, features = ["alloc"] }
