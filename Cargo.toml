@@ -16,12 +16,12 @@ exclude = [".github/**", "images/**"]
 
 [workspace]
 members = [
-    "crates/cairo-serde",
-    "crates/cairo-serde-derive",
-    "crates/parser",
-    "crates/rs",
-    "crates/rs-macro",
-    "crates/cairo-test-artifacts",
+	"crates/cairo-serde",
+	"crates/cairo-serde-derive",
+	"crates/parser",
+	"crates/rs",
+	"crates/rs-macro",
+	"crates/cairo-test-artifacts",
 ]
 
 [workspace.dependencies]
@@ -43,8 +43,8 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 url = "2.5"
 # temp: change this to proper crates.io version
-starknet = "0.17.0-rc.2"
-starknet-types-core = "0.1"
+starknet = "0.17.0-rc.4"
+starknet-types-core = "0.2"
 
 [dependencies]
 camino.workspace = true
