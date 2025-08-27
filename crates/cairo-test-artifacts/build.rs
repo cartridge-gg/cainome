@@ -30,7 +30,7 @@ fn main() {
     if let Ok(entries) = fs::read_dir(test_artifacts_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
-            if path.extension().map_or(false, |ext| ext == "json") {
+            if path.extension().is_some_and(|ext| ext == "json") {
                 if let Ok(content) = fs::read_to_string(&path) {
                     if let Some(type_name) = path.file_stem().and_then(|s| s.to_str()) {
                         if let Ok(artifact) = serde_json::from_str::<Value>(&content) {
