@@ -134,7 +134,7 @@ impl GolangPlugin {
             .collect();
 
         // Ensure it starts with a letter or underscore
-        if sanitized.chars().next().map_or(true, |c| c.is_numeric()) {
+        if sanitized.chars().next().is_none_or(|c| c.is_numeric()) {
             sanitized = format!("_{}", sanitized);
         }
 
@@ -522,13 +522,13 @@ impl GolangPlugin {
     /// Checks if a struct name represents an event
     fn is_event_struct(&self, struct_name: &str) -> bool {
         // Event structs typically start with "Event" or contain event-like naming
-        struct_name.starts_with("Event") || 
+        struct_name.starts_with("Event") ||
         struct_name.starts_with("My") && struct_name.contains("Event") ||
         // Add other patterns as needed
         struct_name.ends_with("Event") && !struct_name.ends_with("sEvent") // Avoid matching things like "SimpleEventsEvent"
     }
 
-    /// Generates interface methods for event structs  
+    /// Generates interface methods for event structs
     fn generate_event_interface_methods(&self, struct_name: &str) -> String {
         // Skip generating interface methods here - we'll handle this differently
         // Event structs need to implement the interface from the event enum, not individual methods
@@ -1739,7 +1739,7 @@ impl GolangPlugin {
         code
     }
 
-    /// Generates marshal code for tuple fields  
+    /// Generates marshal code for tuple fields
     fn generate_tuple_marshal_code(
         &self,
         field_name: &str,
