@@ -15,7 +15,7 @@ import (
 )
 
 type StructsGenericOne struct {
-	A StructsToAlias `json:"a"`
+	A uint64 `json:"a"`
 	B *felt.Felt `json:"b"`
 	C *big.Int `json:"c"`
 }
@@ -24,12 +24,7 @@ type StructsGenericOne struct {
 func (s *StructsGenericOne) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	// Struct field A: marshal using CairoMarshaler
-	if fieldData, err := s.A.MarshalCairo(); err != nil {
-		return nil, err
-	} else {
-		result = append(result, fieldData...)
-	}
+	result = append(result, cainome.FeltFromUint(uint64(s.A)))
 	result = append(result, s.B)
 	result = append(result, cainome.FeltFromBigInt(s.C))
 	return result, nil
@@ -39,11 +34,11 @@ func (s *StructsGenericOne) MarshalCairo() ([]*felt.Felt, error) {
 func (s *StructsGenericOne) UnmarshalCairo(data []*felt.Felt) error {
 	offset := 0
 
-	// Struct field A: unmarshal using CairoMarshaler
-	if err := s.A.UnmarshalCairo(data[offset:]); err != nil {
-		return err
+	if offset >= len(data) {
+		return fmt.Errorf("insufficient data for field A")
 	}
-	// TODO: Update offset based on consumed data
+	s.A = cainome.UintFromFelt(data[offset])
+	offset++
 
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field B")
@@ -67,7 +62,7 @@ func (s *StructsGenericOne) CairoSize() int {
 
 
 type StructsGenericTwo struct {
-	A *felt.Felt `json:"a"`
+	A uint64 `json:"a"`
 	B uint64 `json:"b"`
 	C *felt.Felt `json:"c"`
 	D StructsToAlias `json:"d"`
@@ -79,7 +74,7 @@ type StructsGenericTwo struct {
 func (s *StructsGenericTwo) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
-	result = append(result, s.A)
+	result = append(result, cainome.FeltFromUint(uint64(s.A)))
 	result = append(result, cainome.FeltFromUint(uint64(s.B)))
 	result = append(result, s.C)
 	// Struct field D: marshal using CairoMarshaler
@@ -113,7 +108,7 @@ func (s *StructsGenericTwo) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field A")
 	}
-	s.A = data[offset]
+	s.A = cainome.UintFromFelt(data[offset])
 	offset++
 
 	if offset >= len(data) {
