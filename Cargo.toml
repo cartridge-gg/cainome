@@ -43,7 +43,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 url = "2.5"
 # temp: change this to proper crates.io version
-starknet = "0.17.0-rc.2"
+starknet = "0.17.0-rc.3"
 starknet-types-core = "0.1"
 
 [dependencies]
