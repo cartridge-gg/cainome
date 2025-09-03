@@ -43,7 +43,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 url = "2.5"
 # temp: change this to proper crates.io version
-starknet = "0.17.0-rc.3"
+starknet = "0.17.0-rc.2"
 starknet-types-core = "0.1"
 
 [dependencies]
@@ -81,3 +81,6 @@ build-binary = ["tokio"]
 name = "cainome"
 path = "src/bin/cli/main.rs"
 required-features = ["build-binary"]
+
+[patch.crates-io]
+starknet = { git = "https://github.com/kariy/starknet-rs", rev = "3ae5a88" }
