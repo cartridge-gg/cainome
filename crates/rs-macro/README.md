@@ -35,7 +35,6 @@ The `abigen!` macro takes 2 or 3 inputs:
 
 1. The name you want to assign to the contract type being generated.
 2. Path to the JSON file containing the ABI. This file can have two format:
-
    - The entire Sierra file (`*.contract_class.json`) [**Only for Cairo 1**]
    - Only the array of ABI entries. These can be easily extracted with `jq` doing the following:
 
