@@ -29,7 +29,7 @@ members = [
 cainome-cairo-serde = { version = "0.4.0", path = "crates/cairo-serde" }
 cainome-cairo-serde-derive = { version = "0.1.0", path = "crates/cairo-serde-derive" }
 cainome-parser = { version = "0.6.0", path = "crates/parser" }
-cainome-rs = { version = "0.4.0", path = "crates/rs" }
+cainome-rs = { version = "0.5.0", path = "crates/rs" }
 
 anyhow = "1.0"
 async-trait = "0.1"
