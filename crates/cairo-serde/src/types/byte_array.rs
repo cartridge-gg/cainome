@@ -196,7 +196,10 @@ impl ByteArray {
         }
 
         if self.pending_word_len > 0 {
-            s.push_str(&felt_to_utf8_lossy(&self.pending_word, self.pending_word_len));
+            s.push_str(&felt_to_utf8_lossy(
+                &self.pending_word,
+                self.pending_word_len,
+            ));
         }
 
         s
@@ -552,18 +555,15 @@ mod tests {
         let original_string = "Hello, World! 🦀";
         let byte_array = ByteArray::from_string(original_string).unwrap();
         let bytes = byte_array.to_bytes();
-        
+
         assert_eq!(bytes, original_string.as_bytes());
         assert_eq!(String::from_utf8(bytes).unwrap(), original_string);
     }
 
     #[test]
     fn test_to_bytes_with_data_and_pending() {
-        let b = ByteArray::from_string(
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZ12345ABCD",
-        )
-        .unwrap();
-        
+        let b = ByteArray::from_string("ABCDEFGHIJKLMNOPQRSTUVWXYZ12345ABCD").unwrap();
+
         let bytes = b.to_bytes();
         assert_eq!(bytes, b"ABCDEFGHIJKLMNOPQRSTUVWXYZ12345ABCD");
     }
@@ -572,7 +572,7 @@ mod tests {
     fn test_to_bytes_empty() {
         let b = ByteArray::default();
         let bytes = b.to_bytes();
-        
+
         assert_eq!(bytes, Vec::<u8>::new());
     }
 }
