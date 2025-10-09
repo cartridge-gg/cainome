@@ -73,7 +73,7 @@ func (e GenE1) IsGenGenEvent() bool {
 
 type GenMyStructGen struct {
 	F1 *felt.Felt `json:"f1"`
-	F2 *felt.Felt `json:"f2"`
+	F2 *big.Int `json:"f2"`
 	F3 *felt.Felt `json:"f3"`
 }
 
@@ -82,7 +82,7 @@ func (s *GenMyStructGen) MarshalCairo() ([]*felt.Felt, error) {
 	var result []*felt.Felt
 
 	result = append(result, s.F1)
-	result = append(result, s.F2)
+	result = append(result, cainome.FeltFromBigInt(s.F2))
 	result = append(result, s.F3)
 	return result, nil
 }
@@ -100,7 +100,7 @@ func (s *GenMyStructGen) UnmarshalCairo(data []*felt.Felt) error {
 	if offset >= len(data) {
 		return fmt.Errorf("insufficient data for field F2")
 	}
-	s.F2 = data[offset]
+	s.F2 = cainome.BigIntFromFelt(data[offset])
 	offset++
 
 	if offset >= len(data) {
