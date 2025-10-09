@@ -184,6 +184,41 @@ impl ByteArray {
 
         Ok(s)
     }
+
+    /// Converts `ByteArray` instance into a UTF-8 encoded string on success.
+    /// Returns error if the `ByteArray` contains an invalid UTF-8 string.
+    pub fn to_string_lossy(&self) -> String {
+        let mut s = String::new();
+
+        for d in &self.data {
+            // Chunks are always 31 bytes long (MAX_WORD_LEN).
+            s.push_str(&felt_to_utf8_lossy(&d.felt(), MAX_WORD_LEN));
+        }
+
+        if self.pending_word_len > 0 {
+            s.push_str(&felt_to_utf8_lossy(&self.pending_word, self.pending_word_len));
+        }
+
+        s
+    }
+
+    /// Converts `ByteArray` instance into raw bytes.
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut bytes = Vec::new();
+
+        for d in &self.data {
+            // Chunks are always 31 bytes long (MAX_WORD_LEN).
+            let felt_bytes = d.felt().to_bytes_be();
+            bytes.extend_from_slice(&felt_bytes[1..1 + MAX_WORD_LEN]);
+        }
+
+        if self.pending_word_len > 0 {
+            let felt_bytes = self.pending_word.to_bytes_be();
+            bytes.extend_from_slice(&felt_bytes[1 + MAX_WORD_LEN - self.pending_word_len..]);
+        }
+
+        bytes
+    }
 }
 
 /// Converts a felt into a UTF-8 string.
@@ -206,6 +241,28 @@ fn felt_to_utf8(felt: &Felt, len: usize) -> Result<String, FromUtf8Error> {
     }
 
     String::from_utf8(buffer)
+}
+
+/// Converts a felt into a UTF-8 string.
+/// Returns a lossy string if the felt contains an invalid UTF-8 string.
+///
+/// # Arguments
+///
+/// * `felt` - The `Felt` to convert. In the context of `ByteArray` this
+///   felt always contains at most 31 bytes.
+/// * `len` - The number of bytes in the felt, at most 31. In the context
+///   of `ByteArray`, we don't need to check `len` as the `MAX_WORD_LEN`
+///   already protect against that.
+fn felt_to_utf8_lossy(felt: &Felt, len: usize) -> String {
+    let mut buffer = Vec::new();
+
+    // ByteArray always enforce to have the first byte equal to 0.
+    // That's why we start to 1.
+    for byte in felt.to_bytes_be()[1 + MAX_WORD_LEN - len..].iter() {
+        buffer.push(*byte)
+    }
+
+    String::from_utf8_lossy(&buffer).to_string()
 }
 
 impl TryFrom<String> for ByteArray {
@@ -488,5 +545,34 @@ mod tests {
                 pending_word_len: 8,
             }
         );
+    }
+
+    #[test]
+    fn test_to_bytes_round_trip() {
+        let original_string = "Hello, World! 🦀";
+        let byte_array = ByteArray::from_string(original_string).unwrap();
+        let bytes = byte_array.to_bytes();
+        
+        assert_eq!(bytes, original_string.as_bytes());
+        assert_eq!(String::from_utf8(bytes).unwrap(), original_string);
+    }
+
+    #[test]
+    fn test_to_bytes_with_data_and_pending() {
+        let b = ByteArray::from_string(
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ12345ABCD",
+        )
+        .unwrap();
+        
+        let bytes = b.to_bytes();
+        assert_eq!(bytes, b"ABCDEFGHIJKLMNOPQRSTUVWXYZ12345ABCD");
+    }
+
+    #[test]
+    fn test_to_bytes_empty() {
+        let b = ByteArray::default();
+        let bytes = b.to_bytes();
+        
+        assert_eq!(bytes, Vec::<u8>::new());
     }
 }
