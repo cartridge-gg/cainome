@@ -185,8 +185,8 @@ impl ByteArray {
         Ok(s)
     }
 
-    /// Converts `ByteArray` instance into a UTF-8 encoded string on success.
-    /// Returns error if the `ByteArray` contains an invalid UTF-8 string.
+    /// Converts `ByteArray` instance into a UTF-8 encoded string if possible.
+    /// Returns a lossy string if the `ByteArray` contains an invalid UTF-8 string.
     pub fn to_string_lossy(&self) -> String {
         let mut s = String::new();
 
@@ -574,5 +574,75 @@ mod tests {
         let bytes = b.to_bytes();
 
         assert_eq!(bytes, Vec::<u8>::new());
+    }
+
+    #[test]
+    fn test_to_string_lossy_valid_utf8() {
+        // Test that to_string_lossy works correctly with valid UTF-8
+        let b = ByteArray {
+            data: vec![],
+            pending_word: Felt::from_hex(
+                "0x0000000000000000000000000000000000000000000000000000000041424344",
+            )
+            .unwrap(),
+            pending_word_len: 4,
+        };
+
+        // Should return "ABCD" without errors
+        assert_eq!(b.to_string_lossy(), "ABCD");
+    }
+
+    #[test]
+    fn test_to_string_lossy_invalid_utf8() {
+        // Test that to_string_lossy handles invalid UTF-8 gracefully
+        let b = ByteArray {
+            data: vec![],
+            pending_word: Felt::from_hex(
+                "0x00000000000000000000000000000000000000000000000000000000ffffffff",
+            )
+            .unwrap(),
+            pending_word_len: 4,
+        };
+
+        // Should NOT panic and return a lossy string with replacement characters
+        let result = b.to_string_lossy();
+        // Invalid UTF-8 bytes should be replaced with the replacement character U+FFFD
+        assert!(result.contains('\u{FFFD}'));
+        // Should complete without panicking
+        assert!(!result.is_empty());
+    }
+
+    #[test]
+    fn test_to_string_lossy_empty() {
+        // Test that to_string_lossy works with empty ByteArray
+        let b = ByteArray::default();
+        assert_eq!(b.to_string_lossy(), "");
+    }
+
+    #[test]
+    fn test_to_string_lossy_with_emojis() {
+        // Test that to_string_lossy works correctly with multi-byte UTF-8 characters
+        let b: ByteArray = "🦀🌟".try_into().unwrap();
+        assert_eq!(b.to_string_lossy(), "🦀🌟");
+    }
+
+    #[test]
+    fn test_to_string_lossy_data_and_pending() {
+        // Test with both data and pending word
+        let b = ByteArray {
+            data: vec![Felt::from_hex(
+                "0x004142434445464748494a4b4c4d4e4f505152535455565758595a3132333435",
+            )
+            .unwrap()
+            .try_into()
+            .unwrap()],
+            pending_word: Felt::from_hex(
+                "0x0000000000000000000000000000000000000000000000000000000041424344",
+            )
+            .unwrap(),
+            pending_word_len: 4,
+        };
+
+        assert_eq!(b.to_string_lossy(), "ABCDEFGHIJKLMNOPQRSTUVWXYZ12345ABCD");
     }
 }
