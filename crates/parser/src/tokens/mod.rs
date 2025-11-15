@@ -6,31 +6,44 @@ mod array;
 mod basic;
 mod composite;
 mod constants;
+mod enumeration;
+mod event;
 mod function;
 mod genericity;
 mod non_zero;
 mod option;
 mod result;
+mod structure;
 mod tuple;
+mod utils;
 
 use std::collections::HashMap;
 
 pub use array::Array;
 pub use basic::CoreBasic;
 pub use composite::{Composite, CompositeInner, CompositeInnerKind, CompositeType};
+pub use enumeration::Enum;
+pub use event::Event;
 pub use function::{Function, FunctionOutputKind, StateMutability};
 pub use non_zero::NonZero;
 pub use option::Option;
 pub use result::Result;
+pub use structure::Struct;
 pub use tuple::Tuple;
 
-use crate::{CainomeResult, Error};
+use crate::{
+    tokens::{enumeration::EnumInner, event::EventInner, structure::StructInner},
+    CainomeResult, Error,
+};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     CoreBasic(CoreBasic),
     Array(Array),
     Tuple(Tuple),
+    Enum(Enum),
+    Struct(Struct),
+    Event(Event),
     Composite(Composite),
     Function(Function),
     Option(Option),
@@ -38,38 +51,31 @@ pub enum Token {
     NonZero(NonZero),
 }
 
+type Parser = fn(&str) -> CainomeResult<Token>;
+
 impl Token {
+    const PARSERS: &[Parser] = &[
+        |s| CoreBasic::parse(s).map(Token::CoreBasic),
+        |s| Array::parse(s).map(Token::Array),
+        |s| Tuple::parse(s).map(Token::Tuple),
+        |s| Option::parse(s).map(Token::Option),
+        |s| Result::parse(s).map(Token::Result),
+        |s| NonZero::parse(s).map(Token::NonZero),
+        |s| Struct::parse(s).map(Token::Struct),
+        |s| Enum::parse(s).map(Token::Enum),
+        |s| Event::parse(s).map(Token::Event),
+        |s| Composite::parse(s).map(Token::Composite),
+    ];
+
     pub fn parse(type_path: &str) -> CainomeResult<Self> {
-        if let Ok(b) = CoreBasic::parse(type_path) {
-            return Ok(Token::CoreBasic(b));
-        }
-
-        if let Ok(a) = Array::parse(type_path) {
-            return Ok(Token::Array(a));
-        }
-
-        if let Ok(t) = Tuple::parse(type_path) {
-            return Ok(Token::Tuple(t));
-        }
-
-        if let Ok(o) = Option::parse(type_path) {
-            return Ok(Token::Option(o));
-        }
-
-        if let Ok(r) = Result::parse(type_path) {
-            return Ok(Token::Result(r));
-        }
-
-        if let Ok(n) = NonZero::parse(type_path) {
-            return Ok(Token::NonZero(n));
-        }
-
-        if let Ok(c) = Composite::parse(type_path) {
-            return Ok(Token::Composite(c));
+        for parser in Self::PARSERS {
+            if let Ok(tok) = parser(type_path) {
+                return Ok(tok);
+            }
         }
 
         Err(Error::TokenInitFailed(format!(
-            "Couldn't initialize a Token from type path `{}`",
+            "Couldn't initialize a Token from type path `{}`. Please, check if parser is registered.",
             type_path,
         )))
     }
@@ -79,11 +85,14 @@ impl Token {
             Token::CoreBasic(t) => t.type_name(),
             Token::Array(_) => "array".to_string(),
             Token::Tuple(_) => "tuple".to_string(),
-            Token::Composite(t) => t.type_name(),
             Token::Function(_) => "function".to_string(),
             Token::Option(_) => "option".to_string(),
             Token::Result(_) => "result".to_string(),
             Token::NonZero(_) => "non_zero".to_string(),
+            Token::Composite(t) => t.type_name(),
+            Token::Enum(e) => e.type_name(),
+            Token::Struct(s) => s.type_name(),
+            Token::Event(s) => s.type_name(),
         }
     }
 
@@ -92,11 +101,14 @@ impl Token {
             Token::CoreBasic(t) => t.type_path.to_string(),
             Token::Array(t) => t.type_path.to_string(),
             Token::Tuple(t) => t.type_path.to_string(),
-            Token::Composite(t) => t.type_path_no_generic(),
             Token::Function(t) => t.name.clone(),
             Token::Option(t) => t.type_path.to_string(),
             Token::Result(t) => t.type_path.to_string(),
             Token::NonZero(t) => t.type_path.to_string(),
+            Token::Composite(t) => t.type_path_no_generic(),
+            Token::Enum(e) => e.type_path_no_generic(),
+            Token::Struct(s) => s.type_path_no_generic(),
+            Token::Event(s) => s.type_path_no_generic(),
         }
     }
 
@@ -264,6 +276,141 @@ impl Token {
                     alias: comp.alias,
                 })
             }
+            Token::Enum(e) => Token::Enum(Enum {
+                type_path: e.type_path,
+                variants: e
+                    .variants
+                    .into_iter()
+                    .map(|inner| EnumInner {
+                        name: inner.name,
+                        token: Self::hydrate(
+                            inner.token,
+                            filtered,
+                            recursion_max_depth,
+                            iteration_count + 1,
+                        ),
+                    })
+                    .collect(),
+                generic_args: e
+                    .generic_args
+                    .into_iter()
+                    .map(|(name, token)| {
+                        (
+                            name,
+                            Self::hydrate(
+                                token,
+                                filtered,
+                                recursion_max_depth,
+                                iteration_count + 1,
+                            ),
+                        )
+                    })
+                    .collect(),
+                alias: e.alias,
+            }),
+            Token::Struct(e) => Token::Struct(Struct {
+                type_path: e.type_path,
+                fields: e
+                    .fields
+                    .into_iter()
+                    .map(|inner| StructInner {
+                        name: inner.name,
+                        token: Self::hydrate(
+                            inner.token,
+                            filtered,
+                            recursion_max_depth,
+                            iteration_count + 1,
+                        ),
+                    })
+                    .collect(),
+                generic_args: e
+                    .generic_args
+                    .into_iter()
+                    .map(|(name, token)| {
+                        (
+                            name,
+                            Self::hydrate(
+                                token,
+                                filtered,
+                                recursion_max_depth,
+                                iteration_count + 1,
+                            ),
+                        )
+                    })
+                    .collect(),
+                alias: e.alias,
+            }),
+            Token::Event(e) => Token::Event(Event {
+                type_path: e.type_path,
+                keys: e
+                    .keys
+                    .into_iter()
+                    .map(|inner| EventInner {
+                        name: inner.name,
+                        token: Self::hydrate(
+                            inner.token,
+                            filtered,
+                            recursion_max_depth,
+                            iteration_count + 1,
+                        ),
+                    })
+                    .collect(),
+                data: e
+                    .data
+                    .into_iter()
+                    .map(|inner| EventInner {
+                        name: inner.name,
+                        token: Self::hydrate(
+                            inner.token,
+                            filtered,
+                            recursion_max_depth,
+                            iteration_count + 1,
+                        ),
+                    })
+                    .collect(),
+                nested: e
+                    .nested
+                    .into_iter()
+                    .map(|inner| EventInner {
+                        name: inner.name,
+                        token: Self::hydrate(
+                            inner.token,
+                            filtered,
+                            recursion_max_depth,
+                            iteration_count + 1,
+                        ),
+                    })
+                    .collect(),
+                flat: e
+                    .flat
+                    .into_iter()
+                    .map(|inner| EventInner {
+                        name: inner.name,
+                        token: Self::hydrate(
+                            inner.token,
+                            filtered,
+                            recursion_max_depth,
+                            iteration_count + 1,
+                        ),
+                    })
+                    .collect(),
+                generic_args: e
+                    .generic_args
+                    .into_iter()
+                    .map(|(name, token)| {
+                        (
+                            name,
+                            Self::hydrate(
+                                token,
+                                filtered,
+                                recursion_max_depth,
+                                iteration_count + 1,
+                            ),
+                        )
+                    })
+                    .collect(),
+                alias: e.alias,
+            }),
             Token::Function(func) => Token::Function(Function {
                 name: func.name,
                 inputs: func

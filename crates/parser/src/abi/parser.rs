@@ -35,7 +35,7 @@ impl AbiParser {
     ) -> CainomeResult<TokenizedAbi> {
         let abi_entries = Self::parse_abi_string(abi)?;
         let tokenized_abi =
-            AbiParser::collect_tokens(&abi_entries, type_aliases).expect("failed tokens parsing");
+            AbiParser::collect_tokens(abi_entries, type_aliases).expect("failed tokens parsing");
 
         Ok(tokenized_abi)
     }
@@ -61,13 +61,13 @@ impl AbiParser {
 
     /// Parse all tokens in the ABI.
     pub fn collect_tokens(
-        entries: &[AbiEntry],
+        entries: Vec<AbiEntry>,
         type_aliases: &HashMap<String, String>,
     ) -> CainomeResult<TokenizedAbi> {
         let mut token_candidates: HashMap<String, Vec<Token>> = HashMap::new();
 
         // Entry tokens are structs, enums and events (which are structs and enums).
-        for entry in entries {
+        for entry in entries.iter() {
             Self::collect_entry_token(entry, &mut token_candidates)?;
         }
 
@@ -100,7 +100,7 @@ impl AbiParser {
         let mut functions = vec![];
         let mut interfaces: HashMap<String, Vec<Token>> = HashMap::new();
 
-        for entry in entries {
+        for entry in entries.iter() {
             Self::collect_entry_function(
                 entry,
                 &all_composites,
@@ -1154,7 +1154,7 @@ Composite {
     fn test_collect_tokens() {
         let sierra_abi = include_str!("../../test_data/cairo_ls_abi.json");
         let sierra = serde_json::from_str::<SierraClass>(sierra_abi).unwrap();
-        let tokens = AbiParser::collect_tokens(&sierra.abi, &HashMap::new()).unwrap();
+        let tokens = AbiParser::collect_tokens(sierra.abi, &HashMap::new()).unwrap();
         assert_ne!(tokens.enums.len(), 0);
         assert_ne!(tokens.functions.len(), 0);
         assert_ne!(tokens.interfaces.len(), 0);

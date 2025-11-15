@@ -4,8 +4,8 @@
 use crate::tokens::Token;
 use crate::{CainomeResult, Error};
 
-use super::composite::escape_rust_keywords;
 use super::genericity;
+use super::utils;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Result {
@@ -16,7 +16,7 @@ pub struct Result {
 
 impl Result {
     pub fn parse(type_path: &str) -> CainomeResult<Self> {
-        let type_path = escape_rust_keywords(type_path);
+        let type_path = utils::escape_rust_keywords(type_path);
 
         if type_path.starts_with("core::result::Result") {
             let generic_args = genericity::extract_generics_args(&type_path)?;
