@@ -1,6 +1,8 @@
 //! This module provides a token type for the `Result` type.
 //!
 //! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/result.cairo>
+use std::rc::Rc;
+
 use crate::tokens::Token;
 use crate::{CainomeResult, Error};
 
@@ -10,8 +12,8 @@ use super::utils;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Result {
     pub type_path: String,
-    pub inner: Box<Token>,
-    pub error: Box<Token>,
+    pub inner: Rc<Token>,
+    pub error: Rc<Token>,
 }
 
 impl Result {
@@ -30,8 +32,8 @@ impl Result {
 
             Ok(Self {
                 type_path: type_path.to_string(),
-                inner: Box::new(generic_arg_token.clone()),
-                error: Box::new(error_token.clone()),
+                inner: generic_arg_token.clone(),
+                error: error_token.clone(),
             })
         } else {
             Err(Error::TokenInitFailed(format!(
@@ -42,7 +44,7 @@ impl Result {
     }
 
     pub fn apply_alias(&mut self, type_path: &str, alias: &str) {
-        self.inner.apply_alias(type_path, alias);
-        self.error.apply_alias(type_path, alias);
+        // self.inner.apply_alias(type_path, alias);
+        // self.error.apply_alias(type_path, alias);
     }
 }

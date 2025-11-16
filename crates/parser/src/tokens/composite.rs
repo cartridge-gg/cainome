@@ -58,6 +58,8 @@
 //!
 //! A naive strategy would be to ensure all types are parsed a first time,
 //! and then a generic resolution is done.
+use std::rc::Rc;
+
 use super::constants::{CAIRO_COMPOSITE_BUILTINS, CAIRO_GENERIC_BUILTINS};
 use super::genericity;
 use super::utils;
@@ -86,14 +88,14 @@ pub struct CompositeInner {
     pub index: usize,
     pub name: String,
     pub kind: CompositeInnerKind,
-    pub token: Token,
+    pub token: Rc<Token>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Composite {
     pub type_path: String,
     pub inners: Vec<CompositeInner>,
-    pub generic_args: Vec<(String, Token)>,
+    pub generic_args: Vec<(String, Rc<Token>)>,
     pub r#type: CompositeType,
     pub is_event: bool,
     pub alias: Option<String>,
@@ -142,26 +144,6 @@ impl Composite {
         !self.generic_args.is_empty()
     }
 
-    /// Returns true if the current composite is considered as Cairo builtin.
-    /// This is useful to avoid expanding the structure if already managed by
-    /// the backend (like Option and Result for instance).
-    /// Spans and Arrays are handled by `array`.
-    pub fn is_builtin(&self) -> bool {
-        for b in CAIRO_GENERIC_BUILTINS {
-            if self.type_path.starts_with(b) {
-                return true;
-            }
-        }
-
-        for b in CAIRO_COMPOSITE_BUILTINS {
-            if self.type_path.starts_with(b) {
-                return true;
-            }
-        }
-
-        false
-    }
-
     pub fn type_name(&self) -> String {
         // TODO: need to opti that with regex?
         utils::extract_type_path_with_depth(&self.type_path_no_generic(), 0)
@@ -180,11 +162,11 @@ impl Composite {
             self.alias = Some(alias.to_string());
         }
 
-        for ref mut i in &mut self.inners {
-            if let Token::Composite(ref mut c) = i.token {
-                c.apply_alias(type_path, alias);
-            }
-        }
+        // for ref mut i in &mut self.inners {
+        //     if let Token::Composite(ref mut c) = i.token.as_ref() {
+        //         c.apply_alias(type_path, alias);
+        //     }
+        // }
     }
 }
 
@@ -193,16 +175,16 @@ mod tests {
     use super::*;
     use crate::tokens::*;
 
-    fn basic_felt252() -> Token {
-        Token::CoreBasic(CoreBasic {
+    fn basic_felt252() -> Rc<Token> {
+        Rc::new(Token::CoreBasic(CoreBasic {
             type_path: "core::felt252".to_string(),
-        })
+        }))
     }
 
-    fn basic_u64() -> Token {
-        Token::CoreBasic(CoreBasic {
+    fn basic_u64() -> Rc<Token> {
+        Rc::new(Token::CoreBasic(CoreBasic {
             type_path: "core::integer::u64".to_string(),
-        })
+        }))
     }
 
     #[test]

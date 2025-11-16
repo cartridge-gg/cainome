@@ -187,7 +187,7 @@ impl CairoEnumEvent {
             let ty = utils::str_to_type(&inner.token.to_rust_type_path());
             // Tuples type used as rust type path item path must be surrounded
             // by angle brackets.
-            let ty_punctuated = match inner.token {
+            let ty_punctuated = match inner.token.as_ref() {
                 Token::Tuple(_) => quote!(<#ty>),
                 _ => quote!(#ty),
             };

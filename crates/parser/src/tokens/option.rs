@@ -1,6 +1,8 @@
 //! This module provides a token type for the `Option` type.
 //!
 //! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/option.cairo>
+use std::rc::Rc;
+
 use crate::tokens::Token;
 use crate::{CainomeResult, Error};
 
@@ -10,7 +12,7 @@ use super::utils;
 #[derive(Debug, Clone, PartialEq)]
 pub struct Option {
     pub type_path: String,
-    pub inner: Box<Token>,
+    pub inner: Rc<Token>,
 }
 
 impl Option {
@@ -28,7 +30,7 @@ impl Option {
 
             Ok(Self {
                 type_path: type_path.to_string(),
-                inner: Box::new(generic_arg_token.clone()),
+                inner: generic_arg_token.clone(),
             })
         } else {
             Err(Error::TokenInitFailed(format!(
@@ -39,6 +41,6 @@ impl Option {
     }
 
     pub fn apply_alias(&mut self, type_path: &str, alias: &str) {
-        self.inner.apply_alias(type_path, alias);
+        // self.inner.apply_alias(type_path, alias);
     }
 }

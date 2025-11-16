@@ -1,10 +1,15 @@
+use std::{collections::HashMap, rc::Rc};
+
 use starknet::core::types::contract::{
     legacy::{RawLegacyEvent, RawLegacyStruct},
     AbiEnum, AbiEventEnum, AbiEventStruct, AbiStruct, EventFieldKind,
     StateMutability as StarknetStateMutability,
 };
 
-use crate::tokens::{CompositeInner, CompositeInnerKind, CompositeType, StateMutability, Token};
+use crate::tokens::{
+    CompositeInnerKind, Enum, EnumInner, Event, EventInner, StateMutability, Struct, StructInner,
+    Token,
+};
 use crate::Error;
 
 impl From<StarknetStateMutability> for StateMutability {
@@ -27,204 +32,142 @@ impl From<EventFieldKind> for CompositeInnerKind {
     }
 }
 
-impl TryFrom<&AbiStruct> for Token {
-    type Error = Error;
+pub trait TokenConvertible: Sized {
+    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error>;
+}
 
-    fn try_from(value: &AbiStruct) -> Result<Self, Self::Error> {
-        let mut t = Token::parse(&value.name)?;
+impl TokenConvertible for &AbiStruct {
+    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
+        let mut structure = Struct::new(&self.name)?;
 
-        if let Token::Composite(ref mut c) = t {
-            c.r#type = CompositeType::Struct;
-
-            for (i, m) in value.members.iter().enumerate() {
-                c.inners.push(CompositeInner {
-                    index: i,
-                    name: m.name.clone(),
-                    token: Token::parse(&m.r#type).unwrap(),
-                    kind: CompositeInnerKind::NotUsed,
-                });
-            }
-
-            Ok(t)
-        } else {
-            Err(Error::ParsingFailed(format!(
-                "AbiStruct is expected to be a Composite token, got `{:?}`",
-                value,
-            )))
+        for field in self.members.iter() {
+            structure.fields.push(StructInner {
+                name: field.name.clone(),
+                token: Token::parse(&field.r#type).unwrap(),
+            });
         }
+
+        Ok(Token::Struct(structure))
     }
 }
 
-impl TryFrom<&AbiEnum> for Token {
-    type Error = Error;
+impl TokenConvertible for &AbiEnum {
+    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
+        let mut enumeration = Enum::new(&self.name)?;
 
-    fn try_from(value: &AbiEnum) -> Result<Self, Self::Error> {
-        let mut t = Token::parse(&value.name)?;
+        // if t.type_name() == "option" {
+        //     return Ok(t);
+        // }
 
-        if t.type_name() == "option" {
-            return Ok(t);
+        // if t.type_name() == "result" {
+        //     return Ok(t);
+        // }
+
+        for v in self.variants.iter() {
+            enumeration.variants.push(EnumInner {
+                name: v.name.clone(),
+                token: Token::parse(&v.r#type).unwrap(),
+            });
         }
 
-        if t.type_name() == "result" {
-            return Ok(t);
-        }
-
-        if let Token::Composite(ref mut c) = t {
-            c.r#type = CompositeType::Enum;
-
-            for (i, v) in value.variants.iter().enumerate() {
-                // Determine the kind based on whether the variant has data
-                let kind = if v.r#type == "()" {
-                    CompositeInnerKind::NotUsed
-                } else {
-                    CompositeInnerKind::Data
-                };
-
-                c.inners.push(CompositeInner {
-                    index: i,
-                    name: v.name.clone(),
-                    token: Token::parse(&v.r#type).unwrap(),
-                    kind,
-                });
-            }
-
-            Ok(t)
-        } else {
-            Err(Error::ParsingFailed(format!(
-                "AbiEnum is expected to be a Composite token, got `{:?}`",
-                value,
-            )))
-        }
+        Ok(Token::Enum(enumeration))
     }
 }
 
-impl TryFrom<&AbiEventStruct> for Token {
-    type Error = Error;
+impl TokenConvertible for &AbiEventStruct {
+    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
+        let mut event = Event::new(self.name.clone())?;
 
-    fn try_from(value: &AbiEventStruct) -> Result<Self, Self::Error> {
-        let mut t = Token::parse(&value.name)?;
-
-        if let Token::Composite(ref mut c) = t {
-            c.r#type = CompositeType::Struct;
-            c.is_event = true;
-
-            for (i, m) in value.members.iter().enumerate() {
-                c.inners.push(CompositeInner {
-                    index: i,
+        for m in self.members.iter() {
+            // nested and falt could be omitted here I suppose.
+            match m.kind {
+                EventFieldKind::Key => event.keys.push(EventInner {
                     name: m.name.clone(),
-                    token: Token::parse(&m.r#type).unwrap(),
-                    kind: m.kind.clone().into(),
-                });
+                    token: Token::parse(&m.r#type)?,
+                }),
+                EventFieldKind::Data => event.data.push(EventInner {
+                    name: m.name.clone(),
+                    token: Token::parse(&m.r#type)?,
+                }),
+                EventFieldKind::Nested => event.nested.push(EventInner {
+                    name: m.name.clone(),
+                    token: Token::parse(&m.r#type)?,
+                }),
+                EventFieldKind::Flat => event.flat.push(EventInner {
+                    name: m.name.clone(),
+                    token: Token::parse(&m.r#type)?,
+                }),
             }
-
-            Ok(t)
-        } else {
-            Err(Error::ParsingFailed(format!(
-                "AbiEventStruct is expected to be a Composite token, got `{:?}`",
-                value,
-            )))
         }
+
+        Ok(Token::Event(event))
     }
 }
 
-impl TryFrom<&AbiEventEnum> for Token {
-    type Error = Error;
+impl TokenConvertible for &AbiEventEnum {
+    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
+        let mut event = Event::new(self.name.clone())?;
 
-    fn try_from(value: &AbiEventEnum) -> Result<Self, Self::Error> {
-        let mut t = Token::parse(&value.name)?;
-
-        if let Token::Composite(ref mut c) = t {
-            c.r#type = CompositeType::Enum;
-            c.is_event = true;
-
-            for (i, v) in value.variants.iter().enumerate() {
-                c.inners.push(CompositeInner {
-                    index: i,
-                    name: v.name.clone(),
-                    token: Token::parse(&v.r#type).unwrap(),
-                    kind: v.kind.clone().into(),
-                });
+        for m in self.variants.iter() {
+            match m.kind {
+                // key and data could be omitted here I suppose.
+                EventFieldKind::Key => event.keys.push(EventInner {
+                    name: m.name.clone(),
+                    token: Token::parse(&m.r#type)?,
+                }),
+                EventFieldKind::Data => event.data.push(EventInner {
+                    name: m.name.clone(),
+                    token: Token::parse(&m.r#type)?,
+                }),
+                EventFieldKind::Nested => event.nested.push(EventInner {
+                    name: m.name.clone(),
+                    token: Token::parse(&m.r#type)?,
+                }),
+                EventFieldKind::Flat => event.flat.push(EventInner {
+                    name: m.name.clone(),
+                    token: Token::parse(&m.r#type)?,
+                }),
             }
-
-            Ok(t)
-        } else {
-            Err(Error::ParsingFailed(format!(
-                "AbiEventEnum is expected to be a Composite token, got `{:?}`",
-                value,
-            )))
         }
+
+        Ok(Token::Event(event))
     }
 }
 
-impl TryFrom<&RawLegacyStruct> for Token {
-    type Error = Error;
+impl TokenConvertible for &RawLegacyEvent {
+    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
+        let mut event = Event::new(self.name.clone())?;
 
-    fn try_from(value: &RawLegacyStruct) -> Result<Self, Self::Error> {
-        let mut t = Token::parse(&value.name)?;
-
-        if let Token::Composite(ref mut c) = t {
-            c.r#type = CompositeType::Struct;
-
-            for (i, m) in value.members.iter().enumerate() {
-                c.inners.push(CompositeInner {
-                    index: i,
-                    name: m.name.clone(),
-                    token: Token::parse(&m.r#type).unwrap(),
-                    kind: CompositeInnerKind::NotUsed,
-                });
-            }
-
-            Ok(t)
-        } else {
-            Err(Error::ParsingFailed(format!(
-                "RawLegacyStruct is expected to be a Composite token, got `{:?}`",
-                value,
-            )))
+        for m in self.data.iter() {
+            event.data.push(EventInner {
+                name: m.name.clone(),
+                token: Token::parse(&m.r#type)?,
+            });
         }
+
+        for m in self.keys.iter() {
+            event.keys.push(EventInner {
+                name: m.name.clone(),
+                token: Token::parse(&m.r#type)?,
+            });
+        }
+
+        Ok(Token::Event(event))
     }
 }
 
-impl TryFrom<&RawLegacyEvent> for Token {
-    type Error = Error;
+impl TokenConvertible for &RawLegacyStruct {
+    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
+        let mut structure = Struct::new(&self.name)?;
 
-    fn try_from(value: &RawLegacyEvent) -> Result<Self, Self::Error> {
-        let mut t = Token::parse(&value.name)?;
-
-        if let Token::Composite(ref mut c) = t {
-            c.r#type = CompositeType::Struct;
-            c.is_event = true;
-
-            let mut i = 0;
-
-            for m in value.data.iter() {
-                c.inners.push(CompositeInner {
-                    index: i,
-                    name: m.name.clone(),
-                    token: Token::parse(&m.r#type).unwrap(),
-                    kind: CompositeInnerKind::Data,
-                });
-
-                i += 1;
-            }
-
-            for m in value.keys.iter() {
-                c.inners.push(CompositeInner {
-                    index: i,
-                    name: m.name.clone(),
-                    token: Token::parse(&m.r#type).unwrap(),
-                    kind: CompositeInnerKind::Key,
-                });
-
-                i += 1;
-            }
-
-            Ok(t)
-        } else {
-            Err(Error::ParsingFailed(format!(
-                "RawLegacyEvent is expected to be a Composite token, got `{:?}`",
-                value,
-            )))
+        for field in self.members.iter() {
+            structure.fields.push(StructInner {
+                name: field.name.clone(),
+                token: Token::parse(&field.r#type).unwrap(),
+            });
         }
+
+        Ok(Token::Struct(structure))
     }
 }
 

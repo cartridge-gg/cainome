@@ -6,6 +6,8 @@
 //! A tuple can contain generic in cairo code, however in the ABI,
 //! generic types are actually always replaced by their concrete types.
 //! So a [`Tuple`] is not a generic type itself in the context of cainome.
+use std::rc::Rc;
+
 use syn::Type;
 
 use super::Token;
@@ -14,7 +16,7 @@ use crate::{CainomeResult, Error};
 #[derive(Debug, Clone, PartialEq)]
 pub struct Tuple {
     pub type_path: String,
-    pub inners: Vec<Token>,
+    pub inners: Vec<Rc<Token>>,
 }
 
 impl Tuple {
@@ -79,9 +81,9 @@ impl Tuple {
     }
 
     pub fn apply_alias(&mut self, type_path: &str, alias: &str) {
-        for i in &mut self.inners {
-            i.apply_alias(type_path, alias);
-        }
+        // for i in &mut self.inners {
+        //     i.apply_alias(type_path, alias);
+        // }
     }
 }
 
@@ -101,9 +103,9 @@ mod tests {
             Tuple::parse("(core::felt252)").unwrap(),
             Tuple {
                 type_path: "(core::felt252)".to_string(),
-                inners: vec![Token::CoreBasic(CoreBasic {
+                inners: vec![Rc::new(Token::CoreBasic(CoreBasic {
                     type_path: "core::felt252".to_string()
-                }),],
+                }))],
             }
         );
     }
@@ -115,12 +117,12 @@ mod tests {
             Tuple {
                 type_path: "(core::felt252, core::integer::u64)".to_string(),
                 inners: vec![
-                    Token::CoreBasic(CoreBasic {
+                    Rc::new(Token::CoreBasic(CoreBasic {
                         type_path: "core::felt252".to_string()
-                    }),
-                    Token::CoreBasic(CoreBasic {
+                    })),
+                    Rc::new(Token::CoreBasic(CoreBasic {
                         type_path: "core::integer::u64".to_string()
-                    }),
+                    })),
                 ],
             }
         );

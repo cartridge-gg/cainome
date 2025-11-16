@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use syn::{GenericArgument, PathArguments, Type};
 
 use super::Token;
@@ -15,7 +17,7 @@ use crate::CainomeResult;
 /// The string is the name of the generic argument, starting to 'A' and incrementing
 /// by 1 for each generic argument. The token is the token representing the generic
 /// argument type.
-pub fn extract_generics_args(type_path: &str) -> CainomeResult<Vec<(String, Token)>> {
+pub fn extract_generics_args(type_path: &str) -> CainomeResult<Vec<(String, Rc<Token>)>> {
     let t: Type = syn::parse_str(type_path)?;
 
     let mut generic_args = vec![];

@@ -1,6 +1,8 @@
 use starknet::core::types::contract::{AbiEntry, AbiEvent, SierraClass, TypedAbiEvent};
 use std::collections::HashMap;
+use std::rc::Rc;
 
+use crate::abi::conversions::TokenConvertible;
 use crate::tokens::{Array, Composite, CompositeType, CoreBasic, Function, Token};
 use crate::{CainomeResult, Error};
 
@@ -59,19 +61,29 @@ impl AbiParser {
         Ok(entries)
     }
 
+    pub fn collect_tokens_without_dependencies(
+        entries: &Vec<AbiEntry>
+    ) -> CainomeResult<HashMap<String, Vec<Token>>> {
+        for entry in entries {
+
+        }
+
+        Err(Error::ParsingFailed("cant".to_string()))
+    }
+
     /// Parse all tokens in the ABI.
     pub fn collect_tokens(
         entries: Vec<AbiEntry>,
         type_aliases: &HashMap<String, String>,
     ) -> CainomeResult<TokenizedAbi> {
-        let mut token_candidates: HashMap<String, Vec<Token>> = HashMap::new();
+        let mut registry: HashMap<String, Vec<Token>> = Self::collect_tokens_without_dependencies(&entries)?;
 
         // Entry tokens are structs, enums and events (which are structs and enums).
-        for entry in entries.iter() {
-            Self::collect_entry_token(entry, &mut token_candidates)?;
-        }
+        // for entry in entries.iter() {
+        //     Self::collect_entry_token(entry, &mut registry)?;
+        // }
 
-        let tokens = Self::filter_struct_enum_tokens(token_candidates);
+        let tokens = Self::filter_struct_enum_tokens(registry);
 
         let mut structs = vec![];
         let mut enums = vec![];
@@ -141,15 +153,15 @@ impl AbiParser {
         fn get_existing_token_or_parsed(
             type_path: &str,
             all_composites: &HashMap<String, Composite>,
-        ) -> CainomeResult<Token> {
+        ) -> CainomeResult<Rc<Token>> {
             let parsed_token = Token::parse(type_path)?;
 
             // If the token is an known struct or enum, we look up
             // in existing one to get full info from there as the parsing
             // of composites is already done before functions.
-            if let Token::Composite(ref c) = parsed_token {
+            if let Token::Composite(ref c) = parsed_token.as_ref() {
                 match all_composites.get(&c.type_path_no_generic()) {
-                    Some(e) => Ok(Token::Composite(e.clone())),
+                    Some(e) => Ok(Rc::new(Token::Composite(e.clone()))),
                     None => Ok(parsed_token),
                 }
             } else {
@@ -166,21 +178,21 @@ impl AbiParser {
                 for i in &f.inputs {
                     let mut token = get_existing_token_or_parsed(&i.r#type, all_composites)?;
 
-                    for (alias_type_path, alias) in type_aliases {
-                        token.apply_alias(alias_type_path, alias);
-                    }
+                    // for (alias_type_path, alias) in type_aliases {
+                    //     token.apply_alias(alias_type_path, alias);
+                    // }
 
-                    func.inputs.push((i.name.clone(), token));
+                    func.inputs.push((i.name.clone(), token.as_ref().clone()));
                 }
 
                 for o in &f.outputs {
                     let mut token = get_existing_token_or_parsed(&o.r#type, all_composites)?;
 
-                    for (alias_type_path, alias) in type_aliases {
-                        token.apply_alias(alias_type_path, alias);
-                    }
+                    // for (alias_type_path, alias) in type_aliases {
+                    //     token.apply_alias(alias_type_path, alias);
+                    // }
 
-                    func.outputs.push(token);
+                    func.outputs.push(token.as_ref().clone());
                 }
 
                 if let Some(name) = interface_name {
@@ -219,6 +231,7 @@ impl AbiParser {
     fn collect_entry_token(
         entry: &AbiEntry,
         tokens: &mut HashMap<String, Vec<Token>>,
+        registry: &mut HashMap<String, Rc<Token>>
     ) -> CainomeResult<()> {
         match entry {
             AbiEntry::Struct(s) => {
@@ -228,7 +241,7 @@ impl AbiParser {
                     return Ok(());
                 };
 
-                let token: Token = s.try_into()?;
+                let token: Token = s.to_token(registry)?;
                 let entry = tokens.entry(token.type_path()).or_default();
                 entry.push(token);
             }
@@ -238,7 +251,7 @@ impl AbiParser {
                     return Ok(());
                 };
 
-                let token: Token = e.try_into()?;
+                let token: Token = e.to_token(registry)?;
                 let entry = tokens.entry(token.type_path()).or_default();
                 entry.push(token);
             }
@@ -252,7 +265,7 @@ impl AbiParser {
                                 return Ok(());
                             };
 
-                            token = s.try_into()?;
+                            token = s.to_token(registry)?;
                         }
                         TypedAbiEvent::Enum(e) => {
                             // Some enums may be basics, we want to skip them.
@@ -260,7 +273,7 @@ impl AbiParser {
                                 return Ok(());
                             };
 
-                            token = e.try_into()?;
+                            token = e.to_token(registry)?;
 
                             // All types inside an event enum are also events.
                             // To ensure correctness of the tokens, we
@@ -272,13 +285,13 @@ impl AbiParser {
                             // but less logic.
 
                             // An enum if a composite, safe to expect here.
-                            if let Token::Composite(ref mut c) = token {
-                                for i in &mut c.inners {
-                                    if let Token::Composite(ref mut ic) = i.token {
-                                        ic.is_event = true;
-                                    }
-                                }
-                            }
+                            // if let Token::Composite(ref mut c) = token {
+                            //     for i in &mut c.inners {
+                            //         if let Token::Composite(ref mut ic) = i.token.as_ref() {
+                            //             ic.is_event = true;
+                            //         }
+                            //     }
+                            // }
                         }
                     },
                     AbiEvent::Untyped(_) => {
@@ -291,9 +304,9 @@ impl AbiParser {
                 entry.push(token);
             }
             AbiEntry::Interface(interface) => {
-                for entry in &interface.items {
-                    Self::collect_entry_token(entry, tokens)?;
-                }
+                // for entry in &interface.items {
+                //     Self::collect_entry_token(entry, tokens)?;
+                // }
             }
             _ => (),
         };
@@ -393,6 +406,8 @@ impl AbiParser {
 
 #[cfg(test)]
 mod tests {
+    use std::rc::Rc;
+
     use super::*;
     use crate::tokens::{CompositeInner, CompositeInnerKind, CompositeType};
 
@@ -408,41 +423,41 @@ mod tests {
                         index: 0,
                         name: "None".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::CoreBasic(CoreBasic {
+                        token: Rc::new(Token::CoreBasic(CoreBasic {
                             type_path: "()".to_owned(),
-                        }),
+                        })),
                     },
                     CompositeInner {
                         index: 1,
                         name: "North".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::CoreBasic(CoreBasic {
+                        token: Rc::new(Token::CoreBasic(CoreBasic {
                             type_path: "()".to_owned(),
-                        }),
+                        })),
                     },
                     CompositeInner {
                         index: 2,
                         name: "South".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::CoreBasic(CoreBasic {
+                        token: Rc::new(Token::CoreBasic(CoreBasic {
                             type_path: "()".to_owned(),
-                        }),
+                        })),
                     },
                     CompositeInner {
                         index: 3,
                         name: "West".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::CoreBasic(CoreBasic {
+                        token: Rc::new(Token::CoreBasic(CoreBasic {
                             type_path: "()".to_owned(),
-                        }),
+                        })),
                     },
                     CompositeInner {
                         index: 4,
                         name: "East".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::CoreBasic(CoreBasic {
+                        token: Rc::new(Token::CoreBasic(CoreBasic {
                             type_path: "()".to_owned(),
-                        }),
+                        })),
                     },
                 ],
                 generic_args: vec![],
@@ -460,20 +475,20 @@ mod tests {
                         index: 0,
                         name: "player".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::CoreBasic(CoreBasic {
+                        token: Rc::new(Token::CoreBasic(CoreBasic {
                             type_path: "core::starknet::contract_address::ContractAddress"
                                 .to_owned(),
-                        }),
+                        })),
                     },
                     CompositeInner {
                         index: 1,
                         name: "directions".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::Array(Array {
+                        token: Rc::new(Token::Array(Array {
                             is_legacy: false,
                             type_path: "core::array::Array::<dojo_starter::models::Direction>"
                                 .to_owned(),
-                            inner: Box::new(Token::Composite(Composite {
+                            inner: Rc::new(Token::Composite(Composite {
                                 type_path: "dojo_starter::models::Direction".to_owned(),
                                 inners: vec![],
                                 generic_args: vec![],
@@ -481,7 +496,7 @@ mod tests {
                                 is_event: false,
                                 alias: None,
                             })),
-                        }),
+                        })),
                     },
                 ],
                 generic_args: vec![],
@@ -511,17 +526,17 @@ mod tests {
                             index: 0,
                             name: "Weapon".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::CoreBasic(CoreBasic {
+                            token: Rc::new(Token::CoreBasic(CoreBasic {
                                 type_path: "core::felt252".to_owned(),
-                            }),
+                            })),
                         },
                         CompositeInner {
                             index: 1,
                             name: "Armor".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::CoreBasic(CoreBasic {
+                            token: Rc::new(Token::CoreBasic(CoreBasic {
                                 type_path: "core::felt252".to_owned(),
-                            }),
+                            })),
                         },
                     ],
                     generic_args: vec![],
@@ -536,17 +551,17 @@ mod tests {
                             index: 0,
                             name: "Weapon".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::CoreBasic(CoreBasic {
+                            token: Rc::new(Token::CoreBasic(CoreBasic {
                                 type_path: "core::integer::u8".to_owned(),
-                            }),
+                            })),
                         },
                         CompositeInner {
                             index: 1,
                             name: "Armor".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::CoreBasic(CoreBasic {
+                            token: Rc::new(Token::CoreBasic(CoreBasic {
                                 type_path: "core::integer::u8".to_owned(),
-                            }),
+                            })),
                         },
                     ],
                     generic_args: vec![],
@@ -561,17 +576,17 @@ mod tests {
                             index: 0,
                             name: "Weapon".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::CoreBasic(CoreBasic {
+                            token: Rc::new(Token::CoreBasic(CoreBasic {
                                 type_path: "core::felt252".to_owned(),
-                            }),
+                            })),
                         },
                         CompositeInner {
                             index: 1,
                             name: "Armor".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::CoreBasic(CoreBasic {
+                            token: Rc::new(Token::CoreBasic(CoreBasic {
                                 type_path: "core::felt252".to_owned(),
-                            }),
+                            })),
                         },
                     ],
                     generic_args: vec![],
@@ -593,17 +608,17 @@ mod tests {
                             index: 0,
                             name: "id".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::CoreBasic(CoreBasic {
+                            token: Rc::new(Token::CoreBasic(CoreBasic {
                                 type_path: "core::integer::u64".to_owned(),
-                            }),
+                            })),
                         },
                         CompositeInner {
                             index: 1,
                             name: "name".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::CoreBasic(CoreBasic {
+                            token: Rc::new(Token::CoreBasic(CoreBasic {
                                 type_path: "core::felt252".to_owned(),
-                            }),
+                            })),
                         },
                     ],
                     generic_args: vec![],
@@ -618,17 +633,17 @@ mod tests {
                             index: 0,
                             name: "id".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::CoreBasic(CoreBasic {
+                            token: Rc::new(Token::CoreBasic(CoreBasic {
                                 type_path: "core::integer::u128".to_owned(),
-                            }),
+                            })),
                         },
                         CompositeInner {
                             index: 1,
                             name: "name".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::CoreBasic(CoreBasic {
+                            token: Rc::new(Token::CoreBasic(CoreBasic {
                                 type_path: "core::felt252".to_owned(),
-                            }),
+                            })),
                         },
                     ],
                     generic_args: vec![],
@@ -643,17 +658,17 @@ mod tests {
                             index: 0,
                             name: "id".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::CoreBasic(CoreBasic {
+                            token: Rc::new(Token::CoreBasic(CoreBasic {
                                 type_path: "core::integer::u64".to_owned(),
-                            }),
+                            })),
                         },
                         CompositeInner {
                             index: 1,
                             name: "name".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::CoreBasic(CoreBasic {
+                            token: Rc::new(Token::CoreBasic(CoreBasic {
                                 type_path: "core::felt252".to_owned(),
-                            }),
+                            })),
                         },
                     ],
                     generic_args: vec![],
@@ -748,7 +763,7 @@ mod tests {
 
         assert_eq!(abi.structs.len(), 1);
         let s = abi.structs[0].to_composite().unwrap();
-        if let Token::Array(a) = &s.inners[1].token {
+        if let Token::Array(a) = &s.inners[1].token.as_ref() {
             let inner_array = a.inner.to_composite().unwrap();
             assert_eq!(5, inner_array.inners.len());
             // Check that copy was properly done
@@ -769,8 +784,8 @@ mod tests {
 
         assert_eq!(abi.structs.len(), 1);
         let s = abi.structs[0].to_composite().unwrap();
-        if let Token::Array(a) = &s.inners[1].token {
-            if let Token::Tuple(t) = *a.inner.to_owned() {
+        if let Token::Array(a) = &s.inners[1].token.as_ref() {
+            if let Token::Tuple(t) = a.inner.as_ref() {
                 let inner_array = t.inners[0].to_composite().unwrap();
                 assert_eq!(5, inner_array.inners.len());
                 // Check that copy was properly done
@@ -797,7 +812,7 @@ mod tests {
                         index: 0,
                         name: "criteria".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::Composite(Composite {
+                        token: Rc::new(Token::Composite(Composite {
                             type_path:
                                 "tournament::ls15_components::models::tournament::EntryCriteria"
                                     .to_owned(),
@@ -806,32 +821,32 @@ mod tests {
                                     index: 0,
                                     name: "token_id".to_owned(),
                                     kind: CompositeInnerKind::NotUsed,
-                                    token: Token::CoreBasic(CoreBasic {
+                                    token: Rc::new(Token::CoreBasic(CoreBasic {
                                         type_path: "core::integer::u128".to_owned(),
-                                    }),
+                                    })),
                                 },
                                 CompositeInner {
                                     index: 1,
                                     name: "entry_count".to_owned(),
                                     kind: CompositeInnerKind::NotUsed,
-                                    token: Token::CoreBasic(CoreBasic {
+                                    token: Rc::new(Token::CoreBasic(CoreBasic {
                                         type_path: "core::integer::u64".to_owned(),
-                                    }),
+                                    })),
                                 },
                             ],
                             generic_args: vec![],
                             r#type: CompositeType::Struct,
                             is_event: false,
                             alias: None,
-                        }),
+                        })),
                     },
                     CompositeInner {
                         index: 1,
                         name: "uniform".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::CoreBasic(CoreBasic {
+                        token: Rc::new(Token::CoreBasic(CoreBasic {
                             type_path: "core::integer::u64".to_owned(),
-                        }),
+                        })),
                     },
                 ],
                 generic_args: vec![],
@@ -850,16 +865,16 @@ mod tests {
                         index: 0,
                         name: "token".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::CoreBasic(CoreBasic {
+                        token: Rc::new(Token::CoreBasic(CoreBasic {
                             type_path: "core::starknet::contract_address::ContractAddress"
                                 .to_owned(),
-                        }),
+                        })),
                     },
                     CompositeInner {
                         index: 1,
                         name: "entry_type".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::Composite(Composite {
+                        token: Rc::new(Token::Composite(Composite {
                             type_path:
                                 "tournament::ls15_components::models::tournament::GatedEntryType"
                                     .to_owned(),
@@ -868,7 +883,7 @@ mod tests {
                             r#type: CompositeType::Unknown,
                             is_event: false,
                             alias: None,
-                        }),
+                        })),
                     },
                 ],
                 generic_args: vec![],
@@ -887,7 +902,7 @@ Composite {
             index: 0,
             name: "token".to_owned(),
             kind: CompositeInnerKind::NotUsed,
-            token: Token::Composite(
+            token: Rc::new(Token::Composite(
                 Composite {
                     type_path: "tournament::ls15_components::models::tournament::GatedToken".to_owned(),
                     inners: vec![
@@ -895,17 +910,17 @@ Composite {
                             index: 0,
                             name: "token".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::CoreBasic(
+                            token: Rc::new(Token::CoreBasic(
                                 CoreBasic {
                                     type_path: "core::starknet::contract_address::ContractAddress".to_owned(),
                                 },
-                            ),
+                            )),
                         },
                         CompositeInner {
                             index: 1,
                             name: "entry_type".to_owned(),
                             kind: CompositeInnerKind::NotUsed,
-                            token: Token::Composite(
+                            token: Rc::new(Token::Composite(
                                 Composite {
                                     type_path: "tournament::ls15_components::models::tournament::GatedEntryType".to_owned(),
                                     inners: vec![],
@@ -914,7 +929,7 @@ Composite {
                                     is_event: false,
                                     alias: None,
                                 },
-                            ),
+                            )),
                         },
                     ],
                     generic_args: vec![],
@@ -922,32 +937,32 @@ Composite {
                     is_event: false,
                     alias: None,
                 },
-            ),
+            )),
         },
         CompositeInner {
             index: 1,
             name: "tournament".to_owned(),
             kind: CompositeInnerKind::NotUsed,
-            token: Token::Array(
+            token: Rc::new(Token::Array(
                 Array {
                     type_path: "core::array::Span::<core::integer::u64>".to_owned(),
-                    inner: Box::new(Token::CoreBasic(
+                    inner: Rc::new(Token::CoreBasic(
                         CoreBasic {
                             type_path: "core::integer::u64".to_owned(),
                         },
                     )),
                     is_legacy: false,
                 },
-            ),
+            )),
         },
         CompositeInner {
             index: 2,
             name: "address".to_owned(),
             kind: CompositeInnerKind::NotUsed,
-            token: Token::Array(
+            token: Rc::new(Token::Array(
                 Array {
                     type_path: "core::array::Span::<core::starknet::contract_address::ContractAddress>".to_owned(),
-                    inner: Box::new(
+                    inner: Rc::new(
                         Token::CoreBasic(
                         CoreBasic {
                             type_path: "core::starknet::contract_address::ContractAddress".to_owned(),
@@ -956,7 +971,7 @@ Composite {
                     ),
                     is_legacy: false,
                 },
-            ),
+            )),
         },
     ],
     generic_args: vec![],
@@ -974,9 +989,25 @@ Composite {
                     index: 0,
                     name: "gated_type".to_owned(),
                     kind: CompositeInnerKind::NotUsed,
-                    token: Token::Composite(Composite { type_path: "core::option::Option::<tournament::ls15_components::models::tournament::GatedType>".to_owned(), inners: vec![], generic_args: vec![
-                ("A".to_owned(), Token::Composite(Composite { type_path: "tournament::ls15_components::models::tournament::GatedType".to_owned(), inners: vec![], generic_args: vec![], r#type: CompositeType::Unknown, is_event: false, alias: None })),
-                    ], r#type: CompositeType::Unknown, is_event: false, alias: None }),
+                    token: Rc::new(Token::Composite(Composite { 
+                        type_path: "core::option::Option::<tournament::ls15_components::models::tournament::GatedType>".to_owned(), 
+                        inners: vec![], 
+                        generic_args: vec![
+                            ("A".to_owned(), Rc::new(Token::Composite(
+                                Composite { 
+                                    type_path: "tournament::ls15_components::models::tournament::GatedType".to_owned(), 
+                                    inners: vec![], 
+                                    generic_args: vec![], 
+                                    r#type: CompositeType::Unknown, 
+                                    is_event: false, 
+                                    alias: None 
+                                }
+                            ))),
+                        ], 
+                        r#type: CompositeType::Unknown, 
+                        is_event: false, 
+                        alias: None 
+                    }))
                 }],
                 generic_args: vec![],
                 r#type: CompositeType::Struct,
@@ -991,8 +1022,8 @@ Composite {
             .unwrap()
             .to_composite()
             .unwrap();
-        if let Token::Composite(c) = &tmv.inners[0].token {
-            if let Token::Composite(cc) = &c.generic_args[0].1 {
+        if let Token::Composite(c) = &tmv.inners[0].token.as_ref() {
+            if let Token::Composite(cc) = &c.generic_args[0].1.as_ref() {
                 // Checking that inners are not empty ensures us that hydration was done, even for
                 // `generic_args`.
                 assert_ne!(0, cc.inners.len());
@@ -1015,17 +1046,17 @@ Composite {
                         index: 0,
                         name: "id".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::CoreBasic(CoreBasic {
+                        token: Rc::new(Token::CoreBasic(CoreBasic {
                             type_path: "core::integer::u8".to_owned(),
-                        }),
+                        })),
                     },
                     CompositeInner {
                         index: 1,
                         name: "name".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::CoreBasic(CoreBasic {
+                        token: Rc::new(Token::CoreBasic(CoreBasic {
                             type_path: "core::integer::u16".to_owned(),
-                        }),
+                        })),
                     },
                 ],
                 generic_args: vec![],
@@ -1044,7 +1075,7 @@ Composite {
                         index: 0,
                         name: "weapon".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::Composite(Composite {
+                        token: Rc::new(Token::Composite(Composite {
                             type_path: "tournament::ls15_components::models::loot_survivor::Item"
                                 .to_owned(),
                             inners: vec![],
@@ -1052,13 +1083,13 @@ Composite {
                             r#type: CompositeType::Unknown,
                             is_event: false,
                             alias: None,
-                        }),
+                        })),
                     },
                     CompositeInner {
                         index: 1,
                         name: "chest".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::Composite(Composite {
+                        token: Rc::new(Token::Composite(Composite {
                             type_path: "tournament::ls15_components::models::loot_survivor::Item"
                                 .to_owned(),
                             inners: vec![],
@@ -1066,7 +1097,7 @@ Composite {
                             r#type: CompositeType::Unknown,
                             is_event: false,
                             alias: None,
-                        }),
+                        })),
                     },
                 ],
                 generic_args: vec![],
@@ -1084,7 +1115,7 @@ Composite {
                     index: 0,
                     name: "equipment".to_owned(),
                     kind: CompositeInnerKind::NotUsed,
-                    token: Token::Composite(Composite {
+                    token: Rc::new(Token::Composite(Composite {
                         type_path: "tournament::ls15_components::models::loot_survivor::Equipment"
                             .to_owned(),
                         inners: vec![],
@@ -1092,7 +1123,7 @@ Composite {
                         r#type: CompositeType::Unknown,
                         is_event: false,
                         alias: None,
-                    }),
+                    })),
                 }],
                 generic_args: vec![],
                 r#type: CompositeType::Struct,
@@ -1110,15 +1141,15 @@ Composite {
                         index: 0,
                         name: "adventurer_id".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::CoreBasic(CoreBasic {
+                        token: Rc::new(Token::CoreBasic(CoreBasic {
                             type_path: "core::felt252".to_owned(),
-                        }),
+                        })),
                     },
                     CompositeInner {
                         index: 1,
                         name: "adventurer".to_owned(),
                         kind: CompositeInnerKind::NotUsed,
-                        token: Token::Composite(Composite {
+                        token: Rc::new(Token::Composite(Composite {
                             type_path:
                                 "tournament::ls15_components::models::loot_survivor::Adventurer"
                                     .to_owned(),
@@ -1127,7 +1158,7 @@ Composite {
                             r#type: CompositeType::Unknown,
                             is_event: false,
                             alias: None,
-                        }),
+                        })),
                     },
                 ],
                 generic_args: vec![],

@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use super::constants::{CAIRO_COMPOSITE_BUILTINS, CAIRO_GENERIC_BUILTINS};
 use super::genericity;
 use super::Token;
@@ -8,7 +10,7 @@ use crate::CainomeResult;
 #[derive(Debug, Clone, PartialEq)]
 pub struct EventInner {
     pub name: String,
-    pub token: Token,
+    pub token: Rc<Token>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -18,22 +20,25 @@ pub struct Event {
     pub data: Vec<EventInner>,
     pub nested: Vec<EventInner>,
     pub flat: Vec<EventInner>,
-    pub generic_args: Vec<(String, Token)>,
+    pub generic_args: Vec<(String, Rc<Token>)>,
     pub alias: Option<String>,
 }
 
 impl Event {
-    fn new(type_path: String, generic_args: Vec<(String, Token)>) -> Self {
-        Self {
+    pub fn new(type_path: String) -> CainomeResult<Self> {
+        let type_path = utils::escape_rust_keywords(&type_path);
+        let generic_args = genericity::extract_generics_args(&type_path)?;
+
+        Ok(Self {
             // We want to keep the path with generic for the generic resolution.
-            type_path: type_path.to_string(),
+            type_path: type_path,
             keys: vec![],
             data: vec![],
             nested: vec![],
             flat: vec![],
             generic_args,
             alias: None,
-        }
+        })
     }
 
     /// Parses a composite type from a type path.
@@ -60,7 +65,8 @@ impl Event {
         let generic_args = genericity::extract_generics_args(&type_path)?;
 
         // We want to keep the path with generic for the generic resolution.
-        Ok(Self::new(type_path.to_string(), generic_args))
+        // Ok(Self::new(type_path.to_string(), generic_args))
+        Err(crate::Error::ParsingFailed("asd".to_string()))
     }
 
     pub fn type_path_no_generic(&self) -> String {
@@ -109,17 +115,17 @@ impl Event {
             self.alias = Some(alias.to_string());
         }
 
-        for ref mut i in &mut self.nested {
-            if let Token::Composite(ref mut c) = i.token {
-                c.apply_alias(type_path, alias);
-            }
-        }
+        // for ref mut i in &mut self.nested {
+        //     if let Token::Composite(ref mut c) = i.token.as_ref() {
+        //         c.apply_alias(type_path, alias);
+        //     }
+        // }
 
-        for ref mut i in &mut self.flat {
-            if let Token::Composite(ref mut c) = i.token {
-                c.apply_alias(type_path, alias);
-            }
-        }
+        // for ref mut i in &mut self.flat {
+        //     if let Token::Composite(ref mut c) = i.token.as_ref() {
+        //         c.apply_alias(type_path, alias);
+        //     }
+        // }
     }
 }
 
@@ -142,7 +148,7 @@ mod tests {
 
     #[test]
     fn test_parse() {
-        let expected = Event::new("module::MyStruct".to_string(), vec![]);
+        let expected = Event::new("module::MyStruct".to_string()).unwrap();
 
         assert_eq!(Event::parse("module::MyStruct").unwrap(), expected);
         assert!(!expected.is_generic());
@@ -150,10 +156,7 @@ mod tests {
 
     #[test]
     fn test_parse_generic_one() {
-        let expected = Event::new(
-            "module::MyStruct::<core::felt252>".to_string(),
-            vec![("A".to_string(), basic_felt252())],
-        );
+        let expected = Event::new("module::MyStruct::<core::felt252>".to_string()).unwrap();
 
         assert_eq!(
             Event::parse("module::MyStruct::<core::felt252>").unwrap(),
@@ -164,13 +167,9 @@ mod tests {
 
     #[test]
     fn test_parse_generic_two() {
-        let expected = Event::new(
-            "module::MyStruct::<core::felt252, core::integer::u64>".to_string(),
-            vec![
-                ("A".to_string(), basic_felt252()),
-                ("B".to_string(), basic_u64()),
-            ],
-        );
+        let expected =
+            Event::new("module::MyStruct::<core::felt252, core::integer::u64>".to_string())
+                .unwrap();
 
         assert_eq!(
             Event::parse("module::MyStruct::<core::felt252, core::integer::u64>").unwrap(),
@@ -181,7 +180,7 @@ mod tests {
 
     #[test]
     fn test_type_name() {
-        let mut c = Event::new("module::MyStruct".to_string(), vec![]);
+        let mut c = Event::new("module::MyStruct".to_string()).unwrap();
         assert_eq!(c.type_name(), "MyStruct");
 
         c.type_path = "module::MyStruct::<core::felt252>".to_string();

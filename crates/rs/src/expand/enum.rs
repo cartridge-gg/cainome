@@ -1,3 +1,4 @@
+use cainome_parser::tokens::utils::is_builtin;
 use cainome_parser::tokens::{Composite, Token};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
@@ -9,7 +10,7 @@ pub struct CairoEnum;
 
 impl CairoEnum {
     pub fn expand_decl(composite: &Composite, derives: &[String]) -> TokenStream2 {
-        if composite.is_builtin() {
+        if is_builtin(&composite.type_path) {
             return quote!();
         }
 
@@ -45,7 +46,7 @@ impl CairoEnum {
     }
 
     pub fn expand_impl(composite: &Composite) -> TokenStream2 {
-        if composite.is_builtin() {
+        if is_builtin(&composite.type_path) {
             return quote!();
         }
 
@@ -63,7 +64,7 @@ impl CairoEnum {
 
             // Tuples type used as rust type path must be surrounded
             // by angle brackets.
-            let ty_punctuated = match inner.token {
+            let ty_punctuated = match inner.token.as_ref() {
                 Token::Tuple(_) => quote!(<#ty>),
                 _ => quote!(#ty),
             };

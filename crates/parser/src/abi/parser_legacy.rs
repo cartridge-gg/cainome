@@ -3,7 +3,9 @@ use starknet::core::types::contract::legacy::{
 };
 use starknet::core::types::contract::StateMutability;
 use std::collections::HashMap;
+use std::rc::Rc;
 
+use crate::abi::conversions::TokenConvertible;
 use crate::tokens::{Composite, CompositeType, CoreBasic, Function, Token};
 use crate::{CainomeResult, Error, TokenizedAbi};
 
@@ -43,7 +45,7 @@ impl AbiParserLegacy {
         entries: &[RawLegacyAbiEntry],
         type_aliases: &HashMap<String, String>,
     ) -> CainomeResult<TokenizedAbi> {
-        let mut tokens: HashMap<String, Token> = HashMap::new();
+        let mut tokens: HashMap<String, Rc<Token>> = HashMap::new();
 
         for entry in entries {
             Self::collect_entry_token(entry, &mut tokens)?;
@@ -58,11 +60,11 @@ impl AbiParserLegacy {
 
         // Apply type aliases only on structs and enums.
         for (_, mut t) in tokens {
-            for (type_path, alias) in type_aliases {
-                t.apply_alias(type_path, alias);
-            }
+            // for (type_path, alias) in type_aliases {
+            //     t.apply_alias(type_path, alias);
+            // }
 
-            if let Token::Composite(ref c) = t {
+            if let Token::Composite(ref c) = t.as_ref() {
                 all_composites.insert(c.type_path_no_generic(), c.clone());
 
                 match c.r#type {
@@ -82,9 +84,9 @@ impl AbiParserLegacy {
         let interfaces: HashMap<String, Vec<Token>> = HashMap::new();
 
         Ok(TokenizedAbi {
-            enums,
-            structs,
-            functions,
+            enums: enums.into_iter().map(|i| i.as_ref().clone()).collect(),
+            structs: structs.into_iter().map(|i| i.as_ref().clone()).collect(),
+            functions: functions.into_iter().map(|i| i.as_ref().clone()).collect(),
             interfaces,
         })
     }
@@ -97,7 +99,7 @@ impl AbiParserLegacy {
     /// * `tokens` - The list of tokens already collected.
     fn collect_entry_token(
         entry: &RawLegacyAbiEntry,
-        tokens: &mut HashMap<String, Token>,
+        registry: &mut HashMap<String, Rc<Token>>,
     ) -> CainomeResult<()> {
         match entry {
             RawLegacyAbiEntry::Struct(s) => {
@@ -106,12 +108,12 @@ impl AbiParserLegacy {
                     return Ok(());
                 };
 
-                let token: Token = s.try_into()?;
-                tokens.insert(token.type_path(), token);
+                let token: Token = s.to_token(registry)?;
+                registry.insert(token.type_path(), Rc::new(token));
             }
             RawLegacyAbiEntry::Event(ev) => {
-                let token: Token = ev.try_into()?;
-                tokens.insert(token.type_path(), token);
+                let token: Token = ev.to_token(registry)?;
+                registry.insert(token.type_path(), Rc::new(token));
             }
             _ => (),
         };
@@ -130,8 +132,8 @@ impl AbiParserLegacy {
     fn collect_entry_function(
         entry: &RawLegacyAbiEntry,
         all_composites: &mut HashMap<String, Composite>,
-        structs: &mut Vec<Token>,
-        functions: &mut Vec<Token>,
+        structs: &mut Vec<Rc<Token>>,
+        functions: &mut Vec<Rc<Token>>,
     ) -> CainomeResult<()> {
         /// Gets the existing token into known composite, if any.
         /// Otherwise, return the parsed token.
@@ -144,13 +146,13 @@ impl AbiParserLegacy {
             // If the token is an known struct or enum, we look up
             // in existing one to get full info from there as the parsing
             // of composites is already done before functions.
-            if let Token::Composite(ref c) = parsed_token {
+            if let Token::Composite(ref c) = parsed_token.as_ref() {
                 match all_composites.get(&c.type_path_no_generic()) {
                     Some(e) => Ok(Token::Composite(e.clone())),
-                    None => Ok(parsed_token),
+                    None => Ok(parsed_token.as_ref().clone()),
                 }
             } else {
-                Ok(parsed_token)
+                Ok(parsed_token.as_ref().clone())
             }
         }
 
@@ -186,16 +188,19 @@ impl AbiParserLegacy {
                     });
                 }
 
-                let s = RawLegacyStruct {
+                let s = &RawLegacyStruct {
                     members,
                     name: func.get_cairo0_output_name(),
                     size: func.named_outputs.len() as u64,
                 };
 
-                structs.push((&s).try_into()?);
+                let mut registry: HashMap<String, Rc<Token>> = HashMap::new();
+                let z = s.to_token(&mut registry)?;
+
+                structs.push(Rc::new(z));
             }
 
-            functions.push(Token::Function(func));
+            functions.push(Rc::new(Token::Function(func)));
         }
 
         Ok(())

@@ -15,26 +15,23 @@ mod option;
 mod result;
 mod structure;
 mod tuple;
-mod utils;
+pub mod utils;
 
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 pub use array::Array;
 pub use basic::CoreBasic;
 pub use composite::{Composite, CompositeInner, CompositeInnerKind, CompositeType};
-pub use enumeration::Enum;
-pub use event::Event;
+pub use enumeration::{Enum, EnumInner};
+pub use event::{Event, EventInner};
 pub use function::{Function, FunctionOutputKind, StateMutability};
 pub use non_zero::NonZero;
 pub use option::Option;
 pub use result::Result;
-pub use structure::Struct;
+pub use structure::{Struct, StructInner};
 pub use tuple::Tuple;
 
-use crate::{
-    tokens::{enumeration::EnumInner, event::EventInner, structure::StructInner},
-    CainomeResult, Error,
-};
+use crate::{CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
@@ -54,7 +51,7 @@ pub enum Token {
 type Parser = fn(&str) -> CainomeResult<Token>;
 
 impl Token {
-    const PARSERS: &[Parser] = &[
+    const BASIC_PARSERS: &[Parser] = &[
         |s| CoreBasic::parse(s).map(Token::CoreBasic),
         |s| Array::parse(s).map(Token::Array),
         |s| Tuple::parse(s).map(Token::Tuple),
@@ -67,10 +64,19 @@ impl Token {
         |s| Composite::parse(s).map(Token::Composite),
     ];
 
-    pub fn parse(type_path: &str) -> CainomeResult<Self> {
-        for parser in Self::PARSERS {
+    pub fn parse(
+        type_path: &str,
+        // registry: &mut HashMap<String, Rc<Token>>,
+    ) -> CainomeResult<Rc<Self>> {
+        // if let Some(token) = registry.get(type_path) {
+        //     return Ok(Rc::clone(token));
+        // }
+
+        for parser in Self::BASIC_PARSERS {
             if let Ok(tok) = parser(type_path) {
-                return Ok(tok);
+                let value = Rc::new(tok);
+                // registry.insert(type_path.to_string(), Rc::clone(&value));
+                return Ok(value);
             }
         }
 
@@ -172,8 +178,8 @@ impl Token {
         match token {
             Token::CoreBasic(_) => token,
             Token::Array(arr) => Token::Array(Array {
-                inner: Box::new(Self::hydrate(
-                    *arr.inner,
+                inner: Rc::new(Self::hydrate(
+                    arr.inner.as_ref().clone(),
                     filtered,
                     recursion_max_depth,
                     iteration_count + 1,
@@ -186,15 +192,21 @@ impl Token {
                     .inners
                     .into_iter()
                     .map(|inner| {
-                        Self::hydrate(inner, filtered, recursion_max_depth, iteration_count + 1)
+                        Self::hydrate(
+                            inner.as_ref().clone(),
+                            filtered,
+                            recursion_max_depth,
+                            iteration_count + 1,
+                        )
                     })
+                    .map(Rc::new)
                     .collect(),
                 type_path: tup.type_path,
             }),
             Token::Option(opt) => Token::Option(Option {
                 type_path: opt.type_path,
-                inner: Box::new(Self::hydrate(
-                    *opt.inner,
+                inner: Rc::new(Self::hydrate(
+                    opt.inner.as_ref().clone(),
                     filtered,
                     recursion_max_depth,
                     iteration_count + 1,
@@ -202,8 +214,8 @@ impl Token {
             }),
             Token::NonZero(non_zero) => Token::NonZero(NonZero {
                 type_path: non_zero.type_path,
-                inner: Box::new(Self::hydrate(
-                    *non_zero.inner,
+                inner: Rc::new(Self::hydrate(
+                    non_zero.inner.as_ref().clone(),
                     filtered,
                     recursion_max_depth,
                     iteration_count + 1,
@@ -211,14 +223,14 @@ impl Token {
             }),
             Token::Result(res) => Token::Result(Result {
                 type_path: res.type_path,
-                inner: Box::new(Self::hydrate(
-                    *res.inner,
+                inner: Rc::new(Self::hydrate(
+                    res.inner.as_ref().clone(),
                     filtered,
                     recursion_max_depth,
                     iteration_count + 1,
                 )),
-                error: Box::new(Self::hydrate(
-                    *res.error,
+                error: Rc::new(Self::hydrate(
+                    res.inner.as_ref().clone(),
                     filtered,
                     recursion_max_depth,
                     iteration_count + 1,
@@ -226,8 +238,8 @@ impl Token {
             }),
             Token::Composite(comp) => {
                 let type_path = comp.type_path_no_generic();
-
-                if comp.r#type == CompositeType::Unknown && !comp.is_builtin() {
+                let is_builtin = utils::is_builtin(&comp.type_path);
+                if comp.r#type == CompositeType::Unknown && is_builtin {
                     if let Some(hydrated) = filtered.get(&type_path) {
                         return Token::hydrate(
                             hydrated.clone(),
@@ -248,12 +260,12 @@ impl Token {
                             index: i.index,
                             name: i.name,
                             kind: i.kind,
-                            token: Self::hydrate(
-                                i.token,
+                            token: Rc::new(Self::hydrate(
+                                i.token.as_ref().clone(),
                                 filtered,
                                 recursion_max_depth,
                                 iteration_count + 1,
-                            ),
+                            )),
                         })
                         .collect(),
                     generic_args: comp
@@ -262,12 +274,12 @@ impl Token {
                         .map(|(name, token)| {
                             (
                                 name,
-                                Self::hydrate(
-                                    token,
+                                Rc::new(Self::hydrate(
+                                    token.as_ref().clone(),
                                     filtered,
                                     recursion_max_depth,
                                     iteration_count + 1,
-                                ),
+                                )),
                             )
                         })
                         .collect(),
@@ -283,12 +295,12 @@ impl Token {
                     .into_iter()
                     .map(|inner| EnumInner {
                         name: inner.name,
-                        token: Self::hydrate(
-                            inner.token,
+                        token: Rc::new(Self::hydrate(
+                            inner.token.as_ref().clone(),
                             filtered,
                             recursion_max_depth,
                             iteration_count + 1,
-                        ),
+                        )),
                     })
                     .collect(),
                 generic_args: e
@@ -297,12 +309,12 @@ impl Token {
                     .map(|(name, token)| {
                         (
                             name,
-                            Self::hydrate(
-                                token,
+                            Rc::new(Self::hydrate(
+                                token.as_ref().clone(),
                                 filtered,
                                 recursion_max_depth,
                                 iteration_count + 1,
-                            ),
+                            )),
                         )
                     })
                     .collect(),
@@ -315,12 +327,12 @@ impl Token {
                     .into_iter()
                     .map(|inner| StructInner {
                         name: inner.name,
-                        token: Self::hydrate(
-                            inner.token,
+                        token: Rc::new(Self::hydrate(
+                            inner.token.as_ref().clone(),
                             filtered,
                             recursion_max_depth,
                             iteration_count + 1,
-                        ),
+                        )),
                     })
                     .collect(),
                 generic_args: e
@@ -329,12 +341,12 @@ impl Token {
                     .map(|(name, token)| {
                         (
                             name,
-                            Self::hydrate(
-                                token,
+                            Rc::new(Self::hydrate(
+                                token.as_ref().clone(),
                                 filtered,
                                 recursion_max_depth,
                                 iteration_count + 1,
-                            ),
+                            )),
                         )
                     })
                     .collect(),
@@ -347,12 +359,12 @@ impl Token {
                     .into_iter()
                     .map(|inner| EventInner {
                         name: inner.name,
-                        token: Self::hydrate(
-                            inner.token,
+                        token: Rc::new(Self::hydrate(
+                            inner.token.as_ref().clone(),
                             filtered,
                             recursion_max_depth,
                             iteration_count + 1,
-                        ),
+                        )),
                     })
                     .collect(),
                 data: e
@@ -360,12 +372,12 @@ impl Token {
                     .into_iter()
                     .map(|inner| EventInner {
                         name: inner.name,
-                        token: Self::hydrate(
-                            inner.token,
+                        token: Rc::new(Self::hydrate(
+                            inner.token.as_ref().clone(),
                             filtered,
                             recursion_max_depth,
                             iteration_count + 1,
-                        ),
+                        )),
                     })
                     .collect(),
                 nested: e
@@ -373,12 +385,12 @@ impl Token {
                     .into_iter()
                     .map(|inner| EventInner {
                         name: inner.name,
-                        token: Self::hydrate(
-                            inner.token,
+                        token: Rc::new(Self::hydrate(
+                            inner.token.as_ref().clone(),
                             filtered,
                             recursion_max_depth,
                             iteration_count + 1,
-                        ),
+                        )),
                     })
                     .collect(),
                 flat: e
@@ -386,12 +398,12 @@ impl Token {
                     .into_iter()
                     .map(|inner| EventInner {
                         name: inner.name,
-                        token: Self::hydrate(
-                            inner.token,
+                        token: Rc::new(Self::hydrate(
+                            inner.token.as_ref().clone(),
                             filtered,
                             recursion_max_depth,
                             iteration_count + 1,
-                        ),
+                        )),
                     })
                     .collect(),
                 generic_args: e
@@ -400,12 +412,12 @@ impl Token {
                     .map(|(name, token)| {
                         (
                             name,
-                            Self::hydrate(
-                                token,
+                            Rc::new(Self::hydrate(
+                                token.as_ref().clone(),
                                 filtered,
                                 recursion_max_depth,
                                 iteration_count + 1,
-                            ),
+                            )),
                         )
                     })
                     .collect(),

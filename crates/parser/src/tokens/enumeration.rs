@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::{
     tokens::{genericity, utils, Token},
     CainomeResult,
@@ -6,18 +8,30 @@ use crate::{
 #[derive(Debug, Clone, PartialEq)]
 pub struct EnumInner {
     pub name: String,
-    pub token: Token,
+    pub token: Rc<Token>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Enum {
     pub type_path: String,
     pub variants: Vec<EnumInner>,
-    pub generic_args: Vec<(String, Token)>,
+    pub generic_args: Vec<(String, Rc<Token>)>,
     pub alias: Option<String>,
 }
 
 impl Enum {
+    pub fn new(type_path: &str) -> CainomeResult<Self> {
+        let type_path = utils::escape_rust_keywords(type_path);
+        let generic_args = genericity::extract_generics_args(&type_path)?;
+
+        return Ok(Self {
+            type_path: type_path.to_string(),
+            generic_args: generic_args,
+            variants: vec![],
+            alias: None,
+        });
+    }
+
     pub fn type_path_no_generic(&self) -> String {
         genericity::type_path_no_generic(&self.type_path)
     }
@@ -31,12 +45,13 @@ impl Enum {
         let type_path = utils::escape_rust_keywords(type_path);
         let generic_args = genericity::extract_generics_args(&type_path)?;
 
+        Err(crate::Error::ParsingFailed("asd".to_string()))
         // We want to keep the path with generic for the generic resolution.
-        Ok(Self {
-            type_path: type_path.to_string(),
-            generic_args: generic_args,
-            variants: vec![],
-            alias: None,
-        })
+        // Ok(Self {
+        //     type_path: type_path.to_string(),
+        //     generic_args: generic_args,
+        //     variants: vec![],
+        //     alias: None,
+        // })
     }
 }

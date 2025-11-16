@@ -3,6 +3,8 @@
 //! Technically, a `Span` is different than an `Array` in cairo.
 //! However, from a binding point of view, they are both collections,
 //! and we can safely consider them as the same type.
+use std::rc::Rc;
+
 use super::constants::CAIRO_CORE_SPAN_ARRAY;
 use super::genericity;
 
@@ -14,7 +16,7 @@ pub const CAIRO_0_ARRAY: &str = "*";
 #[derive(Debug, Clone, PartialEq)]
 pub struct Array {
     pub type_path: String,
-    pub inner: Box<Token>,
+    pub inner: Rc<Token>,
     pub is_legacy: bool,
 }
 
@@ -36,7 +38,7 @@ impl Array {
 
                 return Ok(Self {
                     type_path: type_path.to_string(),
-                    inner: Box::new(generic_arg_token.clone()),
+                    inner: generic_arg_token.clone(),
                     is_legacy: false,
                 });
             }
@@ -45,7 +47,7 @@ impl Array {
         if let Some(inner_type) = type_path.strip_suffix(CAIRO_0_ARRAY) {
             return Ok(Self {
                 type_path: type_path.to_string(),
-                inner: Box::new(Token::parse(inner_type)?),
+                inner: Token::parse(inner_type)?,
                 is_legacy: true,
             });
         }
@@ -57,7 +59,7 @@ impl Array {
     }
 
     pub fn apply_alias(&mut self, type_path: &str, alias: &str) {
-        self.inner.apply_alias(type_path, alias);
+        // self.inner.apply_alias(type_path, alias);
     }
 }
 
@@ -72,7 +74,7 @@ mod tests {
             Array::parse("core::array::Array::<core::felt252>").unwrap(),
             Array {
                 type_path: "core::array::Array::<core::felt252>".to_string(),
-                inner: Box::new(Token::CoreBasic(CoreBasic {
+                inner: Rc::new(Token::CoreBasic(CoreBasic {
                     type_path: "core::felt252".to_string()
                 })),
                 is_legacy: false,
