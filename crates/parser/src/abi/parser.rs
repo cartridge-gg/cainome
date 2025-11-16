@@ -1,9 +1,9 @@
 use starknet::core::types::contract::{AbiEntry, AbiEvent, SierraClass, TypedAbiEvent};
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::rc::Rc;
 
 use crate::abi::conversions::TokenConvertible;
-use crate::tokens::{Array, Composite, CompositeType, CoreBasic, Function, Token};
+use crate::tokens::{Array, Composite, CompositeType, CoreBasic, FuncInner, Function, Token};
 use crate::{CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -60,67 +60,96 @@ impl AbiParser {
 
         Ok(entries)
     }
-
-    pub fn collect_tokens_without_dependencies(
-        entries: &Vec<AbiEntry>
-    ) -> CainomeResult<HashMap<String, Vec<Token>>> {
-        for entry in entries {
-
+    
+    pub fn has_unknown_dependencies(entry: &AbiEntry, registry: &HashMap<String, Rc<Token>>) -> bool {
+        match entry {
+            AbiEntry::Function(abi_function) => {
+                let has_unknown_input = abi_function.inputs.iter().any(|m| !registry.contains_key(&m.r#type));
+                let has_unknown_output = abi_function.outputs.iter().any(|m| !registry.contains_key(&m.r#type));
+                has_unknown_input || has_unknown_output
+            },
+            AbiEntry::Event(abi_event) => {
+                match abi_event {
+                    AbiEvent::Typed(typed_abi_event) => {
+                        match typed_abi_event {
+                            TypedAbiEvent::Struct(abi_event_struct) => {
+                                abi_event_struct.members.iter().any(|m| !registry.contains_key(&m.r#type))
+                            },
+                            TypedAbiEvent::Enum(abi_event_enum) => {
+                                abi_event_enum.variants.iter().any(|m| !registry.contains_key(&m.r#type))
+                            },
+                        }
+                    },
+                    AbiEvent::Untyped(untyped_abi_event) => {
+                        untyped_abi_event.inputs.iter().any(|m| !registry.contains_key(&m.r#type))
+                    },
+                }
+            },
+            AbiEntry::Struct(abi_struct) => {
+                abi_struct.members.iter().any(|m| !registry.contains_key(&m.r#type))
+            },
+            AbiEntry::Enum(abi_enum) => {
+                abi_enum.variants.iter().any(|m| !registry.contains_key(&m.r#type))
+            },
+            AbiEntry::Constructor(abi_constructor) => {
+                abi_constructor.inputs.iter().any(|m| !registry.contains_key(&m.r#type))
+            },
+            AbiEntry::Interface(abi_interface) => {
+                abi_interface.items.iter().any(|m| Self::has_unknown_dependencies(m, registry))
+            },
+            AbiEntry::L1Handler(abi_function) => {
+                let has_unknown_input = abi_function.inputs.iter().any(|m| !registry.contains_key(&m.r#type));
+                let has_unknown_output = abi_function.outputs.iter().any(|m| !registry.contains_key(&m.r#type));
+                has_unknown_input || has_unknown_output
+            },
+            AbiEntry::Impl(abi_impl) => {
+                !registry.contains_key(&abi_impl.interface_name)
+            },
         }
-
-        Err(Error::ParsingFailed("cant".to_string()))
     }
+
 
     /// Parse all tokens in the ABI.
     pub fn collect_tokens(
         entries: Vec<AbiEntry>,
         type_aliases: &HashMap<String, String>,
     ) -> CainomeResult<TokenizedAbi> {
-        let mut registry: HashMap<String, Vec<Token>> = Self::collect_tokens_without_dependencies(&entries)?;
+        let mut registry: HashMap<String, Rc<Token>> = HashMap::new();
+        let mut local_entries = VecDeque::from(entries.clone());
+        let mut seen_since_last_removal = 0;
 
-        // Entry tokens are structs, enums and events (which are structs and enums).
-        // for entry in entries.iter() {
-        //     Self::collect_entry_token(entry, &mut registry)?;
-        // }
-
-        let tokens = Self::filter_struct_enum_tokens(registry);
-
-        let mut structs = vec![];
-        let mut enums = vec![];
-        // This is not memory efficient, but
-        // currently the focus is on search speed.
-        // To be optimized.
-        let mut all_composites: HashMap<String, Composite> = HashMap::new();
-
-        // Apply type aliases only on structs and enums.
-        for (_, mut t) in tokens {
-            for (type_path, alias) in type_aliases {
-                t.apply_alias(type_path, alias);
+        while local_entries.len() > 0 {
+            if seen_since_last_removal > local_entries.len() {
+                // TODO: sort out
+                return Err(Error::ParsingFailed("Something went wromg. Indirect recursion most likely.".to_string()))
             }
-
-            if let Token::Composite(ref c) = t {
-                all_composites.insert(c.type_path_no_generic(), c.clone());
-
-                match c.r#type {
-                    CompositeType::Struct => structs.push(t),
-                    CompositeType::Enum => enums.push(t),
-                    _ => (),
-                }
+            
+            let entry = local_entries.pop_front().expect("Should always succeed");
+            seen_since_last_removal += 1;
+            
+            if Self::has_unknown_dependencies(&entry, &registry) {
+                local_entries.push_back(entry);
+            } else {
+                let token = entry.to_token(&mut registry)?;
+                registry.insert(token.type_name(), Rc::new(token));
+                seen_since_last_removal = 0;
             }
         }
 
+        let tokens = registry.values();
+
+        let mut structs = vec![];
+        let mut enums = vec![];
         let mut functions = vec![];
         let mut interfaces: HashMap<String, Vec<Token>> = HashMap::new();
 
-        for entry in entries.iter() {
-            Self::collect_entry_function(
-                entry,
-                &all_composites,
-                &mut functions,
-                &mut interfaces,
-                None,
-                type_aliases,
-            )?;
+        for token in tokens {
+            match token.as_ref() {
+                Token::Function(function) => {
+                    functions.push(Token::Function(function.clone()));
+                },
+                _ => ()
+            }
         }
 
         Ok(TokenizedAbi {
@@ -131,277 +160,6 @@ impl AbiParser {
         })
     }
 
-    /// Collects the function from the ABI entry.
-    ///
-    /// # Arguments
-    ///
-    /// * `entry` - The ABI entry to collect functions from.
-    /// * `all_composites` - All known composites tokens.
-    /// * `functions` - The list of functions already collected.
-    /// * `interfaces` - The list of interfaces already collected.
-    /// * `interface_name` - The name of the interface (if any).
-    fn collect_entry_function(
-        entry: &AbiEntry,
-        all_composites: &HashMap<String, Composite>,
-        functions: &mut Vec<Token>,
-        interfaces: &mut HashMap<String, Vec<Token>>,
-        interface_name: Option<String>,
-        type_aliases: &HashMap<String, String>,
-    ) -> CainomeResult<()> {
-        /// Gets the existing token into known composite, if any.
-        /// Otherwise, return the parsed token.
-        fn get_existing_token_or_parsed(
-            type_path: &str,
-            all_composites: &HashMap<String, Composite>,
-        ) -> CainomeResult<Rc<Token>> {
-            let parsed_token = Token::parse(type_path)?;
-
-            // If the token is an known struct or enum, we look up
-            // in existing one to get full info from there as the parsing
-            // of composites is already done before functions.
-            if let Token::Composite(ref c) = parsed_token.as_ref() {
-                match all_composites.get(&c.type_path_no_generic()) {
-                    Some(e) => Ok(Rc::new(Token::Composite(e.clone()))),
-                    None => Ok(parsed_token),
-                }
-            } else {
-                Ok(parsed_token)
-            }
-        }
-
-        // TODO: optimize the search and data structures.
-        // HashMap would be more appropriate than vec.
-        match entry {
-            AbiEntry::Function(f) => {
-                let mut func = Function::new(&f.name, f.state_mutability.clone().into());
-
-                for i in &f.inputs {
-                    let mut token = get_existing_token_or_parsed(&i.r#type, all_composites)?;
-
-                    // for (alias_type_path, alias) in type_aliases {
-                    //     token.apply_alias(alias_type_path, alias);
-                    // }
-
-                    func.inputs.push((i.name.clone(), token.as_ref().clone()));
-                }
-
-                for o in &f.outputs {
-                    let mut token = get_existing_token_or_parsed(&o.r#type, all_composites)?;
-
-                    // for (alias_type_path, alias) in type_aliases {
-                    //     token.apply_alias(alias_type_path, alias);
-                    // }
-
-                    func.outputs.push(token.as_ref().clone());
-                }
-
-                if let Some(name) = interface_name {
-                    interfaces
-                        .entry(name)
-                        .or_default()
-                        .push(Token::Function(func));
-                } else {
-                    functions.push(Token::Function(func));
-                }
-            }
-            AbiEntry::Interface(interface) => {
-                for entry in &interface.items {
-                    Self::collect_entry_function(
-                        entry,
-                        all_composites,
-                        functions,
-                        interfaces,
-                        Some(interface.name.clone()),
-                        type_aliases,
-                    )?;
-                }
-            }
-            _ => (),
-        }
-
-        Ok(())
-    }
-
-    /// Collects the token from the ABI entry.
-    ///
-    /// # Arguments
-    ///
-    /// * `entry` - The ABI entry to collect tokens from.
-    /// * `tokens` - The list of tokens already collected.
-    fn collect_entry_token(
-        entry: &AbiEntry,
-        tokens: &mut HashMap<String, Vec<Token>>,
-        registry: &mut HashMap<String, Rc<Token>>
-    ) -> CainomeResult<()> {
-        match entry {
-            AbiEntry::Struct(s) => {
-                if Array::parse(&s.name).is_ok() {
-                    // Spans can be found as a struct entry in the ABI. We don't want
-                    // them as Composite, they are considered as arrays.
-                    return Ok(());
-                };
-
-                let token: Token = s.to_token(registry)?;
-                let entry = tokens.entry(token.type_path()).or_default();
-                entry.push(token);
-            }
-            AbiEntry::Enum(e) => {
-                // `bool` is a core basic enum, we want to skip it.
-                if CoreBasic::parse(&e.name).is_ok() {
-                    return Ok(());
-                };
-
-                let token: Token = e.to_token(registry)?;
-                let entry = tokens.entry(token.type_path()).or_default();
-                entry.push(token);
-            }
-            AbiEntry::Event(ev) => {
-                let mut token: Token;
-                match ev {
-                    AbiEvent::Typed(typed_e) => match typed_e {
-                        TypedAbiEvent::Struct(s) => {
-                            // Some enums may be basics, we want to skip them.
-                            if CoreBasic::parse(&s.name).is_ok() {
-                                return Ok(());
-                            };
-
-                            token = s.to_token(registry)?;
-                        }
-                        TypedAbiEvent::Enum(e) => {
-                            // Some enums may be basics, we want to skip them.
-                            if CoreBasic::parse(&e.name).is_ok() {
-                                return Ok(());
-                            };
-
-                            token = e.to_token(registry)?;
-
-                            // All types inside an event enum are also events.
-                            // To ensure correctness of the tokens, we
-                            // set the boolean is_event to true for each variant
-                            // inner token (if any).
-
-                            // An other solution would have been to looks for the type
-                            // inside existing tokens, and clone it. More computation,
-                            // but less logic.
-
-                            // An enum if a composite, safe to expect here.
-                            // if let Token::Composite(ref mut c) = token {
-                            //     for i in &mut c.inners {
-                            //         if let Token::Composite(ref mut ic) = i.token.as_ref() {
-                            //             ic.is_event = true;
-                            //         }
-                            //     }
-                            // }
-                        }
-                    },
-                    AbiEvent::Untyped(_) => {
-                        // Cairo 0.
-                        return Ok(());
-                    }
-                };
-
-                let entry = tokens.entry(token.type_path()).or_default();
-                entry.push(token);
-            }
-            AbiEntry::Interface(interface) => {
-                // for entry in &interface.items {
-                //     Self::collect_entry_token(entry, tokens)?;
-                // }
-            }
-            _ => (),
-        };
-
-        Ok(())
-    }
-
-    fn filter_struct_enum_tokens(
-        token_candidates: HashMap<String, Vec<Token>>,
-    ) -> HashMap<String, Token> {
-        let tokens_filtered = Self::filter_token_candidates(token_candidates);
-
-        // Can be a very huge copy here. Need an other way to do that in the loop
-        // above here.
-        let filtered = tokens_filtered.clone();
-
-        // So now once it's filtered, we may actually iterate again on the tokens
-        // to resolve all structs/enums inners that may reference existing types.
-        Self::hydrate_composites(tokens_filtered, filtered)
-    }
-
-    /// ABI is a flat list of tokens that represents any types declared in cairo code.
-    /// We need therefore to filter them out and resolve generic types.
-    /// * `token_candidates` - A map of type name to a list of tokens that can be a type.
-    ///
-    fn filter_token_candidates(
-        token_candidates: HashMap<String, Vec<Token>>,
-    ) -> HashMap<String, Token> {
-        token_candidates
-            .into_iter()
-            .filter_map(|(name, tokens)| {
-                if tokens.is_empty() {
-                    return None;
-                }
-
-                if tokens.len() == 1 {
-                    // Only token with this type path -> we keep it without comparison.
-                    return Some((name, tokens[0].clone()));
-                }
-
-                if let Token::Composite(composite_0) = &tokens[0] {
-                    let unique_composite = composite_0.clone();
-                    let inners = composite_0
-                        .inners
-                        .iter()
-                        .map(|inner| {
-                            let inner_tokens = tokens
-                                .iter()
-                                .filter_map(|__t| {
-                                    __t.to_composite().ok().and_then(|comp| {
-                                        comp.inners
-                                            .iter()
-                                            .find(|__t_inner| __t_inner.name == inner.name)
-                                    })
-                                })
-                                .fold(HashMap::new(), |mut acc, __t_inner| {
-                                    let type_path = __t_inner.token.type_path();
-                                    let counter = acc
-                                        .entry(type_path.clone())
-                                        .or_insert((0, __t_inner.clone()));
-                                    counter.0 += 1;
-                                    acc
-                                });
-
-                            // Take the most abundant type path for each member, sorted by the usize counter in descending order.
-                            inner_tokens
-                                .into_iter()
-                                .max_by_key(|(_, (count, _))| *count)
-                                .map(|(_, (_, inner))| inner)
-                                .unwrap()
-                        })
-                        .collect();
-
-                    let mut unique_composite = unique_composite;
-                    unique_composite.inners = inners;
-
-                    return Some((name, Token::Composite(unique_composite)));
-                }
-
-                None
-            })
-            .collect()
-    }
-
-    fn hydrate_composites(
-        tokens_filtered: HashMap<String, Token>,
-        filtered: HashMap<String, Token>,
-    ) -> HashMap<String, Token> {
-        tokens_filtered
-            .into_iter()
-            .fold(HashMap::new(), |mut acc, (name, token)| {
-                acc.insert(name, Token::hydrate(token, &filtered, 10, 0));
-                acc
-            })
-    }
 }
 
 #[cfg(test)]

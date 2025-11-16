@@ -2,13 +2,14 @@ use std::{collections::HashMap, rc::Rc};
 
 use starknet::core::types::contract::{
     legacy::{RawLegacyEvent, RawLegacyStruct},
-    AbiEnum, AbiEventEnum, AbiEventStruct, AbiStruct, EventFieldKind,
-    StateMutability as StarknetStateMutability,
+    AbiConstructor, AbiEntry, AbiEnum, AbiEvent, AbiEventEnum, AbiEventStruct, AbiFunction,
+    AbiStruct, EventFieldKind, StateMutability as StarknetStateMutability, TypedAbiEvent,
+    UntypedAbiEvent,
 };
 
 use crate::tokens::{
-    CompositeInnerKind, Enum, EnumInner, Event, EventInner, StateMutability, Struct, StructInner,
-    Token,
+    CompositeInnerKind, Enum, EnumInner, Event, EventInner, FuncInner, Function, StateMutability,
+    Struct, StructInner, Token,
 };
 use crate::Error;
 
@@ -71,6 +72,21 @@ impl TokenConvertible for &AbiEnum {
         }
 
         Ok(Token::Enum(enumeration))
+    }
+}
+
+impl TokenConvertible for &UntypedAbiEvent {
+    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
+        let mut event = Event::new(self.name.clone())?;
+
+        for m in self.inputs.iter() {
+            event.data.push(EventInner {
+                name: m.name.clone(),
+                token: Token::parse(&m.r#type)?,
+            })
+        }
+
+        Ok(Token::Event(event))
     }
 }
 
@@ -168,6 +184,46 @@ impl TokenConvertible for &RawLegacyStruct {
         }
 
         Ok(Token::Struct(structure))
+    }
+}
+
+impl TokenConvertible for &AbiFunction {
+    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
+        let mut function = Function::new(&self.name, self.state_mutability.clone().into());
+
+        for input in self.inputs.iter() {
+            function.inputs.push(FuncInner {
+                name: input.name.clone(),
+                token: Token::parse(&input.r#type).unwrap(),
+            });
+        }
+
+        for output in self.outputs.iter() {
+            function.outputs.push(Token::parse(&output.r#type).unwrap());
+        }
+
+        Ok(Token::Function(function))
+    }
+}
+
+impl TokenConvertible for AbiEntry {
+    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
+        match self {
+            AbiEntry::Function(abi_function) => abi_function.to_token(registry),
+            AbiEntry::Event(AbiEvent::Typed(TypedAbiEvent::Enum(abi_event))) => {
+                abi_event.to_token(registry)
+            }
+            AbiEntry::Event(AbiEvent::Typed(TypedAbiEvent::Struct(abi_event))) => {
+                abi_event.to_token(registry)
+            }
+            AbiEntry::Event(AbiEvent::Untyped(abi_event)) => abi_event.to_token(registry),
+            AbiEntry::Struct(abi_struct) => abi_struct.to_token(registry),
+            AbiEntry::Enum(abi_enum) => abi_enum.to_token(registry),
+            AbiEntry::Constructor(abi_constructor) => todo!(),
+            AbiEntry::Impl(abi_impl) => todo!(),
+            AbiEntry::Interface(abi_interface) => todo!(),
+            AbiEntry::L1Handler(abi_function) => abi_function.to_token(registry),
+        }
     }
 }
 

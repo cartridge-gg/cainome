@@ -60,7 +60,6 @@
 //! and then a generic resolution is done.
 use std::rc::Rc;
 
-use super::constants::{CAIRO_COMPOSITE_BUILTINS, CAIRO_GENERIC_BUILTINS};
 use super::genericity;
 use super::utils;
 use super::Token;

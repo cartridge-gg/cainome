@@ -1,4 +1,6 @@
 //! Function tokens.
+use std::rc::Rc;
+
 use convert_case::{Case, Casing};
 
 use super::Token;
@@ -17,13 +19,19 @@ pub enum FunctionOutputKind {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct FuncInner {
+    pub name: String,
+    pub token: Rc<Token>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Function {
     pub name: String,
     pub state_mutability: StateMutability,
-    pub inputs: Vec<(String, Token)>,
-    pub outputs: Vec<Token>,
+    pub inputs: Vec<FuncInner>,
+    pub outputs: Vec<Rc<Token>>,
     // Only cairo0 has named outputs.
-    pub named_outputs: Vec<(String, Token)>,
+    pub named_outputs: Vec<FuncInner>,
 }
 
 impl Function {
@@ -38,17 +46,17 @@ impl Function {
     }
 
     pub fn apply_alias(&mut self, type_path: &str, alias: &str) {
-        for (_, ref mut t) in &mut self.inputs {
-            if let Token::Composite(ref mut c) = t {
-                c.apply_alias(type_path, alias);
-            }
-        }
+        // for input in &mut self.inputs {
+        //     if let Token::Composite(ref mut c) = input.token.as_ref() {
+        //         c.apply_alias(type_path, alias);
+        //     }
+        // }
 
-        for ref mut t in &mut self.outputs {
-            if let Token::Composite(ref mut c) = t {
-                c.apply_alias(type_path, alias);
-            }
-        }
+        // for ref mut t in &mut self.outputs {
+        //     if let Token::Composite(ref mut c) = t.as_ref() {
+        //         c.apply_alias(type_path, alias);
+        //     }
+        // }
     }
 
     pub fn get_output_kind(&self) -> FunctionOutputKind {

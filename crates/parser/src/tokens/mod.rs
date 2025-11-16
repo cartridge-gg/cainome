@@ -24,7 +24,7 @@ pub use basic::CoreBasic;
 pub use composite::{Composite, CompositeInner, CompositeInnerKind, CompositeType};
 pub use enumeration::{Enum, EnumInner};
 pub use event::{Event, EventInner};
-pub use function::{Function, FunctionOutputKind, StateMutability};
+pub use function::{FuncInner, Function, FunctionOutputKind, StateMutability};
 pub use non_zero::NonZero;
 pub use option::Option;
 pub use result::Result;
@@ -428,38 +428,39 @@ impl Token {
                 inputs: func
                     .inputs
                     .into_iter()
-                    .map(|(name, token)| {
-                        (
-                            name,
-                            Self::hydrate(
-                                token,
-                                filtered,
-                                recursion_max_depth,
-                                iteration_count + 1,
-                            ),
-                        )
+                    .map(|inner| FuncInner {
+                        name: inner.name,
+                        token: Rc::new(Self::hydrate(
+                            inner.token.as_ref().clone(),
+                            filtered,
+                            recursion_max_depth,
+                            iteration_count + 1,
+                        )),
                     })
                     .collect(),
                 outputs: func
                     .outputs
                     .into_iter()
                     .map(|token| {
-                        Self::hydrate(token, filtered, recursion_max_depth, iteration_count + 1)
+                        Rc::new(Self::hydrate(
+                            token.as_ref().clone(),
+                            filtered,
+                            recursion_max_depth,
+                            iteration_count + 1,
+                        ))
                     })
                     .collect(),
                 named_outputs: func
                     .named_outputs
                     .into_iter()
-                    .map(|(name, token)| {
-                        (
-                            name,
-                            Self::hydrate(
-                                token,
-                                filtered,
-                                recursion_max_depth,
-                                iteration_count + 1,
-                            ),
-                        )
+                    .map(|inner| FuncInner {
+                        name: inner.name,
+                        token: Rc::new(Self::hydrate(
+                            inner.token.as_ref().clone(),
+                            filtered,
+                            recursion_max_depth,
+                            iteration_count + 1,
+                        )),
                     })
                     .collect(),
                 state_mutability: func.state_mutability,
