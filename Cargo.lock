@@ -1907,7 +1907,7 @@ checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
 [[package]]
 name = "starknet"
 version = "0.17.0"
-source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#bc33ecb0837f7bb605176deacf6d110409016039"
 dependencies = [
  "starknet-accounts",
  "starknet-contract",
@@ -1922,7 +1922,7 @@ dependencies = [
 [[package]]
 name = "starknet-accounts"
 version = "0.16.0"
-source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#bc33ecb0837f7bb605176deacf6d110409016039"
 dependencies = [
  "async-trait",
  "auto_impl",
@@ -1936,7 +1936,7 @@ dependencies = [
 [[package]]
 name = "starknet-contract"
 version = "0.16.0"
-source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#bc33ecb0837f7bb605176deacf6d110409016039"
 dependencies = [
  "serde",
  "serde_json",
@@ -1950,7 +1950,7 @@ dependencies = [
 [[package]]
 name = "starknet-core"
 version = "0.16.0"
-source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#bc33ecb0837f7bb605176deacf6d110409016039"
 dependencies = [
  "base64 0.21.7",
  "crypto-bigint",
@@ -1972,7 +1972,7 @@ dependencies = [
 [[package]]
 name = "starknet-core-derive"
 version = "0.1.0"
-source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#bc33ecb0837f7bb605176deacf6d110409016039"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1982,7 +1982,7 @@ dependencies = [
 [[package]]
 name = "starknet-crypto"
 version = "0.8.1"
-source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#bc33ecb0837f7bb605176deacf6d110409016039"
 dependencies = [
  "crypto-bigint",
  "hex",
@@ -2000,7 +2000,7 @@ dependencies = [
 [[package]]
 name = "starknet-curve"
 version = "0.6.0"
-source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#bc33ecb0837f7bb605176deacf6d110409016039"
 dependencies = [
  "starknet-types-core",
 ]
@@ -2008,7 +2008,7 @@ dependencies = [
 [[package]]
 name = "starknet-macros"
 version = "0.2.5"
-source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#bc33ecb0837f7bb605176deacf6d110409016039"
 dependencies = [
  "starknet-core",
  "syn 2.0.101",
@@ -2017,7 +2017,7 @@ dependencies = [
 [[package]]
 name = "starknet-providers"
 version = "0.16.0"
-source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#bc33ecb0837f7bb605176deacf6d110409016039"
 dependencies = [
  "async-trait",
  "auto_impl",
@@ -2037,7 +2037,7 @@ dependencies = [
 [[package]]
 name = "starknet-signers"
 version = "0.14.0"
-source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#bc33ecb0837f7bb605176deacf6d110409016039"
 dependencies = [
  "async-trait",
  "auto_impl",
