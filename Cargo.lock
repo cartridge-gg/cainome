@@ -1049,11 +1049,13 @@ dependencies = [
 
 [[package]]
 name = "lambdaworks-crypto"
-version = "0.10.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbc2a4da0d9e52ccfe6306801a112e81a8fc0c76aa3e4449fefeda7fef72bb34"
+checksum = "58b1a1c1102a5a7fbbda117b79fb3a01e033459c738a3c1642269603484fd1c1"
 dependencies = [
  "lambdaworks-math",
+ "rand 0.8.5",
+ "rand_chacha 0.3.1",
  "serde",
  "sha2",
  "sha3",
@@ -1061,10 +1063,14 @@ dependencies = [
 
 [[package]]
 name = "lambdaworks-math"
-version = "0.10.0"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1bd2632acbd9957afc5aeec07ad39f078ae38656654043bf16e046fa2730e23"
+checksum = "018a95aa873eb49896a858dee0d925c33f3978d073c64b08dd4f2c9b35a017c6"
 dependencies = [
+ "getrandom 0.2.15",
+ "num-bigint",
+ "num-traits",
+ "rand 0.8.5",
  "serde",
  "serde_json",
 ]
@@ -1401,7 +1407,7 @@ dependencies = [
  "bytes",
  "getrandom 0.3.3",
  "lru-slab",
- "rand 0.9.1",
+ "rand 0.9.2",
  "ring",
  "rustc-hash",
  "rustls",
@@ -1461,9 +1467,9 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.9.1"
+version = "0.9.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9fbfd9d094a40bf3ae768db9361049ace4c0e04a4fd6b359518bd7b73a73dd97"
+checksum = "6db2770f06117d490610c7488547d543617b21bfa07796d7a12f6f1bd53850d1"
 dependencies = [
  "rand_chacha 0.9.0",
  "rand_core 0.9.3",
@@ -1901,8 +1907,7 @@ checksum = "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
 [[package]]
 name = "starknet"
 version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5ed01c14136e56dcdf21385d20c4a6fdd3509947cb56cca45fc765ef5809add"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
 dependencies = [
  "starknet-accounts",
  "starknet-contract",
@@ -1917,8 +1922,7 @@ dependencies = [
 [[package]]
 name = "starknet-accounts"
 version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f7c118729bcdcfa1610844047cbdb23090fb1d4172a36bb97a663be8d022d1a"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
 dependencies = [
  "async-trait",
  "auto_impl",
@@ -1932,8 +1936,7 @@ dependencies = [
 [[package]]
 name = "starknet-contract"
 version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ccb64331b72caf51c0d8b684b62012f9a771015b4cf5e52cba9bf61be8384ad3"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
 dependencies = [
  "serde",
  "serde_json",
@@ -1947,8 +1950,7 @@ dependencies = [
 [[package]]
 name = "starknet-core"
 version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "efb7212226769766c1c7d79b70f9242ffbd213290a41604ecc7e78faa0ed0deb"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
 dependencies = [
  "base64 0.21.7",
  "crypto-bigint",
@@ -1970,8 +1972,7 @@ dependencies = [
 [[package]]
 name = "starknet-core-derive"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b08520b7d80eda7bf1a223e8db4f9bb5779a12846f15ebf8f8d76667eca7f5ad"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1981,8 +1982,7 @@ dependencies = [
 [[package]]
 name = "starknet-crypto"
 version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1004a16c25dc6113c19d4f9d0c19ff97d85804829894bba22c0d0e9e7b249812"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
 dependencies = [
  "crypto-bigint",
  "hex",
@@ -2000,8 +2000,7 @@ dependencies = [
 [[package]]
 name = "starknet-curve"
 version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22c898ae81b6409532374cf237f1bd752d068b96c6ad500af9ebbd0d9bb712f6"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
 dependencies = [
  "starknet-types-core",
 ]
@@ -2009,8 +2008,7 @@ dependencies = [
 [[package]]
 name = "starknet-macros"
 version = "0.2.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d59e1eb22f4366385b132ba7016faa5a6457f1f23f896f737a06da626455e7b"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
 dependencies = [
  "starknet-core",
  "syn 2.0.101",
@@ -2019,8 +2017,7 @@ dependencies = [
 [[package]]
 name = "starknet-providers"
 version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "15fc3d94cc008cea64e291b261e8349065424ee7491e5dd0fa9bd688818bece1"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
 dependencies = [
  "async-trait",
  "auto_impl",
@@ -2040,8 +2037,7 @@ dependencies = [
 [[package]]
 name = "starknet-signers"
 version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d839b06d899ef3a0de11b1e9a91a14c118b1ed36830ec8e59d9fbc9a1e51976b"
+source = "git+https://github.com/dojoengine/starknet-rs?branch=feat%2Ftypes-rs-100-blake2s#50d5a7dcaf15eb4981597c54fd9685586205069b"
 dependencies = [
  "async-trait",
  "auto_impl",
@@ -2056,17 +2052,19 @@ dependencies = [
 
 [[package]]
 name = "starknet-types-core"
-version = "0.2.0"
+version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fa3d91e38f091dbc543d33589eb7716bed2a8eb1c20879e484561977832b60a"
+checksum = "8a12690813e587969cb4a9e7d8ebdb069d4bb7ec8d03275c5f719310c8e1f07c"
 dependencies = [
  "blake2",
  "digest",
+ "generic-array",
  "lambdaworks-crypto",
  "lambdaworks-math",
  "num-bigint",
  "num-integer",
  "num-traits",
+ "rand 0.9.2",
  "serde",
  "zeroize",
 ]

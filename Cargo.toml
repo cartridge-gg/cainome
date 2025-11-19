@@ -43,8 +43,8 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 url = "2.5"
 # temp: change this to proper crates.io version
-starknet = "0.17.0"
-starknet-types-core = "0.2"
+starknet = { git = "https://github.com/dojoengine/starknet-rs", branch = "feat/types-rs-100-blake2s" }
+starknet-types-core = "1.0.0"
 
 [dependencies]
 camino.workspace = true
