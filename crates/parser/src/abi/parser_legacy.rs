@@ -5,8 +5,9 @@ use starknet::core::types::contract::StateMutability;
 use std::collections::HashMap;
 use std::rc::Rc;
 
-use crate::abi::conversions::TokenConvertible;
-use crate::tokens::{Composite, CompositeType, CoreBasic, Function, Token};
+use crate::abi::abi_extensions::TokenConvertible;
+use crate::abi::registry::TypeRegistry;
+use crate::tokens::{Composite, CompositeType, CoreBasic, FuncInner, Function, Token};
 use crate::{CainomeResult, Error, TokenizedAbi};
 
 pub struct AbiParserLegacy {}
@@ -104,9 +105,9 @@ impl AbiParserLegacy {
         match entry {
             RawLegacyAbiEntry::Struct(s) => {
                 // Some struct may be basics, we want to skip them.
-                if CoreBasic::parse(&s.name).is_ok() {
-                    return Ok(());
-                };
+                // if CoreBasic::parse(&s.name).is_ok() {
+                //     return Ok(());
+                // };
 
                 let token: Token = s.to_token(registry)?;
                 registry.insert(token.type_path(), Rc::new(token));
@@ -169,22 +170,28 @@ impl AbiParserLegacy {
 
             for i in &f.inputs {
                 let token = get_existing_token_or_parsed(&i.r#type, all_composites)?;
-                func.inputs.push((i.name.clone(), token));
+                func.inputs.push(FuncInner {
+                    name: i.name.clone(),
+                    token: Rc::new(token),
+                });
             }
 
             for o in &f.outputs {
                 let token = get_existing_token_or_parsed(&o.r#type, all_composites)?;
-                func.named_outputs.push((o.name.clone(), token));
+                func.named_outputs.push(FuncInner {
+                    name: o.name.clone(),
+                    token: Rc::new(token),
+                });
             }
 
             if !func.named_outputs.is_empty() {
                 let mut members = vec![];
 
-                for (offset, (n, t)) in func.named_outputs.iter().enumerate() {
+                for (offset, i) in func.named_outputs.iter().enumerate() {
                     members.push(RawLegacyMember {
-                        name: n.clone(),
+                        name: i.name.clone(),
                         offset: offset.try_into().unwrap(),
-                        r#type: t.type_path().clone(),
+                        r#type: i.token.type_path().clone(),
                     });
                 }
 
@@ -194,7 +201,7 @@ impl AbiParserLegacy {
                     size: func.named_outputs.len() as u64,
                 };
 
-                let mut registry: HashMap<String, Rc<Token>> = HashMap::new();
+                let mut registry = &mut TypeRegistry::new();
                 let z = s.to_token(&mut registry)?;
 
                 structs.push(Rc::new(z));

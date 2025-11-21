@@ -3,6 +3,7 @@
 //! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/result.cairo>
 use std::rc::Rc;
 
+use crate::abi::registry::{self, TypeRegistry};
 use crate::tokens::Token;
 use crate::{CainomeResult, Error};
 
@@ -10,41 +11,40 @@ use super::genericity;
 use super::utils;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Result {
+pub struct ResultContainer {
     pub type_path: String,
     pub inner: Rc<Token>,
     pub error: Rc<Token>,
 }
 
-impl Result {
-    pub fn parse(type_path: &str) -> CainomeResult<Self> {
-        let type_path = utils::escape_rust_keywords(type_path);
+pub struct ResultContainerInnerTypes {
+    pub inner: String,
+    pub error: String,
+}
 
-        if type_path.starts_with("core::result::Result") {
-            let generic_args = genericity::extract_generics_args(&type_path)?;
-
-            if generic_args.len() != 2 {
-                return Err(Error::InvalidResultTypePath(type_path.to_string()));
-            }
-
-            let (_, generic_arg_token) = &generic_args[0];
-            let (_, error_token) = &generic_args[1];
-
-            Ok(Self {
-                type_path: type_path.to_string(),
-                inner: generic_arg_token.clone(),
-                error: error_token.clone(),
-            })
-        } else {
-            Err(Error::TokenInitFailed(format!(
-                "Result couldn't be initialized from `{}`.",
-                type_path,
-            )))
-        }
+impl ResultContainer {
+    pub fn test_path(type_path: &str) -> bool {
+        type_path.starts_with("core::result::Result")
     }
 
-    pub fn apply_alias(&mut self, type_path: &str, alias: &str) {
-        // self.inner.apply_alias(type_path, alias);
-        // self.error.apply_alias(type_path, alias);
+    pub fn get_inner(type_path: &str) -> CainomeResult<ResultContainerInnerTypes, Error> {
+        let generic_args = genericity::extract_generics_args(&type_path)?;
+
+        if generic_args.len() != 2 {
+            return Err(Error::InvalidOptionTypePath(type_path.to_string()));
+        }
+
+        Ok(ResultContainerInnerTypes {
+            inner: generic_args[0].1.clone(),
+            error: generic_args[1].1.clone(),
+        })
+    }
+
+    pub fn new(type_path: &str, inner: &Rc<Token>, error: &Rc<Token>) -> Self {
+        Self {
+            type_path: type_path.to_string(),
+            inner: Rc::clone(inner),
+            error: Rc::clone(error),
+        }
     }
 }

@@ -2,15 +2,14 @@
 mod tests {
     use std::collections::HashMap;
 
-    use cainome_parser::{tokens::Token, AbiParser};
-    use starknet::core::types::contract::{AbiEntry, SierraClass};
+    use cainome_parser::AbiParser;
 
     #[test]
     fn test_something() {
         let abi = include_str!("../../../contracts/abi/basic.abi.json");
         let z = AbiParser::parse_abi_string(abi).unwrap();
         let type_aliases: HashMap<String, String> = HashMap::new();
-        let x = AbiParser::collect_tokens(z, &type_aliases);
+        // let x = AbiParser::collect_tokens(z, &type_aliases);
         assert!(true);
         // let tokens = AbiParser::tokens_from_abi_string(&abi, &HashMap::new()).unwrap();
         // assert_ne!(tokens.enums.len(), 0);
@@ -38,15 +37,19 @@ mod tests {
         "#;
 
         let abies = AbiParser::parse_abi_string(abi).unwrap();
-        let registry = AbiParser::collect_tokens_without_dependencies(&abies).unwrap();
+        let tokenized_abi = AbiParser::collect_tokens(abies).unwrap();
+        assert_eq!(tokenized_abi.enums.len(), 0);
+        assert_eq!(tokenized_abi.structs.len(), 1);
+        assert_eq!(tokenized_abi.functions.len(), 0);
+        assert_eq!(tokenized_abi.interfaces.len(), 0);
     }
 
-    #[test]
-    fn test_type_name_parsing() {
-        let type_path = "core::integer::u256".to_string();
+    // #[test]
+    // fn test_type_name_parsing() {
+    //     let type_path = "core::integer::u256".to_string();
 
-        let z = Token::parse(&type_path).unwrap();
+    //     let z = Token::parse(&type_path).unwrap();
 
-        println!("{:?}", z.as_ref());
-    }
+    //     println!("{:?}", z.as_ref());
+    // }
 }

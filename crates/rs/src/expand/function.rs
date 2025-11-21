@@ -13,7 +13,7 @@
 //!
 //! * `FCall` - Struct for readonly functions.
 //! * `ExecutionV1` - Struct from starknet-rs for transaction based functions.
-use cainome_parser::tokens::{Function, FunctionOutputKind, StateMutability, Token};
+use cainome_parser::tokens::{FuncInner, Function, FunctionOutputKind, StateMutability, Token};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
@@ -37,10 +37,10 @@ impl ExecutionVersion {
     }
 }
 
-fn get_func_inputs(inputs: &[(String, Token)]) -> Vec<TokenStream2> {
+fn get_func_inputs(inputs: &[FuncInner]) -> Vec<TokenStream2> {
     let mut out: Vec<TokenStream2> = vec![];
 
-    for (name, token) in inputs {
+    for FuncInner { name, token } in inputs {
         let name = utils::str_to_ident(name);
         let ty = utils::str_to_type(&token.to_rust_type_path());
         out.push(quote!(#name:&#ty));
@@ -61,11 +61,11 @@ impl CairoFunction {
         let func_name_ident = utils::str_to_ident(func_name);
 
         let mut serializations: Vec<TokenStream2> = vec![];
-        for (name, token) in &func.inputs {
+        for FuncInner { name, token } in &func.inputs {
             let name = utils::str_to_ident(name);
             let ty = utils::str_to_type(&token.to_rust_type_path());
 
-            let ser = match token {
+            let ser = match token.as_ref() {
                 Token::Tuple(_) => quote! {
                     __calldata.extend(<#ty>::cairo_serialize(#name));
                 },

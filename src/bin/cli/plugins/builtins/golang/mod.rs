@@ -1743,7 +1743,7 @@ impl GolangPlugin {
     fn generate_tuple_marshal_code(
         &self,
         field_name: &str,
-        tuple: &cainome_parser::tokens::Tuple,
+        tuple: &cainome_parser::tokens::TupleContainer,
     ) -> String {
         let mut code = format!(
             "\t// Tuple field {}: marshal each sub-field (tuple has {} elements)\n",
@@ -1882,7 +1882,7 @@ impl GolangPlugin {
     fn generate_tuple_unmarshal_code(
         &self,
         field_name: &str,
-        tuple: &cainome_parser::tokens::Tuple,
+        tuple: &cainome_parser::tokens::TupleContainer,
     ) -> String {
         let mut code = format!(
             "\t// Tuple field {}: unmarshal each sub-field\n",
@@ -2110,7 +2110,7 @@ impl GolangPlugin {
     /// Generates response deserialization code for tuple types
     fn generate_tuple_response_deserialization(
         &self,
-        tuple: &cainome_parser::tokens::Tuple,
+        tuple: &cainome_parser::tokens::TupleContainer,
         go_type: &str,
     ) -> String {
         if tuple.inners.is_empty() {
@@ -2377,7 +2377,7 @@ impl GolangPlugin {
     fn generate_option_marshal_code_unified(
         &self,
         field_name: &str,
-        option: &cainome_parser::tokens::Option,
+        option: &cainome_parser::tokens::OptionContainer,
         context: OptionContext,
     ) -> String {
         let mut code = format!(
@@ -2470,7 +2470,7 @@ impl GolangPlugin {
     /// Generates marshal code for Option fields (backward compatibility wrapper)
     fn generate_option_marshal_code(&self, field_name: &str, inner_token: &Token) -> String {
         // Create a temporary Option token for the unified method
-        let option = cainome_parser::tokens::Option {
+        let option = cainome_parser::tokens::OptionContainer {
             type_path: "core::option::Option".to_string(),
             inner: Box::new(inner_token.clone()),
         };
@@ -2485,7 +2485,7 @@ impl GolangPlugin {
     fn generate_option_unmarshal_code_unified(
         &self,
         field_name: &str,
-        option: &cainome_parser::tokens::Option,
+        option: &cainome_parser::tokens::OptionContainer,
         contract_name: Option<&str>,
     ) -> String {
         let mut code = format!(
@@ -4135,7 +4135,7 @@ impl GolangPlugin {
     fn generate_tuple_serialization_code_with_context(
         &self,
         param_name: &str,
-        tuple: &cainome_parser::tokens::Tuple,
+        tuple: &cainome_parser::tokens::TupleContainer,
         function: &Function,
     ) -> String {
         let zero_returns = self.generate_zero_returns(function);
@@ -4230,7 +4230,7 @@ impl GolangPlugin {
     fn generate_array_serialization_code_with_context(
         &self,
         param_name: &str,
-        array: &cainome_parser::tokens::Array,
+        array: &cainome_parser::tokens::ArrayContainer,
         function: &Function,
     ) -> String {
         let zero_returns = self.generate_zero_returns(function);
@@ -4291,7 +4291,7 @@ impl GolangPlugin {
     fn generate_option_serialization_for_invoke(
         &self,
         param_name: &str,
-        option: &cainome_parser::tokens::Option,
+        option: &cainome_parser::tokens::OptionContainer,
         function: &Function,
     ) -> String {
         let zero_returns = self.generate_invoke_zero_returns(function);
@@ -5364,7 +5364,7 @@ package {}
     fn generate_option_marshal_code_for_input_struct(
         &self,
         field_name: &str,
-        option: &cainome_parser::tokens::Option,
+        option: &cainome_parser::tokens::OptionContainer,
         _contract_name: Option<&str>,
     ) -> String {
         self.generate_option_marshal_code_unified(field_name, option, OptionContext::InputStruct)
@@ -5374,7 +5374,7 @@ package {}
     fn generate_option_unmarshal_code_for_input_struct(
         &self,
         field_name: &str,
-        option: &cainome_parser::tokens::Option,
+        option: &cainome_parser::tokens::OptionContainer,
         _contract_name: Option<&str>,
     ) -> String {
         // Note: Input structs have different field access patterns than response structs

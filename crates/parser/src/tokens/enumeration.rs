@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use crate::{
+    abi::registry::TypeRegistry,
     tokens::{genericity, utils, Token},
     CainomeResult,
 };
@@ -20,13 +21,18 @@ pub struct Enum {
 }
 
 impl Enum {
-    pub fn new(type_path: &str) -> CainomeResult<Self> {
-        let type_path = utils::escape_rust_keywords(type_path);
+    pub fn new(type_path: String, registry: &TypeRegistry) -> CainomeResult<Self> {
+        let type_path = utils::escape_rust_keywords(&type_path);
         let generic_args = genericity::extract_generics_args(&type_path)?;
 
+        let generic_args_with_types: Vec<(String, Rc<Token>)> = generic_args
+            .into_iter()
+            .map(|(name, path)| (name, registry.get(&path).unwrap()))
+            .collect();
+
         return Ok(Self {
-            type_path: type_path.to_string(),
-            generic_args: generic_args,
+            type_path,
+            generic_args: generic_args_with_types,
             variants: vec![],
             alias: None,
         });

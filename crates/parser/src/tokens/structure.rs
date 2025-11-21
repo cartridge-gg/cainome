@@ -1,6 +1,7 @@
 use std::rc::Rc;
 
 use crate::{
+    abi::registry::{self, TypeRegistry},
     tokens::{
         genericity,
         utils::{self, escape_rust_keywords},
@@ -24,13 +25,18 @@ pub struct Struct {
 }
 
 impl Struct {
-    pub fn new(type_path: &str) -> CainomeResult<Self> {
-        let type_path = escape_rust_keywords(type_path);
+    pub fn new(type_path: String, registry: &TypeRegistry) -> CainomeResult<Self> {
+        let type_path = escape_rust_keywords(&type_path);
         let generic_args = genericity::extract_generics_args(&type_path)?;
 
+        let generic_args_with_types: Vec<(String, Rc<Token>)> = generic_args
+            .into_iter()
+            .map(|(name, path)| (name, registry.get(&path).unwrap()))
+            .collect();
+
         return Ok(Self {
-            type_path: type_path.to_string(),
-            generic_args: generic_args,
+            type_path,
+            generic_args: generic_args_with_types,
             fields: vec![],
             alias: None,
         });
@@ -43,20 +49,5 @@ impl Struct {
     pub fn type_name(&self) -> String {
         // TODO: need to opti that with regex?
         utils::extract_type_path_with_depth(&self.type_path_no_generic(), 0)
-    }
-
-    pub fn parse(type_path: &str) -> CainomeResult<Self> {
-        let type_path = escape_rust_keywords(type_path);
-        let generic_args = genericity::extract_generics_args(&type_path)?;
-
-        Err(crate::Error::ParsingFailed("asd".to_string()))
-
-        // We want to keep the path with generic for the generic resolution.
-        // Ok(Self {
-        //     type_path: type_path.to_string(),
-        //     generic_args: generic_args,
-        //     fields: vec![],
-        //     alias: None,
-        // })
     }
 }

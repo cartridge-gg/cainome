@@ -1,17 +1,20 @@
-use std::{collections::HashMap, rc::Rc};
+use std::rc::Rc;
 
-use starknet::core::types::contract::{
-    legacy::{RawLegacyEvent, RawLegacyStruct},
-    AbiConstructor, AbiEntry, AbiEnum, AbiEvent, AbiEventEnum, AbiEventStruct, AbiFunction,
-    AbiStruct, EventFieldKind, StateMutability as StarknetStateMutability, TypedAbiEvent,
-    UntypedAbiEvent,
+use starknet::core::types::{
+    contract::{
+        legacy::{RawLegacyEvent, RawLegacyStruct},
+        AbiEntry, AbiEnum, AbiEvent, AbiEventEnum, AbiEventStruct, AbiFunction, AbiInterface,
+        AbiStruct, EventFieldKind, StateMutability as StarknetStateMutability, TypedAbiEvent,
+        UntypedAbiEvent,
+    },
+    LegacyEventAbiEntry,
 };
 
 use crate::tokens::{
     CompositeInnerKind, Enum, EnumInner, Event, EventInner, FuncInner, Function, StateMutability,
     Struct, StructInner, Token,
 };
-use crate::Error;
+use crate::{abi::registry::TypeRegistry, tokens::Interface, Error};
 
 impl From<StarknetStateMutability> for StateMutability {
     fn from(value: StarknetStateMutability) -> Self {
@@ -34,17 +37,19 @@ impl From<EventFieldKind> for CompositeInnerKind {
 }
 
 pub trait TokenConvertible: Sized {
-    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error>;
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error>;
 }
 
 impl TokenConvertible for &AbiStruct {
-    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
-        let mut structure = Struct::new(&self.name)?;
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
+        let mut structure = Struct::new(self.name.clone(), &registry)?;
 
         for field in self.members.iter() {
+            let token = registry.get(&field.r#type).unwrap();
+
             structure.fields.push(StructInner {
                 name: field.name.clone(),
-                token: Token::parse(&field.r#type).unwrap(),
+                token: token,
             });
         }
 
@@ -53,21 +58,15 @@ impl TokenConvertible for &AbiStruct {
 }
 
 impl TokenConvertible for &AbiEnum {
-    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
-        let mut enumeration = Enum::new(&self.name)?;
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
+        let mut enumeration = Enum::new(self.name.clone(), &registry)?;
 
-        // if t.type_name() == "option" {
-        //     return Ok(t);
-        // }
+        for field in self.variants.iter() {
+            let token = registry.get(&field.r#type).unwrap();
 
-        // if t.type_name() == "result" {
-        //     return Ok(t);
-        // }
-
-        for v in self.variants.iter() {
             enumeration.variants.push(EnumInner {
-                name: v.name.clone(),
-                token: Token::parse(&v.r#type).unwrap(),
+                name: field.name.clone(),
+                token: token,
             });
         }
 
@@ -76,14 +75,16 @@ impl TokenConvertible for &AbiEnum {
 }
 
 impl TokenConvertible for &UntypedAbiEvent {
-    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
-        let mut event = Event::new(self.name.clone())?;
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
+        let mut event = Event::new(self.name.clone(), &registry)?;
 
-        for m in self.inputs.iter() {
+        for field in self.inputs.iter() {
+            let token = registry.get(&field.r#type)?;
+
             event.data.push(EventInner {
-                name: m.name.clone(),
-                token: Token::parse(&m.r#type)?,
-            })
+                name: field.name.clone(),
+                token: token,
+            });
         }
 
         Ok(Token::Event(event))
@@ -91,28 +92,23 @@ impl TokenConvertible for &UntypedAbiEvent {
 }
 
 impl TokenConvertible for &AbiEventStruct {
-    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
-        let mut event = Event::new(self.name.clone())?;
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
+        let mut event = Event::new(self.name.clone(), &registry)?;
 
         for m in self.members.iter() {
+            let token = registry.get(&m.r#type)?;
+
+            let inner = EventInner {
+                name: m.name.clone(),
+                token: token,
+            };
+
             // nested and falt could be omitted here I suppose.
             match m.kind {
-                EventFieldKind::Key => event.keys.push(EventInner {
-                    name: m.name.clone(),
-                    token: Token::parse(&m.r#type)?,
-                }),
-                EventFieldKind::Data => event.data.push(EventInner {
-                    name: m.name.clone(),
-                    token: Token::parse(&m.r#type)?,
-                }),
-                EventFieldKind::Nested => event.nested.push(EventInner {
-                    name: m.name.clone(),
-                    token: Token::parse(&m.r#type)?,
-                }),
-                EventFieldKind::Flat => event.flat.push(EventInner {
-                    name: m.name.clone(),
-                    token: Token::parse(&m.r#type)?,
-                }),
+                EventFieldKind::Key => event.keys.push(inner),
+                EventFieldKind::Data => event.data.push(inner),
+                EventFieldKind::Nested => event.nested.push(inner),
+                EventFieldKind::Flat => event.flat.push(inner),
             }
         }
 
@@ -121,28 +117,23 @@ impl TokenConvertible for &AbiEventStruct {
 }
 
 impl TokenConvertible for &AbiEventEnum {
-    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
-        let mut event = Event::new(self.name.clone())?;
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
+        let mut event = Event::new(self.name.clone(), &registry)?;
 
         for m in self.variants.iter() {
+            let token = registry.get(&m.r#type)?;
+
+            let inner = EventInner {
+                name: m.name.clone(),
+                token: token,
+            };
+
             match m.kind {
                 // key and data could be omitted here I suppose.
-                EventFieldKind::Key => event.keys.push(EventInner {
-                    name: m.name.clone(),
-                    token: Token::parse(&m.r#type)?,
-                }),
-                EventFieldKind::Data => event.data.push(EventInner {
-                    name: m.name.clone(),
-                    token: Token::parse(&m.r#type)?,
-                }),
-                EventFieldKind::Nested => event.nested.push(EventInner {
-                    name: m.name.clone(),
-                    token: Token::parse(&m.r#type)?,
-                }),
-                EventFieldKind::Flat => event.flat.push(EventInner {
-                    name: m.name.clone(),
-                    token: Token::parse(&m.r#type)?,
-                }),
+                EventFieldKind::Key => event.keys.push(inner),
+                EventFieldKind::Data => event.data.push(inner),
+                EventFieldKind::Nested => event.nested.push(inner),
+                EventFieldKind::Flat => event.flat.push(inner),
             }
         }
 
@@ -151,20 +142,24 @@ impl TokenConvertible for &AbiEventEnum {
 }
 
 impl TokenConvertible for &RawLegacyEvent {
-    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
-        let mut event = Event::new(self.name.clone())?;
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
+        let mut event = Event::new(self.name.clone(), &registry)?;
 
         for m in self.data.iter() {
+            let token = registry.get(&m.r#type)?;
+
             event.data.push(EventInner {
                 name: m.name.clone(),
-                token: Token::parse(&m.r#type)?,
+                token: token,
             });
         }
 
         for m in self.keys.iter() {
+            let token = registry.get(&m.r#type)?;
+
             event.keys.push(EventInner {
                 name: m.name.clone(),
-                token: Token::parse(&m.r#type)?,
+                token: token,
             });
         }
 
@@ -173,13 +168,15 @@ impl TokenConvertible for &RawLegacyEvent {
 }
 
 impl TokenConvertible for &RawLegacyStruct {
-    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
-        let mut structure = Struct::new(&self.name)?;
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
+        let mut structure = Struct::new(self.name.clone(), &registry)?;
 
         for field in self.members.iter() {
+            let token = registry.get(&field.r#type)?;
+
             structure.fields.push(StructInner {
                 name: field.name.clone(),
-                token: Token::parse(&field.r#type).unwrap(),
+                token: token,
             });
         }
 
@@ -188,26 +185,45 @@ impl TokenConvertible for &RawLegacyStruct {
 }
 
 impl TokenConvertible for &AbiFunction {
-    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut function = Function::new(&self.name, self.state_mutability.clone().into());
 
         for input in self.inputs.iter() {
+            let token = registry.get(&input.r#type)?;
+
             function.inputs.push(FuncInner {
                 name: input.name.clone(),
-                token: Token::parse(&input.r#type).unwrap(),
+                token: token,
             });
         }
 
         for output in self.outputs.iter() {
-            function.outputs.push(Token::parse(&output.r#type).unwrap());
+            let token = registry.get(&output.r#type)?;
+            function.outputs.push(token);
         }
 
         Ok(Token::Function(function))
     }
 }
 
+impl TokenConvertible for &AbiInterface {
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
+        let mut interface = Interface::new(&self.name)?;
+
+        for item in self.items.iter() {
+            let token = item.to_token(registry)?;
+            // hmmmm, token name should be extracted from token
+            // let token_ref = registry.set(token.type_path(), token);
+
+            interface.functions.push(Rc::new(token));
+        }
+
+        Ok(Token::Interface(interface))
+    }
+}
+
 impl TokenConvertible for AbiEntry {
-    fn to_token(&self, registry: &mut HashMap<String, Rc<Token>>) -> Result<Token, Error> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         match self {
             AbiEntry::Function(abi_function) => abi_function.to_token(registry),
             AbiEntry::Event(AbiEvent::Typed(TypedAbiEvent::Enum(abi_event))) => {
@@ -219,11 +235,18 @@ impl TokenConvertible for AbiEntry {
             AbiEntry::Event(AbiEvent::Untyped(abi_event)) => abi_event.to_token(registry),
             AbiEntry::Struct(abi_struct) => abi_struct.to_token(registry),
             AbiEntry::Enum(abi_enum) => abi_enum.to_token(registry),
+            // TODO: should be use for contract deployment (in the future)
             AbiEntry::Constructor(abi_constructor) => todo!(),
             AbiEntry::Impl(abi_impl) => todo!(),
-            AbiEntry::Interface(abi_interface) => todo!(),
+            AbiEntry::Interface(abi_interface) => abi_interface.to_token(registry),
             AbiEntry::L1Handler(abi_function) => abi_function.to_token(registry),
         }
+    }
+}
+
+impl TokenConvertible for LegacyEventAbiEntry {
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
+        todo!()
     }
 }
 

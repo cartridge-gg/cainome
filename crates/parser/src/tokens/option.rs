@@ -3,6 +3,7 @@
 //! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/option.cairo>
 use std::rc::Rc;
 
+use crate::abi::registry::TypeRegistry;
 use crate::tokens::Token;
 use crate::{CainomeResult, Error};
 
@@ -10,37 +11,32 @@ use super::genericity;
 use super::utils;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Option {
+pub struct OptionContainer {
     pub type_path: String,
     pub inner: Rc<Token>,
 }
 
-impl Option {
-    pub fn parse(type_path: &str) -> CainomeResult<Self> {
-        let type_path = utils::escape_rust_keywords(type_path);
+impl OptionContainer {
+    pub fn test_path(type_path: &str) -> bool {
+        type_path.starts_with("core::option::Option")
+    }
 
-        if type_path.starts_with("core::option::Option") {
-            let generic_args = genericity::extract_generics_args(&type_path)?;
-
-            if generic_args.len() != 1 {
-                return Err(Error::InvalidOptionTypePath(type_path.to_string()));
-            }
-
-            let (_, generic_arg_token) = &generic_args[0];
-
-            Ok(Self {
-                type_path: type_path.to_string(),
-                inner: generic_arg_token.clone(),
-            })
-        } else {
-            Err(Error::TokenInitFailed(format!(
-                "Option couldn't be initialized from `{}`.",
-                type_path,
-            )))
+    pub fn new(type_path: &str, inner: &Rc<Token>) -> Self {
+        Self {
+            type_path: type_path.to_string(),
+            inner: Rc::clone(inner),
         }
     }
 
-    pub fn apply_alias(&mut self, type_path: &str, alias: &str) {
-        // self.inner.apply_alias(type_path, alias);
+    pub fn get_inner(type_path: &str) -> CainomeResult<String, Error> {
+        let generic_args = genericity::extract_generics_args(&type_path)?;
+
+        if generic_args.len() != 1 {
+            return Err(Error::InvalidOptionTypePath(type_path.to_string()));
+        }
+
+        let generic_arg_token = generic_args.into_iter().next().map(|(_, token)| token);
+
+        Ok(generic_arg_token.unwrap())
     }
 }

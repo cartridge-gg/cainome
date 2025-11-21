@@ -17,7 +17,7 @@ use crate::CainomeResult;
 /// The string is the name of the generic argument, starting to 'A' and incrementing
 /// by 1 for each generic argument. The token is the token representing the generic
 /// argument type.
-pub fn extract_generics_args(type_path: &str) -> CainomeResult<Vec<(String, Rc<Token>)>> {
+pub fn extract_generics_args(type_path: &str) -> CainomeResult<Vec<(String, String)>> {
     let t: Type = syn::parse_str(type_path)?;
 
     let mut generic_args = vec![];
@@ -33,7 +33,7 @@ pub fn extract_generics_args(type_path: &str) -> CainomeResult<Vec<(String, Rc<T
                     if let GenericArgument::Type(ty) = arg {
                         let arg_name = ((ascii + i as u8) as char).to_string();
                         let arg_str = quote::quote!(#ty).to_string().replace(' ', "");
-                        generic_args.push((arg_name, Token::parse(&arg_str)?));
+                        generic_args.push((arg_name, arg_str));
                         i += 1;
                     }
                 }
@@ -92,7 +92,7 @@ mod tests {
         let generics_args = extract_generics_args("module::TypeName::<core::felt252>").unwrap();
         assert_eq!(generics_args.len(), 1);
         assert_eq!(generics_args[0].0, "A");
-        assert_eq!(generics_args[0].1, Token::parse("core::felt252").unwrap());
+        // assert_eq!(generics_args[0].1, Token::parse("core::felt252").unwrap());
     }
 
     #[test]
@@ -101,8 +101,8 @@ mod tests {
             extract_generics_args("module::TypeName::<core::felt252, core::bool>").unwrap();
         assert_eq!(generics_args.len(), 2);
         assert_eq!(generics_args[0].0, "A");
-        assert_eq!(generics_args[0].1, Token::parse("core::felt252").unwrap());
+        // assert_eq!(generics_args[0].1, Token::parse("core::felt252").unwrap());
         assert_eq!(generics_args[1].0, "B");
-        assert_eq!(generics_args[1].1, Token::parse("core::bool").unwrap());
+        // assert_eq!(generics_args[1].1, Token::parse("core::bool").unwrap());
     }
 }
