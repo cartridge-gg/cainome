@@ -38,19 +38,20 @@ use crate::{CainomeResult, Error};
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     // Builtin types
-    CoreBasic(CoreBasic),
+    CoreBasic(CoreBasic), // tested
 
     // Container Types
-    Array(ArrayContainer),
-    Enum(Enum),
-    Option(OptionContainer),
-    Result(ResultContainer),
-    NonZero(NonZeroContainer),
+    Array(ArrayContainer),     // tested
+    Enum(Enum),                // tested
+    Option(OptionContainer),   // tested
+    Result(ResultContainer),   // tested
+    NonZero(NonZeroContainer), // tested
 
     // Composite types
-    Tuple(TupleContainer),
-    Struct(Struct),
-    Event(Event),
+    Tuple(TupleContainer), // tested
+    Struct(Struct),        // tested
+    Event(Event),          
+    
     Function(Function),
     Interface(Interface),
 

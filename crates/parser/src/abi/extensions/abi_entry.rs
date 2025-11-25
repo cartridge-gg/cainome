@@ -36,11 +36,15 @@ impl From<EventFieldKind> for CompositeInnerKind {
     }
 }
 
-pub trait TokenConvertible: Sized {
+pub trait TokenConvertable: Sized {
     fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error>;
 }
 
-impl TokenConvertible for &AbiStruct {
+pub trait Named {
+    fn get_name(&self) -> String;
+}
+
+impl TokenConvertable for &AbiStruct {
     fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut structure = Struct::new(self.name.clone(), &registry)?;
 
@@ -57,7 +61,7 @@ impl TokenConvertible for &AbiStruct {
     }
 }
 
-impl TokenConvertible for &AbiEnum {
+impl TokenConvertable for &AbiEnum {
     fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut enumeration = Enum::new(self.name.clone(), &registry)?;
 
@@ -74,7 +78,7 @@ impl TokenConvertible for &AbiEnum {
     }
 }
 
-impl TokenConvertible for &UntypedAbiEvent {
+impl TokenConvertable for &UntypedAbiEvent {
     fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut event = Event::new(self.name.clone(), &registry)?;
 
@@ -91,7 +95,7 @@ impl TokenConvertible for &UntypedAbiEvent {
     }
 }
 
-impl TokenConvertible for &AbiEventStruct {
+impl TokenConvertable for &AbiEventStruct {
     fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut event = Event::new(self.name.clone(), &registry)?;
 
@@ -116,7 +120,7 @@ impl TokenConvertible for &AbiEventStruct {
     }
 }
 
-impl TokenConvertible for &AbiEventEnum {
+impl TokenConvertable for &AbiEventEnum {
     fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut event = Event::new(self.name.clone(), &registry)?;
 
@@ -141,7 +145,7 @@ impl TokenConvertible for &AbiEventEnum {
     }
 }
 
-impl TokenConvertible for &RawLegacyEvent {
+impl TokenConvertable for &RawLegacyEvent {
     fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut event = Event::new(self.name.clone(), &registry)?;
 
@@ -167,7 +171,7 @@ impl TokenConvertible for &RawLegacyEvent {
     }
 }
 
-impl TokenConvertible for &RawLegacyStruct {
+impl TokenConvertable for &RawLegacyStruct {
     fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut structure = Struct::new(self.name.clone(), &registry)?;
 
@@ -184,7 +188,7 @@ impl TokenConvertible for &RawLegacyStruct {
     }
 }
 
-impl TokenConvertible for &AbiFunction {
+impl TokenConvertable for &AbiFunction {
     fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut function = Function::new(&self.name, self.state_mutability.clone().into());
 
@@ -206,7 +210,7 @@ impl TokenConvertible for &AbiFunction {
     }
 }
 
-impl TokenConvertible for &AbiInterface {
+impl TokenConvertable for &AbiInterface {
     fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut interface = Interface::new(&self.name)?;
 
@@ -222,7 +226,7 @@ impl TokenConvertible for &AbiInterface {
     }
 }
 
-impl TokenConvertible for AbiEntry {
+impl TokenConvertable for AbiEntry {
     fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         match self {
             AbiEntry::Function(abi_function) => abi_function.to_token(registry),
@@ -244,7 +248,29 @@ impl TokenConvertible for AbiEntry {
     }
 }
 
-impl TokenConvertible for LegacyEventAbiEntry {
+impl Named for AbiEntry {
+    fn get_name(&self) -> String {
+        match &self {
+            AbiEntry::Function(abi_function) => abi_function.name.clone(),
+            AbiEntry::Event(AbiEvent::Typed(TypedAbiEvent::Enum(abi_event))) => {
+                abi_event.name.clone()
+            }
+            AbiEntry::Event(AbiEvent::Typed(TypedAbiEvent::Struct(abi_event))) => {
+                abi_event.name.clone()
+            }
+            AbiEntry::Event(AbiEvent::Untyped(abi_event)) => abi_event.name.clone(),
+            AbiEntry::Struct(abi_struct) => abi_struct.name.clone(),
+            AbiEntry::Enum(abi_enum) => abi_enum.name.clone(),
+            // TODO: should be use for contract deployment (in the future)
+            AbiEntry::Constructor(abi_constructor) => todo!(),
+            AbiEntry::Impl(abi_impl) => todo!(),
+            AbiEntry::Interface(abi_interface) => abi_interface.name.clone(),
+            AbiEntry::L1Handler(abi_function) => abi_function.name.clone(),
+        }
+    }
+}
+
+impl TokenConvertable for LegacyEventAbiEntry {
     fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         todo!()
     }

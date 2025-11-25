@@ -32,7 +32,6 @@ pub struct Function {
     pub outputs: Vec<Rc<Token>>,
     // Only cairo0 has named outputs.
     pub named_outputs: Vec<FuncInner>,
-    pub interface: Rc<Token>,
 }
 
 impl Function {

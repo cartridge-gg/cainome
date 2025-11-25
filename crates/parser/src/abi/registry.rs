@@ -45,8 +45,8 @@ fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
         let mut inners = vec![];
 
         for inner_type_path in inner_type_paths.iter() {
-            let mut z = get_generic_inner_types(&inner_type_path)?;
-            inners.append(&mut z);
+            let mut tuple_elements = get_generic_inner_types(&inner_type_path)?;
+            inners.append(&mut tuple_elements);
         }
 
         return Ok(inners);
