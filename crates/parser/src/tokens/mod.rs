@@ -38,25 +38,28 @@ use crate::{CainomeResult, Error};
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     // Builtin types
-    CoreBasic(CoreBasic), // tested
+    CoreBasic(CoreBasic),
 
     // Container Types
-    Array(ArrayContainer),     // tested
-    Enum(Enum),                // tested
-    Option(OptionContainer),   // tested
-    Result(ResultContainer),   // tested
-    NonZero(NonZeroContainer), // tested
+    Array(ArrayContainer),
+    Enum(Enum),
+    Option(OptionContainer),
+    Result(ResultContainer),
+    NonZero(NonZeroContainer),
 
     // Composite types
-    Tuple(TupleContainer), // tested
-    Struct(Struct),        // tested
-    Event(Event),          
-    
+    Tuple(TupleContainer),
+    Struct(Struct),
+    Event(Event),
+
     Function(Function),
     Interface(Interface),
 
     // Not needed for now
     Constructor(Constructor),
+
+    // Suspicious
+    Blank,
 
     // Legacy
     Composite(Composite),
@@ -78,6 +81,7 @@ impl Token {
             Token::Event(s) => s.type_name(),
             Token::Interface(f) => "interface".to_string(),
             Token::Constructor(f) => "constructor".to_string(),
+            Token::Blank => "empty".to_string(),
         }
     }
 
@@ -96,6 +100,7 @@ impl Token {
             Token::Event(s) => s.type_path_no_generic(),
             Token::Constructor(constructor) => constructor.type_path.to_string(),
             Token::Interface(interface) => interface.type_path.to_string(),
+            Token::Blank => "".to_string(),
         }
     }
 

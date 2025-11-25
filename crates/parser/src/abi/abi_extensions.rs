@@ -4,19 +4,40 @@ use starknet::core::types::{
     contract::{
         legacy::{RawLegacyEvent, RawLegacyStruct},
         AbiEntry, AbiEnum, AbiEvent, AbiEventEnum, AbiEventStruct, AbiFunction, AbiInterface,
-        AbiStruct, EventFieldKind, TypedAbiEvent, UntypedAbiEvent,
+        AbiStruct, EventFieldKind, StateMutability as StarknetStateMutability, TypedAbiEvent,
+        UntypedAbiEvent,
     },
     LegacyEventAbiEntry,
 };
 
-use crate::{abi::registry::TypeRegistry, tokens::Interface, Error};
-use crate::{
-    tokens::{Enum, EnumInner, Event, EventInner, FuncInner, Function, Struct, StructInner, Token},
-    CainomeResult,
+use crate::tokens::{
+    CompositeInnerKind, Enum, EnumInner, Event, EventInner, FuncInner, Function, StateMutability,
+    Struct, StructInner, Token,
 };
+use crate::{abi::registry::TypeRegistry, tokens::Interface, Error};
+
+impl From<StarknetStateMutability> for StateMutability {
+    fn from(value: StarknetStateMutability) -> Self {
+        match value {
+            StarknetStateMutability::External => StateMutability::External,
+            StarknetStateMutability::View => StateMutability::View,
+        }
+    }
+}
+
+impl From<EventFieldKind> for CompositeInnerKind {
+    fn from(value: EventFieldKind) -> Self {
+        match value {
+            EventFieldKind::Key => CompositeInnerKind::Key,
+            EventFieldKind::Data => CompositeInnerKind::Data,
+            EventFieldKind::Nested => CompositeInnerKind::Nested,
+            EventFieldKind::Flat => CompositeInnerKind::Flat,
+        }
+    }
+}
 
 pub trait TokenConvertable: Sized {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token>;
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error>;
 }
 
 pub trait Named {
@@ -24,7 +45,7 @@ pub trait Named {
 }
 
 impl TokenConvertable for &AbiStruct {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut structure = Struct::new(self.name.clone(), &registry)?;
 
         for field in self.members.iter() {
@@ -41,7 +62,7 @@ impl TokenConvertable for &AbiStruct {
 }
 
 impl TokenConvertable for &AbiEnum {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut enumeration = Enum::new(self.name.clone(), &registry)?;
 
         for field in self.variants.iter() {
@@ -58,7 +79,7 @@ impl TokenConvertable for &AbiEnum {
 }
 
 impl TokenConvertable for &UntypedAbiEvent {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut event = Event::new(self.name.clone(), &registry)?;
 
         for field in self.inputs.iter() {
@@ -75,7 +96,7 @@ impl TokenConvertable for &UntypedAbiEvent {
 }
 
 impl TokenConvertable for &AbiEventStruct {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut event = Event::new(self.name.clone(), &registry)?;
 
         for m in self.members.iter() {
@@ -100,7 +121,7 @@ impl TokenConvertable for &AbiEventStruct {
 }
 
 impl TokenConvertable for &AbiEventEnum {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut event = Event::new(self.name.clone(), &registry)?;
 
         for m in self.variants.iter() {
@@ -125,7 +146,7 @@ impl TokenConvertable for &AbiEventEnum {
 }
 
 impl TokenConvertable for &RawLegacyEvent {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut event = Event::new(self.name.clone(), &registry)?;
 
         for m in self.data.iter() {
@@ -168,7 +189,7 @@ impl TokenConvertable for &RawLegacyStruct {
 }
 
 impl TokenConvertable for &AbiFunction {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut function = Function::new(&self.name, self.state_mutability.clone().into());
 
         for input in self.inputs.iter() {
@@ -190,7 +211,7 @@ impl TokenConvertable for &AbiFunction {
 }
 
 impl TokenConvertable for &AbiInterface {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         let mut interface = Interface::new(&self.name)?;
 
         for item in self.items.iter() {
@@ -206,7 +227,7 @@ impl TokenConvertable for &AbiInterface {
 }
 
 impl TokenConvertable for AbiEntry {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> Result<Token, Error> {
         match self {
             AbiEntry::Function(abi_function) => abi_function.to_token(registry),
             AbiEntry::Event(AbiEvent::Typed(TypedAbiEvent::Enum(abi_event))) => {
@@ -220,7 +241,7 @@ impl TokenConvertable for AbiEntry {
             AbiEntry::Enum(abi_enum) => abi_enum.to_token(registry),
             // TODO: should be use for contract deployment (in the future)
             AbiEntry::Constructor(abi_constructor) => todo!(),
-            AbiEntry::Impl(_) => Ok(Token::Blank),
+            AbiEntry::Impl(abi_impl) => todo!(),
             AbiEntry::Interface(abi_interface) => abi_interface.to_token(registry),
             AbiEntry::L1Handler(abi_function) => abi_function.to_token(registry),
         }
@@ -241,8 +262,8 @@ impl Named for AbiEntry {
             AbiEntry::Struct(abi_struct) => abi_struct.name.clone(),
             AbiEntry::Enum(abi_enum) => abi_enum.name.clone(),
             // TODO: should be use for contract deployment (in the future)
-            AbiEntry::Constructor(abi_constructor) => abi_constructor.name.clone(),
-            AbiEntry::Impl(abi_impl) => abi_impl.name.clone(),
+            AbiEntry::Constructor(abi_constructor) => todo!(),
+            AbiEntry::Impl(abi_impl) => todo!(),
             AbiEntry::Interface(abi_interface) => abi_interface.name.clone(),
             AbiEntry::L1Handler(abi_function) => abi_function.name.clone(),
         }
@@ -258,7 +279,7 @@ impl TokenConvertable for LegacyEventAbiEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tokens::{CompositeInnerKind, CompositeType};
+    use crate::tokens::CompositeType;
     use crate::AbiParser;
     use std::collections::HashMap;
 

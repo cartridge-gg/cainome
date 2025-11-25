@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use crate::abi::extensions::{Named, TokenConvertable};
 use crate::abi::registry::TypeRegistry;
-use crate::tokens::{constants, CoreBasic, Token};
+use crate::tokens::{constants, CoreBasic, Interface, Token};
 use crate::{CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -15,8 +15,11 @@ pub struct TokenizedAbi {
     pub structs: Vec<Token>,
     /// Standalone functions in the contract ABI.
     pub functions: Vec<Token>,
+    /// Events.
+    pub events: Vec<Token>,
     /// Fully qualified interface name mapped to all the defined functions in it.
     pub interfaces: HashMap<String, Vec<Token>>,
+    pub interfaces_new: Vec<Token>,
 }
 
 pub struct AbiParser {}
@@ -62,7 +65,7 @@ impl AbiParser {
     }
 
     // TODO: think on using visitor pattern (not only in that case).
-    pub fn has_unknown_dependencies(
+    fn has_unknown_dependencies(
         entry: &AbiEntry,
         registry: &TypeRegistry,
     ) -> CainomeResult<Option<String>> {
@@ -190,7 +193,7 @@ impl AbiParser {
             // This branch means that we went through all the AbiEntry and could not
             // convert any. This means Abi is incorrect (well, we might have a bug though)
             if seen_since_last_removal > local_entries.len() {
-                // TODO: sort out
+                // TODO: sort out error types
                 return Err(Error::ParsingFailed(format!(
                     "Can't resolve ABI types. Some type might be missing. Check: [{}]",
                     unknown_fields.into_iter().collect::<Vec<_>>().join(", ")
@@ -200,7 +203,8 @@ impl AbiParser {
             let entry = local_entries.pop_front().expect("Should always succeed");
             seen_since_last_removal += 1;
 
-            // Workaround to skip parsing CoreBasics that are Composite.
+            // Workaround to skip parsing Composite CoreBasics (like core::boolean).
+            // As get also strips all the containers, those will be dropped at this point.
             // Might also work for type duplicates, but I don't think those exist.
             // NOTE: this might move into extensions for AbiEntry
             if let Ok(_) = registry.get(&entry.get_name()) {
@@ -236,7 +240,9 @@ impl AbiParser {
 
         let mut structs = vec![];
         let mut enums = vec![];
+        let mut events = vec![];
         let mut functions = vec![];
+        let mut interfaces_new = vec![];
         let mut interfaces = HashMap::new();
 
         for token in tokens {
@@ -249,14 +255,16 @@ impl AbiParser {
 
                     for function_token in interface.functions.iter() {
                         let Token::Function(function) = function_token.as_ref() else {
-                            unreachable!("According to ABI only function can be there")
+                            unreachable!("According to ABI specs only function can be there")
                         };
 
                         new_function_tokens.push(Token::Function(function.clone()));
                     }
 
+                    interfaces_new.push(Token::Interface(interface.clone()));
                     interfaces.insert(interface.type_path.clone(), new_function_tokens);
                 }
+                Token::Event(event) => events.push(Token::Event(event.clone())),
                 Token::Enum(enumeration) => enums.push(Token::Enum(enumeration.clone())),
                 Token::Struct(structure) => structs.push(Token::Struct(structure.clone())),
                 _ => (),
@@ -265,9 +273,11 @@ impl AbiParser {
 
         Ok(TokenizedAbi {
             enums,
+            events,
             structs,
             functions,
             interfaces,
+            interfaces_new,
         })
     }
 }
@@ -275,7 +285,37 @@ impl AbiParser {
 #[cfg(test)]
 mod tests {
 
+    use crate::tokens::StateMutability;
+
     use super::*;
+
+    #[test]
+    fn recursive_struct_parsing() {
+        let abi_json = r#"[
+            {
+                "type": "struct",
+                "name": "baitcode::TreeNode",
+                "members": [
+                    {
+                        "name": "parent",
+                        "type": "core::option::Option::<baitcode::TreeNode>"
+                    },
+                    {
+                        "name": "children",
+                        "type": "core::array::Array::<baitcode::TreeNode>"
+                    }
+                ]
+            }
+        ]"#;
+
+        let result = AbiParser::tokens_from_abi_string(abi_json, &HashMap::new()).unwrap();
+
+        assert_eq!(result.structs.len(), 1);
+        assert_eq!(result.interfaces.len(), 0);
+        assert_eq!(result.events.len(), 0);
+        assert_eq!(result.functions.len(), 0);
+        assert_eq!(result.enums.len(), 0);
+    }
 
     #[test]
     fn test_parsing_all_core_type_struct_fields() {
@@ -401,6 +441,7 @@ mod tests {
         assert_eq!(result.enums.len(), 0);
         assert_eq!(result.structs.len(), 0);
         assert_eq!(result.interfaces.len(), 0);
+        assert_eq!(result.events.len(), 0);
         assert_eq!(result.functions.len(), 0);
     }
 
@@ -689,16 +730,9 @@ mod tests {
 
         assert_eq!(result.structs.len(), 2);
         assert_eq!(result.interfaces.len(), 0);
+        assert_eq!(result.events.len(), 0);
         assert_eq!(result.functions.len(), 0);
         assert_eq!(result.enums.len(), 0);
-
-        // let s = result.structs[1].to_composite().unwrap();
-        // assert_eq!(s.type_path, "package::StructOne");
-        // assert_eq!(s.r#type, CompositeType::Struct);
-        // assert_eq!(s.inners.len(), 3);
-        // assert_eq!(s.inners[0].name, "a");
-        // assert_eq!(s.inners[1].name, "b");
-        // assert_eq!(s.inners[2].name, "c");
     }
 
     #[test]
@@ -726,6 +760,7 @@ mod tests {
         assert_eq!(result.enums.len(), 0);
         assert_eq!(result.structs.len(), 0);
         assert_eq!(result.interfaces.len(), 0);
+        assert_eq!(result.events.len(), 0);
         assert_eq!(result.functions.len(), 0);
     }
 
@@ -750,6 +785,7 @@ mod tests {
         assert_eq!(result.enums.len(), 0);
         assert_eq!(result.structs.len(), 1);
         assert_eq!(result.interfaces.len(), 0);
+        assert_eq!(result.events.len(), 0);
         assert_eq!(result.functions.len(), 0);
 
         let Some(Token::Struct(s1)) = result.structs.iter().next() else {
@@ -792,6 +828,7 @@ mod tests {
         assert_eq!(result.enums.len(), 0);
         assert_eq!(result.structs.len(), 0);
         assert_eq!(result.interfaces.len(), 0);
+        assert_eq!(result.events.len(), 0);
         assert_eq!(result.functions.len(), 0);
     }
 
@@ -816,6 +853,7 @@ mod tests {
         assert_eq!(result.enums.len(), 0);
         assert_eq!(result.structs.len(), 1);
         assert_eq!(result.interfaces.len(), 0);
+        assert_eq!(result.events.len(), 0);
         assert_eq!(result.functions.len(), 0);
 
         let Some(Token::Struct(s1)) = result.structs.iter().next() else {
@@ -855,6 +893,7 @@ mod tests {
         assert_eq!(result.enums.len(), 0);
         assert_eq!(result.structs.len(), 1);
         assert_eq!(result.interfaces.len(), 0);
+        assert_eq!(result.events.len(), 0);
         assert_eq!(result.functions.len(), 0);
 
         let Some(Token::Struct(s1)) = result.structs.iter().next() else {
@@ -874,8 +913,6 @@ mod tests {
 
     #[test]
     fn test_simple_event_struct_parsing() {
-        todo!();
-
         let abi_json = format!(
             r#"[
                 {{
@@ -902,12 +939,246 @@ mod tests {
         assert_eq!(result.enums.len(), 0);
         assert_eq!(result.structs.len(), 0);
         assert_eq!(result.interfaces.len(), 0);
+        assert_eq!(result.events.len(), 1);
         assert_eq!(result.functions.len(), 0);
+
+        let Some(Token::Event(e1)) = result.events.iter().next() else {
+            panic!("Only element parsed from ABI should be Token::Event");
+        };
+
+        assert_eq!(e1.data.len(), 1);
+        assert_eq!(e1.keys.len(), 1);
+
+        let f1_inner = e1.data[0].clone();
+        assert_eq!(f1_inner.token.as_ref().type_path(), "core::felt252");
+        assert_eq!(f1_inner.name, "value1");
+
+        let f2_inner = e1.keys[0].clone();
+        assert_eq!(f2_inner.token.as_ref().type_path(), "core::felt252");
+        assert_eq!(f2_inner.name, "value2");
+    }
+
+    #[test]
+    fn test_nested_event_struct_parsing() {
+        let abi_json = format!(
+            r#"[
+                {{
+                    "type": "event",
+                    "name": "contracts::Event",
+                    "kind": "struct",
+                    "members": [
+                      {{
+                        "name": "value1",
+                        "type": "core::felt252",
+                        "kind": "data"
+                      }},
+                      {{
+                        "name": "value2",
+                        "type": "core::felt252",
+                        "kind": "key"
+                      }}
+                    ]
+                }},
+                {{
+                    "type": "event",
+                    "name": "contracts::EventComplex",
+                    "kind": "enum",
+                    "variants": [
+                      {{
+                        "name": "Event1",
+                        "type": "contracts::Event",
+                        "kind": "nested"
+                      }},
+                      {{
+                        "name": "Event2",
+                        "type": "contracts::Event",
+                        "kind": "nested"
+                      }}
+                    ]
+                }}
+            ]"#,
+        );
+
+        let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+        assert_eq!(result.enums.len(), 0);
+        assert_eq!(result.structs.len(), 0);
+        assert_eq!(result.interfaces.len(), 0);
+        assert_eq!(result.events.len(), 2);
+        assert_eq!(result.functions.len(), 0);
+
+        for event in result.events.into_iter() {
+            let Token::Event(e) = event else {
+                panic!("Only element parsed from ABI should be Token::Event");
+            };
+
+            if e.type_path == "contracts::EventComplex" {
+                assert_eq!(e.data.len(), 0);
+                assert_eq!(e.flat.len(), 0);
+                assert_eq!(e.keys.len(), 0);
+                assert_eq!(e.nested.len(), 2);
+
+                let f1_inner = e.nested[0].clone();
+                assert_eq!(f1_inner.token.as_ref().type_path(), "contracts::Event");
+                assert_eq!(f1_inner.name, "Event1");
+
+                let f2_inner = e.nested[1].clone();
+                assert_eq!(f2_inner.token.as_ref().type_path(), "contracts::Event");
+                assert_eq!(f2_inner.name, "Event2");
+            }
+
+            if e.type_path == "contracts::Event" {
+                assert_eq!(e.data.len(), 1);
+                assert_eq!(e.keys.len(), 1);
+
+                let f1_inner = e.data[0].clone();
+                assert_eq!(f1_inner.token.as_ref().type_path(), "core::felt252");
+                assert_eq!(f1_inner.name, "value1");
+
+                let f2_inner = e.keys[0].clone();
+                assert_eq!(f2_inner.token.as_ref().type_path(), "core::felt252");
+                assert_eq!(f2_inner.name, "value2");
+            }
+        }
     }
 
     #[test]
     fn test_function_parsing() {
-        todo!()
+        let abi_json = format!(
+            r#"[
+                {{
+                    "type": "function",
+                    "name": "procedure",
+                    "inputs": [],
+                    "outputs": [],
+                    "state_mutability": "external"  
+                }},
+                {{
+                    "type": "function",
+                    "name": "procedure2",
+                    "inputs": [],
+                    "outputs": [],
+                    "state_mutability": "view"  
+                }},
+                {{
+                    "type": "function",
+                    "name": "func",
+                    "inputs": [
+                        {{
+                            "name": "arg",
+                            "type": "felt"
+                        }}
+                    ],
+                    "outputs": [
+                        {{
+                            "type": "felt"
+                        }}
+                    ],
+                    "state_mutability": "external"  
+                }}
+            ]"#,
+        );
+
+        let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+
+        assert_eq!(result.enums.len(), 0);
+        assert_eq!(result.structs.len(), 0);
+        assert_eq!(result.interfaces.len(), 0);
+        assert_eq!(result.events.len(), 0);
+        assert_eq!(result.functions.len(), 3);
+
+        for token in result.functions.into_iter() {
+            let Token::Function(func) = token else {
+                panic!("Only element parsed from ABI should be Token::Event");
+            };
+
+            if func.name == "func" {
+                assert_eq!(func.inputs.len(), 1);
+
+                let i1 = func.inputs[0].clone();
+                assert_eq!(i1.name, "arg");
+                let Token::CoreBasic(t1) = i1.token.as_ref() else {
+                    panic!("funct first input is arg of CoreBasic type");
+                };
+                assert_eq!(t1.type_path, "felt");
+
+                assert_eq!(func.outputs.len(), 1);
+                let o1 = func.outputs[0].clone();
+                let Token::CoreBasic(o1) = o1.as_ref() else {
+                    panic!("funct first input is arg of CoreBasic type");
+                };
+                assert_eq!(o1.type_path, "felt");
+                assert_eq!(func.state_mutability, StateMutability::External)
+            }
+
+            if func.name == "procedure" {
+                assert_eq!(func.inputs.len(), 0);
+                assert_eq!(func.outputs.len(), 0);
+                assert_eq!(func.state_mutability, StateMutability::External)
+            }
+
+            if func.name == "procedure2" {
+                assert_eq!(func.inputs.len(), 0);
+                assert_eq!(func.outputs.len(), 0);
+                assert_eq!(func.state_mutability, StateMutability::View)
+            }
+        }
+    }
+
+    #[test]
+    fn test_interface_parsing() {
+        let abi_json = format!(
+            r#"[
+                {{
+                    "type": "impl",
+                    "name": "MyInterfaceImpl",
+                    "interface_name": "contracts::abicov::simple_interface::MyInterface"
+                }},
+                {{
+                    "type": "interface",
+                    "name": "contracts::abicov::simple_interface::MyInterface",
+                    "items": [
+                        {{
+                            "type": "function",
+                            "name": "get_value",
+                            "inputs": [],
+                            "outputs": [
+                                {{
+                                    "type": "core::felt252"
+                                }}
+                            ],
+                            "state_mutability": "view"
+                        }},
+                        {{
+                            "type": "function",
+                            "name": "set_value",
+                            "inputs": [
+                                {{
+                                    "name": "value",
+                                    "type": "core::felt252"
+                                }}
+                            ],
+                            "outputs": [],
+                            "state_mutability": "external"
+                        }}
+                    ]
+                }}
+            ]"#,
+        );
+
+        let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+
+        assert_eq!(result.enums.len(), 0);
+        assert_eq!(result.structs.len(), 0);
+        assert_eq!(result.interfaces.len(), 1);
+        assert_eq!(result.interfaces_new.len(), 1);
+        assert_eq!(result.events.len(), 0);
+        assert_eq!(result.functions.len(), 0);
+
+        let Some(Token::Interface(interface)) = result.interfaces_new.iter().next() else {
+            panic!("interfaces should only store interfaces");
+        };
+
+        assert_eq!(interface.functions.len(), 2);
     }
 
     #[test]
@@ -919,16 +1190,27 @@ mod tests {
         .unwrap();
 
         assert_eq!(abi.structs.len(), 1);
-        // let s = abi.structs[0].to_composite().unwrap();
-        // if let Token::Array(a) = &s.inners[1].token.as_ref() {
-        //     let inner_array = a.inner.to_composite().unwrap();
-        //     assert_eq!(5, inner_array.inners.len());
-        //     // Check that copy was properly done
-        //     let src_enum = abi.enums[0].to_composite().unwrap();
-        //     assert_eq!(inner_array, src_enum);
-        // } else {
-        //     panic!("Expected array");
-        // }
+        assert_eq!(abi.enums.len(), 1);
+
+        let Token::Enum(e) = abi.enums.into_iter().next().unwrap() else {
+            panic!("Enums should only have Token::Enum")
+        };
+
+        let Token::Struct(s) = abi.structs.into_iter().next().unwrap() else {
+            panic!("Structs should only have Token::Struct")
+        };
+
+        if let Token::Array(a) = &s.fields[1].token.as_ref() {
+            let Token::Enum(array_inner) = a.inner.as_ref() else {
+                panic!("Expect array of Direction Enums")
+            };
+            assert_eq!(5, array_inner.variants.len());
+            // Check that copy was properly done
+
+            assert_eq!(array_inner, &e);
+        } else {
+            panic!("Expected array");
+        }
     }
 
     #[test]
@@ -940,21 +1222,29 @@ mod tests {
         .unwrap();
 
         assert_eq!(abi.structs.len(), 1);
-        let s = abi.structs[0].to_composite().unwrap();
+        assert_eq!(abi.enums.len(), 1);
 
-        // if let Token::Array(a) = &s.inners[1].token.as_ref() {
-        //     if let Token::Tuple(t) = a.inner.as_ref() {
-        //         let inner_array = t.inners[0].to_composite().unwrap();
-        //         assert_eq!(5, inner_array.inners.len());
-        //         // Check that copy was properly done
-        //         let src_enum = abi.enums[0].to_composite().unwrap();
-        //         assert_eq!(inner_array, src_enum);
-        //     } else {
-        //         panic!("Expected tuple");
-        //     }
-        // } else {
-        //     panic!("Expected array");
-        // }
+        let Token::Enum(e) = abi.enums.into_iter().next().unwrap() else {
+            panic!("Enums should only have Token::Enum")
+        };
+
+        let Token::Struct(s) = abi.structs.into_iter().next().unwrap() else {
+            panic!("Structs should only have Token::Struct")
+        };
+
+        if let Token::Array(a) = &s.fields[1].token.as_ref() {
+            let Token::Tuple(t) = a.inner.as_ref() else {
+                panic!("Expect second field to hold Tuple")
+            };
+
+            let Token::Enum(tuple_f1) = t.inners[0].as_ref() else {
+                panic!("Expect first tuple element to be Enum")
+            };
+
+            assert_eq!(5, tuple_f1.variants.len());
+            // Check that copy was properly done
+            assert_eq!(tuple_f1, &e);
+        }
     }
 
     #[test]
@@ -968,3 +1258,18 @@ mod tests {
         assert_ne!(tokens.structs.len(), 0);
     }
 }
+
+// @core::array::Array::<dojo::meta::introspect::Ty>
+// dojo::meta::layout::Layout
+// dojo::meta::introspect::Ty
+// core::array::Span::<dojo::meta::introspect::Member>
+// @core::array::Array::<dojo::meta::layout::Layout>
+// dojo::model::definition::ModelDef
+// core::array::Span::<(core::felt252, dojo::meta::introspect::Ty)>
+// @core::array::Array::<(core::felt252, dojo::meta::introspect::Ty)>
+// dojo::meta::introspect::Struct
+// @core::array::Array::<dojo::meta::layout::FieldLayout>
+// core::array::Span::<dojo::meta::layout::FieldLayout>
+// @core::array::Array::<dojo::meta::introspect::Member>
+// dojo::meta::interface::IStoredResource
+// dojo::model::interface::IModel

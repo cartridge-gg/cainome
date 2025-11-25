@@ -12,7 +12,7 @@ pub struct TypeRegistry {
     store: HashMap<String, Rc<Token>>,
 }
 
-// TODO: memoise maybe?
+// TODO: memoise maybe? set?
 fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
     if ArrayContainer::test_path(&type_path) {
         let inner_type_path = ArrayContainer::get_inner(&type_path)?;
@@ -57,7 +57,7 @@ fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
     Ok(vec![type_path.to_string()])
 }
 
-fn wrap_generic_containers(type_path: &str, registry: &TypeRegistry) -> CainomeResult<Rc<Token>> {
+fn wrap_generic_containers(type_path: &str, registry: &TypeRegistry) -> Result<Rc<Token>, Error> {
     if ArrayContainer::test_path(&type_path) {
         let inner_type_path = ArrayContainer::get_inner(&type_path)?;
 
@@ -133,17 +133,21 @@ impl TypeRegistry {
         registry
     }
 
-    pub fn is_known_type(&self, path: &str) -> CainomeResult<bool> {
+    pub fn is_known_type(&self, path: &str) -> Result<bool, Error> {
         let inner_paths = get_generic_inner_types(path)?;
 
-        let res = inner_paths.iter().all(|p| self.store.contains_key(p));
+        for path in inner_paths.into_iter() {
+            if !self.store.contains_key(&path) {
+                return Ok(false);
+            }
+        }
 
-        return Ok(res);
+        return Ok(true);
     }
 
-    pub fn get(&self, path: &str) -> CainomeResult<Rc<Token>> {
-        let inner_path = wrap_generic_containers(path, &self)?;
-        return Ok(inner_path);
+    pub fn get(&self, path: &str) -> Result<Rc<Token>, Error> {
+        let generic_token_chain = wrap_generic_containers(path, &self)?;
+        return Ok(generic_token_chain);
     }
 
     pub fn set(&mut self, path: String, token: Token) -> Rc<Token> {
