@@ -1,8 +1,5 @@
-use std::rc::Rc;
-
 use syn::{GenericArgument, PathArguments, Type};
 
-use super::Token;
 use crate::CainomeResult;
 
 /// Extracts the generic arguments from a type path.

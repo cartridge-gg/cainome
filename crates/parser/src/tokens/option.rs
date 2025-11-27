@@ -1,6 +1,7 @@
 //! This module provides a token type for the `Option` type.
 //!
 //! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/option.cairo>
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::abi::registry::TypeRegistry;
@@ -13,7 +14,7 @@ use super::utils;
 #[derive(Debug, Clone, PartialEq)]
 pub struct OptionContainer {
     pub type_path: String,
-    pub inner: Rc<Token>,
+    pub inner: Rc<RefCell<Token>>,
 }
 
 impl OptionContainer {
@@ -21,7 +22,7 @@ impl OptionContainer {
         type_path.starts_with("core::option::Option")
     }
 
-    pub fn new(type_path: &str, inner: &Rc<Token>) -> Self {
+    pub fn new(type_path: &str, inner: &Rc<RefCell<Token>>) -> Self {
         Self {
             type_path: type_path.to_string(),
             inner: Rc::clone(inner),

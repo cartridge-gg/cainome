@@ -1,4 +1,8 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{
+    cell::{Ref, RefCell},
+    collections::HashMap,
+    rc::Rc,
+};
 
 use crate::{
     tokens::{
@@ -9,7 +13,7 @@ use crate::{
 };
 
 pub struct TypeRegistry {
-    store: HashMap<String, Rc<Token>>,
+    store: HashMap<String, Rc<RefCell<Token>>>,
 }
 
 // TODO: memoise maybe? set?
@@ -57,14 +61,17 @@ fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
     Ok(vec![type_path.to_string()])
 }
 
-fn wrap_generic_containers(type_path: &str, registry: &TypeRegistry) -> Result<Rc<Token>, Error> {
+fn wrap_generic_containers(
+    type_path: &str,
+    registry: &TypeRegistry,
+) -> Result<Rc<RefCell<Token>>, Error> {
     if ArrayContainer::test_path(&type_path) {
         let inner_type_path = ArrayContainer::get_inner(&type_path)?;
 
         let inner_type = wrap_generic_containers(&inner_type_path, registry)?;
 
         let token = Token::Array(ArrayContainer::new(&type_path, &inner_type));
-        return Ok(Rc::new(token));
+        return Ok(Rc::new(RefCell::new(token)));
     }
 
     if NonZeroContainer::test_path(&type_path) {
@@ -73,7 +80,7 @@ fn wrap_generic_containers(type_path: &str, registry: &TypeRegistry) -> Result<R
         let inner_type = wrap_generic_containers(&inner_type_path, registry)?;
 
         let token = Token::NonZero(NonZeroContainer::new(&type_path, &inner_type));
-        return Ok(Rc::new(token));
+        return Ok(Rc::new(RefCell::new(token)));
     }
 
     if OptionContainer::test_path(&type_path) {
@@ -82,7 +89,7 @@ fn wrap_generic_containers(type_path: &str, registry: &TypeRegistry) -> Result<R
         let inner_type = wrap_generic_containers(&inner_type_path, registry)?;
 
         let token = Token::Option(OptionContainer::new(&type_path, &inner_type));
-        return Ok(Rc::new(token));
+        return Ok(Rc::new(RefCell::new(token)));
     }
 
     if ResultContainer::test_path(&type_path) {
@@ -93,7 +100,7 @@ fn wrap_generic_containers(type_path: &str, registry: &TypeRegistry) -> Result<R
 
         let token = Token::Result(ResultContainer::new(&type_path, &inner_type, &error_type));
 
-        return Ok(Rc::new(token));
+        return Ok(Rc::new(RefCell::new(token)));
     }
 
     // TODO: Tuple should not be here
@@ -107,7 +114,7 @@ fn wrap_generic_containers(type_path: &str, registry: &TypeRegistry) -> Result<R
         }
 
         let token = Token::Tuple(TupleContainer::new(type_path, inners));
-        return Ok(Rc::new(token));
+        return Ok(Rc::new(RefCell::new(token)));
     }
 
     if let Some(token) = registry.store.get(type_path) {
@@ -145,20 +152,40 @@ impl TypeRegistry {
         return Ok(true);
     }
 
-    pub fn get(&self, path: &str) -> Result<Rc<Token>, Error> {
+    pub fn get(&self, path: &str) -> Result<Rc<RefCell<Token>>, Error> {
         let generic_token_chain = wrap_generic_containers(path, &self)?;
         return Ok(generic_token_chain);
     }
 
-    pub fn set(&mut self, path: String, token: Token) -> Rc<Token> {
-        let reference = Rc::new(token);
-        let cloned = Rc::clone(&reference);
-        self.store.insert(path, reference);
-        cloned
+    pub fn set(&mut self, path: String, token: Token) {
+        if let Some(cell) = self.store.get(&path) {
+            if token == Token::Placeholder {
+                // Do not overwrite with placeholder.
+                return;
+            }
+
+            let mut cell = cell.as_ref().borrow_mut();
+            *cell = token;
+        } else {
+            let reference = Rc::new(RefCell::new(token));
+            self.store.insert(path, reference);
+        }
     }
 
-    pub fn values(self) -> Vec<Rc<Token>> {
-        self.store.into_values().collect::<Vec<_>>()
+    pub fn values(self) -> Vec<Rc<RefCell<Token>>> {
+        self.store.into_values().collect()
+    }
+
+    pub fn get_uninitialised_placeholders(&self) -> Vec<String> {
+        let mut unresolved_placeholders = vec![];
+
+        for (path, val) in self.store.iter() {
+            if Token::Placeholder == *val.borrow() {
+                unresolved_placeholders.push(path.clone());
+            }
+        }
+
+        return unresolved_placeholders;
     }
 }
 

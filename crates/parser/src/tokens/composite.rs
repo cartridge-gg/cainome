@@ -58,6 +58,7 @@
 //!
 //! A naive strategy would be to ensure all types are parsed a first time,
 //! and then a generic resolution is done.
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::genericity;
@@ -96,7 +97,7 @@ pub struct CompositeInner {
 pub struct Composite {
     pub type_path: String,
     pub inners: Vec<CompositeInner>,
-    pub generic_args: Vec<(String, Rc<Token>)>,
+    pub generic_args: Vec<(String, Rc<RefCell<Token>>)>,
     pub r#type: CompositeType,
     pub is_event: bool,
     pub alias: Option<String>,
@@ -126,7 +127,7 @@ impl Composite {
         let type_path = utils::escape_rust_keywords(type_path);
         let generic_args = genericity::extract_generics_args(&type_path)?;
 
-        let generic_args_with_types: Vec<(String, Rc<Token>)> = generic_args
+        let generic_args_with_types: Vec<(String, Rc<RefCell<Token>>)> = generic_args
             .into_iter()
             .map(|(name, path)| (name, registry.get(&path).unwrap()))
             .collect();
@@ -181,16 +182,16 @@ mod tests {
     use super::*;
     use crate::tokens::*;
 
-    fn basic_felt252() -> Rc<Token> {
-        Rc::new(Token::CoreBasic(CoreBasic {
+    fn basic_felt252() -> Rc<RefCell<Token>> {
+        Rc::new(RefCell::new(Token::CoreBasic(CoreBasic {
             type_path: "core::felt252".to_string(),
-        }))
+        })))
     }
 
-    fn basic_u64() -> Rc<Token> {
-        Rc::new(Token::CoreBasic(CoreBasic {
+    fn basic_u64() -> Rc<RefCell<Token>> {
+        Rc::new(RefCell::new(Token::CoreBasic(CoreBasic {
             type_path: "core::integer::u64".to_string(),
-        }))
+        })))
     }
 
     #[test]

@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     abi::registry::{self, TypeRegistry},
@@ -13,15 +13,14 @@ use crate::{
 #[derive(Debug, Clone, PartialEq)]
 pub struct StructInner {
     pub name: String,
-    pub token: Rc<Token>,
+    pub token: Rc<RefCell<Token>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Struct {
     pub type_path: String,
     pub fields: Vec<StructInner>,
-    pub generic_args: Vec<(String, Rc<Token>)>,
-    pub alias: Option<String>,
+    pub generic_args: Vec<(String, Rc<RefCell<Token>>)>,
 }
 
 impl Struct {
@@ -29,18 +28,39 @@ impl Struct {
         let type_path = escape_rust_keywords(&type_path);
         let generic_args = genericity::extract_generics_args(&type_path)?;
 
-        let generic_args_with_types: Vec<(String, Rc<Token>)> = generic_args
+        let generic_args_with_types: Vec<(String, Rc<RefCell<Token>>)> = generic_args
             .into_iter()
             .map(|(name, path)| (name, registry.get(&path).unwrap()))
             .collect();
 
-        return Ok(Self {
+        Ok(Self {
             type_path,
             generic_args: generic_args_with_types,
             fields: vec![],
-            alias: None,
-        });
+        })
     }
+
+    // pub fn new(type_path: String) -> CainomeResult<Self> {
+    //     let type_path = escape_rust_keywords(&type_path);
+    //     Ok(Self {
+    //         type_path,
+    //         generic_args: vec![],
+    //         fields: vec![],
+    //     })
+    // }
+
+    // pub fn initialise(&mut self, registry: &TypeRegistry) -> CainomeResult<()> {
+    //     let generic_args = genericity::extract_generics_args(&self.type_path)?;
+
+    //     let generic_args_with_types: Vec<(String, Rc<RefCell<Token>>)> = generic_args
+    //         .into_iter()
+    //         .map(|(name, path)| (name, registry.get(&path).unwrap()))
+    //         .collect();
+
+    //     self.generic_args = generic_args_with_types;
+
+    //     Ok(())
+    // }
 
     pub fn type_path_no_generic(&self) -> String {
         genericity::type_path_no_generic(&self.type_path)

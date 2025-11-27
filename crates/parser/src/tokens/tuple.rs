@@ -6,20 +6,17 @@
 //! A tuple can contain generic in cairo code, however in the ABI,
 //! generic types are actually always replaced by their concrete types.
 //! So a [`Tuple`] is not a generic type itself in the context of cainome.
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use syn::Type;
 
 use super::Token;
-use crate::{
-    abi::registry::{self, TypeRegistry},
-    CainomeResult, Error,
-};
+use crate::{CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TupleContainer {
     pub type_path: String,
-    pub inners: Vec<Rc<Token>>,
+    pub inners: Vec<Rc<RefCell<Token>>>,
 }
 
 impl TupleContainer {
@@ -80,7 +77,7 @@ impl TupleContainer {
     /// assert_eq!(tuple.inners[0], Token::CoreBasic(CoreBasic { type_path: "core::felt252".to_string() }));
     /// assert_eq!(tuple.inners[1], Token::CoreBasic(CoreBasic { type_path: "core::integer::u64".to_string() }));
     /// ```
-    pub fn new(type_path: &str, inners: Vec<Rc<Token>>) -> Self {
+    pub fn new(type_path: &str, inners: Vec<Rc<RefCell<Token>>>) -> Self {
         Self {
             type_path: type_path.to_string(),
             inners,

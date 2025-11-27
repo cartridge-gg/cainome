@@ -1,20 +1,19 @@
 //! This module provides a token type for the `Result` type.
 //!
 //! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/result.cairo>
+use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::abi::registry::{self, TypeRegistry};
 use crate::tokens::Token;
 use crate::{CainomeResult, Error};
 
 use super::genericity;
-use super::utils;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResultContainer {
     pub type_path: String,
-    pub inner: Rc<Token>,
-    pub error: Rc<Token>,
+    pub inner: Rc<RefCell<Token>>,
+    pub error: Rc<RefCell<Token>>,
 }
 
 pub struct ResultContainerInnerTypes {
@@ -40,7 +39,7 @@ impl ResultContainer {
         })
     }
 
-    pub fn new(type_path: &str, inner: &Rc<Token>, error: &Rc<Token>) -> Self {
+    pub fn new(type_path: &str, inner: &Rc<RefCell<Token>>, error: &Rc<RefCell<Token>>) -> Self {
         Self {
             type_path: type_path.to_string(),
             inner: Rc::clone(inner),

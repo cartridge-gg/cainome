@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::constants::{CAIRO_COMPOSITE_BUILTINS, CAIRO_GENERIC_BUILTINS};
@@ -11,7 +12,7 @@ use crate::CainomeResult;
 #[derive(Debug, Clone, PartialEq)]
 pub struct EventInner {
     pub name: String,
-    pub token: Rc<Token>,
+    pub token: Rc<RefCell<Token>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -21,8 +22,7 @@ pub struct Event {
     pub data: Vec<EventInner>,
     pub nested: Vec<EventInner>,
     pub flat: Vec<EventInner>,
-    pub generic_args: Vec<(String, Rc<Token>)>,
-    pub alias: Option<String>,
+    pub generic_args: Vec<(String, Rc<RefCell<Token>>)>,
 }
 
 impl Event {
@@ -30,7 +30,7 @@ impl Event {
         let type_path = utils::escape_rust_keywords(&type_path);
         let generic_args = genericity::extract_generics_args(&type_path)?;
 
-        let generic_args_with_types: Vec<(String, Rc<Token>)> = generic_args
+        let generic_args_with_types: Vec<(String, Rc<RefCell<Token>>)> = generic_args
             .into_iter()
             .map(|(name, path)| (name, registry.get(&path).unwrap()))
             .collect();
@@ -38,40 +38,11 @@ impl Event {
         return Ok(Self {
             type_path,
             generic_args: generic_args_with_types,
-            alias: None,
             keys: vec![],
             data: vec![],
             nested: vec![],
             flat: vec![],
         });
-    }
-
-    /// Parses a composite type from a type path.
-    /// Since the composite can be named arbitrarily, by the user,
-    /// the parsing of the composite is not checking if the type path is
-    /// a core basic type, an array or something else.
-    ///
-    /// In cainome the type path is first parsed as any other token, and
-    /// [`Composite`] is the last token that is parsed (which accepts every path).
-    ///
-    /// You may use [`Composite::is_builtin`] to check if the type path is
-    /// a known Cairo builtin type.
-    ///
-    /// # Arguments
-    ///
-    /// * `type_path` - The type path to parse.
-    ///
-    /// # Returns
-    ///
-    /// Returns a [`Composite`] token if the type path is a composite.
-    /// Returns an error otherwise.
-    pub fn parse(type_path: &str) -> CainomeResult<Self> {
-        let type_path = utils::escape_rust_keywords(type_path);
-        let generic_args = genericity::extract_generics_args(&type_path)?;
-
-        // We want to keep the path with generic for the generic resolution.
-        // Ok(Self::new(type_path.to_string(), generic_args))
-        Err(crate::Error::ParsingFailed("asd".to_string()))
     }
 
     pub fn type_path_no_generic(&self) -> String {
@@ -82,55 +53,9 @@ impl Event {
         !self.generic_args.is_empty()
     }
 
-    /// Returns true if the current composite is considered as Cairo builtin.
-    /// This is useful to avoid expanding the structure if already managed by
-    /// the backend (like Option and Result for instance).
-    /// Spans and Arrays are handled by `array`.
-    pub fn is_builtin(&self) -> bool {
-        for b in CAIRO_GENERIC_BUILTINS {
-            if self.type_path.starts_with(b) {
-                return true;
-            }
-        }
-
-        for b in CAIRO_COMPOSITE_BUILTINS {
-            if self.type_path.starts_with(b) {
-                return true;
-            }
-        }
-
-        false
-    }
-
     pub fn type_name(&self) -> String {
         // TODO: need to opti that with regex?
         utils::extract_type_path_with_depth(&self.type_path_no_generic(), 0)
-    }
-
-    pub fn type_name_or_alias(&self) -> String {
-        if let Some(a) = &self.alias {
-            a.clone()
-        } else {
-            self.type_name()
-        }
-    }
-
-    pub fn apply_alias(&mut self, type_path: &str, alias: &str) {
-        if self.type_path_no_generic() == type_path {
-            self.alias = Some(alias.to_string());
-        }
-
-        // for ref mut i in &mut self.nested {
-        //     if let Token::Composite(ref mut c) = i.token.as_ref() {
-        //         c.apply_alias(type_path, alias);
-        //     }
-        // }
-
-        // for ref mut i in &mut self.flat {
-        //     if let Token::Composite(ref mut c) = i.token.as_ref() {
-        //         c.apply_alias(type_path, alias);
-        //     }
-        // }
     }
 }
 

@@ -3,6 +3,7 @@
 //! Technically, a `Span` is different than an `Array` in cairo.
 //! However, from a binding point of view, they are both collections,
 //! and we can safely consider them as the same type.
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use super::constants::CAIRO_CORE_SPAN_ARRAY;
@@ -16,7 +17,7 @@ pub const CAIRO_0_ARRAY: &str = "*";
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArrayContainer {
     pub type_path: String,
-    pub inner: Rc<Token>,
+    pub inner: Rc<RefCell<Token>>,
     pub is_legacy: bool,
 }
 
@@ -55,7 +56,7 @@ impl ArrayContainer {
         Ok(generic_arg_token.unwrap())
     }
 
-    pub fn new(type_path: &str, inner: &Rc<Token>) -> Self {
+    pub fn new(type_path: &str, inner: &Rc<RefCell<Token>>) -> Self {
         return Self {
             type_path: type_path.to_string(),
             inner: Rc::clone(inner),

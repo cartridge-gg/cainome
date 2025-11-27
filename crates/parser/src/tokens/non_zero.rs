@@ -1,6 +1,7 @@
 //! This module provides a token type for the `NonZero` type.
 //!
 //! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/zeroable.cairo#L80>
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::abi::registry::TypeRegistry;
@@ -13,7 +14,7 @@ use super::utils;
 #[derive(Debug, Clone, PartialEq)]
 pub struct NonZeroContainer {
     pub type_path: String,
-    pub inner: Rc<Token>,
+    pub inner: Rc<RefCell<Token>>,
 }
 
 impl NonZeroContainer {
@@ -21,7 +22,7 @@ impl NonZeroContainer {
         type_path.starts_with("core::zeroable::NonZero")
     }
 
-    pub fn new(type_path: &str, inner: &Rc<Token>) -> Self {
+    pub fn new(type_path: &str, inner: &Rc<RefCell<Token>>) -> Self {
         Self {
             type_path: type_path.to_string(),
             inner: Rc::clone(inner),

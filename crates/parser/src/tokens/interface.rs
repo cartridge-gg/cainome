@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{tokens::Token, CainomeResult};
 
@@ -6,7 +6,7 @@ use crate::{tokens::Token, CainomeResult};
 pub struct Interface {
     pub type_path: String,
     // That is not great, as actually only Token::Function is allowed
-    pub functions: Vec<Rc<Token>>,
+    pub functions: Vec<Rc<RefCell<Token>>>,
 }
 
 impl Interface {

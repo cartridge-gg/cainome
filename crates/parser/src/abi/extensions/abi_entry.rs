@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use starknet::core::types::{
     contract::{
@@ -9,7 +9,11 @@ use starknet::core::types::{
     LegacyEventAbiEntry,
 };
 
-use crate::{abi::registry::TypeRegistry, tokens::Interface, Error};
+use crate::{
+    abi::registry::TypeRegistry,
+    tokens::{CoreBasic, Interface},
+    Error,
+};
 use crate::{
     tokens::{Enum, EnumInner, Event, EventInner, FuncInner, Function, Struct, StructInner, Token},
     CainomeResult,
@@ -198,7 +202,7 @@ impl TokenConvertable for &AbiInterface {
             // hmmmm, token name should be extracted from token
             // let token_ref = registry.set(token.type_path(), token);
 
-            interface.functions.push(Rc::new(token));
+            interface.functions.push(Rc::new(RefCell::new(token)));
         }
 
         Ok(Token::Interface(interface))
@@ -220,7 +224,7 @@ impl TokenConvertable for AbiEntry {
             AbiEntry::Enum(abi_enum) => abi_enum.to_token(registry),
             // TODO: should be use for contract deployment (in the future)
             AbiEntry::Constructor(abi_constructor) => todo!(),
-            AbiEntry::Impl(_) => Ok(Token::Blank),
+            AbiEntry::Impl(abi_impl) => Ok(Token::Blank(CoreBasic::new(&abi_impl.name))),
             AbiEntry::Interface(abi_interface) => abi_interface.to_token(registry),
             AbiEntry::L1Handler(abi_function) => abi_function.to_token(registry),
         }
@@ -291,7 +295,8 @@ mod tests {
         let result = AbiParser::tokens_from_abi_string(abi_json, &HashMap::new()).unwrap();
 
         assert_eq!(result.enums.len(), 1);
-        let enum_composite = result.enums[0].to_composite().unwrap();
+        let enum_token = &*result.enums[0].borrow();
+        let enum_composite = enum_token.to_composite().unwrap();
 
         assert_eq!(enum_composite.r#type, CompositeType::Enum);
         assert_eq!(enum_composite.inners.len(), 3);

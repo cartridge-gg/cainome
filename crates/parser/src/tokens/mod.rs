@@ -58,8 +58,11 @@ pub enum Token {
     // Not needed for now
     Constructor(Constructor),
 
-    // Suspicious
-    Blank,
+    // Suspicious types
+    // Blank is needed to handle AbiEntries that we don't need to expand
+    Blank(CoreBasic),
+    // Placeholder is a service level value, those should never be exposed
+    Placeholder,
 
     // Legacy
     Composite(Composite),
@@ -79,9 +82,10 @@ impl Token {
             Token::Enum(e) => e.type_name(),
             Token::Struct(s) => s.type_name(),
             Token::Event(s) => s.type_name(),
-            Token::Interface(f) => "interface".to_string(),
-            Token::Constructor(f) => "constructor".to_string(),
-            Token::Blank => "empty".to_string(),
+            Token::Interface(_) => "interface".to_string(),
+            Token::Constructor(_) => "constructor".to_string(),
+            Token::Blank(s) => s.type_name(),
+            Token::Placeholder => unreachable!(),
         }
     }
 
@@ -100,7 +104,8 @@ impl Token {
             Token::Event(s) => s.type_path_no_generic(),
             Token::Constructor(constructor) => constructor.type_path.to_string(),
             Token::Interface(interface) => interface.type_path.to_string(),
-            Token::Blank => "".to_string(),
+            Token::Blank(s) => s.type_path.to_string(),
+            Token::Placeholder => unreachable!(),
         }
     }
 
