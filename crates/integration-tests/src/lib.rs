@@ -43,13 +43,4 @@ mod tests {
         assert_eq!(tokenized_abi.functions.len(), 0);
         assert_eq!(tokenized_abi.interfaces.len(), 0);
     }
-
-    // #[test]
-    // fn test_type_name_parsing() {
-    //     let type_path = "core::integer::u256".to_string();
-
-    //     let z = Token::parse(&type_path).unwrap();
-
-    //     println!("{:?}", z.as_ref());
-    // }
 }

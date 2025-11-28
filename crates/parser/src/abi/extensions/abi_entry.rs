@@ -1,4 +1,4 @@
-use std::{cell::RefCell, fmt::format, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use starknet::core::types::{
     contract::{
@@ -9,28 +9,25 @@ use starknet::core::types::{
     LegacyEventAbiEntry,
 };
 
-use crate::{
-    abi::registry::TypeRegistry,
-    tokens::{EntryToken, Interface},
-};
+use crate::{abi::registry::TypeRegistry, tokens::Interface};
 use crate::{
     tokens::{Enum, EnumInner, Event, EventInner, FuncInner, Function, Struct, StructInner, Token},
     CainomeResult,
 };
 
 pub trait TokenConvertable: Sized {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<EntryToken>;
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token>;
 }
 
 pub trait TryTokenConvertable: Sized {
-    fn try_to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Option<EntryToken>>;
+    fn try_to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Option<Token>>;
 }
 
 impl<T> TryTokenConvertable for T
 where
     T: TokenConvertable,
 {
-    fn try_to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Option<EntryToken>> {
+    fn try_to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Option<Token>> {
         return self.to_token(registry).map(|res| Some(res));
     }
 }
@@ -40,7 +37,7 @@ pub trait Named {
 }
 
 impl TokenConvertable for &AbiStruct {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<EntryToken> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
         let mut structure = Struct::new(self.name.clone(), &registry)?;
 
         for field in self.members.iter() {
@@ -52,12 +49,12 @@ impl TokenConvertable for &AbiStruct {
             });
         }
 
-        Ok(EntryToken::Struct(structure))
+        Ok(Token::Struct(structure))
     }
 }
 
 impl TokenConvertable for &AbiEnum {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<EntryToken> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
         let mut enumeration = Enum::new(self.name.clone(), &registry)?;
 
         for field in self.variants.iter() {
@@ -69,12 +66,12 @@ impl TokenConvertable for &AbiEnum {
             });
         }
 
-        Ok(EntryToken::Enum(enumeration))
+        Ok(Token::Enum(enumeration))
     }
 }
 
 impl TokenConvertable for &UntypedAbiEvent {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<EntryToken> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
         let mut event = Event::new(self.name.clone(), &registry)?;
 
         for field in self.inputs.iter() {
@@ -86,12 +83,12 @@ impl TokenConvertable for &UntypedAbiEvent {
             });
         }
 
-        Ok(EntryToken::Event(event))
+        Ok(Token::Event(event))
     }
 }
 
 impl TokenConvertable for &AbiEventStruct {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<EntryToken> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
         let mut event = Event::new(self.name.clone(), &registry)?;
 
         for m in self.members.iter() {
@@ -111,12 +108,12 @@ impl TokenConvertable for &AbiEventStruct {
             }
         }
 
-        Ok(EntryToken::Event(event))
+        Ok(Token::Event(event))
     }
 }
 
 impl TokenConvertable for &AbiEventEnum {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<EntryToken> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
         let mut event = Event::new(self.name.clone(), &registry)?;
 
         for m in self.variants.iter() {
@@ -136,12 +133,12 @@ impl TokenConvertable for &AbiEventEnum {
             }
         }
 
-        Ok(EntryToken::Event(event))
+        Ok(Token::Event(event))
     }
 }
 
 impl TokenConvertable for &RawLegacyEvent {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<EntryToken> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
         let mut event = Event::new(self.name.clone(), &registry)?;
 
         for m in self.data.iter() {
@@ -162,12 +159,12 @@ impl TokenConvertable for &RawLegacyEvent {
             });
         }
 
-        Ok(EntryToken::Event(event))
+        Ok(Token::Event(event))
     }
 }
 
 impl TokenConvertable for &RawLegacyStruct {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<EntryToken> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
         let mut structure = Struct::new(self.name.clone(), &registry)?;
 
         for field in self.members.iter() {
@@ -179,12 +176,12 @@ impl TokenConvertable for &RawLegacyStruct {
             });
         }
 
-        Ok(EntryToken::Struct(structure))
+        Ok(Token::Struct(structure))
     }
 }
 
 impl TokenConvertable for &AbiFunction {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<EntryToken> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
         let mut function = Function::new(&self.name, self.state_mutability.clone().into());
 
         for input in self.inputs.iter() {
@@ -201,12 +198,12 @@ impl TokenConvertable for &AbiFunction {
             function.outputs.push(token);
         }
 
-        Ok(EntryToken::Function(function))
+        Ok(Token::Function(function))
     }
 }
 
 impl TokenConvertable for &AbiInterface {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<EntryToken> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
         let mut interface = Interface::new(&self.name)?;
 
         for item in self.items.iter() {
@@ -216,17 +213,15 @@ impl TokenConvertable for &AbiInterface {
             };
 
             let token = func.to_token(registry)?;
-            interface
-                .functions
-                .push(Rc::new(RefCell::new(Token::Entry(token))));
+            interface.functions.push(Rc::new(RefCell::new(token)));
         }
 
-        Ok(EntryToken::Interface(interface))
+        Ok(Token::Interface(interface))
     }
 }
 
 impl TryTokenConvertable for AbiEntry {
-    fn try_to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Option<EntryToken>> {
+    fn try_to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Option<Token>> {
         match self {
             AbiEntry::Function(abi_function) => abi_function.try_to_token(registry),
             AbiEntry::Event(AbiEvent::Typed(TypedAbiEvent::Enum(abi_event))) => {
@@ -261,7 +256,6 @@ impl Named for AbiEntry {
             AbiEntry::Event(AbiEvent::Untyped(abi_event)) => abi_event.name.clone(),
             AbiEntry::Struct(abi_struct) => abi_struct.name.clone(),
             AbiEntry::Enum(abi_enum) => abi_enum.name.clone(),
-            // TODO: should be use for contract deployment (in the future)
             AbiEntry::Constructor(abi_constructor) => abi_constructor.name.clone(),
             AbiEntry::Impl(abi_impl) => abi_impl.name.clone(),
             AbiEntry::Interface(abi_interface) => abi_interface.name.clone(),
@@ -271,7 +265,7 @@ impl Named for AbiEntry {
 }
 
 impl TokenConvertable for LegacyEventAbiEntry {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<EntryToken> {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
         todo!()
     }
 }
@@ -312,7 +306,7 @@ mod tests {
         let result = AbiParser::tokens_from_abi_string(abi_json, &HashMap::new()).unwrap();
 
         assert_eq!(result.enums.len(), 1);
-        let Token::Entry(EntryToken::Enum(enum_token)) = &*result.enums[0].borrow() else {
+        let Token::Enum(enum_token) = &*result.enums[0].borrow() else {
             panic!("Should be enum");
         };
 
@@ -335,8 +329,7 @@ mod tests {
 
         // Check that variant with tuple has Data kind
         assert_eq!(enum_token.variants[2].name, "VariantWithTuple");
-        let Token::Container(Container::Tuple(f3t)) = &*enum_token.variants[2].token.borrow()
-        else {
+        let Token::Tuple(f3t) = &*enum_token.variants[2].token.borrow() else {
             panic!("Third field token should be basic");
         };
         assert_eq!(f3t.type_path, "(core::felt252, core::integer::u32)");

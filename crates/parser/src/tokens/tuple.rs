@@ -85,7 +85,7 @@ impl TupleContainer {
     }
 
     pub fn new_token(type_path: &str, inners: Vec<Rc<RefCell<Token>>>) -> Token {
-        Token::Container(Container::Tuple(Self::new(type_path, inners)))
+        Token::Tuple(Self::new(type_path, inners))
     }
 }
 

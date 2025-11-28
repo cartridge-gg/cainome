@@ -3,9 +3,9 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::rc::Rc;
 
-use crate::abi::extensions::{Named, TokenConvertable, TryTokenConvertable};
+use crate::abi::extensions::{Named, TryTokenConvertable};
 use crate::abi::registry::TypeRegistry;
-use crate::tokens::{EntryToken, Token};
+use crate::tokens::Token;
 use crate::{CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -219,7 +219,7 @@ impl AbiParser {
             } else {
                 // To support for indirect recursive reference resolution, we fill seen
                 // types with Placeholder to later replace with resolved type.
-                registry.set(entry.get_name(), Token::Entry(EntryToken::Placeholder));
+                registry.set(entry.get_name(), Token::Placeholder);
             }
 
             // Checking if registry has all the nested types to resolve
@@ -233,7 +233,7 @@ impl AbiParser {
 
             // Ok, now we can resolve.
             if let Some(token) = entry.try_to_token(&mut registry)? {
-                registry.set(token.type_path(), Token::Entry(token));
+                registry.set(entry.get_name(), token);
             } else {
                 // This means that entry resolved into token absence, let's remove placeholder.
                 // (happens for implementation)
@@ -276,10 +276,10 @@ impl AbiParser {
 
         for token in tokens {
             match &*token.borrow() {
-                Token::Entry(EntryToken::Function(_)) => {
+                Token::Function(_) => {
                     functions.push(Rc::clone(&token));
                 }
-                Token::Entry(EntryToken::Interface(interface)) => {
+                Token::Interface(interface) => {
                     interfaces_new.push(Rc::clone(&token));
 
                     // Legacy
@@ -287,8 +287,7 @@ impl AbiParser {
                     let mut new_function_tokens = vec![];
 
                     for function_token in interface.functions.iter() {
-                        let Token::Entry(EntryToken::Function(_)) = &*function_token.borrow()
-                        else {
+                        let Token::Function(_) = &*function_token.borrow() else {
                             unreachable!("According to ABI specs only function can be there")
                         };
 
@@ -296,9 +295,9 @@ impl AbiParser {
                     }
                     interfaces.insert(interface.type_path.clone(), new_function_tokens);
                 }
-                Token::Entry(EntryToken::Event(_)) => events.push(Rc::clone(&token)),
-                Token::Entry(EntryToken::Enum(_)) => enums.push(Rc::clone(&token)),
-                Token::Entry(EntryToken::Struct(_)) => structs.push(Rc::clone(&token)),
+                Token::Event(_) => events.push(Rc::clone(&token)),
+                Token::Enum(_) => enums.push(Rc::clone(&token)),
+                Token::Struct(_) => structs.push(Rc::clone(&token)),
                 _ => (),
             }
         }

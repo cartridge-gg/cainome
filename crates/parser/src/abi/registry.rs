@@ -2,8 +2,8 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     tokens::{
-        constants, ArrayContainer, CoreBasic, EntryToken, NonZeroContainer, OptionContainer,
-        ResultContainer, Token, TupleContainer,
+        constants, ArrayContainer, CoreBasic, NonZeroContainer, OptionContainer, ResultContainer,
+        Token, TupleContainer,
     },
     CainomeResult, Error,
 };
@@ -151,7 +151,7 @@ impl TypeRegistry {
 
     pub fn set(&mut self, path: String, token: Token) {
         if let Some(cell) = self.store.get(&path) {
-            if token == Token::Entry(EntryToken::Placeholder) {
+            if token == Token::Placeholder {
                 // Do not overwrite with placeholder.
                 return;
             }
@@ -176,7 +176,7 @@ impl TypeRegistry {
         let mut unresolved_placeholders = vec![];
 
         for (path, val) in self.store.iter() {
-            if Token::Entry(EntryToken::Placeholder) == *val.borrow() {
+            if Token::Placeholder == *val.borrow() {
                 unresolved_placeholders.push(path.clone());
             }
         }
@@ -184,6 +184,3 @@ impl TypeRegistry {
         return unresolved_placeholders;
     }
 }
-
-#[cfg(test)]
-mod tests {}

@@ -3,7 +3,7 @@ use std::{collections::HashMap, rc::Rc};
 use starknet::core::types::contract::SierraClass;
 
 use crate::{
-    tokens::{Container, CoreBasic, EntryToken, StateMutability, Token},
+    tokens::{Container, CoreBasic, StateMutability, Token},
     AbiParser,
 };
 
@@ -40,20 +40,20 @@ fn recursive_struct_parsing() {
         panic!("At least one element should be present in structs");
     };
 
-    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+    let Token::Struct(s1) = &*token.borrow() else {
         panic!("Only element parsed from ABI should be Token::Struct");
     };
 
     for field in s1.fields.iter() {
         if field.name == "parent" {
-            let Token::Container(Container::Option(parent)) = &*field.token.borrow() else {
+            let Token::Option(parent) = &*field.token.borrow() else {
                 panic!("Parent field is optional")
             };
             assert!(Rc::ptr_eq(token, &parent.inner));
         }
 
         if field.name == "children" {
-            let Token::Container(Container::Array(children)) = &*field.token.borrow() else {
+            let Token::Array(children) = &*field.token.borrow() else {
                 panic!("Children field is optional")
             };
             assert!(Rc::ptr_eq(token, &children.inner));
@@ -126,20 +126,20 @@ fn recursive_enum_parsing() {
         panic!("At least one element should be present in structs");
     };
 
-    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+    let Token::Struct(s1) = &*token.borrow() else {
         panic!("Only element parsed from ABI should be Token::Struct");
     };
 
     for field in s1.fields.iter() {
         if field.name == "parent" {
-            let Token::Container(Container::Option(parent)) = &*field.token.borrow() else {
+            let Token::Option(parent) = &*field.token.borrow() else {
                 panic!("Parent field is optional")
             };
             assert!(Rc::ptr_eq(token, &parent.inner));
         }
 
         if field.name == "children" {
-            let Token::Container(Container::Array(children)) = &*field.token.borrow() else {
+            let Token::Array(children) = &*field.token.borrow() else {
                 panic!("Children field is optional")
             };
             assert!(Rc::ptr_eq(token, &children.inner));
@@ -195,7 +195,7 @@ fn test_parsing_all_core_type_struct_fields() {
         panic!("At least one element should be present in structs");
     };
 
-    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+    let Token::Struct(s1) = &*token.borrow() else {
         panic!("Only element parsed from ABI should be Token::Struct");
     };
 
@@ -238,7 +238,7 @@ fn check_array_container_is_parsed() {
         panic!("At least one element should be present in structs");
     };
 
-    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+    let Token::Struct(s1) = &*token.borrow() else {
         panic!("Only element parsed from ABI should be Token::Struct");
     };
 
@@ -247,10 +247,10 @@ fn check_array_container_is_parsed() {
     let f1_inner = s1.fields[0].clone();
     let f2_inner = s1.fields[1].clone();
 
-    let Token::Container(Container::Array(a1)) = &*f1_inner.token.borrow() else {
+    let Token::Array(a1) = &*f1_inner.token.borrow() else {
         panic!("First field should be Array");
     };
-    let Token::Container(Container::Array(a2)) = &*f2_inner.token.borrow() else {
+    let Token::Array(a2) = &*f2_inner.token.borrow() else {
         panic!("Second field should be Array");
     };
 
@@ -314,7 +314,7 @@ fn check_tuple_container_is_parsed() {
         panic!("At least one element should be present in structs");
     };
 
-    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+    let Token::Struct(s1) = &*token.borrow() else {
         panic!("Only element parsed from ABI should be Token::Struct");
     };
 
@@ -322,7 +322,7 @@ fn check_tuple_container_is_parsed() {
 
     let f1_inner = s1.fields[0].clone();
 
-    let Token::Container(Container::Tuple(a1)) = &*f1_inner.token.borrow() else {
+    let Token::Tuple(a1) = &*f1_inner.token.borrow() else {
         panic!("First field should be Tuple");
     };
 
@@ -361,7 +361,7 @@ fn check_nested_tuple_container_is_parsed() {
         panic!("At least one element should be present in structs");
     };
 
-    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+    let Token::Struct(s1) = &*token.borrow() else {
         panic!("Only element parsed from ABI should be Token::Struct");
     };
 
@@ -369,7 +369,7 @@ fn check_nested_tuple_container_is_parsed() {
 
     let f1_inner = s1.fields[0].clone();
 
-    let Token::Container(Container::Tuple(a1)) = &*f1_inner.token.as_ref().borrow() else {
+    let Token::Tuple(a1) = &*f1_inner.token.as_ref().borrow() else {
         panic!("First field should be Tuple");
     };
 
@@ -379,7 +379,7 @@ fn check_nested_tuple_container_is_parsed() {
 
     assert_eq!(t1.type_path, "felt");
 
-    let Token::Container(Container::Tuple(t2)) = &*a1.inners[1].borrow() else {
+    let Token::Tuple(t2) = &*a1.inners[1].borrow() else {
         panic!("Second tuple element should be Tuple");
     };
 
@@ -448,7 +448,7 @@ fn check_basic_enum_is_parsed() {
         panic!("At least one element should be present in enums");
     };
 
-    let Token::Entry(EntryToken::Enum(s1)) = &*token.borrow() else {
+    let Token::Enum(s1) = &*token.borrow() else {
         panic!("Only element parsed from ABI should be Token::Enum");
     };
 
@@ -650,7 +650,7 @@ fn test_option_is_resolved_as_a_part_of_struct() {
         panic!("At least one element should be present in structs");
     };
 
-    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+    let Token::Struct(s1) = &*token.borrow() else {
         panic!("Only element parsed from ABI should be Token::Struct");
     };
 
@@ -658,7 +658,7 @@ fn test_option_is_resolved_as_a_part_of_struct() {
 
     let f1_inner = s1.fields[0].clone();
 
-    let Token::Container(Container::Option(a1)) = &*f1_inner.token.as_ref().borrow() else {
+    let Token::Option(a1) = &*f1_inner.token.as_ref().borrow() else {
         panic!("First field should be Option");
     };
 
@@ -726,7 +726,7 @@ fn test_result_is_resolved_as_a_part_of_struct() {
         panic!("At least one element should be present in structs");
     };
 
-    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+    let Token::Struct(s1) = &*token.borrow() else {
         panic!("Only element parsed from ABI should be Token::Struct");
     };
 
@@ -734,7 +734,7 @@ fn test_result_is_resolved_as_a_part_of_struct() {
 
     let f1_inner = s1.fields[0].clone();
 
-    let Token::Container(Container::Result(a1)) = &*f1_inner.token.as_ref().borrow() else {
+    let Token::Result(a1) = &*f1_inner.token.as_ref().borrow() else {
         panic!("First field should be Result");
     };
 
@@ -777,7 +777,7 @@ fn test_non_zero_is_resolved_as_a_part_of_struct() {
         panic!("At least one element should be present in structs");
     };
 
-    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+    let Token::Struct(s1) = &*token.borrow() else {
         panic!("Only element parsed from ABI should be Token::Struct");
     };
 
@@ -785,7 +785,7 @@ fn test_non_zero_is_resolved_as_a_part_of_struct() {
 
     let f1_inner = s1.fields[0].clone();
 
-    let Token::Container(Container::NonZero(a1)) = &*f1_inner.token.as_ref().borrow() else {
+    let Token::NonZero(a1) = &*f1_inner.token.as_ref().borrow() else {
         panic!("First field should be NonZero");
     };
 
@@ -830,7 +830,7 @@ fn test_simple_event_struct_parsing() {
         panic!("At least one element should be present in events");
     };
 
-    let Token::Entry(EntryToken::Event(e1)) = &*token.borrow() else {
+    let Token::Event(e1) = &*token.borrow() else {
         panic!("Only element parsed from ABI should be Token::Event");
     };
 
@@ -901,7 +901,7 @@ fn test_nested_event_struct_parsing() {
     assert_eq!(result.functions.len(), 0);
 
     for event in result.events.into_iter() {
-        let Token::Entry(EntryToken::Event(e)) = &*event.borrow() else {
+        let Token::Event(e) = &*event.borrow() else {
             panic!("Only element parsed from ABI should be Token::Event");
         };
 
@@ -913,14 +913,14 @@ fn test_nested_event_struct_parsing() {
 
             let f1_inner = e.nested[0].clone();
             assert_eq!(f1_inner.name, "Event1");
-            let Token::Basic(c1) = &*f1_inner.token.borrow() else {
+            let Token::Event(c1) = &*f1_inner.token.borrow() else {
                 panic!("Event field 1 content should be CoreBasic");
             };
             assert_eq!(c1.type_path, "contracts::Event");
 
             let f2_inner = e.nested[1].clone();
             assert_eq!(f2_inner.name, "Event2");
-            let Token::Basic(c2) = &*f2_inner.token.borrow() else {
+            let Token::Event(c2) = &*f2_inner.token.borrow() else {
                 panic!("Event field 1 content should be CoreBasic");
             };
             assert_eq!(c2.type_path, "contracts::Event");
@@ -994,7 +994,7 @@ fn test_function_parsing() {
     assert_eq!(result.functions.len(), 3);
 
     for token in result.functions.into_iter() {
-        let Token::Entry(EntryToken::Function(func)) = &*token.borrow() else {
+        let Token::Function(func) = &*token.borrow() else {
             panic!("Only element parsed from ABI should be Token::Event");
         };
 
@@ -1085,7 +1085,7 @@ fn test_interface_parsing() {
         panic!("At least one element should be present in interfaces_new");
     };
 
-    let Token::Entry(EntryToken::Interface(interface)) = &*token.borrow() else {
+    let Token::Interface(interface) = &*token.borrow() else {
         panic!("interfaces should only store interfaces");
     };
 
@@ -1107,7 +1107,7 @@ fn test_dojo_starter_direction_available_abi() {
         panic!("Enums should have at least 1 item")
     };
 
-    let Token::Entry(EntryToken::Enum(e)) = &*enum_token.borrow() else {
+    let Token::Enum(e) = &*enum_token.borrow() else {
         panic!("Enums should only have Token::Enum")
     };
 
@@ -1115,12 +1115,12 @@ fn test_dojo_starter_direction_available_abi() {
         panic!("Structs should have at least 1 item")
     };
 
-    let Token::Entry(EntryToken::Struct(s)) = &*struct_token.borrow() else {
+    let Token::Struct(s) = &*struct_token.borrow() else {
         panic!("Structs should only have Token::Struct")
     };
 
-    if let Token::Container(Container::Array(a)) = &*s.fields[1].clone().token.as_ref().borrow() {
-        let Token::Entry(EntryToken::Enum(array_inner)) = &*a.inner.borrow() else {
+    if let Token::Array(a) = &*s.fields[1].clone().token.as_ref().borrow() {
+        let Token::Enum(array_inner) = &*a.inner.borrow() else {
             panic!("Expect array of Direction Enums")
         };
         assert_eq!(5, array_inner.variants.len());
@@ -1147,7 +1147,7 @@ fn test_nested_tuple() {
         panic!("Enums should have at least 1 item")
     };
 
-    let Token::Entry(EntryToken::Enum(e)) = &*enum_token.borrow() else {
+    let Token::Enum(e) = &*enum_token.borrow() else {
         panic!("Enums should only have Token::Enum")
     };
 
@@ -1155,16 +1155,16 @@ fn test_nested_tuple() {
         panic!("Structs should have at least 1 item")
     };
 
-    let Token::Entry(EntryToken::Struct(s)) = &*struct_token.borrow() else {
+    let Token::Struct(s) = &*struct_token.borrow() else {
         panic!("Structs should only have Token::Struct")
     };
 
-    if let Token::Container(Container::Array(a)) = &*s.fields[1].clone().token.as_ref().borrow() {
-        let Token::Container(Container::Tuple(t)) = &*a.inner.borrow() else {
+    if let Token::Array(a) = &*s.fields[1].clone().token.as_ref().borrow() {
+        let Token::Tuple(t) = &*a.inner.borrow() else {
             panic!("Expect second field to hold Tuple")
         };
 
-        let Token::Entry(EntryToken::Enum(tuple_f1)) = &*t.inners[0].borrow() else {
+        let Token::Enum(tuple_f1) = &*t.inners[0].borrow() else {
             panic!("Expect first tuple element to be Enum")
         };
 

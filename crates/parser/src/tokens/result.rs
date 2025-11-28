@@ -52,6 +52,6 @@ impl ResultContainer {
         inner: &Rc<RefCell<Token>>,
         error: &Rc<RefCell<Token>>,
     ) -> Token {
-        Token::Container(Container::Result(Self::new(type_path, inner, error)))
+        Token::Result(Self::new(type_path, inner, error))
     }
 }

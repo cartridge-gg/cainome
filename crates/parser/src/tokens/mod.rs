@@ -34,16 +34,23 @@ pub use structure::{Struct, StructInner};
 pub use tuple::TupleContainer;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Container {
+pub enum Container {}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Token {
+    // Basic type is well known cairo builtin.
+    // It's stored in ABI as a reference and defined in caire
+    // core lib.
+    Basic(CoreBasic),
+
+    // Container types are similar to Basic, but are well
+    // known generic containers.
     Array(ArrayContainer),
     Option(OptionContainer),
     Result(ResultContainer),
     NonZero(NonZeroContainer),
     Tuple(TupleContainer),
-}
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum EntryToken {
     // Composite types
     Struct(Struct),
     Event(Event),
@@ -56,34 +63,6 @@ pub enum EntryToken {
 
     // Not needed for now
     Constructor(Constructor),
-}
-
-impl EntryToken {
-    pub fn type_path(&self) -> String {
-        let type_path = match self {
-            EntryToken::Struct(s) => &s.type_path,
-            EntryToken::Event(event) => &event.type_path,
-            EntryToken::Enum(e) => &e.type_path,
-            EntryToken::Function(function) => &function.name,
-            EntryToken::Interface(interface) => &interface.type_path,
-            EntryToken::Constructor(constructor) => &constructor.type_path,
-            EntryToken::Placeholder => unreachable!(),
-        };
-        type_path.clone()
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub enum Token {
-    // Basic type is well known cairo builtin.
-    // It's stored in ABI as a reference and defined in caire
-    // core lib.
-    Basic(CoreBasic),
-    // Container types are similar to Basic, but are well
-    // known generic containers.
-    Container(Container),
-    // These are types defined by user, they might contain complex references.
-    Entry(EntryToken),
 
     // Legacy
     CompositeLegacy(CompositeLegacy),

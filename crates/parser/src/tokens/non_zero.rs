@@ -28,7 +28,7 @@ impl NonZeroContainer {
     }
 
     pub fn new_token(type_path: &str, inner: &Rc<RefCell<Token>>) -> Token {
-        Token::Container(Container::NonZero(Self::new(type_path, inner)))
+        Token::NonZero(Self::new(type_path, inner))
     }
 
     pub fn get_inner(type_path: &str) -> CainomeResult<String, Error> {

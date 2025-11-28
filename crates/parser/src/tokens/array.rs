@@ -9,7 +9,7 @@ use std::rc::Rc;
 use super::constants::CAIRO_CORE_SPAN_ARRAY;
 use super::genericity;
 
-use crate::tokens::{Container, Token};
+use crate::tokens::Token;
 use crate::{CainomeResult, Error};
 
 pub const CAIRO_0_ARRAY: &str = "*";
@@ -69,7 +69,7 @@ impl ArrayContainer {
     }
 
     pub fn new_token(type_path: &str, inner: &Rc<RefCell<Token>>) -> Token {
-        Token::Container(Container::Array(Self::new(type_path, inner)))
+        Token::Array(Self::new(type_path, inner))
     }
 }
 
