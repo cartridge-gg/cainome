@@ -33,8 +33,6 @@ pub use result::ResultContainer;
 pub use structure::{Struct, StructInner};
 pub use tuple::TupleContainer;
 
-use crate::{CainomeResult, Error};
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum Container {
     Array(ArrayContainer),
@@ -60,6 +58,21 @@ pub enum EntryToken {
     Constructor(Constructor),
 }
 
+impl EntryToken {
+    pub fn type_path(&self) -> String {
+        let type_path = match self {
+            EntryToken::Struct(s) => &s.type_path,
+            EntryToken::Event(event) => &event.type_path,
+            EntryToken::Enum(e) => &e.type_path,
+            EntryToken::Function(function) => &function.name,
+            EntryToken::Interface(interface) => &interface.type_path,
+            EntryToken::Constructor(constructor) => &constructor.type_path,
+            EntryToken::Placeholder => unreachable!(),
+        };
+        type_path.clone()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     // Basic type is well known cairo builtin.
@@ -76,84 +89,12 @@ pub enum Token {
     CompositeLegacy(CompositeLegacy),
 }
 
-impl EntryToken {
-    pub fn type_path(&self) -> String {
-        let type_path = match self {
-            EntryToken::Struct(s) => &s.type_path,
-            EntryToken::Event(event) => &event.type_path,
-            EntryToken::Enum(e) => &e.type_path,
-            EntryToken::Function(function) => &function.name,
-            EntryToken::Interface(interface) => &interface.type_path,
-            EntryToken::Constructor(constructor) => &constructor.type_path,
-            EntryToken::Placeholder => unreachable!(),
-        };
-        type_path.clone()
-    }
-}
-
 impl Token {
-    pub fn type_name(&self) -> String {
-        match self {
-            Token::Basic(t) => t.type_name(),
-
-            Token::Container(Container::Array(_)) => "array".to_string(),
-            Token::Container(Container::Tuple(_)) => "tuple".to_string(),
-            Token::Container(Container::Option(_)) => "option".to_string(),
-            Token::Container(Container::Result(_)) => "result".to_string(),
-            Token::Container(Container::NonZero(_)) => "non_zero".to_string(),
-
-            Token::Entry(EntryToken::Function(_)) => "function".to_string(),
-            Token::Entry(EntryToken::Enum(e)) => e.type_name(),
-            Token::Entry(EntryToken::Struct(s)) => s.type_name(),
-            Token::Entry(EntryToken::Event(s)) => s.type_name(),
-            Token::Entry(EntryToken::Interface(_)) => "interface".to_string(),
-            Token::Entry(EntryToken::Constructor(_)) => "constructor".to_string(),
-            Token::Entry(EntryToken::Placeholder) => unreachable!(),
-
-            Token::CompositeLegacy(t) => t.type_name(),
-        }
-    }
-
-    pub fn type_path(&self) -> String {
-        match self {
-            Token::Basic(t) => t.type_path.to_string(),
-
-            Token::Container(Container::Array(t)) => t.type_path.to_string(),
-            Token::Container(Container::Tuple(t)) => t.type_path.to_string(),
-            Token::Container(Container::Option(t)) => t.type_path.to_string(),
-            Token::Container(Container::Result(t)) => t.type_path.to_string(),
-            Token::Container(Container::NonZero(t)) => t.type_path.to_string(),
-
-            Token::Entry(EntryToken::Function(t)) => t.name.clone(),
-            Token::Entry(EntryToken::Enum(e)) => e.type_path_no_generic(),
-            Token::Entry(EntryToken::Struct(s)) => s.type_path_no_generic(),
-            Token::Entry(EntryToken::Event(s)) => s.type_path_no_generic(),
-            Token::Entry(EntryToken::Interface(i)) => i.type_path.to_string(),
-            Token::Entry(EntryToken::Constructor(c)) => c.type_path.to_string(),
-            Token::Entry(EntryToken::Placeholder) => unreachable!(),
-
-            Token::CompositeLegacy(t) => t.type_path_no_generic(),
-        }
-    }
-
-    // TODO: we may remove these two functions...! And change types somewhere..
-    pub fn to_composite(&self) -> CainomeResult<&CompositeLegacy> {
-        match self {
-            Token::CompositeLegacy(t) => Ok(t),
-            _ => Err(Error::ConversionFailed(format!(
-                "Can't convert token into composite, got {:?}",
-                self
-            ))),
-        }
-    }
-
-    pub fn to_function(&self) -> CainomeResult<&Function> {
-        match self {
-            Token::Entry(EntryToken::Function(t)) => Ok(t),
-            _ => Err(Error::ConversionFailed(format!(
-                "Can't convert token into function, got {:?}",
-                self
-            ))),
+    pub fn is_basic(&self) -> bool {
+        if let Token::Basic(_) = self {
+            true
+        } else {
+            false
         }
     }
 }

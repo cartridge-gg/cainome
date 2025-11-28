@@ -89,7 +89,7 @@ mod tests {
         let generics_args = extract_generics_args("module::TypeName::<core::felt252>").unwrap();
         assert_eq!(generics_args.len(), 1);
         assert_eq!(generics_args[0].0, "A");
-        // assert_eq!(generics_args[0].1, Token::parse("core::felt252").unwrap());
+        assert_eq!(generics_args[0].1, "core::felt252");
     }
 
     #[test]
@@ -98,8 +98,8 @@ mod tests {
             extract_generics_args("module::TypeName::<core::felt252, core::bool>").unwrap();
         assert_eq!(generics_args.len(), 2);
         assert_eq!(generics_args[0].0, "A");
-        // assert_eq!(generics_args[0].1, Token::parse("core::felt252").unwrap());
+        assert_eq!(generics_args[0].1, "core::felt252");
         assert_eq!(generics_args[1].0, "B");
-        // assert_eq!(generics_args[1].1, Token::parse("core::bool").unwrap());
+        assert_eq!(generics_args[1].1, "core::bool");
     }
 }

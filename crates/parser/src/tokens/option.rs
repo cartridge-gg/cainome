@@ -4,12 +4,10 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::abi::registry::TypeRegistry;
 use crate::tokens::{Container, Token};
 use crate::{CainomeResult, Error};
 
 use super::genericity;
-use super::utils;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct OptionContainer {

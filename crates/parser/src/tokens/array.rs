@@ -27,6 +27,8 @@ impl ArrayContainer {
     }
 
     pub fn is_span(type_path: &str) -> bool {
+        let type_path = type_path.trim_start_matches("@");
+
         CAIRO_CORE_SPAN_ARRAY
             .iter()
             .any(|prefix| type_path.starts_with(prefix))
@@ -73,37 +75,96 @@ impl ArrayContainer {
 
 #[cfg(test)]
 mod tests {
+    use starknet::core::types::contract::{AbiEntry, AbiNamedMember, AbiStruct};
+
     use super::*;
-    use crate::tokens::*;
+    use crate::{abi::registry::TypeRegistry, AbiParser};
 
     #[test]
-    fn test_parse() {
-        // assert_eq!(
-        //     Array::parse("core::array::Array::<core::felt252>").unwrap(),
-        //     Array {
-        //         type_path: "core::array::Array::<core::felt252>".to_string(),
-        //         inner: Rc::new(Token::CoreBasic(CoreBasic {
-        //             type_path: "core::felt252".to_string()
-        //         })),
-        //         is_legacy: false,
-        //     }
-        // );
+    fn test_get_inner() {
+        let inner_type =
+            ArrayContainer::get_inner("core::array::Array::<core::felt252>").expect("Should work");
+
+        assert_eq!(inner_type, "core::felt252")
+    }
+
+    fn execute_parsing_for(ttype: String) -> CainomeResult<TypeRegistry> {
+        let data = vec![AbiEntry::Struct(AbiStruct {
+            name: "test".to_string(),
+            members: vec![AbiNamedMember {
+                name: "f1".to_string(),
+                r#type: ttype,
+            }],
+        })];
+
+        return AbiParser::build_registry(data);
     }
 
     #[test]
-    fn test_parse_no_inner_invalid() {
-        // assert!(Array::parse("core::array::Array").is_err());
-        // assert!(Array::parse("core::array::Array<>").is_err());
+    fn test_ok_cases() {
+        let cases = vec![
+            "core::array::Array<felt>".to_string(),
+            "@core::array::Array<core::felt252>".to_string(),
+            "core::array::Span<felt>".to_string(),
+            "@core::array::Span<core::option::Option<felt>>".to_string(),
+        ];
+
+        for case in cases {
+            let res = execute_parsing_for(case.clone());
+
+            assert!(res.is_ok())
+        }
     }
 
     #[test]
-    fn test_parse_wrong_path_invalid() {
-        // assert!(Array::parse("array::Array::<core::felt252>").is_err());
+    fn test_parse_no_inner_invalid1() {
+        let res = execute_parsing_for("core::array::Array".to_string());
+
+        let Result::Err(e) = res else {
+            panic!("This should fail. Array is incorrect");
+        };
+
+        let Error::TokenInitFailed(_) = e else {
+            panic!("This be Error::TokenInitFailed error");
+        };
     }
 
     #[test]
-    fn test_parse_invalid_path_invalid() {
-        // assert!(Array::parse("module::module2::array::Array::<core::felt252>").is_err());
-        // assert!(Array::parse("module::module2::MyStruct::<core::felt252>").is_err());
+    fn test_parse_wrong_path_invalid1() {
+        let res = execute_parsing_for("array::Array::<core::felt252>".to_string());
+
+        let Result::Err(e) = res else {
+            panic!("This should fail. Array is incorrect");
+        };
+
+        let Error::ParsingFailed(_) = e else {
+            panic!("This be Error::TokenInitFailed error");
+        };
+    }
+
+    #[test]
+    fn test_parse_wrong_path_invalid2() {
+        let res = execute_parsing_for("module::module2::array::Array::<core::felt252>".to_string());
+
+        let Result::Err(e) = res else {
+            panic!("This should fail. Array is incorrect");
+        };
+
+        let Error::ParsingFailed(_) = e else {
+            panic!("This be Error::TokenInitFailed error");
+        };
+    }
+
+    #[test]
+    fn test_parse_wrong_path_invalid3() {
+        let res = execute_parsing_for("module::module2::MyStruct::<core::felt252>".to_string());
+
+        let Result::Err(e) = res else {
+            panic!("This should fail. Array is incorrect");
+        };
+
+        let Error::ParsingFailed(_) = e else {
+            panic!("This be Error::TokenInitFailed error");
+        };
     }
 }

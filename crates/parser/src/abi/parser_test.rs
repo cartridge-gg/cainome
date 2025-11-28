@@ -3,9 +3,11 @@ use std::{collections::HashMap, rc::Rc};
 use starknet::core::types::contract::SierraClass;
 
 use crate::{
-    tokens::{Container, EntryToken, StateMutability, Token},
+    tokens::{Container, CoreBasic, EntryToken, StateMutability, Token},
     AbiParser,
 };
+
+// Unconvertible
 
 #[test]
 fn recursive_struct_parsing() {
@@ -57,6 +59,40 @@ fn recursive_struct_parsing() {
             assert!(Rc::ptr_eq(token, &children.inner));
         }
     }
+}
+
+#[test]
+fn indirect_recursion_struct_parsing() {
+    let abi_json = r#"[
+            {
+                "type": "struct",
+                "name": "baitcode::S1",
+                "members": [
+                    {
+                        "name": "parent",
+                        "type": "core::option::Option::<baitcode::S2>"
+                    }
+                ]
+            },
+            {
+                "type": "struct",
+                "name": "baitcode::S2",
+                "members": [
+                    {
+                        "name": "parent",
+                        "type": "core::option::Option::<baitcode::S1>"
+                    }
+                ]
+            }
+        ]"#;
+
+    let result = AbiParser::tokens_from_abi_string(abi_json, &HashMap::new()).unwrap();
+
+    assert_eq!(result.structs.len(), 2);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 0);
+    assert_eq!(result.functions.len(), 0);
+    assert_eq!(result.enums.len(), 0);
 }
 
 #[test]
@@ -218,8 +254,14 @@ fn check_array_container_is_parsed() {
         panic!("Second field should be Array");
     };
 
-    assert_eq!(a1.inner.borrow().type_path(), "felt");
-    assert_eq!(a2.inner.borrow().type_path(), "felt");
+    let Token::Basic(c1) = &*a1.inner.borrow() else {
+        panic!("Array content should be CoreBasic");
+    };
+    assert_eq!(c1.type_path, "felt");
+    let Token::Basic(c2) = &*a2.inner.borrow() else {
+        panic!("Array content should be CoreBasic");
+    };
+    assert_eq!(c2.type_path, "felt");
 }
 
 #[ignore]
@@ -620,7 +662,10 @@ fn test_option_is_resolved_as_a_part_of_struct() {
         panic!("First field should be Option");
     };
 
-    assert_eq!(a1.inner.borrow().type_path(), "core::felt252");
+    let Token::Basic(c) = &*a1.inner.borrow() else {
+        panic!("Array content should be CoreBasic");
+    };
+    assert_eq!(c.type_path, "core::felt252");
 }
 
 #[ignore]
@@ -693,8 +738,15 @@ fn test_result_is_resolved_as_a_part_of_struct() {
         panic!("First field should be Result");
     };
 
-    assert_eq!(a1.inner.borrow().type_path(), "core::felt252");
-    assert_eq!(a1.error.borrow().type_path(), "core::integer::u32");
+    let Token::Basic(c1) = &*a1.inner.borrow() else {
+        panic!("Result content should be CoreBasic");
+    };
+    assert_eq!(c1.type_path, "core::felt252");
+
+    let Token::Basic(c2) = &*a1.error.borrow() else {
+        panic!("Result error should be CoreBasic");
+    };
+    assert_eq!(c2.type_path, "core::integer::u32");
 }
 
 #[test]
@@ -737,7 +789,10 @@ fn test_non_zero_is_resolved_as_a_part_of_struct() {
         panic!("First field should be NonZero");
     };
 
-    assert_eq!(a1.inner.borrow().type_path(), "core::felt252");
+    let Token::Basic(c1) = &*a1.inner.borrow() else {
+        panic!("Result content should be CoreBasic");
+    };
+    assert_eq!(c1.type_path, "core::felt252");
 }
 
 #[test]
@@ -783,12 +838,18 @@ fn test_simple_event_struct_parsing() {
     assert_eq!(e1.keys.len(), 1);
 
     let f1_inner = e1.data[0].clone();
-    assert_eq!(f1_inner.token.borrow().type_path(), "core::felt252");
     assert_eq!(f1_inner.name, "value1");
+    let Token::Basic(c1) = &*f1_inner.token.borrow() else {
+        panic!("Event field 1 content should be CoreBasic");
+    };
+    assert_eq!(c1.type_path, "core::felt252");
 
     let f2_inner = e1.keys[0].clone();
-    assert_eq!(f2_inner.token.borrow().type_path(), "core::felt252");
     assert_eq!(f2_inner.name, "value2");
+    let Token::Basic(c2) = &*f2_inner.token.borrow() else {
+        panic!("Event field 1 content should be CoreBasic");
+    };
+    assert_eq!(c2.type_path, "core::felt252");
 }
 
 #[test]
@@ -851,12 +912,18 @@ fn test_nested_event_struct_parsing() {
             assert_eq!(e.nested.len(), 2);
 
             let f1_inner = e.nested[0].clone();
-            assert_eq!(f1_inner.token.borrow().type_path(), "contracts::Event");
             assert_eq!(f1_inner.name, "Event1");
+            let Token::Basic(c1) = &*f1_inner.token.borrow() else {
+                panic!("Event field 1 content should be CoreBasic");
+            };
+            assert_eq!(c1.type_path, "contracts::Event");
 
             let f2_inner = e.nested[1].clone();
-            assert_eq!(f2_inner.token.borrow().type_path(), "contracts::Event");
             assert_eq!(f2_inner.name, "Event2");
+            let Token::Basic(c2) = &*f2_inner.token.borrow() else {
+                panic!("Event field 1 content should be CoreBasic");
+            };
+            assert_eq!(c2.type_path, "contracts::Event");
         }
 
         if e.type_path == "contracts::Event" {
@@ -864,11 +931,18 @@ fn test_nested_event_struct_parsing() {
             assert_eq!(e.keys.len(), 1);
 
             let f1_inner = e.data[0].clone();
-            assert_eq!(f1_inner.token.borrow().type_path(), "core::felt252");
             assert_eq!(f1_inner.name, "value1");
+            let Token::Basic(c1) = &*f1_inner.token.borrow() else {
+                panic!("Event field 1 content should be CoreBasic");
+            };
+            assert_eq!(c1.type_path, "core::felt252");
 
             let f2_inner = e.keys[0].clone();
-            assert_eq!(f2_inner.token.borrow().type_path(), "core::felt252");
+            let Token::Basic(c2) = &*f2_inner.token.borrow() else {
+                panic!("Event field 1 content should be CoreBasic");
+            };
+            assert_eq!(c2.type_path, "core::felt252");
+
             assert_eq!(f2_inner.name, "value2");
         }
     }

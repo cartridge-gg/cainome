@@ -240,6 +240,7 @@ impl TryTokenConvertable for AbiEntry {
             AbiEntry::Enum(abi_enum) => abi_enum.try_to_token(registry),
             // TODO: should be use for contract deployment (in the future)
             AbiEntry::Constructor(abi_constructor) => todo!(),
+            // TODO: Maybe rethink
             AbiEntry::Impl(abi_impl) => Ok(None),
             AbiEntry::Interface(abi_interface) => abi_interface.try_to_token(registry),
             AbiEntry::L1Handler(abi_function) => abi_function.try_to_token(registry),
@@ -278,7 +279,7 @@ impl TokenConvertable for LegacyEventAbiEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tokens::{CompositeInnerKind, CompositeType};
+    use crate::tokens::Container;
     use crate::AbiParser;
     use std::collections::HashMap;
 
@@ -305,28 +306,39 @@ mod tests {
                     }
                 ]
             }
-        ]
+        ]   
         "#;
 
         let result = AbiParser::tokens_from_abi_string(abi_json, &HashMap::new()).unwrap();
 
         assert_eq!(result.enums.len(), 1);
-        let enum_token = &*result.enums[0].borrow();
-        let enum_composite = enum_token.to_composite().unwrap();
+        let Token::Entry(EntryToken::Enum(enum_token)) = &*result.enums[0].borrow() else {
+            panic!("Should be enum");
+        };
 
-        assert_eq!(enum_composite.r#type, CompositeType::Enum);
-        assert_eq!(enum_composite.inners.len(), 3);
+        assert_eq!(enum_token.type_path, "test::TestEnum");
+        assert_eq!(enum_token.variants.len(), 3);
 
         // Check that variant without data has NotUsed kind
-        assert_eq!(enum_composite.inners[0].name, "VariantWithoutData");
-        assert_eq!(enum_composite.inners[0].kind, CompositeInnerKind::NotUsed);
+        assert_eq!(enum_token.variants[0].name, "VariantWithoutData");
+        let Token::Basic(f1t) = &*enum_token.variants[0].token.borrow() else {
+            panic!("First field token should be basic");
+        };
+        assert_eq!(f1t.type_path, "()");
 
         // Check that variant with felt252 has Data kind
-        assert_eq!(enum_composite.inners[1].name, "VariantWithFelt252");
-        assert_eq!(enum_composite.inners[1].kind, CompositeInnerKind::Data);
+        assert_eq!(enum_token.variants[1].name, "VariantWithFelt252");
+        let Token::Basic(f2t) = &*enum_token.variants[1].token.borrow() else {
+            panic!("Second field token should be basic");
+        };
+        assert_eq!(f2t.type_path, "core::felt252");
 
         // Check that variant with tuple has Data kind
-        assert_eq!(enum_composite.inners[2].name, "VariantWithTuple");
-        assert_eq!(enum_composite.inners[2].kind, CompositeInnerKind::Data);
+        assert_eq!(enum_token.variants[2].name, "VariantWithTuple");
+        let Token::Container(Container::Tuple(f3t)) = &*enum_token.variants[2].token.borrow()
+        else {
+            panic!("Third field token should be basic");
+        };
+        assert_eq!(f3t.type_path, "(core::felt252, core::integer::u32)");
     }
 }

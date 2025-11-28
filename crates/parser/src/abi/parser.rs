@@ -210,13 +210,11 @@ impl AbiParser {
             // Might also work for type duplicates, but I don't think those exist.
             // NOTE: this might move into extensions for AbiEntry
             if let Ok(token) = registry.get(&entry.get_name()) {
-                // ONLY KNOWN INNERTYPES SHOULD BE IGNORED
-                match &*token.borrow() {
-                    Token::Basic(_) => {
-                        seen_since_last_removal = 0;
-                        continue;
-                    }
-                    _ => (),
+                if token.borrow().is_basic() {
+                    // If entry is of basic builtin type
+                    // We just ignore that entry and drop it.
+                    seen_since_last_removal = 0;
+                    continue;
                 }
             } else {
                 // To support for indirect recursive reference resolution, we fill seen
@@ -238,6 +236,7 @@ impl AbiParser {
                 registry.set(token.type_path(), Token::Entry(token));
             } else {
                 // This means that entry resolved into token absence, let's remove placeholder.
+                // (happens for implementation)
                 registry.remove(&entry.get_name());
             }
             seen_since_last_removal = 0;
