@@ -65,13 +65,13 @@ mod tests {
     use crate::tokens::*;
 
     fn basic_felt252() -> Token {
-        Token::CoreBasic(CoreBasic {
+        Token::Basic(CoreBasic {
             type_path: "core::felt252".to_string(),
         })
     }
 
     fn basic_u64() -> Token {
-        Token::CoreBasic(CoreBasic {
+        Token::Basic(CoreBasic {
             type_path: "core::integer::u64".to_string(),
         })
     }

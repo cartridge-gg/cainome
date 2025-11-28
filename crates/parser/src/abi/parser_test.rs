@@ -1,0 +1,1112 @@
+use std::{collections::HashMap, rc::Rc};
+
+use starknet::core::types::contract::SierraClass;
+
+use crate::{
+    tokens::{Container, EntryToken, StateMutability, Token},
+    AbiParser,
+};
+
+#[test]
+fn recursive_struct_parsing() {
+    let abi_json = r#"[
+            {
+                "type": "struct",
+                "name": "baitcode::TreeNode",
+                "members": [
+                    {
+                        "name": "parent",
+                        "type": "core::option::Option::<baitcode::TreeNode>"
+                    },
+                    {
+                        "name": "children",
+                        "type": "core::array::Array::<baitcode::TreeNode>"
+                    }   
+                ]
+            }
+        ]"#;
+
+    let result = AbiParser::tokens_from_abi_string(abi_json, &HashMap::new()).unwrap();
+
+    assert_eq!(result.structs.len(), 1);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 0);
+    assert_eq!(result.functions.len(), 0);
+    assert_eq!(result.enums.len(), 0);
+
+    let Some(token) = result.structs.iter().next() else {
+        panic!("At least one element should be present in structs");
+    };
+
+    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+        panic!("Only element parsed from ABI should be Token::Struct");
+    };
+
+    for field in s1.fields.iter() {
+        if field.name == "parent" {
+            let Token::Container(Container::Option(parent)) = &*field.token.borrow() else {
+                panic!("Parent field is optional")
+            };
+            assert!(Rc::ptr_eq(token, &parent.inner));
+        }
+
+        if field.name == "children" {
+            let Token::Container(Container::Array(children)) = &*field.token.borrow() else {
+                panic!("Children field is optional")
+            };
+            assert!(Rc::ptr_eq(token, &children.inner));
+        }
+    }
+}
+
+#[test]
+fn recursive_enum_parsing() {
+    let abi_json = r#"[
+            {
+                "type": "struct",
+                "name": "baitcode::TreeNode",
+                "members": [
+                    {
+                        "name": "parent",
+                        "type": "core::option::Option::<baitcode::TreeNode>"
+                    },
+                    {
+                        "name": "children",
+                        "type": "core::array::Array::<baitcode::TreeNode>"
+                    }   
+                ]
+            }
+        ]"#;
+
+    let result = AbiParser::tokens_from_abi_string(abi_json, &HashMap::new()).unwrap();
+
+    assert_eq!(result.structs.len(), 1);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 0);
+    assert_eq!(result.functions.len(), 0);
+    assert_eq!(result.enums.len(), 0);
+
+    let Some(token) = result.structs.iter().next() else {
+        panic!("At least one element should be present in structs");
+    };
+
+    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+        panic!("Only element parsed from ABI should be Token::Struct");
+    };
+
+    for field in s1.fields.iter() {
+        if field.name == "parent" {
+            let Token::Container(Container::Option(parent)) = &*field.token.borrow() else {
+                panic!("Parent field is optional")
+            };
+            assert!(Rc::ptr_eq(token, &parent.inner));
+        }
+
+        if field.name == "children" {
+            let Token::Container(Container::Array(children)) = &*field.token.borrow() else {
+                panic!("Children field is optional")
+            };
+            assert!(Rc::ptr_eq(token, &children.inner));
+        }
+    }
+}
+
+#[test]
+fn test_parsing_all_core_type_struct_fields() {
+    let core_fields = vec![
+        ("m1", "core::integer::u128"),
+        ("m2", "felt"),
+        ("m3", "core::felt252"),
+        ("m4", "core::bool"),
+        ("m5", "core::integer::u8"),
+        ("m6", "core::integer::u16"),
+        ("m7", "core::integer::u32"),
+        ("m8", "core::integer::u64"),
+        ("m9", "core::integer::u128"),
+        ("m10", "core::integer::usize"),
+        ("m11", "core::integer::i8"),
+        ("m12", "core::integer::i16"),
+        ("m13", "core::integer::i32"),
+        ("m14", "core::integer::i64"),
+        ("m15", "core::integer::i128"),
+        ("m16", "core::starknet::contract_address::ContractAddress"),
+        ("m17", "core::starknet::class_hash::ClassHash"),
+        // TODO: Is this array?
+        ("m18", "core::bytes_31::bytes31"),
+    ];
+
+    let mut members = vec![];
+    for (name, ttype) in core_fields.iter() {
+        members.push(format!(r#"{{"name": "{}", "type": "{}"}}"#, name, ttype));
+    }
+
+    let abi_json = format!(
+        r#"[
+                {{
+                    "type": "struct",
+                    "name": "my::package::AllInOne",
+                    "members": [{}]
+                }}
+            ]"#,
+        members.join(",")
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+
+    assert_eq!(result.structs.len(), 1);
+
+    let Some(token) = result.structs.iter().next() else {
+        panic!("At least one element should be present in structs");
+    };
+
+    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+        panic!("Only element parsed from ABI should be Token::Struct");
+    };
+
+    assert_eq!(s1.fields.len(), core_fields.len());
+
+    for (idx, (name, ttype)) in core_fields.iter().enumerate() {
+        assert_eq!(s1.fields[idx].name, name.to_string());
+        let Token::Basic(f1) = &*s1.fields[idx].token.as_ref().borrow() else {
+            panic!("Only element parsed from ABI should be Token::Struct");
+        };
+        assert_eq!(ttype.to_string(), f1.type_path);
+    }
+}
+
+#[test]
+fn check_array_container_is_parsed() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "type": "struct",
+                    "name": "my::package::AllInOne",
+                    "members": [
+                        {{
+                            "name": "f1",
+                            "type": "core::array::Span::<felt>"
+                        }},
+                        {{
+                            "name": "f2",
+                            "type": "core::array::Array::<felt>"
+                        }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.structs.len(), 1);
+
+    let Some(token) = result.structs.iter().next() else {
+        panic!("At least one element should be present in structs");
+    };
+
+    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+        panic!("Only element parsed from ABI should be Token::Struct");
+    };
+
+    assert_eq!(s1.fields.len(), 2);
+
+    let f1_inner = s1.fields[0].clone();
+    let f2_inner = s1.fields[1].clone();
+
+    let Token::Container(Container::Array(a1)) = &*f1_inner.token.borrow() else {
+        panic!("First field should be Array");
+    };
+    let Token::Container(Container::Array(a2)) = &*f2_inner.token.borrow() else {
+        panic!("Second field should be Array");
+    };
+
+    assert_eq!(a1.inner.borrow().type_path(), "felt");
+    assert_eq!(a2.inner.borrow().type_path(), "felt");
+}
+
+#[ignore]
+#[test]
+fn check_that_array_container_is_ignored_toplevel() {
+    let abi_json = format!(
+        r#"[
+                {{
+                  "type": "struct",
+                  "name": "core::array::Span::<core::felt252>",
+                  "members": [
+                    {{
+                      "name": "snapshot",
+                      "type": "core::array::Array::<core::felt252>"
+                    }}
+                  ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.enums.len(), 0);
+    assert_eq!(result.structs.len(), 0);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 0);
+    assert_eq!(result.functions.len(), 0);
+}
+
+#[test]
+fn check_tuple_container_is_parsed() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "type": "struct",
+                    "name": "my::package::AllInOne",
+                    "members": [
+                        {{
+                            "name": "f1",
+                            "type": "(felt, core::integer::i32)"
+                        }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.structs.len(), 1);
+
+    let Some(token) = result.structs.iter().next() else {
+        panic!("At least one element should be present in structs");
+    };
+
+    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+        panic!("Only element parsed from ABI should be Token::Struct");
+    };
+
+    assert_eq!(s1.fields.len(), 1);
+
+    let f1_inner = s1.fields[0].clone();
+
+    let Token::Container(Container::Tuple(a1)) = &*f1_inner.token.borrow() else {
+        panic!("First field should be Tuple");
+    };
+
+    let Token::Basic(t1) = &*a1.inners[0].borrow() else {
+        panic!("First tuple element should be CoreBasic");
+    };
+    let Token::Basic(t2) = &*a1.inners[1].borrow() else {
+        panic!("Second tuple element should be CoreBasic");
+    };
+
+    assert_eq!(t1.type_path, "felt");
+    assert_eq!(t2.type_path, "core::integer::i32");
+}
+
+#[test]
+fn check_nested_tuple_container_is_parsed() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "type": "struct",
+                    "name": "my::package::AllInOne",
+                    "members": [
+                        {{
+                            "name": "f1",
+                            "type": "(felt, (felt, core::integer::i32))"
+                        }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.structs.len(), 1);
+
+    let Some(token) = result.structs.iter().next() else {
+        panic!("At least one element should be present in structs");
+    };
+
+    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+        panic!("Only element parsed from ABI should be Token::Struct");
+    };
+
+    assert_eq!(s1.fields.len(), 1);
+
+    let f1_inner = s1.fields[0].clone();
+
+    let Token::Container(Container::Tuple(a1)) = &*f1_inner.token.as_ref().borrow() else {
+        panic!("First field should be Tuple");
+    };
+
+    let Token::Basic(t1) = &*a1.inners[0].borrow() else {
+        panic!("First tuple element should be CoreBasic");
+    };
+
+    assert_eq!(t1.type_path, "felt");
+
+    let Token::Container(Container::Tuple(t2)) = &*a1.inners[1].borrow() else {
+        panic!("Second tuple element should be Tuple");
+    };
+
+    let Token::Basic(nested_t1) = &*t2.inners[0].borrow() else {
+        panic!("First nested tuple element should be CoreBasic");
+    };
+    let Token::Basic(nested_t2) = &*t2.inners[1].borrow() else {
+        panic!("Second nested tuple element should be CoreBasic");
+    };
+
+    assert_eq!(nested_t1.type_path, "felt");
+    assert_eq!(nested_t2.type_path, "core::integer::i32");
+}
+
+#[test]
+fn check_bool_enum_is_ignored_on_parse() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "name": "core::bool",
+                    "type": "enum",
+                    "variants": [
+                        {{
+                            "name": "False",
+                            "type": "()"
+                        }},
+                        {{
+                            "name": "True",
+                            "type": "()"
+                        }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.structs.len(), 0);
+    assert_eq!(result.enums.len(), 0);
+}
+
+#[test]
+fn check_basic_enum_is_parsed() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "name": "contracts::abicov::enums::MixedEnum",
+                    "type": "enum",
+                    "variants": [
+                        {{
+                            "name": "Variant1",
+                            "type": "core::felt252"
+                        }},
+                        {{
+                            "name": "Variant2",
+                            "type": "()"
+                        }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.enums.len(), 1);
+
+    let Some(token) = result.enums.iter().next() else {
+        panic!("At least one element should be present in enums");
+    };
+
+    let Token::Entry(EntryToken::Enum(s1)) = &*token.borrow() else {
+        panic!("Only element parsed from ABI should be Token::Enum");
+    };
+
+    assert_eq!(s1.variants.len(), 2);
+
+    let f1_inner = s1.variants[0].clone();
+    let f2_inner = s1.variants[1].clone();
+
+    let Token::Basic(a1) = &*f1_inner.token.borrow() else {
+        panic!("First variant should be CoreBasic");
+    };
+    let Token::Basic(a2) = &*f2_inner.token.borrow() else {
+        panic!("Second variant should be CoreBasic");
+    };
+
+    assert_eq!(a1.type_path, "core::felt252");
+    assert_eq!(a2.type_path, "()");
+}
+
+#[test]
+fn check_complex_enum_is_parsed() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "type": "struct",
+                    "name": "core::integer::u256",
+                    "members": [
+                        {{
+                            "name": "low",
+                            "type": "core::integer::u128"
+                        }},
+                        {{
+                            "name": "high",
+                            "type": "core::integer::u128"
+                        }}
+                    ]
+                }},
+                {{
+                    "name": "contracts::abicov::enums::TypedEnum",
+                    "type": "enum",
+                    "variants": [
+                        {{
+                            "name": "Variant1",
+                            "type": "core::felt252"
+                        }},
+                        {{
+                            "name": "Variant2",
+                            "type": "core::integer::u256"
+                        }},
+                        {{
+                            "name": "Variant3",
+                            "type": "(core::felt252, core::integer::u256)"
+                        }},
+                        {{
+                            "name": "Variant4",
+                            "type": "core::starknet::contract_address::ContractAddress"
+                        }},
+                        {{
+                            "name": "Variant5",
+                            "type": "contracts::abicov::enums::Simple"
+                        }},
+                        {{
+                            "name": "Variant6",
+                            "type": "contracts::abicov::enums::StructWithStruct"
+                        }}
+                    ]
+                }},
+                {{
+                    "type": "struct",
+                    "name": "contracts::abicov::enums::StructWithStruct",
+                    "members": [
+                        {{
+                            "name": "simple",
+                            "type": "contracts::abicov::enums::Simple"
+                        }}
+                    ]
+                }},
+                {{
+                    "type": "struct",
+                    "name": "contracts::abicov::enums::Simple",
+                    "members": [
+                        {{
+                            "name": "span",
+                            "type": "felt"
+                        }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.enums.len(), 1);
+    assert_eq!(result.structs.len(), 3);
+}
+
+#[test]
+fn test_abi_struct_with_link_to_other_struct_and_nonzero_container() {
+    let abi_json = r#"
+        [
+            {
+                "type": "struct",
+                "name": "core::integer::u256",
+                "members": [
+                {
+                    "name": "low",
+                    "type": "core::integer::u128"
+                },
+                {
+                    "name": "high",
+                    "type": "core::integer::u128"
+                }
+                ]
+            },
+            {
+                "type": "struct",
+                "name": "package::StructOne",
+                "members": [
+                    {
+                        "name": "a",
+                        "type": "core::integer::u64"
+                    },
+                    {
+                        "name": "b",
+                        "type": "core::zeroable::NonZero<core::felt252>"
+                    },
+                    {
+                        "name": "c",
+                        "type": "core::integer::u256"
+                    }
+                ]
+            }
+        ]
+        "#;
+
+    let result = AbiParser::tokens_from_abi_string(abi_json, &HashMap::new()).unwrap();
+
+    assert_eq!(result.structs.len(), 2);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 0);
+    assert_eq!(result.functions.len(), 0);
+    assert_eq!(result.enums.len(), 0);
+}
+
+#[ignore]
+#[test]
+fn test_option_is_ignored_during_parsing() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "name": "core::option::Option::<core::felt252>",
+                    "type": "enum",
+                    "variants": [
+                        {{
+                            "name": "Some",
+                            "type": "core::felt252"
+                        }},
+                        {{
+                            "name": "None",
+                            "type": "()"
+                        }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.enums.len(), 0);
+    assert_eq!(result.structs.len(), 0);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 0);
+    assert_eq!(result.functions.len(), 0);
+}
+
+#[test]
+fn test_option_is_resolved_as_a_part_of_struct() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "name": "baitcode::TestStruct",
+                    "type": "struct",
+                    "members": [
+                        {{
+                            "name": "option",
+                            "type": "core::option::Option::<core::felt252>"
+                        }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.enums.len(), 0);
+    assert_eq!(result.structs.len(), 1);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 0);
+    assert_eq!(result.functions.len(), 0);
+
+    let Some(token) = result.structs.iter().next() else {
+        panic!("At least one element should be present in structs");
+    };
+
+    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+        panic!("Only element parsed from ABI should be Token::Struct");
+    };
+
+    assert_eq!(s1.fields.len(), 1);
+
+    let f1_inner = s1.fields[0].clone();
+
+    let Token::Container(Container::Option(a1)) = &*f1_inner.token.as_ref().borrow() else {
+        panic!("First field should be Option");
+    };
+
+    assert_eq!(a1.inner.borrow().type_path(), "core::felt252");
+}
+
+#[ignore]
+#[test]
+fn test_result_is_ignored_during_parsing() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "name": "core::result::Result::<core::felt252, core::integer::u32>",
+                    "type": "enum",
+                    "variants": [
+                        {{
+                            "name": "Ok",
+                            "type": "core::felt252"
+                        }},
+                        {{
+                            "name": "Err",
+                            "type": "core::integer::u32"
+                        }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.enums.len(), 0);
+    assert_eq!(result.structs.len(), 0);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 0);
+    assert_eq!(result.functions.len(), 0);
+}
+
+#[test]
+fn test_result_is_resolved_as_a_part_of_struct() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "name": "baitcode::TestStruct",
+                    "type": "struct",
+                    "members": [
+                        {{
+                            "name": "result",
+                            "type": "core::result::Result::<core::felt252, core::integer::u32>"
+                        }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.enums.len(), 0);
+    assert_eq!(result.structs.len(), 1);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 0);
+    assert_eq!(result.functions.len(), 0);
+
+    let Some(token) = result.structs.iter().next() else {
+        panic!("At least one element should be present in structs");
+    };
+
+    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+        panic!("Only element parsed from ABI should be Token::Struct");
+    };
+
+    assert_eq!(s1.fields.len(), 1);
+
+    let f1_inner = s1.fields[0].clone();
+
+    let Token::Container(Container::Result(a1)) = &*f1_inner.token.as_ref().borrow() else {
+        panic!("First field should be Result");
+    };
+
+    assert_eq!(a1.inner.borrow().type_path(), "core::felt252");
+    assert_eq!(a1.error.borrow().type_path(), "core::integer::u32");
+}
+
+#[test]
+fn test_non_zero_is_resolved_as_a_part_of_struct() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "name": "baitcode::TestStruct",
+                    "type": "struct",
+                    "members": [
+                        {{
+                            "name": "result",
+                            "type": "core::zeroable::NonZero::<core::felt252>"
+                        }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.enums.len(), 0);
+    assert_eq!(result.structs.len(), 1);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 0);
+    assert_eq!(result.functions.len(), 0);
+
+    let Some(token) = result.structs.iter().next() else {
+        panic!("At least one element should be present in structs");
+    };
+
+    let Token::Entry(EntryToken::Struct(s1)) = &*token.borrow() else {
+        panic!("Only element parsed from ABI should be Token::Struct");
+    };
+
+    assert_eq!(s1.fields.len(), 1);
+
+    let f1_inner = s1.fields[0].clone();
+
+    let Token::Container(Container::NonZero(a1)) = &*f1_inner.token.as_ref().borrow() else {
+        panic!("First field should be NonZero");
+    };
+
+    assert_eq!(a1.inner.borrow().type_path(), "core::felt252");
+}
+
+#[test]
+fn test_simple_event_struct_parsing() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "type": "event",
+                    "name": "contracts::abicov::simple_events::simple_events::EventWithOtherName",
+                    "kind": "struct",
+                    "members": [
+                      {{
+                        "name": "value1",
+                        "type": "core::felt252",
+                        "kind": "data"
+                      }},
+                      {{
+                        "name": "value2",
+                        "type": "core::felt252",
+                        "kind": "key"
+                      }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.enums.len(), 0);
+    assert_eq!(result.structs.len(), 0);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 1);
+    assert_eq!(result.functions.len(), 0);
+
+    let Some(token) = result.events.iter().next() else {
+        panic!("At least one element should be present in events");
+    };
+
+    let Token::Entry(EntryToken::Event(e1)) = &*token.borrow() else {
+        panic!("Only element parsed from ABI should be Token::Event");
+    };
+
+    assert_eq!(e1.data.len(), 1);
+    assert_eq!(e1.keys.len(), 1);
+
+    let f1_inner = e1.data[0].clone();
+    assert_eq!(f1_inner.token.borrow().type_path(), "core::felt252");
+    assert_eq!(f1_inner.name, "value1");
+
+    let f2_inner = e1.keys[0].clone();
+    assert_eq!(f2_inner.token.borrow().type_path(), "core::felt252");
+    assert_eq!(f2_inner.name, "value2");
+}
+
+#[test]
+fn test_nested_event_struct_parsing() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "type": "event",
+                    "name": "contracts::Event",
+                    "kind": "struct",
+                    "members": [
+                      {{
+                        "name": "value1",
+                        "type": "core::felt252",
+                        "kind": "data"
+                      }},
+                      {{
+                        "name": "value2",
+                        "type": "core::felt252",
+                        "kind": "key"
+                      }}
+                    ]
+                }},
+                {{
+                    "type": "event",
+                    "name": "contracts::EventComplex",
+                    "kind": "enum",
+                    "variants": [
+                      {{
+                        "name": "Event1",
+                        "type": "contracts::Event",
+                        "kind": "nested"
+                      }},
+                      {{
+                        "name": "Event2",
+                        "type": "contracts::Event",
+                        "kind": "nested"
+                      }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+    assert_eq!(result.enums.len(), 0);
+    assert_eq!(result.structs.len(), 0);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 2);
+    assert_eq!(result.functions.len(), 0);
+
+    for event in result.events.into_iter() {
+        let Token::Entry(EntryToken::Event(e)) = &*event.borrow() else {
+            panic!("Only element parsed from ABI should be Token::Event");
+        };
+
+        if e.type_path == "contracts::EventComplex" {
+            assert_eq!(e.data.len(), 0);
+            assert_eq!(e.flat.len(), 0);
+            assert_eq!(e.keys.len(), 0);
+            assert_eq!(e.nested.len(), 2);
+
+            let f1_inner = e.nested[0].clone();
+            assert_eq!(f1_inner.token.borrow().type_path(), "contracts::Event");
+            assert_eq!(f1_inner.name, "Event1");
+
+            let f2_inner = e.nested[1].clone();
+            assert_eq!(f2_inner.token.borrow().type_path(), "contracts::Event");
+            assert_eq!(f2_inner.name, "Event2");
+        }
+
+        if e.type_path == "contracts::Event" {
+            assert_eq!(e.data.len(), 1);
+            assert_eq!(e.keys.len(), 1);
+
+            let f1_inner = e.data[0].clone();
+            assert_eq!(f1_inner.token.borrow().type_path(), "core::felt252");
+            assert_eq!(f1_inner.name, "value1");
+
+            let f2_inner = e.keys[0].clone();
+            assert_eq!(f2_inner.token.borrow().type_path(), "core::felt252");
+            assert_eq!(f2_inner.name, "value2");
+        }
+    }
+}
+
+#[test]
+fn test_function_parsing() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "type": "function",
+                    "name": "procedure",
+                    "inputs": [],
+                    "outputs": [],
+                    "state_mutability": "external"  
+                }},
+                {{
+                    "type": "function",
+                    "name": "procedure2",
+                    "inputs": [],
+                    "outputs": [],
+                    "state_mutability": "view"  
+                }},
+                {{
+                    "type": "function",
+                    "name": "func",
+                    "inputs": [
+                        {{
+                            "name": "arg",
+                            "type": "felt"
+                        }}
+                    ],
+                    "outputs": [
+                        {{
+                            "type": "felt"
+                        }}
+                    ],
+                    "state_mutability": "external"  
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+
+    assert_eq!(result.enums.len(), 0);
+    assert_eq!(result.structs.len(), 0);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 0);
+    assert_eq!(result.functions.len(), 3);
+
+    for token in result.functions.into_iter() {
+        let Token::Entry(EntryToken::Function(func)) = &*token.borrow() else {
+            panic!("Only element parsed from ABI should be Token::Event");
+        };
+
+        if func.name == "func" {
+            assert_eq!(func.inputs.len(), 1);
+
+            let i1 = func.inputs[0].clone();
+            assert_eq!(i1.name, "arg");
+            let Token::Basic(t1) = &*i1.token.borrow() else {
+                panic!("funct first input is arg of CoreBasic type");
+            };
+            assert_eq!(t1.type_path, "felt");
+
+            assert_eq!(func.outputs.len(), 1);
+            let o1 = func.outputs[0].clone();
+            let Token::Basic(o1) = &*o1.borrow() else {
+                panic!("funct first input is arg of CoreBasic type");
+            };
+            assert_eq!(o1.type_path, "felt");
+            assert_eq!(func.state_mutability, StateMutability::External)
+        }
+
+        if func.name == "procedure" {
+            assert_eq!(func.inputs.len(), 0);
+            assert_eq!(func.outputs.len(), 0);
+            assert_eq!(func.state_mutability, StateMutability::External)
+        }
+
+        if func.name == "procedure2" {
+            assert_eq!(func.inputs.len(), 0);
+            assert_eq!(func.outputs.len(), 0);
+            assert_eq!(func.state_mutability, StateMutability::View)
+        }
+    }
+}
+
+#[test]
+fn test_interface_parsing() {
+    let abi_json = format!(
+        r#"[
+                {{
+                    "type": "impl",
+                    "name": "MyInterfaceImpl",
+                    "interface_name": "contracts::abicov::simple_interface::MyInterface"
+                }},
+                {{
+                    "type": "interface",
+                    "name": "contracts::abicov::simple_interface::MyInterface",
+                    "items": [
+                        {{
+                            "type": "function",
+                            "name": "get_value",
+                            "inputs": [],
+                            "outputs": [
+                                {{
+                                    "type": "core::felt252"
+                                }}
+                            ],
+                            "state_mutability": "view"
+                        }},
+                        {{
+                            "type": "function",
+                            "name": "set_value",
+                            "inputs": [
+                                {{
+                                    "name": "value",
+                                    "type": "core::felt252"
+                                }}
+                            ],
+                            "outputs": [],
+                            "state_mutability": "external"
+                        }}
+                    ]
+                }}
+            ]"#,
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+
+    assert_eq!(result.enums.len(), 0);
+    assert_eq!(result.structs.len(), 0);
+    assert_eq!(result.interfaces.len(), 1);
+    assert_eq!(result.interfaces_new.len(), 1);
+    assert_eq!(result.events.len(), 0);
+    assert_eq!(result.functions.len(), 0);
+
+    let Some(token) = result.interfaces_new.iter().next() else {
+        panic!("At least one element should be present in interfaces_new");
+    };
+
+    let Token::Entry(EntryToken::Interface(interface)) = &*token.borrow() else {
+        panic!("interfaces should only store interfaces");
+    };
+
+    assert_eq!(interface.functions.len(), 2);
+}
+
+#[test]
+fn test_dojo_starter_direction_available_abi() {
+    let abi = AbiParser::tokens_from_abi_string(
+        include_str!("../../test_data/dojo_starter-directions_available.abi.json"),
+        &HashMap::new(),
+    )
+    .unwrap();
+
+    assert_eq!(abi.structs.len(), 1);
+    assert_eq!(abi.enums.len(), 1);
+
+    let Some(enum_token) = abi.enums.into_iter().next() else {
+        panic!("Enums should have at least 1 item")
+    };
+
+    let Token::Entry(EntryToken::Enum(e)) = &*enum_token.borrow() else {
+        panic!("Enums should only have Token::Enum")
+    };
+
+    let Some(struct_token) = abi.structs.into_iter().next() else {
+        panic!("Structs should have at least 1 item")
+    };
+
+    let Token::Entry(EntryToken::Struct(s)) = &*struct_token.borrow() else {
+        panic!("Structs should only have Token::Struct")
+    };
+
+    if let Token::Container(Container::Array(a)) = &*s.fields[1].clone().token.as_ref().borrow() {
+        let Token::Entry(EntryToken::Enum(array_inner)) = &*a.inner.borrow() else {
+            panic!("Expect array of Direction Enums")
+        };
+        assert_eq!(5, array_inner.variants.len());
+        // Check that copy was properly done
+
+        assert_eq!(array_inner, e);
+    } else {
+        panic!("Expected array");
+    }
+}
+
+#[test]
+fn test_nested_tuple() {
+    let abi = AbiParser::tokens_from_abi_string(
+        include_str!("../../test_data/struct_tuple.abi.json"),
+        &HashMap::new(),
+    )
+    .unwrap();
+
+    assert_eq!(abi.structs.len(), 1);
+    assert_eq!(abi.enums.len(), 1);
+
+    let Some(enum_token) = abi.enums.into_iter().next() else {
+        panic!("Enums should have at least 1 item")
+    };
+
+    let Token::Entry(EntryToken::Enum(e)) = &*enum_token.borrow() else {
+        panic!("Enums should only have Token::Enum")
+    };
+
+    let Some(struct_token) = abi.structs.into_iter().next() else {
+        panic!("Structs should have at least 1 item")
+    };
+
+    let Token::Entry(EntryToken::Struct(s)) = &*struct_token.borrow() else {
+        panic!("Structs should only have Token::Struct")
+    };
+
+    if let Token::Container(Container::Array(a)) = &*s.fields[1].clone().token.as_ref().borrow() {
+        let Token::Container(Container::Tuple(t)) = &*a.inner.borrow() else {
+            panic!("Expect second field to hold Tuple")
+        };
+
+        let Token::Entry(EntryToken::Enum(tuple_f1)) = &*t.inners[0].borrow() else {
+            panic!("Expect first tuple element to be Enum")
+        };
+
+        assert_eq!(5, tuple_f1.variants.len());
+        // Check that copy was properly done
+        assert_eq!(tuple_f1, e);
+    }
+}
+
+#[test]
+fn test_collect_tokens() {
+    let sierra_abi = include_str!("../../test_data/cairo_ls_abi.json");
+    let sierra = serde_json::from_str::<SierraClass>(sierra_abi).unwrap();
+    let tokens = AbiParser::collect_tokens(sierra.abi).unwrap();
+    assert_ne!(tokens.enums.len(), 0);
+    assert_ne!(tokens.functions.len(), 0);
+    assert_ne!(tokens.interfaces.len(), 0);
+    assert_ne!(tokens.structs.len(), 0);
+}

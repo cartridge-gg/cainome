@@ -11,7 +11,7 @@ use std::{cell::RefCell, rc::Rc};
 use syn::Type;
 
 use super::Token;
-use crate::{CainomeResult, Error};
+use crate::{tokens::Container, CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TupleContainer {
@@ -82,6 +82,10 @@ impl TupleContainer {
             type_path: type_path.to_string(),
             inners,
         }
+    }
+
+    pub fn new_token(type_path: &str, inners: Vec<Rc<RefCell<Token>>>) -> Token {
+        Token::Container(Container::Tuple(Self::new(type_path, inners)))
     }
 }
 

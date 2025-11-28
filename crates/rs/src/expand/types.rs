@@ -11,7 +11,7 @@ pub trait CairoToRust {
 impl CairoToRust for Token {
     fn to_rust_type(&self) -> String {
         match self {
-            Token::CoreBasic(t) => basic_types_to_rust(&t.type_name()),
+            Token::Basic(t) => basic_types_to_rust(&t.type_name()),
             Token::Array(t) => {
                 if t.is_legacy {
                     let ccsp = utils::cainome_cairo_serde_path();
@@ -34,7 +34,7 @@ impl CairoToRust for Token {
 
                 s
             }
-            Token::Composite(c) => {
+            Token::CompositeLegacy(c) => {
                 let mut s = c.type_name_or_alias();
 
                 let (type_name, is_builtin) = builtin_composite_to_rust(&s);
@@ -60,7 +60,7 @@ impl CairoToRust for Token {
 
     fn to_rust_type_path(&self) -> String {
         match self {
-            Token::CoreBasic(t) => basic_types_to_rust(&t.type_name()),
+            Token::Basic(t) => basic_types_to_rust(&t.type_name()),
             Token::Array(t) => {
                 if t.is_legacy {
                     let ccsp = utils::cainome_cairo_serde_path();
@@ -85,7 +85,7 @@ impl CairoToRust for Token {
                 s.push(')');
                 s
             }
-            Token::Composite(c) => {
+            Token::CompositeLegacy(c) => {
                 let mut s = c.type_name_or_alias();
 
                 let (type_name, is_builtin) = builtin_composite_to_rust(&s);

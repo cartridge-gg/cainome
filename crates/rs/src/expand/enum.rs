@@ -1,5 +1,5 @@
 use cainome_parser::tokens::utils::is_builtin;
-use cainome_parser::tokens::{Composite, Token};
+use cainome_parser::tokens::{CompositeLegacy, Token};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 
@@ -9,7 +9,7 @@ use crate::expand::utils;
 pub struct CairoEnum;
 
 impl CairoEnum {
-    pub fn expand_decl(composite: &Composite, derives: &[String]) -> TokenStream2 {
+    pub fn expand_decl(composite: &CompositeLegacy, derives: &[String]) -> TokenStream2 {
         if is_builtin(&composite.type_path) {
             return quote!();
         }
@@ -45,7 +45,7 @@ impl CairoEnum {
         }
     }
 
-    pub fn expand_impl(composite: &Composite) -> TokenStream2 {
+    pub fn expand_impl(composite: &CompositeLegacy) -> TokenStream2 {
         if is_builtin(&composite.type_path) {
             return quote!();
         }

@@ -3,7 +3,7 @@ use convert_case::{Case, Casing};
 use std::collections::HashMap;
 
 use cainome_parser::tokens::{
-    Composite, CompositeInnerKind, CompositeType, Function, StateMutability, Token,
+    CompositeLegacy, CompositeInnerKind, CompositeType, Function, StateMutability, Token,
 };
 
 #[cfg(test)]
@@ -100,7 +100,7 @@ impl GolangPlugin {
     }
 
     /// Gets the prefixed type name for a composite type
-    fn get_prefixed_type_name(&self, composite: &Composite, contract_name: Option<&str>) -> String {
+    fn get_prefixed_type_name(&self, composite: &CompositeLegacy, contract_name: Option<&str>) -> String {
         let base_name = composite.type_name_or_alias().to_case(Case::Pascal);
 
         if let Some(contract) = contract_name {
@@ -198,7 +198,7 @@ impl GolangPlugin {
         type_param_map: &std::collections::HashMap<String, String>,
     ) -> String {
         match token {
-            Token::CoreBasic(core_basic) => self.map_core_basic_type(&core_basic.type_path),
+            Token::Basic(core_basic) => self.map_core_basic_type(&core_basic.type_path),
             Token::Array(array) => {
                 let inner_type = self.token_to_go_generic_type(&array.inner, type_param_map);
                 format!("[]{}", inner_type)
@@ -222,7 +222,7 @@ impl GolangPlugin {
                     format!("struct {{\n\t{}\n}}", field_types.join("\n\t"))
                 }
             }
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 if composite.is_builtin() {
                     self.map_composite_builtin_type(&composite.type_path_no_generic())
                 } else {
@@ -263,7 +263,7 @@ impl GolangPlugin {
     /// Converts a token to its Go type representation for struct fields with contract context
     fn token_to_go_type_with_context(&self, token: &Token, contract_name: Option<&str>) -> String {
         match token {
-            Token::CoreBasic(core_basic) => self.map_core_basic_type(&core_basic.type_path),
+            Token::Basic(core_basic) => self.map_core_basic_type(&core_basic.type_path),
             Token::Array(array) => {
                 let inner_type = self.token_to_go_type_with_context(&array.inner, contract_name);
                 format!("[]{}", inner_type)
@@ -287,7 +287,7 @@ impl GolangPlugin {
                     format!("struct {{\n\t{}\n}}", field_types.join("\n\t"))
                 }
             }
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 if composite.is_builtin() {
                     self.map_composite_builtin_type(&composite.type_path_no_generic())
                 } else {
@@ -316,7 +316,7 @@ impl GolangPlugin {
     /// Converts a token to its Go type representation for struct fields
     fn token_to_go_type(&self, token: &Token) -> String {
         match token {
-            Token::CoreBasic(core_basic) => self.map_core_basic_type(&core_basic.type_path),
+            Token::Basic(core_basic) => self.map_core_basic_type(&core_basic.type_path),
             Token::Array(array) => {
                 let inner_type = self.token_to_go_type(&array.inner);
                 format!("[]{}", inner_type)
@@ -334,7 +334,7 @@ impl GolangPlugin {
                     format!("struct {{\n\t{}\n}}", field_types.join("\n\t"))
                 }
             }
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 if composite.is_builtin() {
                     self.map_composite_builtin_type(&composite.type_path_no_generic())
                 } else {
@@ -365,7 +365,7 @@ impl GolangPlugin {
         contract_name: Option<&str>,
     ) -> String {
         match token {
-            Token::CoreBasic(core_basic) => self.map_core_basic_type(&core_basic.type_path),
+            Token::Basic(core_basic) => self.map_core_basic_type(&core_basic.type_path),
             Token::Array(array) => {
                 let inner_type =
                     self.token_to_go_param_type_with_context(&array.inner, contract_name);
@@ -390,7 +390,7 @@ impl GolangPlugin {
                     format!("struct {{\n\t{}\n}}", field_types.join("\n\t"))
                 }
             }
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 if composite.is_builtin() {
                     self.map_composite_builtin_type(&composite.type_path_no_generic())
                 } else if composite.r#type == CompositeType::Enum {
@@ -405,7 +405,7 @@ impl GolangPlugin {
             Token::Option(option) => {
                 // For Option types, we need to handle them specially to avoid double pointers
                 match option.inner.as_ref() {
-                    Token::CoreBasic(_core_basic) => {
+                    Token::Basic(_core_basic) => {
                         // For basic types, Option adds the pointer
                         // But check if the inner type is already a pointer (like *felt.Felt)
                         let inner_type =
@@ -417,7 +417,7 @@ impl GolangPlugin {
                             format!("*{}", inner_type)
                         }
                     }
-                    Token::Composite(composite)
+                    Token::CompositeLegacy(composite)
                         if composite.r#type == CompositeType::Enum
                             || (composite.r#type == CompositeType::Unknown
                                 && composite.type_name().contains("Enum")) =>
@@ -449,7 +449,7 @@ impl GolangPlugin {
     }
 
     /// Generates Go struct definition for a Cairo composite type
-    fn generate_struct(&self, composite: &Composite, contract_name: Option<&str>) -> String {
+    fn generate_struct(&self, composite: &CompositeLegacy, contract_name: Option<&str>) -> String {
         let mut struct_name = composite.type_name_or_alias().to_case(Case::Pascal);
 
         // Always prefix structs with contract name to prevent namespace conflicts
@@ -548,7 +548,7 @@ impl GolangPlugin {
     }
 
     /// Generates Go enum definition for a Cairo enum type
-    fn generate_enum(&self, composite: &Composite, contract_name: Option<&str>) -> String {
+    fn generate_enum(&self, composite: &CompositeLegacy, contract_name: Option<&str>) -> String {
         let mut enum_name = composite.type_name_or_alias().to_case(Case::Pascal);
 
         // Always prefix enums with contract name to prevent namespace conflicts
@@ -663,7 +663,7 @@ impl GolangPlugin {
         variant_type_name: &str,
         token: &Token,
         kind: CompositeInnerKind,
-        _enum_composite: &Composite,
+        _enum_composite: &CompositeLegacy,
         discriminant: u64,
     ) -> String {
         let mut marshaler = String::new();
@@ -780,7 +780,7 @@ impl GolangPlugin {
     }
 
     /// Generate unmarshal function for enum interface
-    fn generate_enum_unmarshal_function(&self, enum_name: &str, composite: &Composite) -> String {
+    fn generate_enum_unmarshal_function(&self, enum_name: &str, composite: &CompositeLegacy) -> String {
         let mut code = String::new();
 
         // Generate the Unmarshal function that returns the interface
@@ -837,7 +837,7 @@ impl GolangPlugin {
     ) -> String {
         let mut code = String::new();
 
-        if let Token::Composite(composite) = token {
+        if let Token::CompositeLegacy(composite) = token {
             code.push_str("\tif len(response) == 0 {\n");
             code.push_str("\t\treturn nil, fmt.Errorf(\"empty response\")\n");
             code.push_str("\t}\n");
@@ -891,7 +891,7 @@ impl GolangPlugin {
     /// Generate marshal code for enum variant with new interface approach
     fn generate_enum_variant_marshal_code_new(&self, token: &Token, receiver_var: &str) -> String {
         match token {
-            Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+            Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                 "felt" | "core::felt252" => {
                     format!("\tresult = append(result, {}.Data)\n", receiver_var)
                 }
@@ -933,7 +933,7 @@ impl GolangPlugin {
                     core_basic.type_path
                 ),
             },
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
                         "core::integer::u256" => {
@@ -967,7 +967,7 @@ impl GolangPlugin {
                 for (i, inner_token) in tuple.inners.iter().enumerate() {
                     let field_access = format!("{}.Data.Field{}", receiver_var, i);
                     match inner_token {
-                        Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                        Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                             "felt" | "core::felt252" => {
                                 marshal_code.push_str(&format!(
                                     "\tresult = append(result, {})\n",
@@ -1017,7 +1017,7 @@ impl GolangPlugin {
                                 ));
                             }
                         },
-                        Token::Composite(composite) => {
+                        Token::CompositeLegacy(composite) => {
                             if composite.is_builtin() {
                                 match composite.type_path_no_generic().as_str() {
                                     "core::integer::u256" => {
@@ -1053,7 +1053,7 @@ impl GolangPlugin {
             Token::Array(array) => {
                 // Handle array types for enum variants
                 match array.inner.as_ref() {
-                    Token::CoreBasic(core_basic)
+                    Token::Basic(core_basic)
                         if core_basic.type_path == "felt"
                             || core_basic.type_path == "core::felt252" =>
                     {
@@ -1077,7 +1077,7 @@ impl GolangPlugin {
         receiver_var: &str,
     ) -> String {
         match token {
-            Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+            Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                 "felt" | "core::felt252" => {
                     format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\t{}.Data = data[offset]\n\toffset++\n", receiver_var)
                 }
@@ -1109,7 +1109,7 @@ impl GolangPlugin {
                     format!("\t// TODO: Handle unknown core basic type {} for enum variant unmarshal\n\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for variant data\")\n\t}}\n\t// Skip unknown data\n\t_ = data[offset]\n\toffset++\n", core_basic.type_path)
                 }
             },
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
                         "core::integer::u256" => {
@@ -1133,7 +1133,7 @@ impl GolangPlugin {
                 for (i, inner_token) in tuple.inners.iter().enumerate() {
                     unmarshal_code.push_str(&format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for tuple field {}\")\n\t}}\n", i));
                     match inner_token {
-                        Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                        Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                             "felt" | "core::felt252" => {
                                 unmarshal_code.push_str(&format!(
                                     "\t{}.Data.Field{} = data[offset]\n\toffset++\n",
@@ -1160,7 +1160,7 @@ impl GolangPlugin {
                                 unmarshal_code.push_str(&format!("\t// TODO: Handle unknown core basic type {} in tuple unmarshal\n", core_basic.type_path));
                             }
                         },
-                        Token::Composite(composite) => {
+                        Token::CompositeLegacy(composite) => {
                             if composite.is_builtin() {
                                 match composite.type_path_no_generic().as_str() {
                                     "core::integer::u256" => {
@@ -1190,7 +1190,7 @@ impl GolangPlugin {
             Token::Array(array) => {
                 // Handle array types for enum variant unmarshal
                 match array.inner.as_ref() {
-                    Token::CoreBasic(core_basic)
+                    Token::Basic(core_basic)
                         if core_basic.type_path == "felt"
                             || core_basic.type_path == "core::felt252" =>
                     {
@@ -1208,7 +1208,7 @@ impl GolangPlugin {
     }
 
     /// Generates Go event interface for Cairo event enum types with a custom name
-    fn generate_event_enum_with_name(&self, composite: &Composite, enum_name: &str) -> String {
+    fn generate_event_enum_with_name(&self, composite: &CompositeLegacy, enum_name: &str) -> String {
         let interface_name = enum_name.to_string();
         let mut event_def = String::new();
 
@@ -1247,7 +1247,7 @@ impl GolangPlugin {
     fn generate_event_struct_implementation(
         &self,
         struct_name: &str,
-        event_enum: &Composite,
+        event_enum: &CompositeLegacy,
         contract_name: &str,
     ) -> String {
         // Generate the interface name with contract prefix
@@ -1277,7 +1277,7 @@ impl GolangPlugin {
     fn generate_struct_cairo_marshaler_with_context(
         &self,
         struct_name: &str,
-        composite: &Composite,
+        composite: &CompositeLegacy,
         contract_name: Option<&str>,
     ) -> String {
         let mut marshaler = String::new();
@@ -1363,7 +1363,7 @@ impl GolangPlugin {
         code.push_str(&format!("\tfor _, item := range s.{} {{\n", field_name));
 
         match inner_token {
-            Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+            Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                 "felt" | "core::felt252" => {
                     code.push_str("\t\tresult = append(result, item)\n");
                 }
@@ -1397,7 +1397,7 @@ impl GolangPlugin {
                     code.push_str("\t\t_ = item\n");
                 }
             },
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
                         "core::integer::u256" => {
@@ -1471,7 +1471,7 @@ impl GolangPlugin {
         ));
 
         match inner_token {
-            Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+            Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                 "felt" | "core::felt252" => {
                     code.push_str("\t\tif offset >= len(data) {\n");
                     code.push_str(&format!("\t\t\treturn fmt.Errorf(\"insufficient data for array element %d of {}\", i)\n", field_name));
@@ -1486,7 +1486,7 @@ impl GolangPlugin {
                     ));
                 }
             },
-            Token::Composite(_) => {
+            Token::CompositeLegacy(_) => {
                 // Custom struct/enum - use CairoMarshaler
                 if element_type.starts_with("*") {
                     // Element type is a pointer, so create the struct and take its address
@@ -1560,7 +1560,7 @@ impl GolangPlugin {
         ));
 
         match inner_token {
-            Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+            Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                 "felt" | "core::felt252" => {
                     code.push_str("\t\tif offset >= len(data) {\n");
                     code.push_str(&format!("\t\t\treturn fmt.Errorf(\"insufficient data for array element %d of {}\", i)\n", field_name));
@@ -1680,7 +1680,7 @@ impl GolangPlugin {
                     code.push_str("\t\t// TODO: Handle unknown basic type in array unmarshal\n");
                 }
             },
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
                         "core::integer::u256" => {
@@ -1754,7 +1754,7 @@ impl GolangPlugin {
         for (index, inner_token) in tuple.inners.iter().enumerate() {
             let field_access = format!("s.{}.Field{}", field_name, index);
             match inner_token {
-                Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                     "felt" | "core::felt252" => {
                         code.push_str(&format!("\tresult = append(result, {})\n", field_access));
                     }
@@ -1798,7 +1798,7 @@ impl GolangPlugin {
                         ));
                     }
                 },
-                Token::Composite(composite) => {
+                Token::CompositeLegacy(composite) => {
                     if composite.is_builtin() {
                         match composite.type_path_no_generic().as_str() {
                             "core::integer::u256" => {
@@ -1838,7 +1838,7 @@ impl GolangPlugin {
                 Token::NonZero(non_zero) => {
                     // NonZero types are just wrappers, marshal the inner type
                     match non_zero.inner.as_ref() {
-                        Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                        Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                             "felt" | "core::felt252" => {
                                 code.push_str(&format!(
                                     "\tresult = append(result, {})\n",
@@ -1892,7 +1892,7 @@ impl GolangPlugin {
         for (index, inner_token) in tuple.inners.iter().enumerate() {
             let field_access = format!("s.{}.Field{}", field_name, index);
             match inner_token {
-                Token::CoreBasic(core_basic) => {
+                Token::Basic(core_basic) => {
                     match core_basic.type_path.as_str() {
                         "felt" | "core::felt252" => {
                             code.push_str("\tif offset >= len(data) {\n");
@@ -2014,7 +2014,7 @@ impl GolangPlugin {
                         }
                     }
                 }
-                Token::Composite(composite) => {
+                Token::CompositeLegacy(composite) => {
                     if composite.is_builtin() {
                         match composite.type_path_no_generic().as_str() {
                             "core::integer::u256" => {
@@ -2069,7 +2069,7 @@ impl GolangPlugin {
                 Token::NonZero(non_zero) => {
                     // NonZero types are just wrappers, unmarshal the inner type
                     match non_zero.inner.as_ref() {
-                        Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                        Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                             "felt" | "core::felt252" => {
                                 code.push_str("\tif offset >= len(data) {\n");
                                 code.push_str(&format!("\t\treturn fmt.Errorf(\"insufficient data for tuple field {} element {}\")\n", field_name, index));
@@ -2131,7 +2131,7 @@ impl GolangPlugin {
             code.push_str("\t}\n");
 
             match inner_token {
-                Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                     "felt" | "core::felt252" => {
                         code.push_str(&format!("\t{} = response[offset]\n", field_access));
                     }
@@ -2211,7 +2211,7 @@ impl GolangPlugin {
                 Token::NonZero(non_zero) => {
                     // NonZero types are just the inner type
                     let inner_type = &non_zero.inner;
-                    if let Token::CoreBasic(core_basic) = inner_type.as_ref() {
+                    if let Token::Basic(core_basic) = inner_type.as_ref() {
                         match core_basic.type_path.as_str() {
                             "felt" | "core::felt252" => {
                                 code.push_str(&format!("\t{} = response[offset]\n", field_access));
@@ -2225,7 +2225,7 @@ impl GolangPlugin {
                         }
                     }
                 }
-                Token::Composite(composite) => {
+                Token::CompositeLegacy(composite) => {
                     if composite.type_path == "core::integer::u256" {
                         code.push_str(&format!(
                             "\t{} = cainome.BigIntFromFelt(response[offset])\n",
@@ -2390,12 +2390,12 @@ impl GolangPlugin {
 
         // Marshal the inner value based on its type
         match option.inner.as_ref() {
-            Token::CoreBasic(core_basic) => {
+            Token::Basic(core_basic) => {
                 code.push_str(
                     &self.generate_basic_type_marshal_code(core_basic, field_name, context),
                 );
             }
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
                         "core::integer::u256" => {
@@ -2435,7 +2435,7 @@ impl GolangPlugin {
             }
             Token::Array(array) => {
                 // For Option<Array>, handle array serialization
-                if let Token::CoreBasic(core_basic) = array.inner.as_ref() {
+                if let Token::Basic(core_basic) = array.inner.as_ref() {
                     if core_basic.type_path == "felt" || core_basic.type_path == "core::felt252" {
                         // Array of felts - *[]*felt.Felt
                         code.push_str(&format!("\t\tresult = append(result, cainome.FeltFromUint(uint64(len(*s.{}))))\n", field_name));
@@ -2509,10 +2509,10 @@ impl GolangPlugin {
 
         // Unmarshal the inner value based on its type
         match option.inner.as_ref() {
-            Token::CoreBasic(core_basic) => {
+            Token::Basic(core_basic) => {
                 code.push_str(&self.generate_basic_type_unmarshal_code(core_basic, field_name));
             }
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
                         "core::integer::u256" => {
@@ -2568,7 +2568,7 @@ impl GolangPlugin {
         // For pointer types and interface types, don't add another &
         let inner_type = self.token_to_go_type_with_context(&option.inner, contract_name);
         let is_interface = match option.inner.as_ref() {
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 composite.r#type == CompositeType::Enum
                     || (composite.r#type == CompositeType::Unknown
                         && composite.type_name().contains("Enum"))
@@ -2611,7 +2611,7 @@ impl GolangPlugin {
     /// Generates marshal code for a single field
     fn generate_field_marshal_code(&self, field_name: &str, token: &Token) -> String {
         match token {
-            Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+            Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                 "felt" | "core::felt252" => {
                     format!("\tresult = append(result, s.{})\n", field_name)
                 }
@@ -2660,7 +2660,7 @@ impl GolangPlugin {
                 ),
             },
             Token::Array(array) => self.generate_array_marshal_code(field_name, &array.inner),
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
                         "core::byte_array::ByteArray" => {
@@ -2720,7 +2720,7 @@ impl GolangPlugin {
         contract_name: Option<&str>,
     ) -> String {
         match token {
-            Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+            Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                 "felt" | "core::felt252" => {
                     format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = data[offset]\n\toffset++\n\n", field_name, field_name)
                 }
@@ -2765,7 +2765,7 @@ impl GolangPlugin {
             Token::Array(array) => {
                 self.generate_array_unmarshal_code_with_context(field_name, &array.inner, contract_name)
             }
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
                         "core::integer::u256" => {
@@ -3166,7 +3166,7 @@ impl GolangPlugin {
                     Token::Option(option) => {
                         // Handle Option types specially
                         match option.inner.as_ref() {
-                            Token::Composite(composite)
+                            Token::CompositeLegacy(composite)
                                 if composite.r#type == CompositeType::Enum =>
                             {
                                 // Option of enum interface needs special handling
@@ -3310,7 +3310,7 @@ impl GolangPlugin {
                 let deserialization_code =
                     self.generate_basic_type_deserialization(&function.outputs[0], &return_type);
                 method_body.push_str(&deserialization_code);
-            } else if matches!(&function.outputs[0], Token::Composite(composite) if composite.r#type == CompositeType::Enum)
+            } else if matches!(&function.outputs[0], Token::CompositeLegacy(composite) if composite.r#type == CompositeType::Enum)
             {
                 // Enum interfaces need special deserialization logic
                 let enum_name = function.outputs[0].type_name();
@@ -3392,7 +3392,7 @@ impl GolangPlugin {
     /// Check if a token represents a complex type that needs CairoMarshaler
     fn is_complex_type(&self, token: &Token) -> bool {
         match token {
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 // Built-in composite types like u256 should be treated as basic types
                 if composite.is_builtin() {
                     false
@@ -3408,18 +3408,18 @@ impl GolangPlugin {
             }
             Token::NonZero(non_zero) => {
                 // Check if NonZero wraps a basic type
-                !matches!(non_zero.inner.as_ref(), Token::CoreBasic(core_basic) if core_basic.type_path == "felt" || core_basic.type_path == "core::felt252")
+                !matches!(non_zero.inner.as_ref(), Token::Basic(core_basic) if core_basic.type_path == "felt" || core_basic.type_path == "core::felt252")
             }
             Token::Option(option) => {
                 // Check if Option wraps a basic type
                 match option.inner.as_ref() {
-                    Token::CoreBasic(core_basic)
+                    Token::Basic(core_basic)
                         if core_basic.type_path == "felt"
                             || core_basic.type_path == "core::felt252" =>
                     {
                         false
                     }
-                    Token::CoreBasic(core_basic)
+                    Token::Basic(core_basic)
                         if matches!(
                             core_basic.type_path.as_str(),
                             "core::integer::u8"
@@ -3436,7 +3436,7 @@ impl GolangPlugin {
             Token::Array(array) => {
                 // Arrays are basic types when they contain basic elements
                 match array.inner.as_ref() {
-                    Token::CoreBasic(core_basic)
+                    Token::Basic(core_basic)
                         if core_basic.type_path == "felt"
                             || core_basic.type_path == "core::felt252" =>
                     {
@@ -3465,7 +3465,7 @@ impl GolangPlugin {
         );
 
         match token {
-            Token::CoreBasic(core_basic) => {
+            Token::Basic(core_basic) => {
                 match core_basic.type_path.as_str() {
                     "felt" | "core::felt252" => {
                         format!("\tcalldata = append(calldata, {})\n", param_name)
@@ -3527,7 +3527,7 @@ impl GolangPlugin {
                     }
                 }
             }
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 // Handle built-in composite types like u256
                 match composite.type_path.as_str() {
                     "core::integer::u256" => {
@@ -3554,7 +3554,7 @@ impl GolangPlugin {
             Token::Array(array) => {
                 // Handle arrays based on their inner type
                 match array.inner.as_ref() {
-                    Token::CoreBasic(core_basic)
+                    Token::Basic(core_basic)
                         if core_basic.type_path == "felt"
                             || core_basic.type_path == "core::felt252" =>
                     {
@@ -3570,7 +3570,7 @@ impl GolangPlugin {
             Token::NonZero(non_zero) => {
                 // Handle NonZero types - check if the inner type is a basic type
                 match non_zero.inner.as_ref() {
-                    Token::CoreBasic(core_basic)
+                    Token::Basic(core_basic)
                         if core_basic.type_path == "felt"
                             || core_basic.type_path == "core::felt252" =>
                     {
@@ -3586,7 +3586,7 @@ impl GolangPlugin {
             Token::Option(option) => {
                 // Handle Option types - check if the inner type is a basic type
                 match option.inner.as_ref() {
-                    Token::CoreBasic(core_basic)
+                    Token::Basic(core_basic)
                         if core_basic.type_path == "felt"
                             || core_basic.type_path == "core::felt252" =>
                     {
@@ -3609,7 +3609,7 @@ impl GolangPlugin {
                 for (i, inner_token) in tuple.inners.iter().enumerate() {
                     let field_access = format!("{}.Field{}", param_name, i);
                     match inner_token {
-                        Token::CoreBasic(core_basic) => {
+                        Token::Basic(core_basic) => {
                             match core_basic.type_path.as_str() {
                                 "felt" | "core::felt252" => {
                                     code.push_str(&format!(
@@ -3653,7 +3653,7 @@ impl GolangPlugin {
                                 }
                             }
                         }
-                        Token::Composite(composite) => {
+                        Token::CompositeLegacy(composite) => {
                             // Handle composite types like u256
                             match composite.type_path.as_str() {
                                 "core::integer::u256" => {
@@ -3699,7 +3699,7 @@ impl GolangPlugin {
         };
 
         match token {
-            Token::CoreBasic(core_basic) => {
+            Token::Basic(core_basic) => {
                 match core_basic.type_path.as_str() {
                     "felt" | "core::felt252" => {
                         format!("\tcalldata = append(calldata, {})\n", param_name)
@@ -3761,7 +3761,7 @@ impl GolangPlugin {
                     }
                 }
             }
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 // Handle built-in composite types like u256
                 match composite.type_path.as_str() {
                     "core::integer::u256" => {
@@ -3791,7 +3791,7 @@ impl GolangPlugin {
             Token::NonZero(non_zero) => {
                 // Handle NonZero types - check if the inner type is a basic type
                 match non_zero.inner.as_ref() {
-                    Token::CoreBasic(core_basic)
+                    Token::Basic(core_basic)
                         if core_basic.type_path == "felt"
                             || core_basic.type_path == "core::felt252" =>
                     {
@@ -3807,14 +3807,14 @@ impl GolangPlugin {
             Token::Option(option) => {
                 // Handle Option types - check if the inner type is a basic type
                 match option.inner.as_ref() {
-                    Token::CoreBasic(core_basic)
+                    Token::Basic(core_basic)
                         if core_basic.type_path == "felt"
                             || core_basic.type_path == "core::felt252" =>
                     {
                         // Option<felt> - handle as *felt.Felt with nil check and direct append
                         format!("\tif {} != nil {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0)) // Some variant\n\t\tcalldata = append(calldata, {})\n\t}} else {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1)) // None variant\n\t}}\n", param_name, param_name)
                     }
-                    Token::Composite(composite)
+                    Token::CompositeLegacy(composite)
                         if composite.r#type == CompositeType::Enum
                             || (composite.r#type == CompositeType::Unknown
                                 && composite.type_name().contains("Enum")) =>
@@ -3846,7 +3846,7 @@ impl GolangPlugin {
     /// Generate deserialization code for basic types
     fn generate_basic_type_deserialization(&self, token: &Token, go_type: &str) -> String {
         match token {
-            Token::CoreBasic(core_basic) => {
+            Token::Basic(core_basic) => {
                 match core_basic.type_path.as_str() {
                     "felt" | "core::felt252" => {
                         "\tresult := response[0]\n\treturn result, nil\n".to_string()
@@ -3893,7 +3893,7 @@ impl GolangPlugin {
                     }
                 }
             }
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 // Handle composite types
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
@@ -3921,7 +3921,7 @@ impl GolangPlugin {
             Token::Array(array) => {
                 // Handle arrays based on their inner type
                 match array.inner.as_ref() {
-                    Token::CoreBasic(core_basic)
+                    Token::Basic(core_basic)
                         if core_basic.type_path == "felt"
                             || core_basic.type_path == "core::felt252" =>
                     {
@@ -3943,7 +3943,7 @@ impl GolangPlugin {
                 } else {
                     // Other Option types - need to handle based on inner type
                     match option.inner.as_ref() {
-                        Token::Composite(composite)
+                        Token::CompositeLegacy(composite)
                             if composite.r#type == CompositeType::Enum
                                 || (composite.r#type == CompositeType::Unknown
                                     && composite.type_path.contains("TypedEnum")) =>
@@ -3978,7 +3978,7 @@ impl GolangPlugin {
 
                             format!("\tif len(response) == 0 {{\n\t\treturn nil, fmt.Errorf(\"empty response\")\n\t}}\n\t// Check Option discriminant\n\tif cainome.UintFromFelt(response[0]) == 0 {{\n\t\t// None variant\n\t\treturn nil, nil\n\t}} else {{\n\t\t// Some variant - deserialize enum from response[1:]\n\t\tif len(response) < 2 {{\n\t\t\treturn nil, fmt.Errorf(\"insufficient data for Some variant\")\n\t\t}}\n{}\n\t}}\n", enum_code)
                         }
-                        Token::CoreBasic(core_basic) => {
+                        Token::Basic(core_basic) => {
                             // Option<basic_type> - deserialize the basic type
                             match core_basic.type_path.as_str() {
                                 "core::integer::u64" => {
@@ -4154,7 +4154,7 @@ impl GolangPlugin {
         for (i, inner_token) in tuple.inners.iter().enumerate() {
             let field_access = format!("{}.Field{}", param_name, i);
             match inner_token {
-                Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                     "felt" | "core::felt252" => {
                         code.push_str(&format!(
                             "\tcalldata = append(calldata, {})\n",
@@ -4199,7 +4199,7 @@ impl GolangPlugin {
                         code.push_str(&format!("\tif {}, err := {}.MarshalCairo(); err != nil {{\n\t\treturn {}\n\t}} else {{\n\t\tcalldata = append(calldata, {}...)\n\t}}\n", temp_var, field_access, error_return, temp_var));
                     }
                 },
-                Token::Composite(composite) => {
+                Token::CompositeLegacy(composite) => {
                     // Handle composite types like u256
                     match composite.type_path.as_str() {
                         "core::integer::u256" => {
@@ -4241,7 +4241,7 @@ impl GolangPlugin {
         };
 
         match array.inner.as_ref() {
-            Token::CoreBasic(core_basic)
+            Token::Basic(core_basic)
                 if core_basic.type_path == "felt" || core_basic.type_path == "core::felt252" =>
             {
                 // []*felt.Felt - use cainome.CairoFeltArray for serialization
@@ -4302,13 +4302,13 @@ impl GolangPlugin {
 
         // Handle Option types - for structs, we need special handling
         match option.inner.as_ref() {
-            Token::CoreBasic(core_basic)
+            Token::Basic(core_basic)
                 if core_basic.type_path == "felt" || core_basic.type_path == "core::felt252" =>
             {
                 // Option<felt> - handle as *felt.Felt with nil check and direct append
                 format!("\tif {} != nil {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0)) // Some variant\n\t\tcalldata = append(calldata, {})\n\t}} else {{\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1)) // None variant\n\t}}\n", param_name, param_name)
             }
-            Token::Composite(_) => {
+            Token::CompositeLegacy(_) => {
                 // For Option of struct types (represented as **StructType)
                 // We need to check if it's nil (None) or dereference and marshal (Some)
                 format!("\tif {} != nil {{\n\t\t// Some variant\n\t\tcalldata = append(calldata, cainome.FeltFromUint(0))\n\t\tif {}_data, err := (*{}).MarshalCairo(); err != nil {{\n\t\t\treturn {}\n\t\t}} else {{\n\t\t\tcalldata = append(calldata, {}_data...)\n\t\t}}\n\t}} else {{\n\t\t// None variant\n\t\tcalldata = append(calldata, cainome.FeltFromUint(1))\n\t}}\n", param_name, param_name, param_name, error_return, param_name)
@@ -4351,7 +4351,7 @@ impl GolangPlugin {
                     Token::Option(option) => {
                         // Handle Option types specially
                         match option.inner.as_ref() {
-                            Token::Composite(composite)
+                            Token::CompositeLegacy(composite)
                                 if composite.r#type == CompositeType::Enum =>
                             {
                                 // Option of enum interface - enum interfaces can be nil directly
@@ -4825,7 +4825,7 @@ package {}
             let go_type = match &function.outputs[0] {
                 // For Option<Enum>, the type should be the enum interface directly (no pointer)
                 Token::Option(option) => match option.inner.as_ref() {
-                    Token::Composite(composite)
+                    Token::CompositeLegacy(composite)
                         if composite.r#type == CompositeType::Enum
                             || (composite.r#type == CompositeType::Unknown
                                 && composite.type_name().contains("Enum")) =>
@@ -4845,7 +4845,7 @@ package {}
                 let go_type = match output_token {
                     // For Option<Enum>, the type should be the enum interface directly (no pointer)
                     Token::Option(option) => match option.inner.as_ref() {
-                        Token::Composite(composite)
+                        Token::CompositeLegacy(composite)
                             if composite.r#type == CompositeType::Enum
                                 || (composite.r#type == CompositeType::Unknown
                                     && composite.type_name().contains("Enum")) =>
@@ -4872,7 +4872,7 @@ package {}
             let go_type = match &function.outputs[0] {
                 // For Option<Enum>, the type should be the enum interface directly (no pointer)
                 Token::Option(option) => match option.inner.as_ref() {
-                    Token::Composite(composite)
+                    Token::CompositeLegacy(composite)
                         if composite.r#type == CompositeType::Enum
                             || (composite.r#type == CompositeType::Unknown
                                 && composite.type_name().contains("Enum")) =>
@@ -5011,7 +5011,7 @@ package {}
         field_access: &str,
     ) -> String {
         match token {
-            Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+            Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                 "felt" | "core::felt252" => {
                     format!("\tresult = append(result, {})\n", field_access)
                 }
@@ -5061,7 +5061,7 @@ package {}
                     )
                 }
             },
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
                         "core::integer::u256" => {
@@ -5094,7 +5094,7 @@ package {}
             }
             Token::Array(array) => {
                 // Check if this is an array of felts
-                if let Token::CoreBasic(basic) = array.inner.as_ref() {
+                if let Token::Basic(basic) = array.inner.as_ref() {
                     if basic.type_path == "felt" || basic.type_path == "core::felt252" {
                         // Special handling for []*felt.Felt arrays
                         format!("\t// Array of felts: serialize length + elements\n\tresult = append(result, cainome.FeltFromUint(uint64(len({}))))\n\tresult = append(result, {}...)\n", field_access, field_access)
@@ -5144,7 +5144,7 @@ package {}
 
                 // Marshal the inner value based on its type
                 match option.inner.as_ref() {
-                    Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                    Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                         "felt" | "core::felt252" => {
                             code.push_str(&format!(
                                 "\t\tresult = append(result, {})\n",
@@ -5164,7 +5164,7 @@ package {}
                             ));
                         }
                     },
-                    Token::Composite(composite)
+                    Token::CompositeLegacy(composite)
                         if composite.r#type == CompositeType::Enum
                             || (composite.r#type == CompositeType::Unknown
                                 && composite.type_name().contains("Enum")) =>
@@ -5181,7 +5181,7 @@ package {}
                     }
                     Token::Array(array) => {
                         // For Option<Array>, handle array serialization
-                        if let Token::CoreBasic(core_basic) = array.inner.as_ref() {
+                        if let Token::Basic(core_basic) = array.inner.as_ref() {
                             if core_basic.type_path == "felt"
                                 || core_basic.type_path == "core::felt252"
                             {
@@ -5228,7 +5228,7 @@ package {}
         contract_name: Option<&str>,
     ) -> String {
         match token {
-            Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+            Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                 "felt" | "core::felt252" => {
                     format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = data[offset]\n\toffset++\n\n", field_name, field_name)
                 }
@@ -5277,7 +5277,7 @@ package {}
             }
             Token::Array(array) => {
                 // Check if this is an array of felts
-                if let Token::CoreBasic(basic) = array.inner.as_ref() {
+                if let Token::Basic(basic) = array.inner.as_ref() {
                     if basic.type_path == "felt" || basic.type_path == "core::felt252" {
                         // Special handling for []*felt.Felt arrays
                         format!("\t// Array of felts: read length then elements\n\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for array length of field {}\")\n\t}}\n\tlength := cainome.UintFromFelt(data[offset])\n\toffset++\n\n\tif offset + int(length) > len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for array elements of field {}\")\n\t}}\n\ts.{} = data[offset:offset+int(length)]\n\toffset += int(length)\n\n", field_name, field_name, field_name)
@@ -5298,7 +5298,7 @@ package {}
                     )
                 }
             }
-            Token::Composite(composite) => {
+            Token::CompositeLegacy(composite) => {
                 // Handle composite types properly
                 if composite.is_builtin() {
                     match composite.type_path_no_generic().as_str() {
@@ -5335,7 +5335,7 @@ package {}
                 if go_type.starts_with("*") {
                     // This is a pointer type
                     // Check if it's an enum by trying to match the token
-                    if let Token::Composite(composite) = token {
+                    if let Token::CompositeLegacy(composite) = token {
                         if composite.r#type == CompositeType::Enum {
                             // For enum interfaces, we need to unmarshal into the interface directly
                             // Generate the enum unmarshal function name
@@ -5408,7 +5408,7 @@ package {}
                 code.push_str("\t\t// Some variant: read the value\n");
 
                 match option.inner.as_ref() {
-                    Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                    Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                         "felt" | "core::felt252" => {
                             code.push_str("\t\tif offset >= len(data) {\n");
                             code.push_str(&format!("\t\t\treturn fmt.Errorf(\"insufficient data for Option field {} value\")\n", field_name));
@@ -5432,7 +5432,7 @@ package {}
                             ));
                         }
                     },
-                    Token::Composite(composite)
+                    Token::CompositeLegacy(composite)
                         if composite.r#type == CompositeType::Enum
                             || (composite.r#type == CompositeType::Unknown
                                 && composite.type_name().contains("Enum")) =>
@@ -5452,7 +5452,7 @@ package {}
                     }
                     Token::Array(array) => {
                         // For Option<Array>, handle array deserialization
-                        if let Token::CoreBasic(core_basic) = array.inner.as_ref() {
+                        if let Token::Basic(core_basic) = array.inner.as_ref() {
                             if core_basic.type_path == "felt"
                                 || core_basic.type_path == "core::felt252"
                             {
@@ -5492,7 +5492,7 @@ package {}
             _ => {
                 // For non-Option types in response structs, use value types (not pointers)
                 match token {
-                    Token::CoreBasic(core_basic) => match core_basic.type_path.as_str() {
+                    Token::Basic(core_basic) => match core_basic.type_path.as_str() {
                         "felt" | "core::felt252" => {
                             format!("\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = data[offset]\n\toffset++\n\n", field_name, field_name)
                         }
@@ -5506,7 +5506,7 @@ package {}
                             format!("\t// TODO: Handle core basic type {} for response struct field {}\n\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for field {}\")\n\t}}\n\ts.{} = data[offset]\n\toffset++\n\n", core_basic.type_path, field_name, field_name, field_name)
                         }
                     },
-                    Token::Composite(composite) => {
+                    Token::CompositeLegacy(composite) => {
                         if composite.is_builtin() {
                             match composite.type_path_no_generic().as_str() {
                                 "core::integer::u256" => {
@@ -5530,7 +5530,7 @@ package {}
                     }
                     Token::Array(array) => {
                         // Check if this is an array of felts
-                        if let Token::CoreBasic(basic) = array.inner.as_ref() {
+                        if let Token::Basic(basic) = array.inner.as_ref() {
                             if basic.type_path == "felt" || basic.type_path == "core::felt252" {
                                 // Special handling for []*felt.Felt arrays
                                 format!("\t// Array of felts: read length then elements\n\tif offset >= len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for array length of field {}\")\n\t}}\n\tlength := cainome.UintFromFelt(data[offset])\n\toffset++\n\n\tif offset + int(length) > len(data) {{\n\t\treturn fmt.Errorf(\"insufficient data for array elements of field {}\")\n\t}}\n\ts.{} = data[offset:offset+int(length)]\n\toffset += int(length)\n\n", field_name, field_name, field_name)
@@ -5591,7 +5591,7 @@ impl BuiltinPlugin for GolangPlugin {
 
             // Process structs
             for token in &contract.tokens.structs {
-                if let Token::Composite(composite) = token {
+                if let Token::CompositeLegacy(composite) = token {
                     if !composite.is_builtin() {
                         let type_path = composite.type_path_no_generic();
                         if composites.contains_key(&type_path) {
@@ -5607,7 +5607,7 @@ impl BuiltinPlugin for GolangPlugin {
 
             // Process enums
             for token in &contract.tokens.enums {
-                if let Token::Composite(composite) = token {
+                if let Token::CompositeLegacy(composite) = token {
                     if !composite.is_builtin() {
                         let type_path = composite.type_path_no_generic();
                         if composites.contains_key(&type_path) {
@@ -5641,12 +5641,12 @@ impl BuiltinPlugin for GolangPlugin {
             functions.sort_by(|a, b| a.name.cmp(&b.name));
 
             // Create sorted vector of composites for deterministic iteration
-            let mut sorted_composites: Vec<(&String, &Composite)> =
+            let mut sorted_composites: Vec<(&String, &CompositeLegacy)> =
                 composites.iter().map(|(k, &v)| (k, v)).collect();
             sorted_composites.sort_by(|a, b| a.0.cmp(b.0));
 
             // Find event enums first (from sorted composites)
-            let mut event_enums: Vec<&Composite> = Vec::new();
+            let mut event_enums: Vec<&CompositeLegacy> = Vec::new();
             for (_, composite) in &sorted_composites {
                 if composite.r#type == CompositeType::Enum {
                     let enum_name = composite.type_name_or_alias().to_case(Case::Pascal);
@@ -5688,7 +5688,7 @@ impl BuiltinPlugin for GolangPlugin {
                             } else {
                                 // Check if the variant's type matches this struct
                                 // Extract the type name from the variant's type path
-                                if let Token::Composite(variant_composite) = &inner.token {
+                                if let Token::CompositeLegacy(variant_composite) = &inner.token {
                                     let variant_type_name = variant_composite
                                         .type_name_or_alias()
                                         .to_case(Case::Pascal);

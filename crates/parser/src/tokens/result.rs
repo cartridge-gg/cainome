@@ -4,7 +4,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::tokens::Token;
+use crate::tokens::{Container, Token};
 use crate::{CainomeResult, Error};
 
 use super::genericity;
@@ -45,5 +45,13 @@ impl ResultContainer {
             inner: Rc::clone(inner),
             error: Rc::clone(error),
         }
+    }
+
+    pub fn new_token(
+        type_path: &str,
+        inner: &Rc<RefCell<Token>>,
+        error: &Rc<RefCell<Token>>,
+    ) -> Token {
+        Token::Container(Container::Result(Self::new(type_path, inner, error)))
     }
 }

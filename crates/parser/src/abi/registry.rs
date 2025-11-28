@@ -1,13 +1,9 @@
-use std::{
-    cell::{Ref, RefCell},
-    collections::HashMap,
-    rc::Rc,
-};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     tokens::{
-        constants, ArrayContainer, CoreBasic, NonZeroContainer, OptionContainer, ResultContainer,
-        Token, TupleContainer,
+        constants, ArrayContainer, CoreBasic, EntryToken, NonZeroContainer, OptionContainer,
+        ResultContainer, Token, TupleContainer,
     },
     CainomeResult, Error,
 };
@@ -67,19 +63,15 @@ fn wrap_generic_containers(
 ) -> Result<Rc<RefCell<Token>>, Error> {
     if ArrayContainer::test_path(&type_path) {
         let inner_type_path = ArrayContainer::get_inner(&type_path)?;
-
         let inner_type = wrap_generic_containers(&inner_type_path, registry)?;
-
-        let token = Token::Array(ArrayContainer::new(&type_path, &inner_type));
+        let token = ArrayContainer::new_token(&type_path, &inner_type);
         return Ok(Rc::new(RefCell::new(token)));
     }
 
     if NonZeroContainer::test_path(&type_path) {
         let inner_type_path = NonZeroContainer::get_inner(&type_path)?;
-
         let inner_type = wrap_generic_containers(&inner_type_path, registry)?;
-
-        let token = Token::NonZero(NonZeroContainer::new(&type_path, &inner_type));
+        let token = NonZeroContainer::new_token(&type_path, &inner_type);
         return Ok(Rc::new(RefCell::new(token)));
     }
 
@@ -88,7 +80,7 @@ fn wrap_generic_containers(
 
         let inner_type = wrap_generic_containers(&inner_type_path, registry)?;
 
-        let token = Token::Option(OptionContainer::new(&type_path, &inner_type));
+        let token = OptionContainer::new_token(&type_path, &inner_type);
         return Ok(Rc::new(RefCell::new(token)));
     }
 
@@ -98,7 +90,7 @@ fn wrap_generic_containers(
         let inner_type = wrap_generic_containers(&inner_type_path.inner, registry)?;
         let error_type = wrap_generic_containers(&inner_type_path.error, registry)?;
 
-        let token = Token::Result(ResultContainer::new(&type_path, &inner_type, &error_type));
+        let token = ResultContainer::new_token(&type_path, &inner_type, &error_type);
 
         return Ok(Rc::new(RefCell::new(token)));
     }
@@ -113,7 +105,7 @@ fn wrap_generic_containers(
             inners.push(wrap_generic_containers(&inner_type_path, registry)?);
         }
 
-        let token = Token::Tuple(TupleContainer::new(type_path, inners));
+        let token = TupleContainer::new_token(type_path, inners);
         return Ok(Rc::new(RefCell::new(token)));
     }
 
@@ -132,9 +124,9 @@ impl TypeRegistry {
         };
 
         // Register basic types by default
-        registry.set("()".to_string(), Token::CoreBasic(CoreBasic::new("()")));
+        registry.set("()".to_string(), Token::Basic(CoreBasic::new("()")));
         for val in constants::CAIRO_CORE_BASIC {
-            registry.set(val.to_string(), Token::CoreBasic(CoreBasic::new(val)));
+            registry.set(val.to_string(), Token::Basic(CoreBasic::new(val)));
         }
 
         registry
@@ -159,7 +151,7 @@ impl TypeRegistry {
 
     pub fn set(&mut self, path: String, token: Token) {
         if let Some(cell) = self.store.get(&path) {
-            if token == Token::Placeholder {
+            if token == Token::Entry(EntryToken::Placeholder) {
                 // Do not overwrite with placeholder.
                 return;
             }
@@ -172,6 +164,10 @@ impl TypeRegistry {
         }
     }
 
+    pub fn remove(&mut self, path: &str) -> Option<Rc<RefCell<Token>>> {
+        self.store.remove(path)
+    }
+
     pub fn values(self) -> Vec<Rc<RefCell<Token>>> {
         self.store.into_values().collect()
     }
@@ -180,7 +176,7 @@ impl TypeRegistry {
         let mut unresolved_placeholders = vec![];
 
         for (path, val) in self.store.iter() {
-            if Token::Placeholder == *val.borrow() {
+            if Token::Entry(EntryToken::Placeholder) == *val.borrow() {
                 unresolved_placeholders.push(path.clone());
             }
         }

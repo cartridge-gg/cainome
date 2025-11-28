@@ -94,7 +94,7 @@ pub struct CompositeInner {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Composite {
+pub struct CompositeLegacy {
     pub type_path: String,
     pub inners: Vec<CompositeInner>,
     pub generic_args: Vec<(String, Rc<RefCell<Token>>)>,
@@ -103,7 +103,7 @@ pub struct Composite {
     pub alias: Option<String>,
 }
 
-impl Composite {
+impl CompositeLegacy {
     /// Parses a composite type from a type path.
     /// Since the composite can be named arbitrarily, by the user,
     /// the parsing of the composite is not checking if the type path is
@@ -183,20 +183,20 @@ mod tests {
     use crate::tokens::*;
 
     fn basic_felt252() -> Rc<RefCell<Token>> {
-        Rc::new(RefCell::new(Token::CoreBasic(CoreBasic {
+        Rc::new(RefCell::new(Token::Basic(CoreBasic {
             type_path: "core::felt252".to_string(),
         })))
     }
 
     fn basic_u64() -> Rc<RefCell<Token>> {
-        Rc::new(RefCell::new(Token::CoreBasic(CoreBasic {
+        Rc::new(RefCell::new(Token::Basic(CoreBasic {
             type_path: "core::integer::u64".to_string(),
         })))
     }
 
     #[test]
     fn test_parse() {
-        let expected = Composite {
+        let expected = CompositeLegacy {
             type_path: "module::MyStruct".to_string(),
             inners: vec![],
             generic_args: vec![],
@@ -211,7 +211,7 @@ mod tests {
 
     #[test]
     fn test_parse_generic_one() {
-        let expected = Composite {
+        let expected = CompositeLegacy {
             type_path: "module::MyStruct::<core::felt252>".to_string(),
             inners: vec![],
             generic_args: vec![("A".to_string(), basic_felt252())],
@@ -229,7 +229,7 @@ mod tests {
 
     #[test]
     fn test_parse_generic_two() {
-        let expected = Composite {
+        let expected = CompositeLegacy {
             type_path: "module::MyStruct::<core::felt252, core::integer::u64>".to_string(),
             inners: vec![],
             generic_args: vec![
@@ -250,7 +250,7 @@ mod tests {
 
     #[test]
     fn test_type_name() {
-        let mut c = Composite {
+        let mut c = CompositeLegacy {
             type_path: "module::MyStruct".to_string(),
             inners: vec![],
             generic_args: vec![],

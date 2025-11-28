@@ -25,7 +25,12 @@ pub const CAIRO_CORE_BASIC: [&str; 17] = [
 /// Technically, a span is a struct. But it's here
 /// to match array pattern since from a binding point of view,
 /// it's an array.
-pub const CAIRO_CORE_SPAN_ARRAY: [&str; 2] = ["core::array::Span", "core::array::Array"];
+pub const CAIRO_CORE_SPAN_ARRAY: [&str; 4] = [
+    "core::array::Span",
+    "core::array::Array",
+    "@core::array::Span",
+    "@core::array::Array",
+];
 
 /// Generic builtins are types that are available in the core library
 /// and which are generic struct or enum.

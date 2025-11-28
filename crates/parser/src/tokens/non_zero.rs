@@ -5,7 +5,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::abi::registry::TypeRegistry;
-use crate::tokens::Token;
+use crate::tokens::{Container, Token};
 use crate::{CainomeResult, Error};
 
 use super::genericity;
@@ -27,6 +27,10 @@ impl NonZeroContainer {
             type_path: type_path.to_string(),
             inner: Rc::clone(inner),
         }
+    }
+
+    pub fn new_token(type_path: &str, inner: &Rc<RefCell<Token>>) -> Token {
+        Token::Container(Container::NonZero(Self::new(type_path, inner)))
     }
 
     pub fn get_inner(type_path: &str) -> CainomeResult<String, Error> {

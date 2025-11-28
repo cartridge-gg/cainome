@@ -1,4 +1,4 @@
-use cainome_parser::tokens::{Composite, CompositeInnerKind, Token};
+use cainome_parser::tokens::{CompositeLegacy, CompositeInnerKind, Token};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::{LitStr, Type};
@@ -10,7 +10,7 @@ pub struct CairoEnumEvent;
 
 /// Expansion of Cairo event enumeration.
 impl CairoEnumEvent {
-    pub fn expand(composite: &Composite, enums: &[Token], structs: &[Token]) -> TokenStream2 {
+    pub fn expand(composite: &CompositeLegacy, enums: &[Token], structs: &[Token]) -> TokenStream2 {
         if !composite.is_event {
             return quote!();
         }
@@ -59,7 +59,7 @@ impl CairoEnumEvent {
     }
 
     pub fn expand_event_enum(
-        composite: &Composite,
+        composite: &CompositeLegacy,
         depth: usize,
         enums: &[Token],
         structs: &[Token],
@@ -174,7 +174,7 @@ impl CairoEnumEvent {
     }
 
     fn expand_event_struct(
-        composite: &Composite,
+        composite: &CompositeLegacy,
         variant_name: LitStr,
     ) -> (Vec<TokenStream2>, Vec<TokenStream2>) {
         let mut desers_tokens = vec![];

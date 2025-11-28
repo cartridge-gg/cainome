@@ -9,7 +9,7 @@ use std::rc::Rc;
 use super::constants::CAIRO_CORE_SPAN_ARRAY;
 use super::genericity;
 
-use crate::tokens::Token;
+use crate::tokens::{Container, Token};
 use crate::{CainomeResult, Error};
 
 pub const CAIRO_0_ARRAY: &str = "*";
@@ -41,6 +41,8 @@ impl ArrayContainer {
             return Ok(type_path.strip_suffix(CAIRO_0_ARRAY).unwrap().to_string());
         }
 
+        let type_path = type_path.trim_start_matches("@");
+
         let generic_args = genericity::extract_generics_args(type_path)?;
 
         if generic_args.len() != 1 {
@@ -62,6 +64,10 @@ impl ArrayContainer {
             inner: Rc::clone(inner),
             is_legacy: false,
         };
+    }
+
+    pub fn new_token(type_path: &str, inner: &Rc<RefCell<Token>>) -> Token {
+        Token::Container(Container::Array(Self::new(type_path, inner)))
     }
 }
 
