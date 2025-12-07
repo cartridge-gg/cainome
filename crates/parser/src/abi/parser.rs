@@ -219,7 +219,7 @@ impl AbiParser {
             } else {
                 // To support for indirect recursive reference resolution, we fill seen
                 // types with Placeholder to later replace with resolved type.
-                registry.set(entry.get_name(), Token::Placeholder);
+                registry.set(&entry.get_name(), Token::Placeholder);
             }
 
             // Checking if registry has all the nested types to resolve
@@ -233,7 +233,7 @@ impl AbiParser {
 
             // Ok, now we can resolve.
             if let Some(token) = entry.try_to_token(&mut registry)? {
-                registry.set(entry.get_name(), token);
+                registry.set(&entry.get_name(), token);
             } else {
                 // This means that entry resolved into token absence, let's remove placeholder.
                 // (happens for implementation)

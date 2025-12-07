@@ -32,8 +32,8 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
     let abi_tokens = AbiParser::collect_tokens(abi_entries).expect("failed tokens parsing");
 
     let expanded = cainome_rs::abi_to_tokenstream(
-        &contract_name.to_string(),
         &abi_tokens,
+        &contract_name.to_string(),
         contract_abi.execution_version,
         &contract_abi.derives,
         &contract_abi.contract_derives,

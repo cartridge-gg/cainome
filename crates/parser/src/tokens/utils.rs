@@ -2,7 +2,7 @@ use super::constants::{CAIRO_COMPOSITE_BUILTINS, CAIRO_GENERIC_BUILTINS};
 use crate::tokens::Token;
 
 /// Converts a snake case string to pascal case.
-pub fn snake_to_pascal_case(s: &str) -> String {
+fn snake_to_pascal_case(s: &str) -> String {
     s.split('_')
         .map(|word| {
             let mut c = word.chars();

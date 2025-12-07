@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, fmt::format, rc::Rc};
 
 use crate::{
     tokens::{
@@ -113,8 +113,10 @@ fn wrap_generic_containers(
         return Ok(Rc::clone(token));
     }
 
-    // TODO: errors
-    Err(Error::ParsingFailed("asdasd".to_string()))
+    Err(Error::ParsingFailed(format!(
+        "Could not match '{}' against generic container or existent types",
+        type_path,
+    )))
 }
 
 impl TypeRegistry {
@@ -124,9 +126,9 @@ impl TypeRegistry {
         };
 
         // Register basic types by default
-        registry.set("()".to_string(), Token::Basic(CoreBasic::new("()")));
+        registry.set("()", Token::Basic(CoreBasic::new("()")));
         for val in constants::CAIRO_CORE_BASIC {
-            registry.set(val.to_string(), Token::Basic(CoreBasic::new(val)));
+            registry.set(val, Token::Basic(CoreBasic::new(val)));
         }
 
         registry
@@ -149,8 +151,8 @@ impl TypeRegistry {
         return Ok(generic_token_chain);
     }
 
-    pub fn set(&mut self, path: String, token: Token) {
-        if let Some(cell) = self.store.get(&path) {
+    pub fn set(&mut self, path: &str, token: Token) {
+        if let Some(cell) = self.store.get(path) {
             if token == Token::Placeholder {
                 // Do not overwrite with placeholder.
                 return;
@@ -160,7 +162,7 @@ impl TypeRegistry {
             *cell = token;
         } else {
             let reference = Rc::new(RefCell::new(token));
-            self.store.insert(path, reference);
+            self.store.insert(path.to_string(), reference);
         }
     }
 
