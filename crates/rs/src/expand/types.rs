@@ -1,4 +1,7 @@
-use cainome_parser::tokens::Token;
+use cainome_parser::tokens::{
+    ArrayContainer, CompositeLegacy, Constructor, CoreBasic, Enum, Event, Function, Interface,
+    NonZeroContainer, OptionContainer, ResultContainer, Struct, Token, TupleContainer,
+};
 
 use super::utils;
 
@@ -7,112 +10,205 @@ pub trait CairoToRust {
 
     fn to_rust_type_path(&self) -> String;
 }
+impl CairoToRust for CoreBasic {
+    fn to_rust_type(&self) -> String {
+        basic_types_to_rust(&self.type_name())
+    }
+
+    fn to_rust_type_path(&self) -> String {
+        basic_types_to_rust(&self.type_name())
+    }
+}
+impl CairoToRust for ArrayContainer {
+    fn to_rust_type(&self) -> String {
+        let internal_type = (&*self.inner.borrow()).to_rust_type();
+        if self.is_legacy {
+            let ccsp = utils::cainome_cairo_serde_path();
+            format!("{ccsp}::CairoArrayLegacy<{internal_type}>")
+        } else {
+            format!("Vec<{internal_type}>")
+        }
+    }
+
+    fn to_rust_type_path(&self) -> String {
+        if self.is_legacy {
+            let ccsp = utils::cainome_cairo_serde_path();
+            format!(
+                "{ccsp}::CairoArrayLegacy::<{}>",
+                (&*self.inner.borrow()).to_rust_type_path()
+            )
+        } else {
+            format!("Vec::<{}>", (&*self.inner.borrow()).to_rust_type_path())
+        }
+    }
+}
+impl CairoToRust for OptionContainer {
+    fn to_rust_type(&self) -> String {
+        format!("Option<{}>", (&*self.inner.borrow()).to_rust_type())
+    }
+
+    fn to_rust_type_path(&self) -> String {
+        format!("Option::<{}>", (&*self.inner.borrow()).to_rust_type_path())
+    }
+}
+
+impl CairoToRust for ResultContainer {
+    fn to_rust_type(&self) -> String {
+        format!(
+            "Result<{}, {}>",
+            (&*self.inner.borrow()).to_rust_type(),
+            (&*self.error.borrow()).to_rust_type()
+        )
+    }
+
+    fn to_rust_type_path(&self) -> String {
+        format!(
+            "Result::<{}, {}>",
+            (&*self.inner.borrow()).to_rust_type_path(),
+            (&*self.error.borrow()).to_rust_type_path()
+        )
+    }
+}
+
+impl CairoToRust for NonZeroContainer {
+    fn to_rust_type(&self) -> String {
+        let ccsp = utils::cainome_cairo_serde_path();
+        format!(
+            "{ccsp}::NonZero<{}>",
+            (&*self.inner.borrow()).to_rust_type()
+        )
+    }
+
+    fn to_rust_type_path(&self) -> String {
+        let ccsp = utils::cainome_cairo_serde_path();
+        format!(
+            "{ccsp}::NonZero::<{}>",
+            (&*self.inner.borrow()).to_rust_type_path()
+        )
+    }
+}
+
+impl CairoToRust for TupleContainer {
+    fn to_rust_type(&self) -> String {
+        let mut s = String::from("(");
+
+        for (idx, inner) in self.inners.iter().enumerate() {
+            let inner_type = (&*inner.borrow()).to_rust_type();
+            s.push_str(&inner_type);
+
+            if idx < self.inners.len() - 1 {
+                s.push_str(", ");
+            }
+        }
+        s.push(')');
+
+        s
+    }
+
+    fn to_rust_type_path(&self) -> String {
+        let mut s = String::from("(");
+        for (idx, inner) in self.inners.iter().enumerate() {
+            s.push_str(&(&*inner.borrow()).to_rust_type_path());
+
+            if idx < self.inners.len() - 1 {
+                s.push_str(", ");
+            }
+        }
+        s.push(')');
+        s
+    }
+}
+
+impl CairoToRust for Struct {
+    fn to_rust_type(&self) -> String {
+        self.type_name()
+    }
+
+    fn to_rust_type_path(&self) -> String {
+        self.type_name()
+    }
+}
+
+impl CairoToRust for Event {
+    fn to_rust_type(&self) -> String {
+        self.type_name()
+    }
+
+    fn to_rust_type_path(&self) -> String {
+        self.type_name()
+    }
+}
+
+impl CairoToRust for Enum {
+    fn to_rust_type(&self) -> String {
+        self.type_name()
+    }
+
+    fn to_rust_type_path(&self) -> String {
+        self.type_name()
+    }
+}
+
+impl CairoToRust for CompositeLegacy {
+    fn to_rust_type(&self) -> String {
+        let mut s = self.type_name_or_alias();
+
+        let (type_name, is_builtin) = builtin_composite_to_rust(&s);
+        if is_builtin {
+            s = type_name;
+        }
+
+        s
+    }
+
+    fn to_rust_type_path(&self) -> String {
+        let mut s = self.type_name_or_alias();
+
+        let (type_name, is_builtin) = builtin_composite_to_rust(&s);
+        if is_builtin {
+            s = type_name;
+        }
+
+        s
+    }
+}
 
 impl CairoToRust for &Token {
     fn to_rust_type(&self) -> String {
         match self {
-            Token::Basic(t) => basic_types_to_rust(&t.type_name()),
-            Token::Array(t) => {
-                let internal_type = (&*t.inner.borrow()).to_rust_type();
-                if t.is_legacy {
-                    let ccsp = utils::cainome_cairo_serde_path();
-                    format!("{}::CairoArrayLegacy<{}>", ccsp, internal_type)
-                } else {
-                    format!("Vec<{}>", internal_type)
-                }
-            }
-            Token::Tuple(t) => {
-                let mut s = String::from("(");
-
-                for (idx, inner) in t.inners.iter().enumerate() {
-                    let inner_type = (&*inner.borrow()).to_rust_type();
-                    s.push_str(&inner_type);
-
-                    if idx < t.inners.len() - 1 {
-                        s.push_str(", ");
-                    }
-                }
-                s.push(')');
-
-                s
-            }
-            Token::Struct(c) => c.type_name(),
-            Token::CompositeLegacy(c) => {
-                let mut s = c.type_name_or_alias();
-
-                let (type_name, is_builtin) = builtin_composite_to_rust(&s);
-                if is_builtin {
-                    s = type_name;
-                }
-
-                s
-            }
-            Token::Option(o) => format!("Option<{}>", (&*o.inner.borrow()).to_rust_type()),
-            Token::Result(r) => format!(
-                "Result<{}, {}>",
-                (&*r.inner.borrow()).to_rust_type(),
-                (&*r.error.borrow()).to_rust_type(),
-            ),
-            Token::NonZero(n) => {
-                let ccsp = utils::cainome_cairo_serde_path();
-                format!("{}::NonZero<{}>", ccsp, (&*n.inner.borrow()).to_rust_type())
-            }
-            _ => "__FUNCTION_NOT_SUPPORTED__".to_string(),
+            Token::Basic(t) => t.to_rust_type(),
+            Token::Array(t) => t.to_rust_type(),
+            Token::Option(t) => t.to_rust_type(),
+            Token::Result(t) => t.to_rust_type(),
+            Token::NonZero(t) => t.to_rust_type(),
+            Token::Tuple(t) => t.to_rust_type(),
+            Token::Struct(t) => t.to_rust_type(),
+            Token::Event(t) => t.to_rust_type(),
+            Token::Enum(t) => t.to_rust_type(),
+            Token::CompositeLegacy(t) => t.to_rust_type(),
+            Token::Constructor(_) => "__CONSTRUCTOR_NOT_SUPPORTED__".to_string(),
+            Token::Interface(_) => "__INTERFACE_NOT_SUPPORTED__".to_string(),
+            Token::Function(_) => "__FUNCTION_NOT_SUPPORTED__".to_string(),
+            Token::Placeholder => "__PLACEHOLDER__".to_string(),
         }
     }
 
     fn to_rust_type_path(&self) -> String {
         match self {
-            Token::Basic(t) => basic_types_to_rust(&t.type_name()),
-            Token::Array(t) => {
-                if t.is_legacy {
-                    let ccsp = utils::cainome_cairo_serde_path();
-                    format!(
-                        "{}::CairoArrayLegacy::<{}>",
-                        ccsp,
-                        (&*t.inner.borrow()).to_rust_type_path()
-                    )
-                } else {
-                    format!("Vec::<{}>", (&*t.inner.borrow()).to_rust_type_path())
-                }
-            }
-            Token::Tuple(t) => {
-                let mut s = String::from("(");
-                for (idx, inner) in t.inners.iter().enumerate() {
-                    s.push_str(&(&*inner.borrow()).to_rust_type_path());
-
-                    if idx < t.inners.len() - 1 {
-                        s.push_str(", ");
-                    }
-                }
-                s.push(')');
-                s
-            }
-            Token::CompositeLegacy(c) => {
-                let mut s = c.type_name_or_alias();
-
-                let (type_name, is_builtin) = builtin_composite_to_rust(&s);
-                if is_builtin {
-                    s = type_name;
-                }
-
-                s
-            }
-            Token::Option(o) => format!("Option::<{}>", (&*o.inner.borrow()).to_rust_type_path()),
-            Token::Result(r) => format!(
-                "Result::<{}, {}>",
-                (&*r.inner.borrow()).to_rust_type_path(),
-                (&*r.error.borrow()).to_rust_type_path(),
-            ),
-            Token::NonZero(n) => {
-                let ccsp = utils::cainome_cairo_serde_path();
-                format!(
-                    "{}::NonZero::<{}>",
-                    ccsp,
-                    (&*n.inner.borrow()).to_rust_type_path()
-                )
-            }
-            _ => "__FUNCTION_NOT_SUPPORTED__".to_string(),
+            Token::Basic(t) => t.to_rust_type_path(),
+            Token::Array(t) => t.to_rust_type_path(),
+            Token::Option(t) => t.to_rust_type_path(),
+            Token::Result(t) => t.to_rust_type_path(),
+            Token::NonZero(t) => t.to_rust_type_path(),
+            Token::Tuple(t) => t.to_rust_type_path(),
+            Token::Struct(t) => t.to_rust_type_path(),
+            Token::Event(t) => t.to_rust_type_path(),
+            Token::Enum(t) => t.to_rust_type_path(),
+            Token::CompositeLegacy(t) => t.to_rust_type_path(),
+            Token::Function(_) => "__FUNCTION_NOT_SUPPORTED__".to_string(),
+            Token::Interface(_) => "__INTERFACE_NOT_SUPPORTED__".to_string(),
+            Token::Constructor(_) => "__CONSTRUCTOR_NOT_SUPPORTED__".to_string(),
+            Token::Placeholder => "__PLACEHOLDER__".to_string(),
         }
     }
 }

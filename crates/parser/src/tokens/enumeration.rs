@@ -3,20 +3,14 @@ use std::rc::Rc;
 
 use crate::{
     abi::registry::TypeRegistry,
-    tokens::{genericity, utils, Token},
+    tokens::{genericity, utils, NamedToken, Token},
     CainomeResult,
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct EnumInner {
-    pub name: String,
-    pub token: Rc<RefCell<Token>>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub struct Enum {
     pub type_path: String,
-    pub variants: Vec<EnumInner>,
+    pub variants: Vec<NamedToken>,
     pub generic_args: Vec<(String, Rc<RefCell<Token>>)>,
     pub alias: Option<String>,
 }

@@ -1,18 +1,20 @@
-use cainome_parser::tokens::{CoreBasic, Enum, Token};
+use cainome_parser::tokens::{CoreBasic, Enum, NamedToken, Token};
 use proc_macro2::TokenStream;
 use quote::quote;
 
 use crate::expand::types::CairoToRust;
 use crate::expand::{utils, Expandable, ExpansionContext};
 
-fn expand_decl(e: &Enum, ctx: &ExpansionContext) -> TokenStream {
-    let type_name = e.type_name();
-
+pub fn enum_declaration(
+    type_name: &str,
+    variants: &Vec<NamedToken>,
+    ctx: &ExpansionContext,
+) -> TokenStream {
     let enum_name = utils::str_to_ident(&type_name);
 
-    let mut variants: Vec<TokenStream> = vec![];
+    let mut generated_variants: Vec<TokenStream> = vec![];
 
-    for inner in &e.variants {
+    for inner in variants {
         let name = utils::str_to_ident(&inner.name);
 
         let token = &*inner.token.borrow();
@@ -20,11 +22,11 @@ fn expand_decl(e: &Enum, ctx: &ExpansionContext) -> TokenStream {
 
         match &*inner.token.borrow() {
             Token::Basic(CoreBasic { type_path }) if type_path == "()" => {
-                variants.push(quote!(#serde #name));
+                generated_variants.push(quote!(#serde #name));
             }
             _ => {
                 let ty = utils::str_to_type(&token.to_rust_type());
-                variants.push(quote!(#serde #name(#ty)));
+                generated_variants.push(quote!(#serde #name(#ty)));
             }
         }
     }
@@ -43,21 +45,26 @@ fn expand_decl(e: &Enum, ctx: &ExpansionContext) -> TokenStream {
 
     quote! {
         #derive
+
         pub enum #enum_name {
-            #(#variants),*
+            #(#generated_variants),*
         }
     }
 }
 
-fn expand_impl(e: &Enum, ctx: &ExpansionContext) -> TokenStream {
-    let type_name = e.type_path.split("::").last().unwrap();
+pub fn enum_implementation(
+    type_name: &str,
+    variants: &Vec<NamedToken>,
+    ctx: &ExpansionContext,
+) -> TokenStream {
     let enum_name = utils::str_to_ident(type_name);
+    let enum_name_str = utils::str_to_litstr(type_name);
 
     let mut serialized_sizes: Vec<TokenStream> = vec![];
     let mut serializations: Vec<TokenStream> = vec![];
     let mut deserializations: Vec<TokenStream> = vec![];
 
-    for (variant_index, inner) in e.variants.iter().enumerate() {
+    for (variant_index, inner) in variants.iter().enumerate() {
         let variant_name = utils::str_to_ident(&inner.name);
         let token = &*inner.token.borrow();
 
@@ -113,7 +120,7 @@ fn expand_impl(e: &Enum, ctx: &ExpansionContext) -> TokenStream {
     });
 
     deserializations.push(quote! {
-        _ => return Err(#ccs::Error::Deserialize(format!("Index not handle for enum {}", #enum_name)))
+        _ => return Err(#ccs::Error::Deserialize(format!("Index not handle for enum {}", #enum_name_str)))
     });
 
     let (impl_line, rust_type) = (
@@ -157,18 +164,24 @@ fn expand_impl(e: &Enum, ctx: &ExpansionContext) -> TokenStream {
 }
 
 impl Expandable for Enum {
-    fn expand(&self, expansion_context: &ExpansionContext) -> Vec<TokenStream> {
-        return vec![
-            expand_decl(self, expansion_context),
-            expand_impl(self, expansion_context),
-        ];
+    fn expand(&self, expansion_context: &ExpansionContext) -> TokenStream {
+        let name = self.type_name();
+
+        let declaration = enum_declaration(&name, &self.variants, expansion_context);
+        let implementation = enum_implementation(&name, &self.variants, expansion_context);
+
+        quote! {
+            #declaration
+
+            #implementation
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use cainome_parser::{
-        tokens::{Enum, EnumInner},
+        tokens::{Enum, NamedToken},
         TypeRegistry,
     };
     use proc_macro2::TokenStream;
@@ -177,9 +190,8 @@ mod tests {
 
     use crate::expand::{Expandable, ExpansionContext};
 
-    fn assert_code_has<T: ToTokens>(generated: &Vec<TokenStream>, expected: &T, message: &str) {
-        let joined = quote! { #(#generated)* };
-        let file: syn::File = syn::parse2(joined.clone()).expect("expected file-like tokens");
+    fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
+        let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
 
         let expected_str = expected.to_token_stream().to_string();
 
@@ -197,7 +209,7 @@ mod tests {
             "{}. Expected: {} In: {}",
             message,
             expected_str,
-            joined.to_string()
+            generated.to_string()
         );
     }
 
@@ -224,7 +236,7 @@ mod tests {
 
         let mut enumeration = Enum::new("my::Enum".to_string(), &registry).unwrap();
 
-        enumeration.variants.push(EnumInner {
+        enumeration.variants.push(NamedToken {
             name: "variant1".to_string(),
             token: registry.get("felt").unwrap(),
         });

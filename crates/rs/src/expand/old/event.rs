@@ -1,5 +1,5 @@
-use cainome_parser::tokens::{CompositeLegacy, CompositeInnerKind, Token};
-use proc_macro2::TokenStream as TokenStream2;
+use cainome_parser::tokens::{CompositeInnerKind, CompositeLegacy, Token};
+use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{LitStr, Type};
 
@@ -10,7 +10,7 @@ pub struct CairoEnumEvent;
 
 /// Expansion of Cairo event enumeration.
 impl CairoEnumEvent {
-    pub fn expand(composite: &CompositeLegacy, enums: &[Token], structs: &[Token]) -> TokenStream2 {
+    pub fn expand(composite: &CompositeLegacy, enums: &[Token], structs: &[Token]) -> TokenStream {
         if !composite.is_event {
             return quote!();
         }
@@ -193,24 +193,8 @@ impl CairoEnumEvent {
             };
 
             match inner.kind {
-                CompositeInnerKind::Key => {
-                    desers_tokens.push(quote! {
-                        let #name = match #ty_punctuated::cairo_deserialize(&event.keys, key_offset) {
-                            Ok(v) => v,
-                            Err(e) => return Err(format!("Could not deserialize field {} for {}: {:?}", #name_str, #variant_name, e)),
-                        };
-                        key_offset += #ty_punctuated::cairo_serialized_size(&#name);
-                    });
-                }
-                CompositeInnerKind::Data => {
-                    desers_tokens.push(quote! {
-                        let #name = match #ty_punctuated::cairo_deserialize(&event.data, data_offset) {
-                            Ok(v) => v,
-                            Err(e) => return Err(format!("Could not deserialize field {} for {}: {:?}", #name_str, #variant_name, e)),
-                        };
-                        data_offset += #ty_punctuated::cairo_serialized_size(&#name);
-                    });
-                }
+                CompositeInnerKind::Key => {}
+                CompositeInnerKind::Data => {}
                 _ => {}
             };
 

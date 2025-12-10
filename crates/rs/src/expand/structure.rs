@@ -1,17 +1,19 @@
 use crate::expand::{types::CairoToRust, utils, Expandable, ExpansionContext};
-use cainome_parser::tokens::{Struct, Token};
+use cainome_parser::tokens::{NamedToken, Struct, Token};
 use proc_macro2::TokenStream;
 use quote::quote;
 
-fn expand_decl(e: &Struct, ctx: &ExpansionContext) -> TokenStream {
+pub fn struct_declaration(
+    type_name: &str,
+    fields: &Vec<NamedToken>,
+    ctx: &ExpansionContext,
+) -> TokenStream {
     let _ = ctx;
-
-    let type_name = e.type_name();
 
     let struct_name = utils::str_to_ident(&type_name);
 
     let mut members: Vec<TokenStream> = vec![];
-    for inner in &e.fields {
+    for inner in fields {
         let name = utils::str_to_ident(&inner.name);
         let token = &*inner.token.borrow();
 
@@ -52,9 +54,11 @@ fn expand_decl(e: &Struct, ctx: &ExpansionContext) -> TokenStream {
     }
 }
 
-fn expand_impl(e: &Struct, ctx: &ExpansionContext) -> TokenStream {
-    let type_name = e.type_name();
-
+pub fn struct_implementation(
+    type_name: &str,
+    fields: &Vec<NamedToken>,
+    ctx: &ExpansionContext,
+) -> TokenStream {
     let struct_name = utils::str_to_ident(&type_name);
     let struct_name_str = utils::str_to_litstr(&type_name);
 
@@ -63,7 +67,7 @@ fn expand_impl(e: &Struct, ctx: &ExpansionContext) -> TokenStream {
     let mut desers: Vec<TokenStream> = vec![];
     let mut names: Vec<TokenStream> = vec![];
 
-    for inner in &e.fields {
+    for inner in fields {
         let name = utils::str_to_ident(&inner.name);
         let token = &*inner.token.borrow();
         let ty = utils::str_to_type(&token.to_rust_type_path());
@@ -175,18 +179,24 @@ fn expand_impl(e: &Struct, ctx: &ExpansionContext) -> TokenStream {
 }
 
 impl Expandable for Struct {
-    fn expand(&self, expansion_context: &ExpansionContext) -> Vec<TokenStream> {
-        return vec![
-            expand_decl(self, expansion_context),
-            expand_impl(self, expansion_context),
-        ];
+    fn expand(&self, expansion_context: &ExpansionContext) -> TokenStream {
+        let name = self.type_name();
+
+        let declaration = struct_declaration(&name, &self.fields, expansion_context);
+        let implementation = struct_implementation(&name, &self.fields, expansion_context);
+
+        quote! {
+            #declaration
+
+            #implementation
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use cainome_parser::{
-        tokens::{Struct, StructInner, Token},
+        tokens::{NamedToken, Struct, Token},
         TypeRegistry,
     };
     use proc_macro2::TokenStream;
@@ -195,9 +205,8 @@ mod tests {
 
     use crate::expand::{Expandable, ExpansionContext};
 
-    fn assert_code_has<T: ToTokens>(generated: &Vec<TokenStream>, expected: &T, message: &str) {
-        let joined = quote! { #(#generated)* };
-        let file: syn::File = syn::parse2(joined.clone()).expect("expected file-like tokens");
+    fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
+        let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
 
         let expected_str = expected.to_token_stream().to_string();
 
@@ -215,7 +224,7 @@ mod tests {
             "{}. Expected: {} In: {}",
             message,
             expected_str,
-            joined.to_string()
+            generated.to_string()
         );
     }
 
@@ -244,7 +253,7 @@ mod tests {
 
         let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
 
-        structure.fields.push(StructInner {
+        structure.fields.push(NamedToken {
             name: "f1".to_string(),
             token: registry.get("felt").unwrap(),
         });
@@ -270,7 +279,7 @@ mod tests {
 
         let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
 
-        structure.fields.push(StructInner {
+        structure.fields.push(NamedToken {
             name: "f1".to_string(),
             token: registry.get("felt").unwrap(),
         });
@@ -295,7 +304,7 @@ mod tests {
 
         let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
 
-        structure.fields.push(StructInner {
+        structure.fields.push(NamedToken {
             name: "f1".to_string(),
             token: registry.get("core::option::Option<felt>").unwrap(),
         });
@@ -320,7 +329,7 @@ mod tests {
 
         let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
 
-        structure.fields.push(StructInner {
+        structure.fields.push(NamedToken {
             name: "f1".to_string(),
             token: registry.get("core::array::Array::<core::felt252>").unwrap(),
         });
@@ -345,7 +354,7 @@ mod tests {
 
         let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
 
-        structure.fields.push(StructInner {
+        structure.fields.push(NamedToken {
             name: "f1".to_string(),
             token: registry
                 .get("core::zeroable::NonZero::<core::felt252>")
@@ -372,7 +381,7 @@ mod tests {
 
         let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
 
-        structure.fields.push(StructInner {
+        structure.fields.push(NamedToken {
             name: "f1".to_string(),
             token: registry
                 .get("(core::felt252, core::option::Option<felt>)")
@@ -402,7 +411,7 @@ mod tests {
             registry.set("my::Type", Token::Placeholder);
             // Construct type
             let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
-            structure.fields.push(StructInner {
+            structure.fields.push(NamedToken {
                 name: "f1".to_string(),
                 token: registry.get("my::Type").unwrap(),
             });

@@ -1,6 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, fmt::format, rc::Rc};
 
 use crate::{
+    abi::extensions::TryTokenConvertable,
     tokens::{
         constants, ArrayContainer, CoreBasic, NonZeroContainer, OptionContainer, ResultContainer,
         Token, TupleContainer,

@@ -3,7 +3,7 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::rc::Rc;
 
-use crate::abi::extensions::{Named, TryTokenConvertable};
+use crate::abi::extensions::TryTokenConvertable;
 use crate::abi::registry::TypeRegistry;
 use crate::tokens::Token;
 use crate::{CainomeResult, Error};
@@ -24,6 +24,16 @@ pub struct TokenizedAbi {
 }
 
 pub struct AbiParser {}
+
+pub trait WithDependencies {
+    fn get_dependencies(&self) -> Vec<String>;
+}
+
+pub trait Named {
+    fn get_name(&self) -> String;
+}
+
+pub trait Parsable: TryTokenConvertable + Named + WithDependencies + Clone {}
 
 impl AbiParser {
     /// Generates the [`Token`]s from the given ABI string.
@@ -65,124 +75,26 @@ impl AbiParser {
         Ok(entries)
     }
 
-    // TODO: think on using visitor pattern (not only in that case).
-    fn has_unknown_dependencies(
-        entry: &AbiEntry,
+    fn has_unknown_dependencies<T>(
+        entry: &T,
         registry: &TypeRegistry,
-    ) -> CainomeResult<Option<String>> {
-        match entry {
-            // move to abi extensions
-            AbiEntry::Function(abi_function) => {
-                for item in abi_function.inputs.iter() {
-                    if !registry.is_known_type(&item.r#type)? {
-                        return Ok(Some(item.r#type.to_string()));
-                    }
-                }
-
-                for item in abi_function.outputs.iter() {
-                    if !registry.is_known_type(&item.r#type)? {
-                        return Ok(Some(item.r#type.to_string()));
-                    }
-                }
-
-                Ok(None)
-            }
-            AbiEntry::Event(abi_event) => match abi_event {
-                AbiEvent::Typed(typed_abi_event) => match typed_abi_event {
-                    TypedAbiEvent::Struct(abi_event_struct) => {
-                        for item in abi_event_struct.members.iter() {
-                            if !registry.is_known_type(&item.r#type)? {
-                                return Ok(Some(item.r#type.to_string()));
-                            }
-                        }
-
-                        Ok(None)
-                    }
-                    TypedAbiEvent::Enum(abi_event_enum) => {
-                        for item in abi_event_enum.variants.iter() {
-                            if !registry.is_known_type(&item.r#type)? {
-                                return Ok(Some(item.r#type.to_string()));
-                            }
-                        }
-                        Ok(None)
-                    }
-                },
-                AbiEvent::Untyped(event) => {
-                    for item in event.inputs.iter() {
-                        if !registry.is_known_type(&item.r#type)? {
-                            return Ok(Some(item.r#type.to_string()));
-                        }
-                    }
-                    Ok(None)
-                }
-            },
-
-            AbiEntry::Struct(abi_struct) => {
-                for item in abi_struct.members.iter() {
-                    if !registry.is_known_type(&item.r#type)? {
-                        return Ok(Some(item.r#type.to_string()));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            AbiEntry::Enum(abi_enum) => {
-                for item in abi_enum.variants.iter() {
-                    if !registry.is_known_type(&item.r#type)? {
-                        return Ok(Some(item.r#type.to_string()));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            AbiEntry::Constructor(abi_constructor) => {
-                for item in abi_constructor.inputs.iter() {
-                    if !registry.is_known_type(&item.r#type)? {
-                        return Ok(Some(item.r#type.to_string()));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            AbiEntry::Interface(abi_interface) => {
-                for item in abi_interface.items.iter() {
-                    if let Some(unknown_field) = Self::has_unknown_dependencies(item, registry)? {
-                        return Ok(Some(unknown_field));
-                    }
-                }
-
-                Ok(None)
-            }
-
-            AbiEntry::L1Handler(abi_function) => {
-                for item in abi_function.inputs.iter() {
-                    if !registry.is_known_type(&item.r#type)? {
-                        return Ok(Some(item.r#type.to_string()));
-                    }
-                }
-
-                for item in abi_function.outputs.iter() {
-                    if !registry.is_known_type(&item.r#type)? {
-                        return Ok(Some(item.r#type.to_string()));
-                    }
-                }
-
-                Ok(None)
-            }
-            AbiEntry::Impl(abi_impl) => {
-                if !registry.is_known_type(&abi_impl.interface_name)? {
-                    return Ok(Some(abi_impl.interface_name.clone()));
-                }
-
-                Ok(None)
+    ) -> CainomeResult<Option<String>>
+    where
+        T: WithDependencies,
+    {
+        for dep in entry.get_dependencies().iter() {
+            if !registry.is_known_type(dep)? {
+                return Ok(Some(dep.to_string()));
             }
         }
+
+        Ok(None)
     }
 
-    pub fn build_registry(entries: Vec<AbiEntry>) -> CainomeResult<TypeRegistry> {
+    pub fn build_registry<T>(entries: Vec<T>) -> CainomeResult<TypeRegistry>
+    where
+        T: Parsable,
+    {
         let mut registry = TypeRegistry::new();
 
         let mut local_entries = VecDeque::from(entries.clone());
@@ -260,7 +172,10 @@ impl AbiParser {
     }
 
     /// Parse all tokens in the ABI.
-    pub fn collect_tokens(entries: Vec<AbiEntry>) -> CainomeResult<TokenizedAbi> {
+    pub fn collect_tokens<T>(entries: Vec<T>) -> CainomeResult<TokenizedAbi>
+    where
+        T: Parsable,
+    {
         // This procedure will populate all the tokens
         let registry = Self::build_registry(entries)?;
 

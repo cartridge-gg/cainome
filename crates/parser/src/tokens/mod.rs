@@ -12,6 +12,7 @@ mod event;
 mod function;
 mod genericity;
 mod interface;
+mod named_token;
 mod non_zero;
 mod option;
 mod result;
@@ -23,14 +24,15 @@ pub use array::ArrayContainer;
 pub use basic::CoreBasic;
 pub use composite::{CompositeInner, CompositeInnerKind, CompositeLegacy, CompositeType};
 pub use constructor::Constructor;
-pub use enumeration::{Enum, EnumInner};
-pub use event::{Event, EventInner};
-pub use function::{FuncInner, Function, FunctionOutputKind, StateMutability};
+pub use enumeration::Enum;
+pub use event::{Event, EventKind};
+pub use function::{Function, FunctionOutputKind, StateMutability};
 pub use interface::Interface;
+pub use named_token::NamedToken;
 pub use non_zero::NonZeroContainer;
 pub use option::OptionContainer;
 pub use result::ResultContainer;
-pub use structure::{Struct, StructInner};
+pub use structure::Struct;
 pub use tuple::TupleContainer;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -54,6 +56,7 @@ pub enum Token {
     // Composite types
     Struct(Struct),
     Event(Event),
+
     Enum(Enum),
     Function(Function),
     Interface(Interface),

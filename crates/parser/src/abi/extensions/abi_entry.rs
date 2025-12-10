@@ -2,16 +2,25 @@ use std::{cell::RefCell, rc::Rc};
 
 use starknet::core::types::{
     contract::{
-        legacy::{RawLegacyEvent, RawLegacyStruct},
+        legacy::{
+            RawLegacyAbiEntry, RawLegacyConstructor, RawLegacyEvent, RawLegacyFunction,
+            RawLegacyL1Handler, RawLegacyStruct,
+        },
         AbiEntry, AbiEnum, AbiEvent, AbiEventEnum, AbiEventStruct, AbiFunction, AbiInterface,
         AbiStruct, EventFieldKind, TypedAbiEvent, UntypedAbiEvent,
     },
     LegacyEventAbiEntry,
 };
 
-use crate::{abi::registry::TypeRegistry, tokens::Interface};
 use crate::{
-    tokens::{Enum, EnumInner, Event, EventInner, FuncInner, Function, Struct, StructInner, Token},
+    abi::{
+        parser::{Named, Parsable, WithDependencies},
+        registry::TypeRegistry,
+    },
+    tokens::{EventKind, Interface},
+};
+use crate::{
+    tokens::{Enum, Event, Function, NamedToken, Struct, Token},
     CainomeResult,
 };
 
@@ -32,10 +41,6 @@ where
     }
 }
 
-pub trait Named {
-    fn get_name(&self) -> String;
-}
-
 impl TokenConvertable for &AbiStruct {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
         let mut structure = Struct::new(self.name.clone(), &registry)?;
@@ -43,7 +48,7 @@ impl TokenConvertable for &AbiStruct {
         for field in self.members.iter() {
             let token = registry.get(&field.r#type).unwrap();
 
-            structure.fields.push(StructInner {
+            structure.fields.push(NamedToken {
                 name: field.name.clone(),
                 token: token,
             });
@@ -60,7 +65,7 @@ impl TokenConvertable for &AbiEnum {
         for field in self.variants.iter() {
             let token = registry.get(&field.r#type).unwrap();
 
-            enumeration.variants.push(EnumInner {
+            enumeration.variants.push(NamedToken {
                 name: field.name.clone(),
                 token: token,
             });
@@ -72,12 +77,12 @@ impl TokenConvertable for &AbiEnum {
 
 impl TokenConvertable for &UntypedAbiEvent {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
-        let mut event = Event::new(self.name.clone(), &registry)?;
+        let mut event = Event::new(self.name.clone(), EventKind::Struct, &registry)?;
 
         for field in self.inputs.iter() {
             let token = registry.get(&field.r#type)?;
 
-            event.data.push(EventInner {
+            event.data.push(NamedToken {
                 name: field.name.clone(),
                 token: token,
             });
@@ -89,17 +94,17 @@ impl TokenConvertable for &UntypedAbiEvent {
 
 impl TokenConvertable for &AbiEventStruct {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
-        let mut event = Event::new(self.name.clone(), &registry)?;
+        let mut event = Event::new(self.name.clone(), EventKind::Struct, &registry)?;
 
         for m in self.members.iter() {
             let token = registry.get(&m.r#type)?;
 
-            let inner = EventInner {
+            let inner = NamedToken {
                 name: m.name.clone(),
                 token: token,
             };
 
-            // nested and falt could be omitted here I suppose.
+            // TODO: seems like it's a problem with ABI spec. nested and flat should not be here.
             match m.kind {
                 EventFieldKind::Key => event.keys.push(inner),
                 EventFieldKind::Data => event.data.push(inner),
@@ -114,12 +119,12 @@ impl TokenConvertable for &AbiEventStruct {
 
 impl TokenConvertable for &AbiEventEnum {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
-        let mut event = Event::new(self.name.clone(), &registry)?;
+        let mut event = Event::new(self.name.clone(), EventKind::Enum, &registry)?;
 
         for m in self.variants.iter() {
             let token = registry.get(&m.r#type)?;
 
-            let inner = EventInner {
+            let inner = NamedToken {
                 name: m.name.clone(),
                 token: token,
             };
@@ -139,12 +144,12 @@ impl TokenConvertable for &AbiEventEnum {
 
 impl TokenConvertable for &RawLegacyEvent {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
-        let mut event = Event::new(self.name.clone(), &registry)?;
+        let mut event = Event::new(self.name.clone(), EventKind::Struct, &registry)?;
 
         for m in self.data.iter() {
             let token = registry.get(&m.r#type)?;
 
-            event.data.push(EventInner {
+            event.data.push(NamedToken {
                 name: m.name.clone(),
                 token: token,
             });
@@ -153,7 +158,7 @@ impl TokenConvertable for &RawLegacyEvent {
         for m in self.keys.iter() {
             let token = registry.get(&m.r#type)?;
 
-            event.keys.push(EventInner {
+            event.keys.push(NamedToken {
                 name: m.name.clone(),
                 token: token,
             });
@@ -170,7 +175,7 @@ impl TokenConvertable for &RawLegacyStruct {
         for field in self.members.iter() {
             let token = registry.get(&field.r#type)?;
 
-            structure.fields.push(StructInner {
+            structure.fields.push(NamedToken {
                 name: field.name.clone(),
                 token: token,
             });
@@ -187,7 +192,7 @@ impl TokenConvertable for &AbiFunction {
         for input in self.inputs.iter() {
             let token = registry.get(&input.r#type)?;
 
-            function.inputs.push(FuncInner {
+            function.inputs.push(NamedToken {
                 name: input.name.clone(),
                 token: token,
             });
@@ -264,9 +269,214 @@ impl Named for AbiEntry {
     }
 }
 
-impl TokenConvertable for LegacyEventAbiEntry {
+impl WithDependencies for AbiEntry {
+    fn get_dependencies(&self) -> Vec<String> {
+        match &self {
+            // move to abi extensions
+            AbiEntry::Function(abi_function) => {
+                let inputs: Vec<String> = abi_function
+                    .inputs
+                    .iter()
+                    .map(|i| i.r#type.to_string())
+                    .collect();
+
+                let outputs: Vec<String> = abi_function
+                    .outputs
+                    .iter()
+                    .map(|i| i.r#type.to_string())
+                    .collect();
+
+                [inputs, outputs].concat()
+            }
+            AbiEntry::Event(abi_event) => match abi_event {
+                AbiEvent::Typed(typed_abi_event) => match typed_abi_event {
+                    TypedAbiEvent::Struct(abi_event_struct) => abi_event_struct
+                        .members
+                        .iter()
+                        .map(|i| i.r#type.to_string())
+                        .collect(),
+                    TypedAbiEvent::Enum(abi_event_enum) => abi_event_enum
+                        .variants
+                        .iter()
+                        .map(|i| i.r#type.to_string())
+                        .collect(),
+                },
+                AbiEvent::Untyped(event) => {
+                    event.inputs.iter().map(|i| i.r#type.to_string()).collect()
+                }
+            },
+
+            AbiEntry::Struct(abi_struct) => abi_struct
+                .members
+                .iter()
+                .map(|i| i.r#type.to_string())
+                .collect(),
+
+            AbiEntry::Enum(abi_enum) => abi_enum
+                .variants
+                .iter()
+                .map(|i| i.r#type.to_string())
+                .collect(),
+
+            AbiEntry::Constructor(abi_constructor) => abi_constructor
+                .inputs
+                .iter()
+                .map(|i| i.r#type.to_string())
+                .collect(),
+
+            AbiEntry::Interface(abi_interface) => {
+                let mut dependecies = vec![];
+
+                for item in abi_interface.items.iter() {
+                    dependecies.push(item.get_dependencies());
+                }
+
+                dependecies.concat()
+            }
+
+            AbiEntry::L1Handler(abi_function) => {
+                let inputs: Vec<String> = abi_function
+                    .inputs
+                    .iter()
+                    .map(|i| i.r#type.to_string())
+                    .collect();
+
+                let outputs: Vec<String> = abi_function
+                    .outputs
+                    .iter()
+                    .map(|i| i.r#type.to_string())
+                    .collect();
+
+                [inputs, outputs].concat()
+            }
+            AbiEntry::Impl(abi_impl) => vec![abi_impl.interface_name.clone()],
+        }
+    }
+}
+
+impl Parsable for AbiEntry {}
+
+impl TokenConvertable for RawLegacyAbiEntry {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
-        todo!()
+        match self {
+            RawLegacyAbiEntry::Constructor(constructor) => todo!(),
+            RawLegacyAbiEntry::Function(function) => function.to_token(registry),
+            RawLegacyAbiEntry::Struct(structure) => structure.to_token(registry),
+            RawLegacyAbiEntry::L1Handler(l1_handler) => l1_handler.to_token(registry),
+            RawLegacyAbiEntry::Event(event) => event.to_token(registry),
+        }
+    }
+}
+
+impl Named for RawLegacyAbiEntry {
+    fn get_name(&self) -> String {
+        match &self {
+            RawLegacyAbiEntry::Constructor(constructor) => constructor.name.clone(),
+            RawLegacyAbiEntry::Function(function) => function.name.clone(),
+            RawLegacyAbiEntry::Struct(structure) => structure.name.clone(),
+            RawLegacyAbiEntry::L1Handler(l1_handler) => l1_handler.name.clone(),
+            RawLegacyAbiEntry::Event(event) => event.name.clone(),
+        }
+    }
+}
+
+impl WithDependencies for RawLegacyAbiEntry {
+    fn get_dependencies(&self) -> Vec<String> {
+        match &self {
+            RawLegacyAbiEntry::Constructor(constructor) => constructor
+                .inputs
+                .iter()
+                .map(|i| i.r#type.to_string())
+                .collect(),
+            RawLegacyAbiEntry::Function(function) => {
+                let inputs: Vec<String> = function
+                    .inputs
+                    .iter()
+                    .map(|i| i.r#type.to_string())
+                    .collect();
+
+                let outputs: Vec<String> = function
+                    .outputs
+                    .iter()
+                    .map(|i| i.r#type.to_string())
+                    .collect();
+
+                [inputs, outputs].concat()
+            }
+            RawLegacyAbiEntry::Struct(structure) => structure
+                .members
+                .iter()
+                .map(|i| i.r#type.to_string())
+                .collect(),
+            RawLegacyAbiEntry::L1Handler(l1_handler) => {
+                let inputs: Vec<String> = l1_handler
+                    .inputs
+                    .iter()
+                    .map(|i| i.r#type.to_string())
+                    .collect();
+
+                let outputs: Vec<String> = l1_handler
+                    .outputs
+                    .iter()
+                    .map(|i| i.r#type.to_string())
+                    .collect();
+
+                [inputs, outputs].concat()
+            }
+            RawLegacyAbiEntry::Event(event) => {
+                let data: Vec<String> = event.data.iter().map(|i| i.r#type.to_string()).collect();
+
+                let keys: Vec<String> = event.keys.iter().map(|i| i.r#type.to_string()).collect();
+
+                [data, keys].concat()
+            }
+        }
+    }
+}
+
+impl Parsable for RawLegacyAbiEntry {}
+
+impl TokenConvertable for &RawLegacyFunction {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+        let mut function = Function::new(&self.name, self.state_mutability.clone().into());
+
+        for input in self.inputs.iter() {
+            let token = registry.get(&input.r#type)?;
+
+            function.inputs.push(NamedToken {
+                name: input.name.clone(),
+                token: token,
+            });
+        }
+
+        for output in self.outputs.iter() {
+            let token = registry.get(&output.r#type)?;
+            function.outputs.push(token);
+        }
+
+        Ok(Token::Function(function))
+    }
+}
+
+impl TokenConvertable for &RawLegacyL1Handler {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+        let mut function = Function::new(&self.name, crate::tokens::StateMutability::External);
+
+        for input in self.inputs.iter() {
+            let token = registry.get(&input.r#type)?;
+
+            function.inputs.push(NamedToken {
+                name: input.name.clone(),
+                token: token,
+            });
+        }
+
+        for output in self.outputs.iter() {
+            let token = registry.get(&output.r#type)?;
+            function.outputs.push(token);
+        }
+
+        Ok(Token::Function(function))
     }
 }
 

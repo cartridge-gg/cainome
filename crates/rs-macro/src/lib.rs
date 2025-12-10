@@ -1,4 +1,4 @@
-use cainome_parser::{AbiParser, AbiParserLegacy};
+use cainome_parser::AbiParser;
 use cainome_rs::{self};
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
@@ -32,8 +32,8 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
     let abi_tokens = AbiParser::collect_tokens(abi_entries).expect("failed tokens parsing");
 
     let expanded = cainome_rs::abi_to_tokenstream(
-        &abi_tokens,
         &contract_name.to_string(),
+        &abi_tokens,
         contract_abi.execution_version,
         &contract_abi.derives,
         &contract_abi.contract_derives,
@@ -59,8 +59,7 @@ fn abigen_internal_legacy(input: TokenStream) -> TokenStream {
     let abi_entries = contract_abi.abi;
     let contract_name = contract_abi.name;
 
-    let abi_tokens = AbiParserLegacy::collect_tokens(&abi_entries, &contract_abi.type_aliases)
-        .expect("failed tokens parsing");
+    let abi_tokens = AbiParser::collect_tokens(abi_entries).expect("failed tokens parsing");
 
     let expanded = cainome_rs::abi_to_tokenstream(
         &contract_name.to_string(),

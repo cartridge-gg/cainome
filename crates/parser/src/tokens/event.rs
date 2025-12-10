@@ -6,27 +6,32 @@ use super::genericity;
 use super::Token;
 
 use crate::abi::registry::TypeRegistry;
-use crate::tokens::utils;
+use crate::tokens::{utils, NamedToken};
 use crate::CainomeResult;
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct EventInner {
-    pub name: String,
-    pub token: Rc<RefCell<Token>>,
+pub enum EventKind {
+    Enum,
+    Struct,
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Event {
+    pub kind: EventKind, // TODO: split into different structs?
     pub type_path: String,
-    pub keys: Vec<EventInner>,
-    pub data: Vec<EventInner>,
-    pub nested: Vec<EventInner>,
-    pub flat: Vec<EventInner>,
+
+    // Only for kind == Struct
+    pub keys: Vec<NamedToken>,
+    pub data: Vec<NamedToken>,
+
+    // Only for kind == Enum
+    pub nested: Vec<NamedToken>,
+    pub flat: Vec<NamedToken>,
     pub generic_args: Vec<(String, Rc<RefCell<Token>>)>,
 }
 
 impl Event {
-    pub fn new(type_path: String, registry: &TypeRegistry) -> CainomeResult<Self> {
+    pub fn new(type_path: String, kind: EventKind, registry: &TypeRegistry) -> CainomeResult<Self> {
         let type_path = utils::escape_rust_keywords(&type_path);
         let generic_args = genericity::extract_generics_args(&type_path)?;
 
@@ -36,12 +41,13 @@ impl Event {
             .collect();
 
         return Ok(Self {
+            kind: kind,
             type_path,
             generic_args: generic_args_with_types,
             keys: vec![],
             data: vec![],
-            nested: vec![],
             flat: vec![],
+            nested: vec![],
         });
     }
 

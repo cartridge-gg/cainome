@@ -3,11 +3,9 @@ use std::{collections::HashMap, rc::Rc};
 use starknet::core::types::contract::SierraClass;
 
 use crate::{
-    tokens::{Container, CoreBasic, StateMutability, Token},
+    tokens::{EventKind, StateMutability, Token},
     AbiParser,
 };
-
-// Unconvertible
 
 #[test]
 fn recursive_struct_parsing() {
@@ -1183,4 +1181,179 @@ fn test_collect_tokens() {
     assert_ne!(tokens.functions.len(), 0);
     assert_ne!(tokens.interfaces.len(), 0);
     assert_ne!(tokens.structs.len(), 0);
+}
+
+#[test]
+fn events_parsing() {
+    let abi_json = format!(
+        r#"[
+            {{
+                "type": "event",
+                "name": "zzz::HelloStarknet::BookAdded",
+                "kind": "struct",
+                "members": [
+                    {{
+                        "name": "id",
+                        "type": "core::integer::u32",
+                        "kind": "data"
+                    }},
+                    {{
+                        "name": "title",
+                        "type": "core::felt252",
+                        "kind": "data"
+                    }},
+                    {{
+                        "name": "author",
+                        "type": "core::felt252",
+                        "kind": "key"
+                    }}
+                ]
+            }},
+            {{
+                "type": "event",
+                "name": "zzz::HelloStarknet::UpdatedTitleData",
+                "kind": "struct",
+                "members": [
+                    {{
+                        "name": "id",
+                        "type": "core::integer::u32",
+                        "kind": "key"
+                    }},
+                    {{
+                        "name": "new_title",
+                        "type": "core::felt252",
+                        "kind": "data"
+                    }}
+                ]
+            }},
+            {{
+                "type": "event",
+                "name": "zzz::HelloStarknet::UpdatedAuthorData",
+                "kind": "struct",
+                "members": [
+                    {{
+                        "name": "id",
+                        "type": "core::integer::u32",
+                        "kind": "key"
+                    }},
+                    {{
+                        "name": "new_author",
+                        "type": "core::felt252",
+                        "kind": "data"
+                    }}
+                ]
+            }},
+            {{
+                "type": "event",
+                "name": "zzz::HelloStarknet::FieldUpdated",
+                "kind": "enum",
+                "variants": [
+                    {{
+                        "name": "Title",
+                        "type": "zzz::HelloStarknet::UpdatedTitleData",
+                        "kind": "nested"
+                    }},
+                    {{
+                        "name": "Author",
+                        "type": "zzz::HelloStarknet::UpdatedAuthorData",
+                        "kind": "nested"
+                    }}
+                ]
+            }},
+            {{
+                "type": "event",
+                "name": "zzz::HelloStarknet::BookRemoved",
+                "kind": "struct",
+                "members": [
+                    {{
+                        "name": "id",
+                        "type": "core::integer::u32",
+                        "kind": "data"
+                    }}
+                ]
+            }},
+            {{
+                "type": "event",
+                "name": "zzz::HelloStarknet::Event",
+                "kind": "enum",
+                "variants": [
+                    {{
+                        "name": "BookAdded",
+                        "type": "zzz::HelloStarknet::BookAdded",
+                        "kind": "nested"
+                    }},
+                    {{
+                        "name": "FieldUpdated",
+                        "type": "zzz::HelloStarknet::FieldUpdated",
+                        "kind": "flat"
+                    }},
+                    {{
+                        "name": "BookRemoved",
+                        "type": "zzz::HelloStarknet::BookRemoved",
+                        "kind": "nested"
+                    }}
+                ]
+            }}
+        ]"#
+    );
+
+    let result = AbiParser::tokens_from_abi_string(&abi_json, &HashMap::new()).unwrap();
+
+    assert_eq!(result.enums.len(), 0);
+    assert_eq!(result.structs.len(), 0);
+    assert_eq!(result.interfaces.len(), 0);
+    assert_eq!(result.events.len(), 6);
+    assert_eq!(result.functions.len(), 0);
+
+    for token in result.events.iter() {
+        let Token::Event(event) = &*token.borrow() else {
+            panic!("Only element parsed from ABI should be Token::Event");
+        };
+
+        match event.type_path.as_str() {
+            "zzz::HelloStarknet::Event" => {
+                assert_eq!(event.kind, EventKind::Enum);
+                assert_eq!(event.flat.len(), 1);
+                assert_eq!(event.nested.len(), 2);
+                assert_eq!(event.data.len(), 0);
+                assert_eq!(event.keys.len(), 0);
+            }
+            "zzz::HelloStarknet::FieldUpdated" => {
+                assert_eq!(event.kind, EventKind::Enum);
+                assert_eq!(event.flat.len(), 0);
+                assert_eq!(event.nested.len(), 2);
+                assert_eq!(event.data.len(), 0);
+                assert_eq!(event.keys.len(), 0);
+            }
+            "zzz::HelloStarknet::BookAdded" => {
+                assert_eq!(event.kind, EventKind::Struct);
+                assert_eq!(event.flat.len(), 0);
+                assert_eq!(event.nested.len(), 0);
+                assert_eq!(event.data.len(), 2);
+                assert_eq!(event.keys.len(), 1);
+            }
+            "zzz::HelloStarknet::UpdatedTitleData" => {
+                assert_eq!(event.kind, EventKind::Struct);
+                assert_eq!(event.flat.len(), 0);
+                assert_eq!(event.nested.len(), 0);
+                assert_eq!(event.data.len(), 1);
+                assert_eq!(event.keys.len(), 1);
+            }
+            "zzz::HelloStarknet::UpdatedAuthorData" => {
+                assert_eq!(event.kind, EventKind::Struct);
+                assert_eq!(event.flat.len(), 0);
+                assert_eq!(event.nested.len(), 0);
+                assert_eq!(event.data.len(), 1);
+                assert_eq!(event.keys.len(), 1);
+            }
+            "zzz::HelloStarknet::BookRemoved" => {
+                assert_eq!(event.kind, EventKind::Struct);
+                assert_eq!(event.flat.len(), 0);
+                assert_eq!(event.nested.len(), 0);
+                assert_eq!(event.data.len(), 1);
+                assert_eq!(event.keys.len(), 0);
+            }
+            _ => (),
+        }
+    }
 }

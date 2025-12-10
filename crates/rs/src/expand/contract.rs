@@ -1,5 +1,5 @@
 use cainome_parser::{
-    tokens::{FuncInner, Function, FunctionOutputKind, Token},
+    tokens::{Function, FunctionOutputKind, NamedToken, Token},
     TokenizedAbi,
 };
 use proc_macro2::TokenStream;
@@ -47,7 +47,7 @@ impl CairoContract {
     fn get_inputs_for_func(f: &Function) -> Vec<TokenStream> {
         let mut out: Vec<TokenStream> = vec![];
 
-        for FuncInner { name, token } in f.inputs.iter() {
+        for NamedToken { name, token } in f.inputs.iter() {
             let name = utils::str_to_ident(name);
             let token = &*token.borrow();
             let ty = utils::str_to_type(&token.to_rust_type_path());
@@ -60,7 +60,7 @@ impl CairoContract {
     fn get_serializations_for_func(f: &Function) -> Vec<TokenStream> {
         let mut serializations: Vec<TokenStream> = vec![];
 
-        for FuncInner { name, token } in f.inputs.iter() {
+        for NamedToken { name, token } in f.inputs.iter() {
             let name = utils::str_to_ident(name);
             let token = &*token.borrow();
             let ty = utils::str_to_type(&token.to_rust_type_path());
@@ -195,7 +195,7 @@ impl CairoContract {
 }
 
 impl Expandable for CairoContract {
-    fn expand(&self, expansion_context: &super::ExpansionContext) -> Vec<TokenStream> {
+    fn expand(&self, expansion_context: &super::ExpansionContext) -> TokenStream {
         let contract_name = self.name.clone();
         let reader = utils::str_to_ident(format!("{}Reader", contract_name).as_str());
 
@@ -301,6 +301,6 @@ impl Expandable for CairoContract {
             }
         };
 
-        vec![q]
+        q
     }
 }

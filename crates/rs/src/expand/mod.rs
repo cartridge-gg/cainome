@@ -5,17 +5,23 @@ pub(crate) mod structure;
 mod types;
 pub(crate) mod utils;
 
+use cainome_parser::tokens::{
+    ArrayContainer, NonZeroContainer, OptionContainer, ResultContainer, TupleContainer,
+};
 use proc_macro2::TokenStream;
-use quote::ToTokens;
+use quote::quote;
 
-use crate::ExecutionVersion;
+use crate::{expand::types::CairoToRust, ExecutionVersion};
 
 #[derive(Clone)]
 pub struct ExpansionContext {
     pub contract_name: String,
     pub derives: Vec<String>,
     pub execution_version: ExecutionVersion,
+    // TODO: move into enum expansion context?
     pub type_param: Option<String>,
+    pub outer_enum: Option<String>,
+    pub variant_name: Option<String>,
 }
 
 impl ExpansionContext {
@@ -25,6 +31,8 @@ impl ExpansionContext {
             contract_name: contract_name.to_string(),
             execution_version: crate::ExecutionVersion::V3,
             type_param: None,
+            outer_enum: None,
+            variant_name: None,
         }
     }
 
@@ -48,8 +56,22 @@ impl ExpansionContext {
             ..self.clone()
         }
     }
+
+    pub fn with_outer_enum(&self, enum_name: &str) -> Self {
+        Self {
+            outer_enum: Some(enum_name.to_string()),
+            ..self.clone()
+        }
+    }
+
+    pub fn with_variant_name(&self, variant_name: &str) -> Self {
+        Self {
+            variant_name: Some(variant_name.to_string()),
+            ..self.clone()
+        }
+    }
 }
 
 pub trait Expandable {
-    fn expand(&self, expansion_context: &ExpansionContext) -> Vec<TokenStream>;
+    fn expand(&self, expansion_context: &ExpansionContext) -> TokenStream;
 }

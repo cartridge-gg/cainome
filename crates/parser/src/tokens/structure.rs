@@ -1,25 +1,19 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    abi::registry::{self, TypeRegistry},
+    abi::registry::TypeRegistry,
     tokens::{
         genericity,
         utils::{self, escape_rust_keywords},
-        Token,
+        NamedToken, Token,
     },
     CainomeResult,
 };
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct StructInner {
-    pub name: String,
-    pub token: Rc<RefCell<Token>>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub struct Struct {
     pub type_path: String,
-    pub fields: Vec<StructInner>,
+    pub fields: Vec<NamedToken>,
     pub generic_args: Vec<(String, Rc<RefCell<Token>>)>,
 }
 

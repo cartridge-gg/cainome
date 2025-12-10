@@ -158,8 +158,8 @@ impl Abigen {
         match AbiParser::tokens_from_abi_string(&file_content, &self.types_aliases) {
             Ok(tokens) => {
                 let expanded = abi_to_tokenstream(
-                    &tokens,
                     &self.contract_name,
+                    &tokens,
                     self.execution_version,
                     &self.derives,
                     &self.contract_derives,
@@ -192,8 +192,8 @@ impl Abigen {
 /// * `contract_derives` - Derives to be added to the generated contract.
 /// * `type_skips` - Types to be skipped from the generated types.
 pub fn abi_to_tokenstream(
-    abi_tokens: &TokenizedAbi,
     contract_name: &str,
+    abi_tokens: &TokenizedAbi,
     execution_version: ExecutionVersion,
     derives: &[String],
     contract_derives: &[String],
@@ -206,9 +206,11 @@ pub fn abi_to_tokenstream(
         derives: derives.to_vec(),
         execution_version: execution_version,
         type_param: None,
+        outer_enum: None,
+        variant_name: None,
     };
 
-    let mut tokens: Vec<TokenStream> = contract.expand(&ctx);
+    let mut tokens: Vec<TokenStream> = vec![contract.expand(&ctx)];
 
     let sorted_structs = abi_tokens.structs.clone();
     let sorted_enums = abi_tokens.enums.clone();
@@ -218,8 +220,8 @@ pub fn abi_to_tokenstream(
             // TODO: log
             continue;
         };
-        let mut expanded = s.expand(&ctx);
-        tokens.append(&mut expanded);
+        let expanded = s.expand(&ctx);
+        tokens.push(expanded);
     }
 
     for enumeration in &sorted_enums {
@@ -228,8 +230,8 @@ pub fn abi_to_tokenstream(
             continue;
         };
 
-        let mut expanded = e.expand(&ctx);
-        tokens.append(&mut expanded);
+        let expanded = e.expand(&ctx);
+        tokens.push(expanded);
     }
 
     let expanded = quote! {

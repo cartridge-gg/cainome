@@ -3,6 +3,8 @@ use std::{cell::RefCell, rc::Rc};
 
 use convert_case::{Case, Casing};
 
+use crate::tokens::NamedToken;
+
 use super::Token;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -19,19 +21,13 @@ pub enum FunctionOutputKind {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct FuncInner {
-    pub name: String,
-    pub token: Rc<RefCell<Token>>,
-}
-
-#[derive(Debug, Clone, PartialEq)]
 pub struct Function {
     pub name: String,
     pub state_mutability: StateMutability,
-    pub inputs: Vec<FuncInner>,
+    pub inputs: Vec<NamedToken>,
     pub outputs: Vec<Rc<RefCell<Token>>>,
     // Only cairo0 has named outputs.
-    pub named_outputs: Vec<FuncInner>,
+    pub named_outputs: Vec<NamedToken>,
 }
 
 impl Function {
