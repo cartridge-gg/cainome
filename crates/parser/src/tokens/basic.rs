@@ -2,8 +2,6 @@
 //! and which are not a struct nor an enum, nor an array.
 //!
 //! This module provides a parser for core basic types.
-use super::constants::{CAIRO_CORE_BASIC, UNIT_TYPE};
-use crate::{CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct CoreBasic {

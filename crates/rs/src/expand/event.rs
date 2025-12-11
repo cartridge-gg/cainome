@@ -8,7 +8,7 @@ use cainome_parser::tokens::{Event, EventKind, Token};
 use proc_macro2::TokenStream;
 use quote::quote;
 
-fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> TokenStream {
+fn from_event_conversion_from_enum(event: &Event, _ctx: &ExpansionContext) -> TokenStream {
     let event_name_str = event.type_name();
 
     let event_name = utils::str_to_ident(&event_name_str);

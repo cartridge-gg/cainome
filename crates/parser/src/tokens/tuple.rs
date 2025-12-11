@@ -11,7 +11,7 @@ use std::{cell::RefCell, rc::Rc};
 use syn::Type;
 
 use super::Token;
-use crate::{tokens::Container, CainomeResult, Error};
+use crate::{CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct TupleContainer {
@@ -91,8 +91,6 @@ impl TupleContainer {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::tokens::*;
 
     #[test]
     fn test_parse_unit_invalid() {

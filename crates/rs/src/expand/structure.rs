@@ -57,10 +57,9 @@ pub fn struct_declaration(
 pub fn struct_implementation(
     type_name: &str,
     fields: &Vec<NamedToken>,
-    ctx: &ExpansionContext,
+    _ctx: &ExpansionContext,
 ) -> TokenStream {
     let struct_name = utils::str_to_ident(&type_name);
-    let struct_name_str = utils::str_to_litstr(&type_name);
 
     let mut sizes: Vec<TokenStream> = vec![];
     let mut sers: Vec<TokenStream> = vec![];
@@ -200,7 +199,7 @@ mod tests {
         TypeRegistry,
     };
     use proc_macro2::TokenStream;
-    use quote::{quote, ToTokens};
+    use quote::ToTokens;
     use syn::{parse_quote, ItemStruct};
 
     use crate::expand::{Expandable, ExpansionContext};
@@ -232,7 +231,7 @@ mod tests {
     fn test_structure_expand_empty() {
         let registry = TypeRegistry::new();
 
-        let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
+        let structure = Struct::new("my::Type".to_string(), &registry).unwrap();
 
         let ctx = ExpansionContext::new("ContractName");
 

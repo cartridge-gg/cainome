@@ -1,3 +1,7 @@
+use proc_macro2::TokenStream;
+
+use crate::ExecutionVersion;
+
 pub(crate) mod contract;
 pub(crate) mod enumeration;
 pub(crate) mod event;
@@ -5,14 +9,7 @@ pub(crate) mod structure;
 mod types;
 pub(crate) mod utils;
 
-use cainome_parser::tokens::{
-    ArrayContainer, NonZeroContainer, OptionContainer, ResultContainer, TupleContainer,
-};
-use proc_macro2::TokenStream;
-use quote::quote;
-
-use crate::{expand::types::CairoToRust, ExecutionVersion};
-
+#[allow(dead_code)]
 #[derive(Clone)]
 pub struct ExpansionContext {
     pub contract_name: String,
@@ -24,6 +21,7 @@ pub struct ExpansionContext {
     pub variant_name: Option<String>,
 }
 
+#[allow(dead_code)]
 impl ExpansionContext {
     pub fn new(contract_name: &str) -> Self {
         Self {

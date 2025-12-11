@@ -55,7 +55,7 @@ pub fn enum_declaration(
 pub fn enum_implementation(
     type_name: &str,
     variants: &Vec<NamedToken>,
-    ctx: &ExpansionContext,
+    _ctx: &ExpansionContext,
 ) -> TokenStream {
     let enum_name = utils::str_to_ident(type_name);
     let enum_name_str = utils::str_to_litstr(type_name);
@@ -185,7 +185,7 @@ mod tests {
         TypeRegistry,
     };
     use proc_macro2::TokenStream;
-    use quote::{quote, ToTokens};
+    use quote::ToTokens;
     use syn::{parse_quote, ItemEnum};
 
     use crate::expand::{Expandable, ExpansionContext};

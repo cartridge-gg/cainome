@@ -1,7 +1,7 @@
 //! Utils function for expansion.
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::{Ident, LitInt, LitStr, Type};
+use syn::{Ident, LitStr, Type};
 
 pub fn str_to_ident(str_in: &str) -> Ident {
     if is_rust_keyword(str_in) {
@@ -18,10 +18,6 @@ pub fn str_to_type(str_in: &str) -> Type {
 
 pub fn str_to_litstr(str_in: &str) -> LitStr {
     LitStr::new(str_in, proc_macro2::Span::call_site())
-}
-
-pub fn str_to_litint(str_in: &str) -> LitInt {
-    LitInt::new(str_in, proc_macro2::Span::call_site())
 }
 
 pub fn snrs_types() -> Type {

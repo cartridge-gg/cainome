@@ -4,7 +4,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::tokens::{Container, Token};
+use crate::tokens::Token;
 use crate::{CainomeResult, Error};
 
 use super::genericity;

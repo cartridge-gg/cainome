@@ -152,7 +152,7 @@ impl CairoContract {
     fn expand_readonly_method(
         f: &Function,
         type_param: &str,
-        ctx: &ExpansionContext,
+        _ctx: &ExpansionContext,
     ) -> TokenStream {
         let type_param_ident = utils::str_to_type(type_param);
         let func_name = &f.name;
@@ -323,10 +323,10 @@ impl Expandable for CairoContract {
 mod tests {
     use cainome_parser::{
         tokens::{Function, NamedToken, Token},
-        AbiParser, TokenizedAbi, TypeRegistry,
+        AbiParser, TypeRegistry,
     };
     use proc_macro2::TokenStream;
-    use quote::{quote, ToTokens};
+    use quote::ToTokens;
     use syn::parse_quote;
 
     use crate::expand::{contract::CairoContract, Expandable, ExpansionContext};

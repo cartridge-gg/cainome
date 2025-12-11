@@ -1,6 +1,6 @@
 use cainome_parser::tokens::{
-    ArrayContainer, CompositeLegacy, Constructor, CoreBasic, Enum, Event, Function, Interface,
-    NonZeroContainer, OptionContainer, ResultContainer, Struct, Token, TupleContainer,
+    ArrayContainer, CoreBasic, Enum, Event, NonZeroContainer, OptionContainer, ResultContainer,
+    Struct, Token, TupleContainer,
 };
 
 use super::utils;
@@ -149,30 +149,6 @@ impl CairoToRust for Enum {
     }
 }
 
-impl CairoToRust for CompositeLegacy {
-    fn to_rust_type(&self) -> String {
-        let mut s = self.type_name_or_alias();
-
-        let (type_name, is_builtin) = builtin_composite_to_rust(&s);
-        if is_builtin {
-            s = type_name;
-        }
-
-        s
-    }
-
-    fn to_rust_type_path(&self) -> String {
-        let mut s = self.type_name_or_alias();
-
-        let (type_name, is_builtin) = builtin_composite_to_rust(&s);
-        if is_builtin {
-            s = type_name;
-        }
-
-        s
-    }
-}
-
 impl CairoToRust for &Token {
     fn to_rust_type(&self) -> String {
         match self {
@@ -185,7 +161,6 @@ impl CairoToRust for &Token {
             Token::Struct(t) => t.to_rust_type(),
             Token::Event(t) => t.to_rust_type(),
             Token::Enum(t) => t.to_rust_type(),
-            Token::CompositeLegacy(t) => t.to_rust_type(),
             Token::Constructor(_) => "__CONSTRUCTOR_NOT_SUPPORTED__".to_string(),
             Token::Interface(_) => "__INTERFACE_NOT_SUPPORTED__".to_string(),
             Token::Function(_) => "__FUNCTION_NOT_SUPPORTED__".to_string(),
@@ -204,7 +179,6 @@ impl CairoToRust for &Token {
             Token::Struct(t) => t.to_rust_type_path(),
             Token::Event(t) => t.to_rust_type_path(),
             Token::Enum(t) => t.to_rust_type_path(),
-            Token::CompositeLegacy(t) => t.to_rust_type_path(),
             Token::Function(_) => "__FUNCTION_NOT_SUPPORTED__".to_string(),
             Token::Interface(_) => "__INTERFACE_NOT_SUPPORTED__".to_string(),
             Token::Constructor(_) => "__CONSTRUCTOR_NOT_SUPPORTED__".to_string(),
@@ -231,17 +205,17 @@ fn basic_types_to_rust(type_name: &str) -> String {
     }
 }
 
-fn builtin_composite_to_rust(type_name: &str) -> (String, bool) {
-    let ccsp = utils::cainome_cairo_serde_path();
-    let snrs_types = utils::starknet_rs_types_path();
+// fn builtin_composite_to_rust(type_name: &str) -> (String, bool) {
+//     let ccsp = utils::cainome_cairo_serde_path();
+//     let snrs_types = utils::starknet_rs_types_path();
 
-    match type_name {
-        "EthAddress" => (format!("{ccsp}::EthAddress"), true),
-        "ByteArray" => (format!("{ccsp}::ByteArray"), true),
-        "NonZero" => (format!("{ccsp}::NonZero"), true),
-        "U256" => (format!("{ccsp}::U256"), true),
-        // <https://github.com/starkware-libs/cairo/blob/35b299291fd7819f75409fb303ece7d30e4adb19/corelib/src/internal/bounded_int.cairo#L5>
-        "BoundedInt" => (format!("{snrs_types}::Felt"), true),
-        _ => (type_name.to_string(), false),
-    }
-}
+//     match type_name {
+//         "EthAddress" => (format!("{ccsp}::EthAddress"), true),
+//         "ByteArray" => (format!("{ccsp}::ByteArray"), true),
+//         "NonZero" => (format!("{ccsp}::NonZero"), true),
+//         "U256" => (format!("{ccsp}::U256"), true),
+//         // <https://github.com/starkware-libs/cairo/blob/35b299291fd7819f75409fb303ece7d30e4adb19/corelib/src/internal/bounded_int.cairo#L5>
+//         "BoundedInt" => (format!("{snrs_types}::Felt"), true),
+//         _ => (type_name.to_string(), false),
+//     }
+// }

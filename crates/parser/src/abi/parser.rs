@@ -1,4 +1,4 @@
-use starknet::core::types::contract::{AbiEntry, AbiEvent, SierraClass, TypedAbiEvent};
+use starknet::core::types::contract::{AbiEntry, SierraClass};
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::rc::Rc;
@@ -48,7 +48,7 @@ impl AbiParser {
     /// * `type_aliases` - Types to be renamed to avoid name clashing of generated types.
     pub fn tokens_from_abi_string(
         abi: &str,
-        type_aliases: &HashMap<String, String>,
+        _: &HashMap<String, String>,
     ) -> CainomeResult<TokenizedAbi> {
         let abi_entries = Self::parse_abi_string(abi)?;
         let tokenized_abi = AbiParser::collect_tokens(abi_entries).expect("failed tokens parsing");

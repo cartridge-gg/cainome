@@ -4,7 +4,6 @@
 
 mod array;
 mod basic;
-mod composite;
 pub mod constants;
 mod constructor;
 mod enumeration;
@@ -22,7 +21,6 @@ pub mod utils;
 
 pub use array::ArrayContainer;
 pub use basic::CoreBasic;
-pub use composite::{CompositeInner, CompositeInnerKind, CompositeLegacy, CompositeType};
 pub use constructor::Constructor;
 pub use enumeration::Enum;
 pub use event::{Event, EventKind};
@@ -66,9 +64,8 @@ pub enum Token {
 
     // Not needed for now
     Constructor(Constructor),
-
     // Legacy
-    CompositeLegacy(CompositeLegacy),
+    // CompositeLegacy(CompositeLegacy),
 }
 
 impl Token {

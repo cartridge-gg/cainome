@@ -1,3 +1,40 @@
+# TODO:
+
+- generic structs handling. I didn't test those properly (old functionality)
+- modules
+
+- tests for enum generation
+- tests for serialisation rules
+- tests for tuple <> brackets
+- tests for reserved words usage in fields
+- tests for nested events of level 2 and more
+- bindings
+- proper tests for events (probably need full workflow tested, starting with contract deployment and mehtod calls and  ending with event emission),
+- event structure split (not critical)
+- contract deployment
+- starknet-rust
+- deploy and declare calls method
+- functions registry paths intersection. think on type prefixes for token paths.
+- ??? integration tests. create bindings, deploy to testnet, call, assert result. ???
+- composite Builtins to Rust:
+```rust
+fn builtin_composite_to_rust(type_name: &str) -> (String, bool) {
+    let ccsp = utils::cainome_cairo_serde_path();
+    let snrs_types = utils::starknet_rs_types_path();
+
+    match type_name {
+        "EthAddress" => (format!("{ccsp}::EthAddress"), true),
+        "ByteArray" => (format!("{ccsp}::ByteArray"), true),
+        "NonZero" => (format!("{ccsp}::NonZero"), true),
+        "U256" => (format!("{ccsp}::U256"), true),
+        // <https://github.com/starkware-libs/cairo/blob/35b299291fd7819f75409fb303ece7d30e4adb19/corelib/src/internal/bounded_int.cairo#L5>
+        "BoundedInt" => (format!("{snrs_types}::Felt"), true),
+        _ => (type_name.to_string(), false),
+    }
+}
+```
+
+
 # Cainome: bindings generation from Cairo ABI
 
 Cainome is a library to generate bindings from Cairo ABI.
