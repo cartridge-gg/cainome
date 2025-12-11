@@ -20,5 +20,8 @@ starknet.workspace = true
 thiserror.workspace = true
 syn = { version = "2.0", features = [ "extra-traits" ]}
 quote = "1.0"
+serde.workspace = true
 serde_json.workspace = true
+
 cainome-parser.workspace = true
+cainome-cairo-serde.workspace = true

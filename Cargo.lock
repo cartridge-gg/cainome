@@ -1004,9 +1004,11 @@ dependencies = [
 name = "integration-tests"
 version = "0.6.0"
 dependencies = [
+ "cainome-cairo-serde",
  "cainome-parser",
  "convert_case",
  "quote",
+ "serde",
  "serde_json",
  "starknet",
  "syn 2.0.101",

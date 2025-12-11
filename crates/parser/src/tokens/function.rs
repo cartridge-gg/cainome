@@ -26,7 +26,7 @@ pub struct Function {
     pub state_mutability: StateMutability,
     pub inputs: Vec<NamedToken>,
     pub outputs: Vec<Rc<RefCell<Token>>>,
-    // Only cairo0 has named outputs.
+    // Only cairo0 has named outputs. Soooo. Currently this one is unused in v3 execution.
     pub named_outputs: Vec<NamedToken>,
 }
 

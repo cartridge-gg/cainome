@@ -171,17 +171,7 @@ impl AbiParser {
         Ok(registry)
     }
 
-    /// Parse all tokens in the ABI.
-    pub fn collect_tokens<T>(entries: Vec<T>) -> CainomeResult<TokenizedAbi>
-    where
-        T: Parsable,
-    {
-        // This procedure will populate all the tokens
-        let registry = Self::build_registry(entries)?;
-
-        // So we'll need to just bucket them in correct fields.
-        let tokens = registry.values();
-
+    pub fn create_tokenized_abi(tokens: Vec<Rc<RefCell<Token>>>) -> CainomeResult<TokenizedAbi> {
         let mut structs = vec![];
         let mut enums = vec![];
         let mut events = vec![];
@@ -225,5 +215,19 @@ impl AbiParser {
             interfaces,
             interfaces_new,
         })
+    }
+
+    /// Parse all tokens in the ABI.
+    pub fn collect_tokens<T>(entries: Vec<T>) -> CainomeResult<TokenizedAbi>
+    where
+        T: Parsable,
+    {
+        // This procedure will populate all the tokens
+        let registry = Self::build_registry(entries)?;
+
+        // So we'll need to just bucket them in correct fields.
+        let tokens = registry.values();
+
+        Self::create_tokenized_abi(tokens)
     }
 }

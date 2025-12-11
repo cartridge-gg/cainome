@@ -1,15 +1,11 @@
 use std::{cell::RefCell, rc::Rc};
 
-use starknet::core::types::{
-    contract::{
-        legacy::{
-            RawLegacyAbiEntry, RawLegacyConstructor, RawLegacyEvent, RawLegacyFunction,
-            RawLegacyL1Handler, RawLegacyStruct,
-        },
-        AbiEntry, AbiEnum, AbiEvent, AbiEventEnum, AbiEventStruct, AbiFunction, AbiInterface,
-        AbiStruct, EventFieldKind, TypedAbiEvent, UntypedAbiEvent,
+use starknet::core::types::contract::{
+    legacy::{
+        RawLegacyAbiEntry, RawLegacyEvent, RawLegacyFunction, RawLegacyL1Handler, RawLegacyStruct,
     },
-    LegacyEventAbiEntry,
+    AbiEntry, AbiEnum, AbiEvent, AbiEventEnum, AbiEventStruct, AbiFunction, AbiInterface,
+    AbiStruct, EventFieldKind, TypedAbiEvent, UntypedAbiEvent,
 };
 
 use crate::{
@@ -239,9 +235,9 @@ impl TryTokenConvertable for AbiEntry {
             AbiEntry::Struct(abi_struct) => abi_struct.try_to_token(registry),
             AbiEntry::Enum(abi_enum) => abi_enum.try_to_token(registry),
             // TODO: should be use for contract deployment (in the future)
-            AbiEntry::Constructor(abi_constructor) => todo!(),
+            AbiEntry::Constructor(_) => todo!(),
             // TODO: Maybe rethink
-            AbiEntry::Impl(abi_impl) => Ok(None),
+            AbiEntry::Impl(_) => Ok(None),
             AbiEntry::Interface(abi_interface) => abi_interface.try_to_token(registry),
             AbiEntry::L1Handler(abi_function) => abi_function.try_to_token(registry),
         }
@@ -359,7 +355,7 @@ impl Parsable for AbiEntry {}
 impl TokenConvertable for RawLegacyAbiEntry {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
         match self {
-            RawLegacyAbiEntry::Constructor(constructor) => todo!(),
+            RawLegacyAbiEntry::Constructor(_) => todo!(),
             RawLegacyAbiEntry::Function(function) => function.to_token(registry),
             RawLegacyAbiEntry::Struct(structure) => structure.to_token(registry),
             RawLegacyAbiEntry::L1Handler(l1_handler) => l1_handler.to_token(registry),
@@ -483,7 +479,7 @@ impl TokenConvertable for &RawLegacyL1Handler {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tokens::Container;
+
     use crate::AbiParser;
     use std::collections::HashMap;
 
