@@ -10,7 +10,7 @@ use starknet::core::types::contract::{
 
 use crate::{
     abi::{
-        parser::{Named, Parsable, WithDependencies},
+        parser::{Named, Parseable, WithDependencies},
         registry::TypeRegistry,
     },
     tokens::{EventKind, Interface},
@@ -247,6 +247,7 @@ impl TryTokenConvertable for AbiEntry {
 impl Named for AbiEntry {
     fn get_name(&self) -> String {
         match &self {
+            // TODO: function might need some sort of namespacing, due to very simple names
             AbiEntry::Function(abi_function) => abi_function.name.clone(),
             AbiEntry::Event(AbiEvent::Typed(TypedAbiEvent::Enum(abi_event))) => {
                 abi_event.name.clone()
@@ -350,7 +351,7 @@ impl WithDependencies for AbiEntry {
     }
 }
 
-impl Parsable for AbiEntry {}
+impl Parseable for AbiEntry {}
 
 impl TokenConvertable for RawLegacyAbiEntry {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
@@ -430,7 +431,7 @@ impl WithDependencies for RawLegacyAbiEntry {
     }
 }
 
-impl Parsable for RawLegacyAbiEntry {}
+impl Parseable for RawLegacyAbiEntry {}
 
 impl TokenConvertable for &RawLegacyFunction {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {

@@ -5,7 +5,7 @@ use cainome_parser::{
 use proc_macro2::TokenStream;
 
 use crate::{
-    expand::{types::CairoToRust, utils, Expandable, ExpansionContext},
+    expand::{types::CairoToRust, utils, Expandable, ExpansionContext, Module, ROOT_MODULE_NAME},
     ExecutionVersion,
 };
 use quote::quote;
@@ -200,7 +200,7 @@ impl CairoContract {
 }
 
 impl Expandable for CairoContract {
-    fn expand(&self, expansion_context: &super::ExpansionContext) -> TokenStream {
+    fn expand(&self, ctx: &super::ExpansionContext) -> Vec<Module> {
         let contract_name = self.name.clone();
         let reader = utils::str_to_ident(format!("{}Reader", contract_name).as_str());
 
@@ -218,19 +218,19 @@ impl Expandable for CairoContract {
         let externals = self
             .mutating_methods
             .iter()
-            .map(|f| Self::expand_mutable_method(f, &expansion_context))
+            .map(|f| Self::expand_mutable_method(f, &ctx))
             .collect::<Vec<_>>();
 
         let views = self
             .readonly_methods
             .iter()
-            .map(|f| Self::expand_readonly_method(f, "A::Provider", &expansion_context))
+            .map(|f| Self::expand_readonly_method(f, "A::Provider", &ctx))
             .collect::<Vec<_>>();
 
         let reader_views = self
             .readonly_methods
             .iter()
-            .map(|f| Self::expand_readonly_method(f, "P", &expansion_context))
+            .map(|f| Self::expand_readonly_method(f, "P", &ctx))
             .collect::<Vec<_>>();
 
         let derives = if internal_derives.len() > 0 {
@@ -315,7 +315,7 @@ impl Expandable for CairoContract {
             }
         };
 
-        q
+        vec![Module::new(ROOT_MODULE_NAME).add_item(&contract_name, q)]
     }
 }
 
@@ -329,7 +329,7 @@ mod tests {
     use quote::ToTokens;
     use syn::parse_quote;
 
-    use crate::expand::{contract::CairoContract, Expandable, ExpansionContext};
+    use crate::expand::{contract::CairoContract, render, Expandable, ExpansionContext};
 
     fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
         let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
@@ -361,7 +361,7 @@ mod tests {
             mutating_methods: vec![],
         };
 
-        let generated = contract.expand(&ctx);
+        let generated = render(contract.expand(&ctx));
 
         let expected: TokenStream = parse_quote! {
             pub struct ContractName<A: starknet::accounts::ConnectedAccount + Sync> {
@@ -407,7 +407,7 @@ mod tests {
 
         let contract = CairoContract::new("ContractName", vec![], &abi);
 
-        let generated = contract.expand(&ctx);
+        let generated = render(contract.expand(&ctx));
 
         let expected: TokenStream = parse_quote! {
             #[allow(clippy::ptr_arg)]
@@ -475,7 +475,7 @@ mod tests {
 
         let contract = CairoContract::new("ContractName", vec![], &abi);
 
-        let generated = contract.expand(&ctx);
+        let generated = render(contract.expand(&ctx));
 
         let expected: TokenStream = parse_quote! {
             #[allow(clippy::ptr_arg)]

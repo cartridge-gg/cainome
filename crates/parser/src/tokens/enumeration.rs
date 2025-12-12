@@ -41,4 +41,10 @@ impl Enum {
         // TODO: need to opti that with regex?
         utils::extract_type_path_with_depth(&self.type_path_no_generic(), 0)
     }
+
+    pub fn type_module(&self) -> String {
+        genericity::type_path_no_generic(&self.type_path)
+            .trim_end_matches("::")
+            .to_string()
+    }
 }

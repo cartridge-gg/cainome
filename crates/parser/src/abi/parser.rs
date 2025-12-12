@@ -33,7 +33,7 @@ pub trait Named {
     fn get_name(&self) -> String;
 }
 
-pub trait Parsable: TryTokenConvertable + Named + WithDependencies + Clone {}
+pub trait Parseable: TryTokenConvertable + Named + WithDependencies + Clone {}
 
 impl AbiParser {
     /// Generates the [`Token`]s from the given ABI string.
@@ -93,7 +93,7 @@ impl AbiParser {
 
     pub fn build_registry<T>(entries: Vec<T>) -> CainomeResult<TypeRegistry>
     where
-        T: Parsable,
+        T: Parseable,
     {
         let mut registry = TypeRegistry::new();
 
@@ -220,7 +220,7 @@ impl AbiParser {
     /// Parse all tokens in the ABI.
     pub fn collect_tokens<T>(entries: Vec<T>) -> CainomeResult<TokenizedAbi>
     where
-        T: Parsable,
+        T: Parseable,
     {
         // This procedure will populate all the tokens
         let registry = Self::build_registry(entries)?;

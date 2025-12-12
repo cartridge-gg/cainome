@@ -3,7 +3,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 
 use crate::expand::types::CairoToRust;
-use crate::expand::{utils, Expandable, ExpansionContext};
+use crate::expand::{utils, Expandable, ExpansionContext, Module};
 
 pub fn enum_declaration(
     type_name: &str,
@@ -164,17 +164,20 @@ pub fn enum_implementation(
 }
 
 impl Expandable for Enum {
-    fn expand(&self, expansion_context: &ExpansionContext) -> TokenStream {
+    fn expand(&self, ctx: &ExpansionContext) -> Vec<super::Module> {
+        let module = self.type_module();
         let name = self.type_name();
 
-        let declaration = enum_declaration(&name, &self.variants, expansion_context);
-        let implementation = enum_implementation(&name, &self.variants, expansion_context);
+        let declaration = enum_declaration(&name, &self.variants, ctx);
+        let implementation = enum_implementation(&name, &self.variants, ctx);
 
-        quote! {
+        let item = quote! {
             #declaration
 
             #implementation
-        }
+        };
+
+        vec![Module::new(&module).add_item(&name, item)]
     }
 }
 
@@ -188,7 +191,7 @@ mod tests {
     use quote::ToTokens;
     use syn::{parse_quote, ItemEnum};
 
-    use crate::expand::{Expandable, ExpansionContext};
+    use crate::expand::{render, Expandable, ExpansionContext};
 
     fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
         let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
@@ -221,7 +224,7 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName");
 
-        let generated = enumeration.expand(&ctx);
+        let generated = render(enumeration.expand(&ctx));
 
         let expected: ItemEnum = parse_quote! {
             pub enum Enum {}
@@ -243,7 +246,7 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName");
 
-        let generated = enumeration.expand(&ctx);
+        let generated = render(enumeration.expand(&ctx));
 
         let expected: ItemEnum = parse_quote! {
             pub enum Enum {

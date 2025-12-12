@@ -1,4 +1,4 @@
-use crate::expand::{types::CairoToRust, utils, Expandable, ExpansionContext};
+use crate::expand::{types::CairoToRust, utils, Expandable, ExpansionContext, Module};
 use cainome_parser::tokens::{NamedToken, Struct, Token};
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -178,17 +178,20 @@ pub fn struct_implementation(
 }
 
 impl Expandable for Struct {
-    fn expand(&self, expansion_context: &ExpansionContext) -> TokenStream {
+    fn expand(&self, expansion_context: &ExpansionContext) -> Vec<Module> {
+        let module = self.type_module();
         let name = self.type_name();
 
         let declaration = struct_declaration(&name, &self.fields, expansion_context);
         let implementation = struct_implementation(&name, &self.fields, expansion_context);
 
-        quote! {
+        let item = quote! {
             #declaration
 
             #implementation
-        }
+        };
+
+        vec![Module::new(&module).add_item(&name, item)]
     }
 }
 
@@ -202,7 +205,7 @@ mod tests {
     use quote::ToTokens;
     use syn::{parse_quote, ItemStruct};
 
-    use crate::expand::{Expandable, ExpansionContext};
+    use crate::expand::{render, Expandable, ExpansionContext};
 
     fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
         let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
@@ -235,7 +238,7 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName");
 
-        let generated = structure.expand(&ctx);
+        let generated = render(structure.expand(&ctx));
 
         let expected: ItemStruct = parse_quote! {
             pub struct Type {}
@@ -259,7 +262,7 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName");
 
-        let generated = structure.expand(&ctx);
+        let generated = render(structure.expand(&ctx));
 
         let expected: ItemStruct = parse_quote! {
             pub struct Type {
@@ -285,7 +288,7 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
-        let generated = structure.expand(&ctx);
+        let generated = render(structure.expand(&ctx));
 
         let expected: ItemStruct = parse_quote! {
             #[derive(Serde, Clone, )]
@@ -310,7 +313,7 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
-        let generated = structure.expand(&ctx);
+        let generated = render(structure.expand(&ctx));
 
         let expected: ItemStruct = parse_quote! {
             #[derive(Serde, Clone, )]
@@ -335,7 +338,7 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
-        let generated = structure.expand(&ctx);
+        let generated = render(structure.expand(&ctx));
 
         let expected: ItemStruct = parse_quote! {
             #[derive(Serde, Clone, )]
@@ -362,7 +365,7 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
-        let generated = structure.expand(&ctx);
+        let generated = render(structure.expand(&ctx));
 
         let expected: ItemStruct = parse_quote! {
             #[derive(Serde, Clone, )]
@@ -389,7 +392,7 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
-        let generated = structure.expand(&ctx);
+        let generated = render(structure.expand(&ctx));
 
         let expected: ItemStruct = parse_quote! {
             #[derive(Serde, Clone, )]
@@ -422,7 +425,7 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
-        let generated = structure.expand(&ctx);
+        let generated = render(structure.expand(&ctx));
 
         // TODO(@baitcode): This is incorrect. Should be Box<> or something.
         // Discuss with @glihm
