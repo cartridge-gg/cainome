@@ -13,69 +13,122 @@ pub(crate) mod structure;
 mod types;
 pub(crate) mod utils;
 
-pub const ROOT_MODULE_NAME: &str = "ROOT";
+pub const ROOT_MODULE_NAME: &str = "";
 
 #[derive(Clone)]
+pub struct ExpansionResult {
+    pub name: String,
+    pub path: Vec<String>,
+    pub content: HashMap<String, TokenStream>,
+}
+
+impl ExpansionResult {
+    pub fn new(full_path: &str) -> Self {
+        let segments = full_path
+            .split("::")
+            .map(|s| s.to_string())
+            .collect::<Vec<_>>();
+
+        let res = if let Option::Some((name, path)) = segments.split_last() {
+            Self {
+                name: name.to_string(),
+                path: path.to_vec(),
+                content: HashMap::new(),
+            }
+        } else {
+            Self {
+                name: full_path.to_string(),
+                path: vec![],
+                content: HashMap::new(),
+            }
+        };
+
+        res
+    }
+
+    pub fn with_item(mut self, item_name: &str, item: TokenStream) -> Self {
+        self.content.insert(item_name.to_string(), item);
+        self
+    }
+}
+
 pub struct Module {
     pub name: String,
+    pub submodules: HashMap<String, Module>,
     pub content: HashMap<String, TokenStream>,
 }
 
 impl Module {
-    pub fn new(name: &str) -> Self {
+    pub fn new() -> Self {
         Self {
-            name: name.to_string(),
+            name: ROOT_MODULE_NAME.to_string(),
+            submodules: HashMap::new(),
             content: HashMap::new(),
         }
     }
 
-    pub fn add_item(mut self, item_name: &str, item: TokenStream) -> Self {
-        self.content.insert(item_name.to_string(), item);
-        self
-    }
+    pub fn register(&mut self, result: ExpansionResult) {
+        let mut current_module = self;
 
-    pub fn merge(&mut self, other: Module) {
-        if self.name != other.name {
+        for segment in &result.path {
+            current_module = current_module
+                .submodules
+                .entry(segment.to_string())
+                .or_insert(Module {
+                    name: segment.to_string(),
+                    submodules: HashMap::new(),
+                    content: HashMap::new(),
+                });
+        }
+
+        if current_module.content.contains_key(&result.name) {
             return;
         }
 
-        for (key, value) in other.content {
-            if self.content.contains_key(&key) {
-                continue;
-            }
+        let module_content = result.content.into_values().collect::<Vec<_>>();
 
-            self.content.insert(key, value);
-        }
-    }
-}
+        let module_content = quote! {
+            #(#module_content)*
+        };
 
-pub struct Modules {
-    pub modules: HashMap<String, Module>,
-}
-
-impl Modules {
-    pub fn new() -> Self {
-        Self {
-            modules: HashMap::new(),
-        }
+        current_module.content.insert(result.name, module_content);
     }
 
-    pub fn register(&mut self, module: Module) {
-        if let Some(existing_module) = self.modules.get_mut(&module.name) {
-            existing_module.merge(module);
-        } else {
-            self.modules.insert(module.name.clone(), module);
-        }
+    pub fn with_registered_many(mut self, results: Vec<ExpansionResult>) -> Self {
+        self.register_many(results);
+        self
     }
 
-    pub fn register_many(&mut self, modules: Vec<Module>) {
-        for module in modules {
-            self.register(module);
+    pub fn register_many(&mut self, results: Vec<ExpansionResult>) {
+        for result in results {
+            self.register(result);
         }
     }
 
     pub fn to_token_stream(self) -> TokenStream {
-        render(self.modules.into_values().collect())
+        let mut tokens = TokenStream::new();
+
+        // Flatten modules
+        for module in self.submodules.values() {
+            let mod_name = utils::str_to_type(&module.name);
+            let mod_content = module.content.values();
+
+            tokens.extend(if module.name == ROOT_MODULE_NAME {
+                quote! {
+                    #(#mod_content)*
+                }
+            } else {
+                quote! {
+                    pub mod #mod_name {
+                        #(#mod_content)*
+                    }
+                }
+            })
+        }
+
+        tokens.extend(self.content.into_values());
+
+        tokens
     }
 }
 
@@ -85,6 +138,7 @@ pub struct ExpansionContext {
     pub contract_name: String,
     pub derives: Vec<String>,
     pub execution_version: ExecutionVersion,
+
     // TODO: move into enum expansion context?
     pub type_param: Option<String>,
     pub outer_enum: Option<String>,
@@ -94,23 +148,6 @@ pub struct ExpansionContext {
 
 #[allow(dead_code)]
 impl ExpansionContext {
-    // pub fn add_token_stream(&mut self, path: &str, value: TokenStream) {
-    //     let mut segments = path.split("::").collect::<Vec<_>>();
-    //     if segments.is_empty() {
-    //         return;
-    //     }
-
-    //     let type_name = segments.pop().unwrap();
-    //     let module_path = segments.join("::");
-
-    //     let module = self.modules.entry(module_path.clone()).or_insert(Module {
-    //         name: module_path,
-    //         content: HashMap::new(),
-    //     });
-
-    //     module.content.insert(type_name.to_string(), value);
-    // }
-
     pub fn new(contract_name: &str) -> Self {
         Self {
             derives: vec![],
@@ -159,30 +196,5 @@ impl ExpansionContext {
 }
 
 pub trait Expandable {
-    fn expand(&self, ctx: &ExpansionContext) -> Vec<Module>;
-}
-
-// TODO: naming!
-pub fn render(modules: Vec<Module>) -> TokenStream {
-    let mut tokens = TokenStream::new();
-
-    // Flatten modules
-    for module in modules.iter() {
-        let mod_name = utils::str_to_ident(&module.name);
-        let mod_content = module.content.values();
-
-        tokens.extend(if module.name == ROOT_MODULE_NAME {
-            quote! {
-                #(#mod_content)*
-            }
-        } else {
-            quote! {
-                pub mod #mod_name {
-                    #(#mod_content)*
-                }
-            }
-        })
-    }
-
-    tokens
+    fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult>;
 }

@@ -64,8 +64,14 @@ impl Event {
     }
 
     pub fn type_module(&self) -> String {
-        genericity::type_path_no_generic(&self.type_path)
-            .trim_end_matches("::")
-            .to_string()
+        let type_path = genericity::type_path_no_generic(&self.type_path);
+        let Some((module, _)) = type_path
+            .rsplit_once("::")
+            .or_else(|| Some(("", &type_path)))
+        else {
+            unreachable!()
+        };
+
+        return module.to_string();
     }
 }

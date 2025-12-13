@@ -3,7 +3,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 
 use crate::expand::types::CairoToRust;
-use crate::expand::{utils, Expandable, ExpansionContext, Module};
+use crate::expand::{utils, Expandable, ExpansionContext, ExpansionResult};
 
 pub fn enum_declaration(
     type_name: &str,
@@ -164,7 +164,7 @@ pub fn enum_implementation(
 }
 
 impl Expandable for Enum {
-    fn expand(&self, ctx: &ExpansionContext) -> Vec<super::Module> {
+    fn expand(&self, ctx: &ExpansionContext) -> Vec<super::ExpansionResult> {
         let module = self.type_module();
         let name = self.type_name();
 
@@ -177,7 +177,7 @@ impl Expandable for Enum {
             #implementation
         };
 
-        vec![Module::new(&module).add_item(&name, item)]
+        vec![ExpansionResult::new(&module).with_item(&name, item)]
     }
 }
 
@@ -191,7 +191,7 @@ mod tests {
     use quote::ToTokens;
     use syn::{parse_quote, ItemEnum};
 
-    use crate::expand::{render, Expandable, ExpansionContext};
+    use crate::expand::{Expandable, ExpansionContext, Module};
 
     fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
         let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
@@ -199,12 +199,8 @@ mod tests {
         let expected_str = expected.to_token_stream().to_string();
 
         let has_match = file.items.iter().any(|item| {
-            if let syn::Item::Enum(s) = item {
-                let s = s.to_token_stream().to_string();
-                s == expected_str
-            } else {
-                false
-            }
+            let item = item.to_token_stream().to_string();
+            item.contains(&expected_str)
         });
 
         assert!(
@@ -224,7 +220,9 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName");
 
-        let generated = render(enumeration.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(enumeration.expand(&ctx))
+            .to_token_stream();
 
         let expected: ItemEnum = parse_quote! {
             pub enum Enum {}
@@ -246,7 +244,9 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName");
 
-        let generated = render(enumeration.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(enumeration.expand(&ctx))
+            .to_token_stream();
 
         let expected: ItemEnum = parse_quote! {
             pub enum Enum {

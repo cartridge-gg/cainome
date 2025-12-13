@@ -5,7 +5,9 @@ use cainome_parser::{
 use proc_macro2::TokenStream;
 
 use crate::{
-    expand::{types::CairoToRust, utils, Expandable, ExpansionContext, Module, ROOT_MODULE_NAME},
+    expand::{
+        types::CairoToRust, utils, Expandable, ExpansionContext, ExpansionResult, ROOT_MODULE_NAME,
+    },
     ExecutionVersion,
 };
 use quote::quote;
@@ -200,7 +202,7 @@ impl CairoContract {
 }
 
 impl Expandable for CairoContract {
-    fn expand(&self, ctx: &super::ExpansionContext) -> Vec<Module> {
+    fn expand(&self, ctx: &super::ExpansionContext) -> Vec<ExpansionResult> {
         let contract_name = self.name.clone();
         let reader = utils::str_to_ident(format!("{}Reader", contract_name).as_str());
 
@@ -315,7 +317,7 @@ impl Expandable for CairoContract {
             }
         };
 
-        vec![Module::new(ROOT_MODULE_NAME).add_item(&contract_name, q)]
+        vec![ExpansionResult::new(ROOT_MODULE_NAME).with_item(&contract_name, q)]
     }
 }
 
@@ -329,7 +331,7 @@ mod tests {
     use quote::ToTokens;
     use syn::parse_quote;
 
-    use crate::expand::{contract::CairoContract, render, Expandable, ExpansionContext};
+    use crate::expand::{contract::CairoContract, Expandable, ExpansionContext, Module};
 
     fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
         let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
@@ -361,7 +363,9 @@ mod tests {
             mutating_methods: vec![],
         };
 
-        let generated = render(contract.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(contract.expand(&ctx))
+            .to_token_stream();
 
         let expected: TokenStream = parse_quote! {
             pub struct ContractName<A: starknet::accounts::ConnectedAccount + Sync> {
@@ -407,7 +411,9 @@ mod tests {
 
         let contract = CairoContract::new("ContractName", vec![], &abi);
 
-        let generated = render(contract.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(contract.expand(&ctx))
+            .to_token_stream();
 
         let expected: TokenStream = parse_quote! {
             #[allow(clippy::ptr_arg)]
@@ -475,7 +481,9 @@ mod tests {
 
         let contract = CairoContract::new("ContractName", vec![], &abi);
 
-        let generated = render(contract.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(contract.expand(&ctx))
+            .to_token_stream();
 
         let expected: TokenStream = parse_quote! {
             #[allow(clippy::ptr_arg)]

@@ -1,4 +1,4 @@
-use crate::expand::{types::CairoToRust, utils, Expandable, ExpansionContext, Module};
+use crate::expand::{types::CairoToRust, utils, Expandable, ExpansionContext, ExpansionResult};
 use cainome_parser::tokens::{NamedToken, Struct, Token};
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -178,7 +178,7 @@ pub fn struct_implementation(
 }
 
 impl Expandable for Struct {
-    fn expand(&self, expansion_context: &ExpansionContext) -> Vec<Module> {
+    fn expand(&self, expansion_context: &ExpansionContext) -> Vec<ExpansionResult> {
         let module = self.type_module();
         let name = self.type_name();
 
@@ -191,7 +191,7 @@ impl Expandable for Struct {
             #implementation
         };
 
-        vec![Module::new(&module).add_item(&name, item)]
+        vec![ExpansionResult::new(&module).with_item(&name, item)]
     }
 }
 
@@ -205,7 +205,7 @@ mod tests {
     use quote::ToTokens;
     use syn::{parse_quote, ItemStruct};
 
-    use crate::expand::{render, Expandable, ExpansionContext};
+    use crate::expand::{Expandable, ExpansionContext, Module};
 
     fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
         let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
@@ -213,12 +213,8 @@ mod tests {
         let expected_str = expected.to_token_stream().to_string();
 
         let has_match = file.items.iter().any(|item| {
-            if let syn::Item::Struct(s) = item {
-                let s = s.to_token_stream().to_string();
-                s == expected_str
-            } else {
-                false
-            }
+            let item = item.to_token_stream().to_string();
+            item.contains(&expected_str)
         });
 
         assert!(
@@ -238,13 +234,13 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName");
 
-        let generated = render(structure.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(structure.expand(&ctx))
+            .to_token_stream();
 
         let expected: ItemStruct = parse_quote! {
             pub struct Type {}
         };
-
-        // println!("{}", generated[1].to_string());
 
         assert_code_has(&generated, &expected, "Struct not found");
     }
@@ -262,15 +258,15 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName");
 
-        let generated = render(structure.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(structure.expand(&ctx))
+            .to_token_stream();
 
         let expected: ItemStruct = parse_quote! {
             pub struct Type {
                 pub f1: starknet::core::types::Felt
             }
         };
-
-        // println!("{}", generated[1].to_string());
 
         assert_code_has(&generated, &expected, "Struct not found");
     }
@@ -288,7 +284,9 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
-        let generated = render(structure.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(structure.expand(&ctx))
+            .to_token_stream();
 
         let expected: ItemStruct = parse_quote! {
             #[derive(Serde, Clone, )]
@@ -313,7 +311,9 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
-        let generated = render(structure.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(structure.expand(&ctx))
+            .to_token_stream();
 
         let expected: ItemStruct = parse_quote! {
             #[derive(Serde, Clone, )]
@@ -338,7 +338,9 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
-        let generated = render(structure.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(structure.expand(&ctx))
+            .to_token_stream();
 
         let expected: ItemStruct = parse_quote! {
             #[derive(Serde, Clone, )]
@@ -365,7 +367,9 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
-        let generated = render(structure.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(structure.expand(&ctx))
+            .to_token_stream();
 
         let expected: ItemStruct = parse_quote! {
             #[derive(Serde, Clone, )]
@@ -392,7 +396,11 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
-        let generated = render(structure.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(structure.expand(&ctx))
+            .to_token_stream();
+
+        println!("{}", generated.to_string());
 
         let expected: ItemStruct = parse_quote! {
             #[derive(Serde, Clone, )]
@@ -425,7 +433,9 @@ mod tests {
 
         let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
-        let generated = render(structure.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(structure.expand(&ctx))
+            .to_token_stream();
 
         // TODO(@baitcode): This is incorrect. Should be Box<> or something.
         // Discuss with @glihm

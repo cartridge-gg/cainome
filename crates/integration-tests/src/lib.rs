@@ -1,3 +1,5 @@
+mod test;
+
 #[cfg(test)]
 mod tests {
     use cainome_parser::AbiParser;

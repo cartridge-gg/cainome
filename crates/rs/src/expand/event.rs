@@ -2,7 +2,7 @@ use crate::expand::{
     enumeration::{enum_declaration, enum_implementation},
     structure::{struct_declaration, struct_implementation},
     types::CairoToRust,
-    utils, Expandable, ExpansionContext, Module,
+    utils, Expandable, ExpansionContext, ExpansionResult,
 };
 use cainome_parser::tokens::{Event, EventKind, Token};
 use proc_macro2::TokenStream;
@@ -87,7 +87,7 @@ fn from_event_conversion_from_enum(event: &Event, _ctx: &ExpansionContext) -> To
 }
 
 impl Expandable for Event {
-    fn expand(&self, expansion_context: &ExpansionContext) -> Vec<Module> {
+    fn expand(&self, expansion_context: &ExpansionContext) -> Vec<ExpansionResult> {
         let module_path = self.type_module();
         let type_name = self.type_name();
         let event_name = utils::str_to_ident(&type_name);
@@ -140,7 +140,7 @@ impl Expandable for Event {
                     }
                 };
 
-                vec![Module::new(&module_path).add_item(&type_name, definition)]
+                vec![ExpansionResult::new(&module_path).with_item(&type_name, definition)]
             }
             cainome_parser::tokens::EventKind::Struct => {
                 let fields = [self.keys.clone(), self.data.clone()].concat();
@@ -153,7 +153,7 @@ impl Expandable for Event {
 
                     #implementation
                 };
-                vec![Module::new(&module_path).add_item(&type_name, definition)]
+                vec![ExpansionResult::new(&module_path).with_item(&type_name, definition)]
             }
         }
     }
@@ -170,7 +170,7 @@ mod tests {
     use quote::ToTokens;
     use syn::{parse_quote, ItemEnum, ItemStruct};
 
-    use crate::expand::{render, Expandable, ExpansionContext};
+    use crate::expand::{Expandable, ExpansionContext, Module};
 
     fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
         let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
@@ -179,7 +179,7 @@ mod tests {
 
         let has_match = file.items.iter().any(|item| {
             let item = item.to_token_stream().to_string();
-            item == expected_str
+            item.contains(&expected_str)
         });
 
         assert!(
@@ -209,7 +209,10 @@ mod tests {
         };
 
         let ctx = ExpansionContext::new("ContractName");
-        let generated = render(event.expand(&ctx));
+
+        let generated = Module::new()
+            .with_registered_many(event.expand(&ctx))
+            .to_token_stream();
 
         let expected: ItemStruct = parse_quote! {
             pub struct SimpleEvent {
@@ -391,7 +394,9 @@ mod tests {
         };
 
         let ctx = ExpansionContext::new("ContractName");
-        let generated = render(enum_event.expand(&ctx));
+        let generated = Module::new()
+            .with_registered_many(enum_event.expand(&ctx))
+            .to_token_stream();
 
         let expected: ItemEnum = parse_quote! {
             pub enum Event {
