@@ -319,3 +319,34 @@ fn test_structure_expand_all_core_types() {
 
     assert_code_has(&generated, &expected, "Struct not found");
 }
+
+#[test]
+fn structure_with_fields_conflicting_with_keywords() {
+    let registry = TypeRegistry::new();
+
+    let structure = Struct::new("my::Type", &registry)
+        .unwrap()
+        .with_fields(vec![
+            NamedToken::new("type", registry.get("felt").unwrap()),
+            NamedToken::new("match", registry.get("felt").unwrap()),
+            NamedToken::new("move", registry.get("felt").unwrap()),
+            NamedToken::new("final", registry.get("felt").unwrap()),
+        ]);
+
+    let ctx = ExpansionContext::new("ContractName");
+
+    let generated = Module::new()
+        .with_registered_many(structure.expand(&ctx))
+        .to_token_stream();
+
+    let expected: ItemStruct = parse_quote! {
+        pub struct Type {
+            pub r#type: starknet::core::types::Felt,
+            pub r#match: starknet::core::types::Felt
+            pub r#move: starknet::core::types::Felt
+            pub r#final: starknet::core::types::Felt
+        }
+    };
+
+    assert_code_has(&generated, &expected, "Struct not found");
+}

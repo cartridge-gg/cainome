@@ -1009,7 +1009,6 @@ dependencies = [
  "convert_case",
  "quote",
  "serde",
- "serde_json",
  "starknet",
  "syn 2.0.101",
  "thiserror 2.0.12",

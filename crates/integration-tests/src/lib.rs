@@ -1,7 +1,3 @@
-mod zzz;
-
-pub use zzz::*;
-
 #[cfg(test)]
 mod tests {
     use cainome_parser::AbiParser;

@@ -3,8 +3,9 @@
 [x] modules
 [x] tests for enum generation
 [x] tests for tuple <> brackets
-
-[ ] tests for reserved words usage in fields
+[x] tests for reserved words usage in fields
+[ ] examples conversion
+[ ] module dependencies
 
 [ ] tests for serialisation rules
 [ ] tests for nested events of level 2 and more
