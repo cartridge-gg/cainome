@@ -1,15 +1,37 @@
 use std::collections::HashMap;
 
 use proc_macro2::TokenStream;
-use syn::token::Mod;
 
 use crate::ExecutionVersion;
-use quote::quote;
+mod module;
+pub(crate) use module::Module;
+
+#[cfg(test)]
+mod for_tests;
+
+#[cfg(test)]
+mod module_tests;
 
 pub(crate) mod contract;
+
+#[cfg(test)]
+mod contract_tests;
+
 pub(crate) mod enumeration;
+
+#[cfg(test)]
+mod enumeration_tests;
+
 pub(crate) mod event;
+
+#[cfg(test)]
+mod event_tests;
+
 pub(crate) mod structure;
+
+#[cfg(test)]
+mod structure_tests;
+
 mod types;
 pub(crate) mod utils;
 
@@ -52,92 +74,14 @@ impl ExpansionResult {
     }
 }
 
-pub struct Module {
-    pub name: String,
-    pub submodules: HashMap<String, Module>,
-    pub content: HashMap<String, TokenStream>,
-}
-
-impl Module {
-    pub fn new() -> Self {
-        Self {
-            name: ROOT_MODULE_NAME.to_string(),
-            submodules: HashMap::new(),
-            content: HashMap::new(),
-        }
-    }
-
-    pub fn register(&mut self, result: ExpansionResult) {
-        let mut current_module = self;
-
-        for segment in &result.path {
-            current_module = current_module
-                .submodules
-                .entry(segment.to_string())
-                .or_insert(Module {
-                    name: segment.to_string(),
-                    submodules: HashMap::new(),
-                    content: HashMap::new(),
-                });
-        }
-
-        if current_module.content.contains_key(&result.name) {
-            return;
-        }
-
-        let module_content = result.content.into_values().collect::<Vec<_>>();
-
-        let module_content = quote! {
-            #(#module_content)*
-        };
-
-        current_module.content.insert(result.name, module_content);
-    }
-
-    pub fn with_registered_many(mut self, results: Vec<ExpansionResult>) -> Self {
-        self.register_many(results);
-        self
-    }
-
-    pub fn register_many(&mut self, results: Vec<ExpansionResult>) {
-        for result in results {
-            self.register(result);
-        }
-    }
-
-    pub fn to_token_stream(self) -> TokenStream {
-        let mut tokens = TokenStream::new();
-
-        // Flatten modules
-        for module in self.submodules.values() {
-            let mod_name = utils::str_to_type(&module.name);
-            let mod_content = module.content.values();
-
-            tokens.extend(if module.name == ROOT_MODULE_NAME {
-                quote! {
-                    #(#mod_content)*
-                }
-            } else {
-                quote! {
-                    pub mod #mod_name {
-                        #(#mod_content)*
-                    }
-                }
-            })
-        }
-
-        tokens.extend(self.content.into_values());
-
-        tokens
-    }
-}
-
 #[allow(dead_code)]
 #[derive(Clone)]
 pub struct ExpansionContext {
     pub contract_name: String,
     pub derives: Vec<String>,
     pub execution_version: ExecutionVersion,
+    // TODO: syn::Type?
+    pub root_module_path: String,
 
     // TODO: move into enum expansion context?
     pub type_param: Option<String>,
@@ -153,41 +97,49 @@ impl ExpansionContext {
             derives: vec![],
             contract_name: contract_name.to_string(),
             execution_version: crate::ExecutionVersion::V3,
+            root_module_path: "crate".to_string(),
             type_param: None,
             outer_enum: None,
             variant_name: None,
         }
     }
-
-    pub fn with_v1_execution(&self) -> Self {
+    pub fn with_execution(self, execution_version: ExecutionVersion) -> Self {
         Self {
-            execution_version: crate::ExecutionVersion::V1,
+            execution_version: execution_version,
             ..self.clone()
         }
     }
 
-    pub fn with_derives(&self, derives: Vec<&str>) -> Self {
+    pub fn with_v1_execution(self) -> Self {
+        self.with_execution(ExecutionVersion::V1)
+    }
+
+    pub fn with_derives<I, S>(self, derives: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
         Self {
-            derives: derives.iter().map(|i| i.to_string()).collect(),
+            derives: derives.into_iter().map(|s| s.as_ref().to_owned()).collect(),
             ..self.clone()
         }
     }
 
-    pub fn with_type_param(&self, param: &str) -> Self {
+    pub fn with_type_param(self, param: &str) -> Self {
         Self {
             type_param: Some(param.to_string()),
             ..self.clone()
         }
     }
 
-    pub fn with_outer_enum(&self, enum_name: &str) -> Self {
+    pub fn with_outer_enum(self, enum_name: &str) -> Self {
         Self {
             outer_enum: Some(enum_name.to_string()),
             ..self.clone()
         }
     }
 
-    pub fn with_variant_name(&self, variant_name: &str) -> Self {
+    pub fn with_variant_name(self, variant_name: &str) -> Self {
         Self {
             variant_name: Some(variant_name.to_string()),
             ..self.clone()
@@ -197,4 +149,11 @@ impl ExpansionContext {
 
 pub trait Expandable {
     fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult>;
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn test_module_expand_empty() {}
 }

@@ -5,6 +5,8 @@ use quote::quote;
 use crate::expand::types::CairoToRust;
 use crate::expand::{utils, Expandable, ExpansionContext, ExpansionResult};
 
+// TODO: create Enumeration struct with type_name and variants and From<Enum> and From<Event> trait implementation.
+
 pub fn enum_declaration(
     type_name: &str,
     variants: &Vec<NamedToken>,
@@ -18,14 +20,14 @@ pub fn enum_declaration(
         let name = utils::str_to_ident(&inner.name);
 
         let token = &*inner.token.borrow();
-        let serde = utils::serde_hex_derive(&token.to_rust_type());
+        let serde = utils::serde_hex_derive(&token.to_rust_type(ctx));
 
         match &*inner.token.borrow() {
             Token::Basic(CoreBasic { type_path }) if type_path == "()" => {
                 generated_variants.push(quote!(#serde #name));
             }
             _ => {
-                let ty = utils::str_to_type(&token.to_rust_type());
+                let ty = utils::str_to_type(&token.to_rust_type(ctx));
                 generated_variants.push(quote!(#serde #name(#ty)));
             }
         }
@@ -55,7 +57,7 @@ pub fn enum_declaration(
 pub fn enum_implementation(
     type_name: &str,
     variants: &Vec<NamedToken>,
-    _ctx: &ExpansionContext,
+    ctx: &ExpansionContext,
 ) -> TokenStream {
     let enum_name = utils::str_to_ident(type_name);
     let enum_name_str = utils::str_to_litstr(type_name);
@@ -68,13 +70,14 @@ pub fn enum_implementation(
         let variant_name = utils::str_to_ident(&inner.name);
         let token = &*inner.token.borrow();
 
-        let ty = utils::str_to_type(&token.to_rust_type_path());
+        let ty = utils::str_to_type(&token.to_rust_type_path(ctx));
 
         // Tuples type used as rust type path must be surrounded
         // by angle brackets.
-        let ty_punctuated = match &*inner.token.borrow() {
-            Token::Tuple(_) => quote!(<#ty>),
-            _ => quote!(#ty),
+        let ty_punctuated = if inner.token.borrow().is_tuple() {
+            quote!(<#ty>)
+        } else {
+            quote!(#ty)
         };
 
         match &*inner.token.borrow() {
@@ -178,82 +181,5 @@ impl Expandable for Enum {
         };
 
         vec![ExpansionResult::new(&module).with_item(&name, item)]
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use cainome_parser::{
-        tokens::{Enum, NamedToken},
-        TypeRegistry,
-    };
-    use proc_macro2::TokenStream;
-    use quote::ToTokens;
-    use syn::{parse_quote, ItemEnum};
-
-    use crate::expand::{Expandable, ExpansionContext, Module};
-
-    fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
-        let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
-
-        let expected_str = expected.to_token_stream().to_string();
-
-        let has_match = file.items.iter().any(|item| {
-            let item = item.to_token_stream().to_string();
-            item.contains(&expected_str)
-        });
-
-        assert!(
-            has_match,
-            "{}. Expected: {} In: {}",
-            message,
-            expected_str,
-            generated.to_string()
-        );
-    }
-
-    #[test]
-    fn test_enum_expand_empty() {
-        let registry = TypeRegistry::new();
-
-        let enumeration = Enum::new("my::Enum".to_string(), &registry).unwrap();
-
-        let ctx = ExpansionContext::new("ContractName");
-
-        let generated = Module::new()
-            .with_registered_many(enumeration.expand(&ctx))
-            .to_token_stream();
-
-        let expected: ItemEnum = parse_quote! {
-            pub enum Enum {}
-        };
-
-        assert_code_has(&generated, &expected, "Struct not found");
-    }
-
-    #[test]
-    fn test_enum_expand_simple_variants() {
-        let registry = TypeRegistry::new();
-
-        let mut enumeration = Enum::new("my::Enum".to_string(), &registry).unwrap();
-
-        enumeration.variants.push(NamedToken {
-            name: "variant1".to_string(),
-            token: registry.get("felt").unwrap(),
-        });
-
-        let ctx = ExpansionContext::new("ContractName");
-
-        let generated = Module::new()
-            .with_registered_many(enumeration.expand(&ctx))
-            .to_token_stream();
-
-        let expected: ItemEnum = parse_quote! {
-            pub enum Enum {
-                variant1(starknet::core::types::Felt)
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Struct not found");
     }
 }

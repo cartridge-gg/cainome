@@ -1,22 +1,22 @@
 # TODO:
 
-- generic structs handling. I didn't test those properly (old functionality)
-- modules
+[x] modules
+[x] tests for enum generation
+[x] tests for tuple <> brackets
 
-- tests for enum generation
-- tests for serialisation rules
-- tests for tuple <> brackets
-- tests for reserved words usage in fields
-- tests for nested events of level 2 and more
-- bindings
-- proper tests for events (probably need full workflow tested, starting with contract deployment and mehtod calls and  ending with event emission),
-- event structure split (not critical)
-- contract deployment
-- starknet-rust
-- deploy and declare calls method
-- functions registry paths intersection. think on type prefixes for token paths.
-- ??? integration tests. create bindings, deploy to testnet, call, assert result. ???
-- composite Builtins to Rust:
+[ ] tests for reserved words usage in fields
+
+[ ] tests for serialisation rules
+[ ] tests for nested events of level 2 and more
+[ ] generic structs handling. I didn't test those properly (old functionality)
+
+[ ] bindings
+[ ] If we can generate code, why not generate tests as well?
+[ ] event structure split (not critical)
+[ ] deploy and declare calls method
+[ ] starknet-rust
+[ ] functions registry paths intersection. think on type prefixes for token paths.
+[ ] ??? integration tests. create bindings, deploy to testnet, call, assert result. ???
 ```rust
 fn builtin_composite_to_rust(type_name: &str) -> (String, bool) {
     let ccsp = utils::cainome_cairo_serde_path();

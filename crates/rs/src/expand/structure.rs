@@ -1,7 +1,9 @@
 use crate::expand::{types::CairoToRust, utils, Expandable, ExpansionContext, ExpansionResult};
-use cainome_parser::tokens::{NamedToken, Struct, Token};
+use cainome_parser::tokens::{NamedToken, Struct};
 use proc_macro2::TokenStream;
 use quote::quote;
+
+// TODO: create Structure struct with type_name and variants and From<Enum> and From<Event> trait implementation.
 
 pub fn struct_declaration(
     type_name: &str,
@@ -16,9 +18,9 @@ pub fn struct_declaration(
     for inner in fields {
         let name = utils::str_to_ident(&inner.name);
         let token = &*inner.token.borrow();
+        let ty = utils::str_to_type(&token.to_rust_type(ctx));
 
-        let ty = utils::str_to_type(&token.to_rust_type());
-        let serde = utils::serde_hex_derive(&token.to_rust_type());
+        let serde = utils::serde_hex_derive(&token.to_rust_type(ctx));
 
         // r#{name} is not a valid identifier, thus we can't create an ident.
         // And with proc macro 2, we cannot do `quote!(r##name)`.
@@ -57,7 +59,7 @@ pub fn struct_declaration(
 pub fn struct_implementation(
     type_name: &str,
     fields: &Vec<NamedToken>,
-    _ctx: &ExpansionContext,
+    ctx: &ExpansionContext,
 ) -> TokenStream {
     let struct_name = utils::str_to_ident(&type_name);
 
@@ -69,13 +71,15 @@ pub fn struct_implementation(
     for inner in fields {
         let name = utils::str_to_ident(&inner.name);
         let token = &*inner.token.borrow();
-        let ty = utils::str_to_type(&token.to_rust_type_path());
+        let ty = utils::str_to_type(&token.to_rust_type_path(ctx));
 
         // Tuples type used as rust type path item path must be surrounded
         // by angle brackets.
-        let ty_punctuated = match &*inner.token.borrow() {
-            Token::Tuple(_) => quote!(<#ty>),
-            _ => quote!(#ty),
+
+        let ty_punctuated = if inner.token.borrow().is_tuple() {
+            quote!(<#ty>)
+        } else {
+            quote!(#ty)
         };
 
         // r#{name} is not a valid identifier, thus we can't create an ident.
@@ -192,261 +196,5 @@ impl Expandable for Struct {
         };
 
         vec![ExpansionResult::new(&module).with_item(&name, item)]
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use cainome_parser::{
-        tokens::{NamedToken, Struct, Token},
-        TypeRegistry,
-    };
-    use proc_macro2::TokenStream;
-    use quote::ToTokens;
-    use syn::{parse_quote, ItemStruct};
-
-    use crate::expand::{Expandable, ExpansionContext, Module};
-
-    fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
-        let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
-
-        let expected_str = expected.to_token_stream().to_string();
-
-        let has_match = file.items.iter().any(|item| {
-            let item = item.to_token_stream().to_string();
-            item.contains(&expected_str)
-        });
-
-        assert!(
-            has_match,
-            "{}. Expected: {} In: {}",
-            message,
-            expected_str,
-            generated.to_string()
-        );
-    }
-
-    #[test]
-    fn test_structure_expand_empty() {
-        let registry = TypeRegistry::new();
-
-        let structure = Struct::new("my::Type".to_string(), &registry).unwrap();
-
-        let ctx = ExpansionContext::new("ContractName");
-
-        let generated = Module::new()
-            .with_registered_many(structure.expand(&ctx))
-            .to_token_stream();
-
-        let expected: ItemStruct = parse_quote! {
-            pub struct Type {}
-        };
-
-        assert_code_has(&generated, &expected, "Struct not found");
-    }
-
-    #[test]
-    fn test_structure_expand_basic_field() {
-        let registry = TypeRegistry::new();
-
-        let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
-
-        structure.fields.push(NamedToken {
-            name: "f1".to_string(),
-            token: registry.get("felt").unwrap(),
-        });
-
-        let ctx = ExpansionContext::new("ContractName");
-
-        let generated = Module::new()
-            .with_registered_many(structure.expand(&ctx))
-            .to_token_stream();
-
-        let expected: ItemStruct = parse_quote! {
-            pub struct Type {
-                pub f1: starknet::core::types::Felt
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Struct not found");
-    }
-
-    #[test]
-    fn test_structure_expand_with_derive() {
-        let registry = TypeRegistry::new();
-
-        let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
-
-        structure.fields.push(NamedToken {
-            name: "f1".to_string(),
-            token: registry.get("felt").unwrap(),
-        });
-
-        let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
-
-        let generated = Module::new()
-            .with_registered_many(structure.expand(&ctx))
-            .to_token_stream();
-
-        let expected: ItemStruct = parse_quote! {
-            #[derive(Serde, Clone, )]
-            pub struct Type {
-                pub f1: starknet::core::types::Felt
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Struct not found");
-    }
-
-    #[test]
-    fn test_structure_expand_with_option_field() {
-        let registry = TypeRegistry::new();
-
-        let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
-
-        structure.fields.push(NamedToken {
-            name: "f1".to_string(),
-            token: registry.get("core::option::Option<felt>").unwrap(),
-        });
-
-        let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
-
-        let generated = Module::new()
-            .with_registered_many(structure.expand(&ctx))
-            .to_token_stream();
-
-        let expected: ItemStruct = parse_quote! {
-            #[derive(Serde, Clone, )]
-            pub struct Type {
-                pub f1: Option<starknet::core::types::Felt>
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Struct not found");
-    }
-
-    #[test]
-    fn test_structure_expand_with_array_field() {
-        let registry = TypeRegistry::new();
-
-        let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
-
-        structure.fields.push(NamedToken {
-            name: "f1".to_string(),
-            token: registry.get("core::array::Array::<core::felt252>").unwrap(),
-        });
-
-        let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
-
-        let generated = Module::new()
-            .with_registered_many(structure.expand(&ctx))
-            .to_token_stream();
-
-        let expected: ItemStruct = parse_quote! {
-            #[derive(Serde, Clone, )]
-            pub struct Type {
-                pub f1: Vec<starknet::core::types::Felt>
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Struct not found");
-    }
-
-    #[test]
-    fn test_structure_expand_with_non_zero_field() {
-        let registry = TypeRegistry::new();
-
-        let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
-
-        structure.fields.push(NamedToken {
-            name: "f1".to_string(),
-            token: registry
-                .get("core::zeroable::NonZero::<core::felt252>")
-                .unwrap(),
-        });
-
-        let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
-
-        let generated = Module::new()
-            .with_registered_many(structure.expand(&ctx))
-            .to_token_stream();
-
-        let expected: ItemStruct = parse_quote! {
-            #[derive(Serde, Clone, )]
-            pub struct Type {
-                pub f1: cainome::cairo_serde::NonZero<starknet::core::types::Felt>
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Struct not found");
-    }
-
-    #[test]
-    fn test_structure_expand_with_tuple_field() {
-        let registry = TypeRegistry::new();
-
-        let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
-
-        structure.fields.push(NamedToken {
-            name: "f1".to_string(),
-            token: registry
-                .get("(core::felt252, core::option::Option<felt>)")
-                .unwrap(),
-        });
-
-        let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
-
-        let generated = Module::new()
-            .with_registered_many(structure.expand(&ctx))
-            .to_token_stream();
-
-        println!("{}", generated.to_string());
-
-        let expected: ItemStruct = parse_quote! {
-            #[derive(Serde, Clone, )]
-            pub struct Type {
-                pub f1: (starknet::core::types::Felt, Option<starknet::core::types::Felt>)
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Struct not found");
-    }
-
-    #[test]
-    fn test_structure_expand_with_self_reference() {
-        let structure = {
-            let mut registry = TypeRegistry::new();
-
-            // Prepare placeholder
-            registry.set("my::Type", Token::Placeholder);
-            // Construct type
-            let mut structure = Struct::new("my::Type".to_string(), &registry).unwrap();
-            structure.fields.push(NamedToken {
-                name: "f1".to_string(),
-                token: registry.get("my::Type").unwrap(),
-            });
-            // Update placeholder
-            registry.set("my::Type", Token::Struct(structure.clone()));
-
-            structure
-        };
-
-        let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
-
-        let generated = Module::new()
-            .with_registered_many(structure.expand(&ctx))
-            .to_token_stream();
-
-        // TODO(@baitcode): This is incorrect. Should be Box<> or something.
-        // Discuss with @glihm
-
-        let expected: ItemStruct = parse_quote! {
-            #[derive(Serde, Clone, )]
-            pub struct Type {
-                pub f1: Type
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Struct not found");
     }
 }

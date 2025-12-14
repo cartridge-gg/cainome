@@ -8,7 +8,7 @@ use cainome_parser::tokens::{Event, EventKind, Token};
 use proc_macro2::TokenStream;
 use quote::quote;
 
-fn from_event_conversion_from_enum(event: &Event, _ctx: &ExpansionContext) -> TokenStream {
+fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> TokenStream {
     let event_name_str = event.type_name();
 
     let event_name = utils::str_to_ident(&event_name_str);
@@ -28,7 +28,7 @@ fn from_event_conversion_from_enum(event: &Event, _ctx: &ExpansionContext) -> To
             unreachable!("Flat event variant is always an event");
         };
 
-        let inner_type_name = inner_token.to_rust_type();
+        let inner_type_name = inner_token.to_rust_type(ctx);
 
         let inner_type_name_id = utils::str_to_ident(&inner_type_name);
 
@@ -50,7 +50,7 @@ fn from_event_conversion_from_enum(event: &Event, _ctx: &ExpansionContext) -> To
         let variant_ident = utils::str_to_ident(&inner.name);
 
         let inner_token = &*inner.token.borrow();
-        let inner_type_name = inner_token.to_rust_type();
+        let inner_type_name = inner_token.to_rust_type(ctx);
 
         let inner_type_name_str = utils::str_to_litstr(&inner_type_name);
         let inner_type_name_id = utils::str_to_ident(&inner_type_name);
@@ -85,6 +85,8 @@ fn from_event_conversion_from_enum(event: &Event, _ctx: &ExpansionContext) -> To
         #(#variants)*
     }
 }
+
+// TODO: create EventCairo struct with enum field and variants and From<Enum> trait implementation. For uniformity with StructCairo and ContractCairo.
 
 impl Expandable for Event {
     fn expand(&self, expansion_context: &ExpansionContext) -> Vec<ExpansionResult> {
@@ -157,278 +159,4 @@ impl Expandable for Event {
             }
         }
     }
-}
-
-#[cfg(test)]
-mod tests {
-    use cainome_parser::{
-        tokens::{Event, EventKind, NamedToken, Token},
-        TypeRegistry,
-    };
-    use proc_macro2::TokenStream;
-    use quote::quote;
-    use quote::ToTokens;
-    use syn::{parse_quote, ItemEnum, ItemStruct};
-
-    use crate::expand::{Expandable, ExpansionContext, Module};
-
-    fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
-        let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
-
-        let expected_str = expected.to_token_stream().to_string();
-
-        let has_match = file.items.iter().any(|item| {
-            let item = item.to_token_stream().to_string();
-            item.contains(&expected_str)
-        });
-
-        assert!(
-            has_match,
-            "{}. Expected: {} In: {}",
-            message,
-            expected_str,
-            generated.to_string()
-        );
-    }
-
-    #[test]
-    fn test_struct_event_expansion() {
-        let registry = TypeRegistry::new();
-
-        let event = Event {
-            kind: EventKind::Struct,
-            keys: vec![],
-            data: vec![NamedToken {
-                name: "data".to_string(),
-                token: registry.get("core::felt252").unwrap(),
-            }],
-            type_path: "contracts::abicov::events::events::SimpleEvent".to_string(),
-            nested: vec![],
-            flat: vec![],
-            generic_args: vec![],
-        };
-
-        let ctx = ExpansionContext::new("ContractName");
-
-        let generated = Module::new()
-            .with_registered_many(event.expand(&ctx))
-            .to_token_stream();
-
-        let expected: ItemStruct = parse_quote! {
-            pub struct SimpleEvent {
-                pub data: starknet::core::types::Felt
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Event not found");
-    }
-
-    mod fixtures {
-        use cainome_parser::{tokens::*, TypeRegistry};
-
-        pub fn simple_nested_struct_enum() -> TypeRegistry {
-            let mut registry = TypeRegistry::new();
-            registry.set(
-                "contracts::abicov::events::events::SimpleEvent",
-                Token::Event(Event {
-                    kind: EventKind::Struct,
-                    keys: vec![],
-                    data: vec![NamedToken {
-                        name: "data".to_string(),
-                        token: registry.get("core::felt252").unwrap(),
-                    }],
-                    type_path: "contracts::abicov::events::events::SimpleEvent".to_string(),
-                    nested: vec![],
-                    flat: vec![],
-                    generic_args: vec![],
-                }),
-            );
-
-            registry.set(
-                "contracts::abicov::events::events::Event",
-                Token::Event(Event {
-                    kind: EventKind::Enum,
-                    type_path: "contracts::abicov::events::events::Event".to_string(),
-                    keys: vec![],
-                    data: vec![],
-                    nested: vec![NamedToken {
-                        name: "Simple".to_string(),
-                        token: registry
-                            .get("contracts::abicov::events::events::SimpleEvent")
-                            .unwrap(),
-                    }],
-                    flat: vec![],
-                    generic_args: vec![],
-                }),
-            );
-
-            registry
-        }
-
-        pub fn simple_nested_enum_enum() -> TypeRegistry {
-            let mut registry = TypeRegistry::new();
-
-            registry.set(
-                "contracts::abicov::events::events::SimpleEvent",
-                Token::Event(Event {
-                    kind: EventKind::Struct,
-                    type_path: "contracts::abicov::events::events::SimpleEvent".to_string(),
-                    keys: vec![],
-                    data: vec![NamedToken {
-                        name: "data".to_string(),
-                        token: registry.get("core::felt252").unwrap(),
-                    }],
-                    nested: vec![],
-                    flat: vec![],
-                    generic_args: vec![],
-                }),
-            );
-
-            registry.set(
-                "contracts::abicov::events::events::NestedEnum",
-                Token::Event(Event {
-                    kind: EventKind::Enum,
-                    type_path: "contracts::abicov::events::events::NestedEnum".to_string(),
-                    keys: vec![],
-                    data: vec![],
-                    nested: vec![NamedToken {
-                        name: "Variant1".to_string(),
-                        token: registry
-                            .get("contracts::abicov::events::events::SimpleEvent")
-                            .unwrap(),
-                    }],
-                    flat: vec![],
-                    generic_args: vec![],
-                }),
-            );
-
-            registry.set(
-                "contracts::abicov::events::events::Event",
-                Token::Event(Event {
-                    kind: EventKind::Enum,
-                    type_path: "contracts::abicov::events::events::Event".to_string(),
-                    keys: vec![],
-                    data: vec![],
-                    nested: vec![NamedToken {
-                        name: "Simple".to_string(),
-                        token: registry
-                            .get("contracts::abicov::events::events::NestedEnum")
-                            .unwrap(),
-                    }],
-                    flat: vec![],
-                    generic_args: vec![],
-                }),
-            );
-
-            registry
-        }
-
-        pub fn simple_nested_flat_enum() -> TypeRegistry {
-            let mut registry = TypeRegistry::new();
-
-            registry.set(
-                "contracts::abicov::events::events::SimpleEvent",
-                Token::Event(Event {
-                    kind: EventKind::Struct,
-                    type_path: "contracts::abicov::events::events::SimpleEvent".to_string(),
-                    keys: vec![],
-                    data: vec![NamedToken {
-                        name: "data".to_string(),
-                        token: registry.get("core::felt252").unwrap(),
-                    }],
-                    nested: vec![],
-                    flat: vec![],
-                    generic_args: vec![],
-                }),
-            );
-
-            registry.set(
-                "contracts::abicov::events::events::NestedEnum",
-                Token::Event(Event {
-                    kind: EventKind::Enum,
-                    type_path: "contracts::abicov::events::events::NestedEnum".to_string(),
-                    keys: vec![],
-                    data: vec![],
-                    nested: vec![NamedToken {
-                        name: "Variant1".to_string(),
-                        token: registry
-                            .get("contracts::abicov::events::events::SimpleEvent")
-                            .unwrap(),
-                    }],
-                    flat: vec![],
-                    generic_args: vec![],
-                }),
-            );
-
-            registry.set(
-                "contracts::abicov::events::events::Event",
-                Token::Event(Event {
-                    kind: EventKind::Enum,
-                    type_path: "contracts::abicov::events::events::Event".to_string(),
-                    keys: vec![],
-                    data: vec![],
-                    nested: vec![],
-                    flat: vec![NamedToken {
-                        name: "Simple".to_string(),
-                        token: registry
-                            .get("contracts::abicov::events::events::NestedEnum")
-                            .unwrap(),
-                    }],
-                    generic_args: vec![],
-                }),
-            );
-
-            registry
-        }
-    }
-
-    #[test]
-    fn test_simple_case_nested_struct_in_enum() {
-        let registry = fixtures::simple_nested_struct_enum();
-        let token = registry
-            .get("contracts::abicov::events::events::Event")
-            .unwrap();
-
-        let Token::Event(enum_event) = &*token.borrow() else {
-            panic!("Token should be an Event. Something is wrong with fixture.");
-        };
-
-        let ctx = ExpansionContext::new("ContractName");
-        let generated = Module::new()
-            .with_registered_many(enum_event.expand(&ctx))
-            .to_token_stream();
-
-        let expected: ItemEnum = parse_quote! {
-            pub enum Event {
-                Simple(SimpleEvent)
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Event not found");
-    }
-
-    // #[test]
-    // fn expand_whole_file() {
-    //     let registry = fixtures::simple_nested_flat_enum();
-
-    //     let ctx = ExpansionContext::new("ContractName");
-    //     let mut generated = vec![];
-    //     for val in registry.values().iter() {
-    //         let Token::Event(event) = &*val.borrow() else {
-    //             continue;
-    //         };
-
-    //         generated.push(event.expand(&ctx));
-    //     }
-
-    //     let combined = quote! {
-    //         mod cainome {
-    //             pub use cainome_cairo_serde as cairo_serde;
-    //         }
-
-    //         #(#generated)*
-    //     };
-
-    //     println!("{}", combined.to_string());
-    // }
 }

@@ -18,8 +18,8 @@ pub struct Struct {
 }
 
 impl Struct {
-    pub fn new(type_path: String, registry: &TypeRegistry) -> CainomeResult<Self> {
-        let type_path = escape_rust_keywords(&type_path);
+    pub fn new(type_path: &str, registry: &TypeRegistry) -> CainomeResult<Self> {
+        let type_path = escape_rust_keywords(type_path);
         let generic_args = genericity::extract_generics_args(&type_path)?;
 
         let generic_args_with_types: Vec<(String, Rc<RefCell<Token>>)> = generic_args
@@ -32,6 +32,19 @@ impl Struct {
             generic_args: generic_args_with_types,
             fields: vec![],
         })
+    }
+
+    pub fn with_field(mut self, name: &str, token: Rc<RefCell<Token>>) -> Self {
+        self.fields.push(NamedToken {
+            name: name.to_string(),
+            token: token,
+        });
+        self
+    }
+
+    pub fn with_fields(mut self, fields: Vec<NamedToken>) -> Self {
+        self.fields.extend(fields);
+        self
     }
 
     pub fn type_path_no_generic(&self) -> String {

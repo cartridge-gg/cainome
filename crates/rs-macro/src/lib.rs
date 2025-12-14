@@ -35,7 +35,7 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
         &contract_name.to_string(),
         &abi_tokens,
         contract_abi.execution_version,
-        &contract_abi.derives,
+        contract_abi.derives,
         &contract_abi.contract_derives,
         &contract_abi.type_skips,
     );
@@ -65,7 +65,7 @@ fn abigen_internal_legacy(input: TokenStream) -> TokenStream {
         &contract_name.to_string(),
         &abi_tokens,
         contract_abi.execution_version,
-        &contract_abi.derives,
+        contract_abi.derives,
         &contract_abi.contract_derives,
         &contract_abi.type_skips,
     );

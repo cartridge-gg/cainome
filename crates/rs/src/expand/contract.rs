@@ -12,14 +12,14 @@ use crate::{
 };
 use quote::quote;
 
-pub struct CairoContract {
-    name: String,
-    derives: Vec<String>,
-    readonly_methods: Vec<Function>,
-    mutating_methods: Vec<Function>,
+pub struct Contract {
+    pub name: String,
+    pub derives: Vec<String>,
+    pub readonly_methods: Vec<Function>,
+    pub mutating_methods: Vec<Function>,
 }
 
-impl CairoContract {
+impl Contract {
     pub fn new(name: &str, derives: Vec<String>, abi: &TokenizedAbi) -> Self {
         let mut readonly_methods = vec![];
         let mut mutating_methods = vec![];
@@ -46,26 +46,29 @@ impl CairoContract {
         }
     }
 
-    fn get_inputs_for_func(f: &Function) -> Vec<(TokenStream, TokenStream)> {
+    fn get_inputs_for_func(
+        f: &Function,
+        ctx: &ExpansionContext,
+    ) -> Vec<(TokenStream, TokenStream)> {
         let mut out = vec![];
 
         for NamedToken { name, token } in f.inputs.iter() {
             let name = utils::str_to_ident(name);
             let token = &*token.borrow();
-            let ty = utils::str_to_type(&token.to_rust_type_path());
+            let ty = utils::str_to_type(&token.to_rust_type_path(ctx));
             out.push((quote!(#name), quote!(&#ty)));
         }
 
         out
     }
 
-    fn get_serializations_for_func(f: &Function) -> Vec<TokenStream> {
+    fn get_serializations_for_func(f: &Function, ctx: &ExpansionContext) -> Vec<TokenStream> {
         let mut serializations: Vec<TokenStream> = vec![];
 
         for NamedToken { name, token } in f.inputs.iter() {
             let name = utils::str_to_ident(name);
             let token = &*token.borrow();
-            let ty = utils::str_to_type(&token.to_rust_type_path());
+            let ty = utils::str_to_type(&token.to_rust_type_path(ctx));
 
             let ser = match token {
                 Token::Tuple(_) => quote! {
@@ -79,12 +82,12 @@ impl CairoContract {
         return serializations;
     }
 
-    fn get_func_output_type(f: &Function) -> syn::Type {
+    fn get_func_output_type(f: &Function, ctx: &ExpansionContext) -> syn::Type {
         match f.get_output_kind() {
             FunctionOutputKind::NoOutput => utils::str_to_type("()"),
             FunctionOutputKind::Cairo1 => {
                 let output_token = &*f.outputs[0].borrow();
-                utils::str_to_type(&output_token.to_rust_type_path())
+                utils::str_to_type(&output_token.to_rust_type_path(ctx))
             }
             FunctionOutputKind::Cairo0 => utils::str_to_type(&f.get_cairo0_output_name()),
         }
@@ -94,9 +97,9 @@ impl CairoContract {
         let func_name = &f.name;
         let func_name_ident = utils::str_to_ident(func_name);
 
-        let serializations = Self::get_serializations_for_func(f);
+        let serializations = Self::get_serializations_for_func(f, ctx);
 
-        let inputs = Self::get_inputs_for_func(&f);
+        let inputs = Self::get_inputs_for_func(&f, ctx);
         let input_names = inputs
             .iter()
             .map(|(name, _ty)| name.clone())
@@ -154,20 +157,20 @@ impl CairoContract {
     fn expand_readonly_method(
         f: &Function,
         type_param: &str,
-        _ctx: &ExpansionContext,
+        ctx: &ExpansionContext,
     ) -> TokenStream {
         let type_param_ident = utils::str_to_type(type_param);
         let func_name = &f.name;
         let func_name_ident = utils::str_to_ident(func_name);
 
         let out_type = {
-            let var = Self::get_func_output_type(f);
+            let var = Self::get_func_output_type(f, ctx);
             quote!(#var)
         };
 
-        let serializations = Self::get_serializations_for_func(f);
+        let serializations = Self::get_serializations_for_func(f, ctx);
 
-        let inputs_sub = Self::get_inputs_for_func(&f)
+        let inputs_sub = Self::get_inputs_for_func(&f, ctx)
             .iter()
             .map(|(name, ty)| quote!(#name:#ty))
             .collect::<Vec<_>>();
@@ -201,7 +204,7 @@ impl CairoContract {
     }
 }
 
-impl Expandable for CairoContract {
+impl Expandable for Contract {
     fn expand(&self, ctx: &super::ExpansionContext) -> Vec<ExpansionResult> {
         let contract_name = self.name.clone();
         let reader = utils::str_to_ident(format!("{}Reader", contract_name).as_str());
@@ -318,205 +321,5 @@ impl Expandable for CairoContract {
         };
 
         vec![ExpansionResult::new(ROOT_MODULE_NAME).with_item(&contract_name, q)]
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use cainome_parser::{
-        tokens::{Function, NamedToken, Token},
-        AbiParser, TypeRegistry,
-    };
-    use proc_macro2::TokenStream;
-    use quote::ToTokens;
-    use syn::parse_quote;
-
-    use crate::expand::{contract::CairoContract, Expandable, ExpansionContext, Module};
-
-    fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
-        let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
-
-        let expected_str = expected.to_token_stream().to_string();
-
-        let has_match = file.items.iter().any(|item| {
-            let item = item.to_token_stream().to_string();
-            item.contains(&expected_str)
-        });
-
-        assert!(
-            has_match,
-            "{}. Expected: {} In: {}",
-            message,
-            expected_str,
-            generated.to_string()
-        );
-    }
-
-    #[test]
-    fn test_naive_contract_expansion() {
-        let ctx = ExpansionContext::new("ContractName");
-
-        let contract = CairoContract {
-            name: "ContractName".to_string(),
-            derives: vec![],
-            readonly_methods: vec![],
-            mutating_methods: vec![],
-        };
-
-        let generated = Module::new()
-            .with_registered_many(contract.expand(&ctx))
-            .to_token_stream();
-
-        let expected: TokenStream = parse_quote! {
-            pub struct ContractName<A: starknet::accounts::ConnectedAccount + Sync> {
-                pub address: starknet::core::types::Felt,
-                pub account: A,
-                pub block_id: starknet::core::types::BlockId,
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Contract struct not found");
-
-        let expected: TokenStream = parse_quote! {
-            pub struct ContractNameReader<P: starknet::providers::Provider + Sync> {
-                pub address: starknet::core::types::Felt,
-                pub provider: P,
-                pub block_id: starknet::core::types::BlockId,
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Contract reader not found");
-    }
-
-    #[test]
-    fn test_naive_contract_with_view_function() {
-        let mut registry = TypeRegistry::new();
-
-        let function = Token::Function(Function {
-            name: "get_value".to_string(),
-            inputs: vec![NamedToken {
-                name: "in1".to_string(),
-                token: registry.get("felt").unwrap(),
-            }],
-            outputs: vec![registry.get("felt").unwrap()],
-            state_mutability: cainome_parser::tokens::StateMutability::View,
-            named_outputs: vec![],
-        });
-
-        registry.set("some_unique_path", function);
-
-        let ctx = ExpansionContext::new("ContractName");
-
-        let abi = AbiParser::create_tokenized_abi(registry.values()).unwrap();
-
-        let contract = CairoContract::new("ContractName", vec![], &abi);
-
-        let generated = Module::new()
-            .with_registered_many(contract.expand(&ctx))
-            .to_token_stream();
-
-        let expected: TokenStream = parse_quote! {
-            #[allow(clippy::ptr_arg)]
-            #[allow(clippy::too_many_arguments)]
-            pub fn get_value(
-                &self,
-                in1: &starknet::core::types::Felt
-            ) -> cainome::cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
-                use cainome::cairo_serde::CairoSerde;
-                let mut __calldata = vec![];
-                __calldata.extend(starknet::core::types::Felt::cairo_serialize(in1));
-                let __call = starknet::core::types::FunctionCall {
-                    contract_address: self.address,
-                    entry_point_selector: starknet::macros::selector!("get_value"),
-                    calldata: __calldata,
-                };
-                cainome::cairo_serde::call::FCall::new(__call, self.provider(), )
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Contract class not found");
-
-        let expected: TokenStream = parse_quote! {
-            #[allow(clippy::ptr_arg)]
-            #[allow(clippy::too_many_arguments)]
-            pub fn get_value(
-                &self,
-                in1: &starknet::core::types::Felt
-            ) -> cainome::cairo_serde::call::FCall<P, starknet::core::types::Felt> {
-                use cainome::cairo_serde::CairoSerde;
-                let mut __calldata = vec![];
-                __calldata.extend(starknet::core::types::Felt::cairo_serialize(in1));
-                let __call = starknet::core::types::FunctionCall {
-                    contract_address: self.address,
-                    entry_point_selector: starknet::macros::selector!("get_value"),
-                    calldata: __calldata,
-                };
-                cainome::cairo_serde::call::FCall::new(__call, self.provider(), )
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Contract reader not found");
-    }
-
-    #[test]
-    fn test_naive_contract_with_view_mutating_function() {
-        let mut registry = TypeRegistry::new();
-
-        let function = Token::Function(Function {
-            name: "get_value".to_string(),
-            inputs: vec![NamedToken {
-                name: "in1".to_string(),
-                token: registry.get("felt").unwrap(),
-            }],
-            outputs: vec![registry.get("felt").unwrap()],
-            state_mutability: cainome_parser::tokens::StateMutability::External,
-            named_outputs: vec![],
-        });
-
-        registry.set("some_unique_path", function);
-
-        let ctx = ExpansionContext::new("ContractName");
-
-        let abi = AbiParser::create_tokenized_abi(registry.values()).unwrap();
-
-        let contract = CairoContract::new("ContractName", vec![], &abi);
-
-        let generated = Module::new()
-            .with_registered_many(contract.expand(&ctx))
-            .to_token_stream();
-
-        let expected: TokenStream = parse_quote! {
-            #[allow(clippy::ptr_arg)]
-            #[allow(clippy::too_many_arguments)]
-            pub fn get_value_getcall(
-                &self,
-                in1: &starknet::core::types::Felt
-            ) -> starknet::core::types::Call {
-                use cainome::cairo_serde::CairoSerde;
-                let mut __calldata = vec![];
-                __calldata.extend(starknet::core::types::Felt::cairo_serialize(in1));
-                starknet::core::types::Call {
-                    to: self.address,
-                    selector: starknet::macros::selector!("get_value"),
-                    calldata: __calldata,
-                }
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Contract method not found");
-
-        let expected: TokenStream = parse_quote! {
-            #[allow(clippy::ptr_arg)]
-            #[allow(clippy::too_many_arguments)]
-            pub fn get_value(
-                &self,
-                in1: &starknet::core::types::Felt
-            ) -> starknet::accounts::ExecutionV3<A> {
-                let __call = self.get_value_getcall(in1);
-                self.account.execute_v3(vec![__call])
-            }
-        };
-
-        assert_code_has(&generated, &expected, "Contract method not found");
     }
 }

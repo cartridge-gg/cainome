@@ -39,7 +39,7 @@ where
 
 impl TokenConvertable for &AbiStruct {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
-        let mut structure = Struct::new(self.name.clone(), &registry)?;
+        let mut structure = Struct::new(&self.name, &registry)?;
 
         for field in self.members.iter() {
             let token = registry.get(&field.r#type).unwrap();
@@ -56,7 +56,7 @@ impl TokenConvertable for &AbiStruct {
 
 impl TokenConvertable for &AbiEnum {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
-        let mut enumeration = Enum::new(self.name.clone(), &registry)?;
+        let mut enumeration = Enum::new(&self.name, &registry)?;
 
         for field in self.variants.iter() {
             let token = registry.get(&field.r#type).unwrap();
@@ -166,7 +166,7 @@ impl TokenConvertable for &RawLegacyEvent {
 
 impl TokenConvertable for &RawLegacyStruct {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
-        let mut structure = Struct::new(self.name.clone(), &registry)?;
+        let mut structure = Struct::new(&self.name, &registry)?;
 
         for field in self.members.iter() {
             let token = registry.get(&field.r#type)?;

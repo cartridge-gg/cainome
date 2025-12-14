@@ -1,4 +1,6 @@
-mod test;
+mod zzz;
+
+pub use zzz::*;
 
 #[cfg(test)]
 mod tests {

@@ -16,8 +16,8 @@ pub struct Enum {
 }
 
 impl Enum {
-    pub fn new(type_path: String, registry: &TypeRegistry) -> CainomeResult<Self> {
-        let type_path = utils::escape_rust_keywords(&type_path);
+    pub fn new(type_path: &str, registry: &TypeRegistry) -> CainomeResult<Self> {
+        let type_path = utils::escape_rust_keywords(type_path);
         let generic_args = genericity::extract_generics_args(&type_path)?;
 
         let generic_args_with_types: Vec<(String, Rc<RefCell<Token>>)> = generic_args
@@ -31,6 +31,24 @@ impl Enum {
             variants: vec![],
             alias: None,
         });
+    }
+
+    pub fn with_variant(self, name: &str, token: Rc<RefCell<Token>>) -> Self {
+        Self {
+            variants: {
+                let mut v = self.variants;
+                v.push(NamedToken {
+                    name: name.to_string(),
+                    token,
+                });
+                v
+            },
+            ..self
+        }
+    }
+
+    pub fn with_variants(self, variants: Vec<NamedToken>) -> Self {
+        Self { variants, ..self }
     }
 
     pub fn type_path_no_generic(&self) -> String {

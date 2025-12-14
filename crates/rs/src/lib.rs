@@ -12,7 +12,7 @@ mod execution_version;
 mod expand;
 pub use execution_version::{ExecutionVersion, ParseExecutionVersionError};
 
-use crate::expand::contract::CairoContract;
+use crate::expand::contract::Contract;
 use crate::expand::{Expandable, ExpansionContext, Module};
 // use crate::expand::{CairoContract, CairoEnum, CairoEnumEvent, CairoFunction, CairoStruct};
 
@@ -160,7 +160,7 @@ impl Abigen {
                     &self.contract_name,
                     &tokens,
                     self.execution_version,
-                    &self.derives,
+                    self.derives.clone(),
                     &self.contract_derives,
                     &self.type_skips,
                 );
@@ -194,20 +194,15 @@ pub fn abi_to_tokenstream(
     contract_name: &str,
     abi_tokens: &TokenizedAbi,
     execution_version: ExecutionVersion,
-    derives: &[String],
+    derives: Vec<String>,
     contract_derives: &[String],
     _type_skips: &[String],
 ) -> TokenStream {
-    let contract = CairoContract::new(contract_name, contract_derives.into(), abi_tokens);
+    let contract = Contract::new(contract_name, contract_derives.into(), abi_tokens);
 
-    let ctx = ExpansionContext {
-        contract_name: contract_name.to_string(),
-        derives: derives.to_vec(),
-        execution_version: execution_version,
-        type_param: None,
-        outer_enum: None,
-        variant_name: None,
-    };
+    let ctx = ExpansionContext::new(contract_name)
+        .with_derives(derives)
+        .with_execution(execution_version);
 
     let mut root = Module::new().with_registered_many(contract.expand(&ctx));
 
