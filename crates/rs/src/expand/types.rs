@@ -1,9 +1,14 @@
+use std::rc::Rc;
+
 use cainome_parser::tokens::{
-    ArrayContainer, CoreBasic, Enum, Event, NonZeroContainer, OptionContainer, ResultContainer,
-    Struct, Token, TupleContainer,
+    ArrayContainer, CoreBasic, Enum, Event, NamedToken, NonZeroContainer, OptionContainer,
+    ResultContainer, Struct, Token, TupleContainer,
 };
 
-use crate::expand::ExpansionContext;
+use crate::expand::{
+    utils::{is_serde_hex_int, SerdeHexType},
+    ExpansionContext,
+};
 
 use super::utils;
 
@@ -12,6 +17,7 @@ pub trait CairoToRust {
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String;
 }
+
 impl CairoToRust for CoreBasic {
     fn to_rust_type(&self, _: &ExpansionContext) -> String {
         basic_types_to_rust(&self.type_name())
@@ -21,6 +27,7 @@ impl CairoToRust for CoreBasic {
         basic_types_to_rust(&self.type_name())
     }
 }
+
 impl CairoToRust for ArrayContainer {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
         let internal_type = (&*self.inner.borrow()).to_rust_type(ctx);
@@ -44,6 +51,7 @@ impl CairoToRust for ArrayContainer {
         }
     }
 }
+
 impl CairoToRust for OptionContainer {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
         format!("Option<{}>", (&*self.inner.borrow()).to_rust_type(ctx))
@@ -209,4 +217,43 @@ fn basic_types_to_rust(type_name: &str) -> String {
         "U256" => format!("{ccsp}::U256"),
         _ => type_name.to_string(),
     }
+}
+
+pub fn extract_dependencies(items: &Vec<NamedToken>, ctx: &ExpansionContext) -> Vec<String> {
+    let mut deps = vec![];
+
+    // Unwrapping all container types to get inner types
+    let unwrapped_types = items
+        .iter()
+        .flat_map(|named_token| match &*named_token.token.borrow() {
+            Token::Array(t) => vec![Rc::clone(&t.inner)],
+            Token::Option(t) => vec![Rc::clone(&t.inner)],
+            Token::Result(t) => vec![Rc::clone(&t.inner), Rc::clone(&t.error)],
+            Token::NonZero(t) => vec![Rc::clone(&t.inner)],
+            Token::Tuple(t) => t.inners.iter().map(|el| Rc::clone(el)).collect(),
+            // Composite types are added as is as those are imported from their modules
+            // Basic types are also added but only to be skipped later
+            _ => vec![Rc::clone(&named_token.token)],
+        });
+
+    for token in unwrapped_types {
+        let inner_token = &*token.borrow();
+
+        // Basic types are available through core library
+        if inner_token.is_basic() {
+            continue;
+        }
+
+        let type_path = inner_token.to_rust_type_path(ctx);
+
+        let serde_hex = is_serde_hex_int(&type_path);
+        if serde_hex != SerdeHexType::None {
+            let ccsp = utils::cainome_cairo_serde_path();
+            deps.push(ccsp);
+        }
+
+        deps.push(type_path);
+    }
+
+    return deps;
 }

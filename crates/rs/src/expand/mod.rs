@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use proc_macro2::TokenStream;
 
@@ -42,6 +42,7 @@ pub struct ExpansionResult {
     pub name: String,
     pub path: Vec<String>,
     pub content: HashMap<String, TokenStream>,
+    pub imports: HashSet<String>,
 }
 
 impl ExpansionResult {
@@ -56,12 +57,14 @@ impl ExpansionResult {
                 name: name.to_string(),
                 path: path.to_vec(),
                 content: HashMap::new(),
+                imports: HashSet::new(),
             }
         } else {
             Self {
                 name: full_path.to_string(),
                 path: vec![],
                 content: HashMap::new(),
+                imports: HashSet::new(),
             }
         };
 
@@ -70,6 +73,17 @@ impl ExpansionResult {
 
     pub fn with_item(mut self, item_name: &str, item: TokenStream) -> Self {
         self.content.insert(item_name.to_string(), item);
+        self
+    }
+
+    pub fn with_imports<I, S>(mut self, imports: I) -> Self
+    where
+        I: IntoIterator<Item = S>,
+        S: AsRef<str>,
+    {
+        for import in imports {
+            self.imports.insert(import.as_ref().to_string());
+        }
         self
     }
 }
@@ -82,12 +96,6 @@ pub struct ExpansionContext {
     pub execution_version: ExecutionVersion,
     // TODO: syn::Type?
     pub root_module_path: String,
-
-    // TODO: move into enum expansion context?
-    pub type_param: Option<String>,
-    pub outer_enum: Option<String>,
-    pub variant_name: Option<String>,
-    // pub modules: HashMap<String, Module>,
 }
 
 #[allow(dead_code)]
@@ -98,9 +106,6 @@ impl ExpansionContext {
             contract_name: contract_name.to_string(),
             execution_version: crate::ExecutionVersion::V3,
             root_module_path: "crate".to_string(),
-            type_param: None,
-            outer_enum: None,
-            variant_name: None,
         }
     }
     pub fn with_execution(self, execution_version: ExecutionVersion) -> Self {
@@ -121,27 +126,6 @@ impl ExpansionContext {
     {
         Self {
             derives: derives.into_iter().map(|s| s.as_ref().to_owned()).collect(),
-            ..self.clone()
-        }
-    }
-
-    pub fn with_type_param(self, param: &str) -> Self {
-        Self {
-            type_param: Some(param.to_string()),
-            ..self.clone()
-        }
-    }
-
-    pub fn with_outer_enum(self, enum_name: &str) -> Self {
-        Self {
-            outer_enum: Some(enum_name.to_string()),
-            ..self.clone()
-        }
-    }
-
-    pub fn with_variant_name(self, variant_name: &str) -> Self {
-        Self {
-            variant_name: Some(variant_name.to_string()),
             ..self.clone()
         }
     }

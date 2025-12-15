@@ -342,8 +342,8 @@ fn structure_with_fields_conflicting_with_keywords() {
     let expected: ItemStruct = parse_quote! {
         pub struct Type {
             pub r#type: starknet::core::types::Felt,
-            pub r#match: starknet::core::types::Felt
-            pub r#move: starknet::core::types::Felt
+            pub r#match: starknet::core::types::Felt,
+            pub r#move: starknet::core::types::Felt,
             pub r#final: starknet::core::types::Felt
         }
     };

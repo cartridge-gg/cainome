@@ -1,7 +1,7 @@
 use crate::expand::{
     enumeration::{enum_declaration, enum_implementation},
     structure::{struct_declaration, struct_implementation},
-    types::CairoToRust,
+    types::{extract_dependencies, CairoToRust},
     utils, Expandable, ExpansionContext, ExpansionResult,
 };
 use cainome_parser::tokens::{Event, EventKind, Token};
@@ -89,7 +89,7 @@ fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> Tok
 // TODO: create EventCairo struct with enum field and variants and From<Enum> trait implementation. For uniformity with StructCairo and ContractCairo.
 
 impl Expandable for Event {
-    fn expand(&self, expansion_context: &ExpansionContext) -> Vec<ExpansionResult> {
+    fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult> {
         let module_path = self.type_module();
         let type_name = self.type_name();
         let event_name = utils::str_to_ident(&type_name);
@@ -99,13 +99,14 @@ impl Expandable for Event {
             cainome_parser::tokens::EventKind::Enum => {
                 let snrs_types = utils::snrs_types();
 
-                let event_conversion_implementation =
-                    from_event_conversion_from_enum(self, expansion_context);
+                let event_conversion_implementation = from_event_conversion_from_enum(self, ctx);
 
                 let variants = [self.nested.clone(), self.flat.clone()].concat();
 
-                let declaration = enum_declaration(&type_name, &variants, expansion_context);
-                let implementation = enum_implementation(&type_name, &variants, expansion_context);
+                let deps = extract_dependencies(&variants, ctx);
+
+                let declaration = enum_declaration(&type_name, &variants, ctx);
+                let implementation = enum_implementation(&type_name, &variants, ctx);
 
                 let definition = quote! {
 
@@ -142,20 +143,27 @@ impl Expandable for Event {
                     }
                 };
 
-                vec![ExpansionResult::new(&module_path).with_item(&type_name, definition)]
+                vec![ExpansionResult::new(&module_path)
+                    .with_item(&type_name, definition)
+                    .with_imports(deps)]
             }
             cainome_parser::tokens::EventKind::Struct => {
                 let fields = [self.keys.clone(), self.data.clone()].concat();
 
-                let declaration = struct_declaration(&type_name, &fields, expansion_context);
-                let implementation = struct_implementation(&type_name, &fields, expansion_context);
+                let declaration = struct_declaration(&type_name, &fields, ctx);
+                let implementation = struct_implementation(&type_name, &fields, ctx);
+
+                let deps = extract_dependencies(&fields, ctx);
 
                 let definition = quote! {
                     #declaration
 
                     #implementation
                 };
-                vec![ExpansionResult::new(&module_path).with_item(&type_name, definition)]
+
+                vec![ExpansionResult::new(&module_path)
+                    .with_item(&type_name, definition)
+                    .with_imports(deps)]
             }
         }
     }

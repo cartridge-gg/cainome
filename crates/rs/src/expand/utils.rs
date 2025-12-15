@@ -51,7 +51,7 @@ pub fn starknet_rs_types_path() -> String {
 }
 
 #[derive(Debug, PartialEq)]
-enum SerdeHexType {
+pub enum SerdeHexType {
     None,
     Single,
     Tuple(usize),
@@ -105,7 +105,7 @@ pub fn serde_hex_derive(ty: &str) -> TokenStream2 {
 /// This function returns the number of type that require serde_hex serialization.
 /// The type might be a single integer type, or a tuple of integer types.
 #[inline]
-fn is_serde_hex_int(ty: &str) -> SerdeHexType {
+pub fn is_serde_hex_int(ty: &str) -> SerdeHexType {
     let tuple = is_serde_hex_tuple(ty);
     if !tuple.is_none() {
         return tuple;

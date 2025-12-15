@@ -19,6 +19,8 @@ mod structure;
 mod tuple;
 pub mod utils;
 
+use std::{cell::RefCell, rc::Rc};
+
 pub use array::ArrayContainer;
 pub use basic::CoreBasic;
 pub use constructor::Constructor;

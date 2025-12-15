@@ -1,4 +1,7 @@
-use crate::expand::{types::CairoToRust, utils, Expandable, ExpansionContext, ExpansionResult};
+use crate::expand::{
+    types::{extract_dependencies, CairoToRust},
+    utils, Expandable, ExpansionContext, ExpansionResult,
+};
 use cainome_parser::tokens::{NamedToken, Struct};
 use proc_macro2::TokenStream;
 use quote::quote;
@@ -127,12 +130,14 @@ pub fn struct_implementation(
 }
 
 impl Expandable for Struct {
-    fn expand(&self, expansion_context: &ExpansionContext) -> Vec<ExpansionResult> {
+    fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult> {
         let module = self.type_module();
         let name = self.type_name();
 
-        let declaration = struct_declaration(&name, &self.fields, expansion_context);
-        let implementation = struct_implementation(&name, &self.fields, expansion_context);
+        let declaration = struct_declaration(&name, &self.fields, ctx);
+        let implementation = struct_implementation(&name, &self.fields, ctx);
+
+        let deps = extract_dependencies(&self.fields, ctx);
 
         let item = quote! {
             #declaration
@@ -140,6 +145,8 @@ impl Expandable for Struct {
             #implementation
         };
 
-        vec![ExpansionResult::new(&module).with_item(&name, item)]
+        vec![ExpansionResult::new(&module)
+            .with_item(&name, item)
+            .with_imports(deps)]
     }
 }

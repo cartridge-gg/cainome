@@ -2,7 +2,7 @@ use cainome_parser::tokens::{CoreBasic, Enum, NamedToken, Token};
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::expand::types::CairoToRust;
+use crate::expand::types::{extract_dependencies, CairoToRust};
 use crate::expand::{utils, Expandable, ExpansionContext, ExpansionResult};
 
 // TODO: create Enumeration struct with type_name and variants and From<Enum> and From<Event> trait implementation.
@@ -174,12 +174,16 @@ impl Expandable for Enum {
         let declaration = enum_declaration(&name, &self.variants, ctx);
         let implementation = enum_implementation(&name, &self.variants, ctx);
 
+        let deps = extract_dependencies(&self.variants, ctx);
+
         let item = quote! {
             #declaration
 
             #implementation
         };
 
-        vec![ExpansionResult::new(&module).with_item(&name, item)]
+        vec![ExpansionResult::new(&module)
+            .with_item(&name, item)
+            .with_imports(deps)]
     }
 }

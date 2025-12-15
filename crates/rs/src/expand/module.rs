@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use proc_macro2::TokenStream;
 
@@ -7,6 +7,7 @@ use quote::quote;
 
 pub struct Module {
     pub name: String,
+    pub imports: HashSet<String>,
     pub submodules: HashMap<String, Module>,
     pub content: HashMap<String, TokenStream>,
 }
@@ -15,6 +16,7 @@ impl Module {
     pub fn new() -> Self {
         Self {
             name: ROOT_MODULE_NAME.to_string(),
+            imports: HashSet::new(),
             submodules: HashMap::new(),
             content: HashMap::new(),
         }
@@ -31,12 +33,15 @@ impl Module {
                     name: segment.to_string(),
                     submodules: HashMap::new(),
                     content: HashMap::new(),
+                    imports: HashSet::new(),
                 });
         }
 
         if current_module.content.contains_key(&result.name) {
             return;
         }
+
+        current_module.imports.extend(result.imports);
 
         let module_content = result.content.into_values().collect::<Vec<_>>();
 

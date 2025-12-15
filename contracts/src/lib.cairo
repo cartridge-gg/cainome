@@ -9,7 +9,6 @@ mod abicov {
     mod simple_interface;
     mod simple_types;
     mod structs;
-    mod events;
 }
 
 mod basic;

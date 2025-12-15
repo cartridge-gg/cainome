@@ -82,3 +82,43 @@ build-binary = ["tokio"]
 name = "cainome"
 path = "src/bin/cli/main.rs"
 required-features = ["build-binary"]
+
+[[example]]
+name = "abigen_generate"
+required-features = ["tokio", "build-binary"]
+[[example]]
+name = "alias_skip"
+required-features = ["tokio", "build-binary"]
+[[example]]
+name = "byte_array"
+required-features = ["tokio", "build-binary"]
+[[example]]
+name = "cairo_serde_derive"
+required-features = ["tokio", "build-binary"]
+[[example]]
+name = "components_events"
+required-features = ["tokio", "build-binary"]
+[[example]]
+name = "opt_res"
+required-features = ["tokio", "build-binary"]
+[[example]]
+name = "exec_v3"
+required-features = ["tokio", "build-binary"]
+[[example]]
+name = "json_abi"
+required-features = ["tokio", "build-binary"]
+[[example]]
+name = "opt_res"
+required-features = ["tokio", "build-binary"]
+[[example]]
+name = "rust_keyword"
+required-features = ["tokio", "build-binary"]
+[[example]]
+name = "simple_get_set"
+required-features = ["tokio", "build-binary"]
+[[example]]
+name = "simple_types"
+required-features = ["tokio", "build-binary"]
+[[example]]
+name = "structs"
+required-features = ["tokio", "build-binary"]
