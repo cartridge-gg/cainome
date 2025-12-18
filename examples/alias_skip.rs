@@ -37,10 +37,7 @@ abigen!(
         contracts::abicov::structs::GenericTwo as GenericTwoBis;
         contracts::abicov::structs::ToAlias as MyDef;
     },
-    type_skips(
-        contracts::abicov::structs::GenericOne, contracts::abicov::structs::GenericTwo, contracts::abicov::structs::ToAlias
-    ),
-    derives(serde::Serialize)
+    derives(Serde)
 );
 
 #[tokio::main]

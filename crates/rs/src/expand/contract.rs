@@ -1,5 +1,3 @@
-use std::collections::{BTreeSet, HashSet};
-
 use cainome_parser::{
     tokens::{Function, FunctionOutputKind, NamedToken, Token},
     TokenizedAbi, TypeRegistry,

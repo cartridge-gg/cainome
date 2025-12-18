@@ -235,7 +235,7 @@ impl TryTokenConvertable for AbiEntry {
             AbiEntry::Struct(abi_struct) => abi_struct.try_to_token(registry),
             AbiEntry::Enum(abi_enum) => abi_enum.try_to_token(registry),
             // TODO: should be use for contract deployment (in the future)
-            AbiEntry::Constructor(_) => todo!(),
+            AbiEntry::Constructor(_) => Ok(None),
             // TODO: Maybe rethink
             AbiEntry::Impl(_) => Ok(None),
             AbiEntry::Interface(abi_interface) => abi_interface.try_to_token(registry),
@@ -353,14 +353,14 @@ impl WithDependencies for AbiEntry {
 
 impl Parseable for AbiEntry {}
 
-impl TokenConvertable for RawLegacyAbiEntry {
-    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+impl TryTokenConvertable for RawLegacyAbiEntry {
+    fn try_to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Option<Token>> {
         match self {
-            RawLegacyAbiEntry::Constructor(_) => todo!(),
-            RawLegacyAbiEntry::Function(function) => function.to_token(registry),
-            RawLegacyAbiEntry::Struct(structure) => structure.to_token(registry),
-            RawLegacyAbiEntry::L1Handler(l1_handler) => l1_handler.to_token(registry),
-            RawLegacyAbiEntry::Event(event) => event.to_token(registry),
+            RawLegacyAbiEntry::Constructor(_) => Ok(None),
+            RawLegacyAbiEntry::Function(function) => function.try_to_token(registry),
+            RawLegacyAbiEntry::Struct(structure) => structure.try_to_token(registry),
+            RawLegacyAbiEntry::L1Handler(l1_handler) => l1_handler.try_to_token(registry),
+            RawLegacyAbiEntry::Event(event) => event.try_to_token(registry),
         }
     }
 }

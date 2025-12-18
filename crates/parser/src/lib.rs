@@ -5,6 +5,6 @@ mod abi;
 pub use crate::abi::parser::{AbiParser, TokenizedAbi};
 pub use crate::abi::parser_context::ParserContext;
 pub use crate::abi::registry::TypeRegistry;
-// pub use crate::abi::parser_legacy::AbiParserLegacy;
+
 
 pub mod tokens;

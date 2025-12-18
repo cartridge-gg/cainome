@@ -71,6 +71,10 @@ tokio = { version = "1.40", features = ["full"], optional = true }
 
 [dev-dependencies]
 paste = "1.0"
+# For examples
+quote = "1.0"
+syn = { version = "2.0", features = [ "extra-traits" ]}
+prettyplease = "0.2.19"
 
 [features]
 default = ["build-binary"]
@@ -82,10 +86,6 @@ name = "cainome"
 path = "src/bin/cli/main.rs"
 required-features = ["build-binary"]
 
-[[example]]
-name = "aaaa"
-required-features = ["build-binary", "abigen-rs"]
-test = false
 [[example]]
 name = "abigen_generate"
 required-features = ["build-binary", "abigen-rs"]
@@ -141,3 +141,7 @@ test = false
 name = "structs"
 required-features = ["build-binary", "abigen-rs"]
 test = false
+[[example]]
+name = "aaaa"
+required-features = ["build-binary", "abigen-rs"]
+
