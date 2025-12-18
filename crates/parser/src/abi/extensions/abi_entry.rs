@@ -510,7 +510,7 @@ mod tests {
         ]   
         "#;
 
-        let result = AbiParser::tokens_from_abi_string(abi_json, &HashMap::new()).unwrap();
+        let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
 
         assert_eq!(result.enums.len(), 1);
         let Token::Enum(enum_token) = &*result.enums[0].borrow() else {
@@ -539,6 +539,6 @@ mod tests {
         let Token::Tuple(f3t) = &*enum_token.variants[2].token.borrow() else {
             panic!("Third field token should be basic");
         };
-        assert_eq!(f3t.type_path, "(core::felt252, core::integer::u32)");
+        assert_eq!(f3t.type_path, "(core::felt252,core::integer::u32)");
     }
 }

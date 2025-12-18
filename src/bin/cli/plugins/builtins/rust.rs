@@ -1,4 +1,4 @@
-use async_trait::async_trait;
+use cainome_rs::expand::ExpansionContext;
 use cainome_rs::{self};
 use convert_case::{Case, Casing};
 
@@ -17,9 +17,8 @@ impl RustPlugin {
     }
 }
 
-#[async_trait]
 impl BuiltinPlugin for RustPlugin {
-    async fn generate_code(&self, input: &PluginInput) -> CainomeCliResult<()> {
+    fn generate_code(&self, input: &PluginInput) -> CainomeCliResult<()> {
         tracing::trace!("Rust plugin requested");
 
         for contract in &input.contracts {
@@ -38,14 +37,14 @@ impl BuiltinPlugin for RustPlugin {
             let derives = self.options.derives.as_deref().unwrap_or_default();
             let contract_derives = self.options.contract_derives.as_deref().unwrap_or_default();
 
-            let expanded = cainome_rs::abi_to_tokenstream(
-                &contract_name,
-                &contract.tokens,
-                input.execution_version,
-                derives,
-                contract_derives,
-                &input.type_skips,
-            );
+            let ctx = ExpansionContext::new(&contract_name.to_string())
+                .with_contract_derives(contract_derives)
+                .with_derives(derives)
+                .with_execution(input.execution_version)
+                .with_type_skips(&input.type_skips);
+
+            let expanded = cainome_rs::abi_to_tokenstream2(&contract.registry, &ctx);
+
             let filename = format!(
                 "{}.rs",
                 contract_name.from_case(Case::Pascal).to_case(Case::Snake)

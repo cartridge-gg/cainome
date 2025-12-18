@@ -1,4 +1,5 @@
-use cainome_parser::{AbiParser, TokenizedAbi};
+use cainome_parser::{AbiParser, ParserContext, TypeRegistry};
+use cainome_rs::expand::ExpansionContext;
 use camino::Utf8PathBuf;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -30,7 +31,7 @@ pub struct ContractData {
     /// Contract's origin.
     pub origin: ContractOrigin,
     /// Tokens parsed from the ABI.
-    pub tokens: TokenizedAbi,
+    pub registry: TypeRegistry,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -119,31 +120,30 @@ impl ContractParser {
             // Read and parse the file
             let file_content = fs::read_to_string(&file_path)?;
 
-            match AbiParser::tokens_from_abi_string(&file_content, &config.type_aliases) {
-                Ok(tokens) => {
-                    let contract_name = {
-                        let n = file_name.trim_end_matches(&config.sierra_extension);
-                        if let Some(alias) = config.contract_aliases.get(n) {
-                            tracing::trace!("Aliasing {file_name} contract name with {alias}");
-                            alias
-                        } else {
-                            n
-                        }
-                    };
+            let content = AbiParser::parse_abi_string(&file_content)?;
 
-                    tracing::trace!(
-                        "Adding {contract_name} ({file_name}) to the list of contracts"
-                    );
-                    contracts.push(ContractData {
-                        name: contract_name.to_string(),
-                        origin: ContractOrigin::SierraClassFile(file_name.to_string()),
-                        tokens,
-                    });
+            let contract_name = {
+                let n = file_name.trim_end_matches(&config.sierra_extension);
+                if let Some(alias) = config.contract_aliases.get(n) {
+                    tracing::trace!("Aliasing {file_name} contract name with {alias}");
+                    alias
+                } else {
+                    n
                 }
-                Err(e) => {
-                    tracing::warn!("Sierra file {file_name} could not be parsed {e:?}")
-                }
-            }
+            };
+
+            // TODO: This is a crotch, because expansion context has default substitues registered
+            let ctx = ExpansionContext::new(contract_name);
+
+            let registry = AbiParser::build_registry(content, ParserContext::from(&ctx))?;
+
+            tracing::trace!("Adding {contract_name} ({file_name}) to the list of contracts");
+
+            contracts.push(ContractData {
+                name: contract_name.to_string(),
+                origin: ContractOrigin::SierraClassFile(file_name.to_string()),
+                registry: registry,
+            });
         }
 
         Ok(contracts)
@@ -153,7 +153,7 @@ impl ContractParser {
         name: &str,
         address: Felt,
         rpc_url: Url,
-        type_aliases: &HashMap<String, String>,
+        _type_aliases: &HashMap<String, String>,
     ) -> CainomeCliResult<ContractData> {
         let provider = AnyProvider::JsonRpcHttp(JsonRpcClient::new(HttpTransport::new(rpc_url)));
 
@@ -163,17 +163,15 @@ impl ContractParser {
 
         match class {
             ContractClass::Sierra(sierra) => {
-                match AbiParser::tokens_from_abi_string(&sierra.abi, type_aliases) {
-                    Ok(tokens) => Ok(ContractData {
-                        name: name.to_string(),
-                        origin: ContractOrigin::FetchedFromChain(address),
-                        tokens,
-                    }),
-                    Err(e) => Err(Error::Other(format!(
-                        "Error parsing ABI from address {:#x}: {:?}",
-                        address, e
-                    ))),
-                }
+                let content = AbiParser::parse_abi_string(&sierra.abi)?;
+                let ctx = ExpansionContext::new(name);
+                let registry = AbiParser::build_registry(content, ParserContext::from(&ctx))?;
+
+                Ok(ContractData {
+                    name: name.to_string(),
+                    origin: ContractOrigin::FetchedFromChain(address),
+                    registry: registry,
+                })
             }
             ContractClass::Legacy(_) => Err(Error::Other(
                 "Legacy class is not supported yet".to_string(),

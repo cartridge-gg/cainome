@@ -57,21 +57,4 @@ impl Event {
     pub fn is_generic(&self) -> bool {
         !self.generic_args.is_empty()
     }
-
-    pub fn type_name(&self) -> String {
-        // TODO: need to opti that with regex?
-        utils::extract_type_path_with_depth(&self.type_path_no_generic(), 0)
-    }
-
-    pub fn type_module(&self) -> String {
-        let type_path = genericity::type_path_no_generic(&self.type_path);
-        let Some((module, _)) = type_path
-            .rsplit_once("::")
-            .or_else(|| Some(("", &type_path)))
-        else {
-            unreachable!()
-        };
-
-        return module.to_string();
-    }
 }

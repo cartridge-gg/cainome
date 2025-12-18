@@ -67,10 +67,6 @@ impl ArrayContainer {
             is_legacy: false,
         };
     }
-
-    pub fn new_token(type_path: &str, inner: &Rc<RefCell<Token>>) -> Token {
-        Token::Array(Self::new(type_path, inner))
-    }
 }
 
 #[cfg(test)]
@@ -78,7 +74,7 @@ mod tests {
     use starknet::core::types::contract::{AbiEntry, AbiNamedMember, AbiStruct};
 
     use super::*;
-    use crate::{abi::registry::TypeRegistry, AbiParser};
+    use crate::{abi::registry::TypeRegistry, AbiParser, ParserContext};
 
     #[test]
     fn test_get_inner() {
@@ -97,7 +93,7 @@ mod tests {
             }],
         })];
 
-        return AbiParser::build_registry(data);
+        return AbiParser::build_registry(data, ParserContext::default());
     }
 
     #[test]

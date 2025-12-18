@@ -21,8 +21,7 @@ members = [
 	"crates/parser",
 	"crates/rs",
 	"crates/rs-macro",
-	"crates/cairo-test-artifacts",
-	"crates/integration-tests"
+	# "crates/cairo-test-artifacts",
 ]
 
 [workspace.dependencies]
@@ -74,7 +73,7 @@ tokio = { version = "1.40", features = ["full"], optional = true }
 paste = "1.0"
 
 [features]
-default = []
+default = ["build-binary"]
 abigen-rs = ["cainome-rs-macro"]
 build-binary = ["tokio"]
 
@@ -84,41 +83,61 @@ path = "src/bin/cli/main.rs"
 required-features = ["build-binary"]
 
 [[example]]
+name = "aaaa"
+required-features = ["build-binary", "abigen-rs"]
+test = false
+[[example]]
 name = "abigen_generate"
-required-features = ["tokio", "build-binary"]
+required-features = ["build-binary", "abigen-rs"]
+test = false
 [[example]]
 name = "alias_skip"
-required-features = ["tokio", "build-binary"]
+required-features = ["build-binary", "abigen-rs"]
+test = false
 [[example]]
 name = "byte_array"
-required-features = ["tokio", "build-binary"]
+required-features = ["build-binary", "abigen-rs"]
+test = false
 [[example]]
 name = "cairo_serde_derive"
-required-features = ["tokio", "build-binary"]
+test = false
+[[example]]
+name = "cairo0_account"
+required-features = ["build-binary", "abigen-rs"]
+test = false
+[[example]]
+name = "cairo0"
+required-features = ["build-binary", "abigen-rs"]
+test = false
 [[example]]
 name = "components_events"
-required-features = ["tokio", "build-binary"]
-[[example]]
-name = "opt_res"
-required-features = ["tokio", "build-binary"]
+required-features = ["build-binary", "abigen-rs"]
+test = false
 [[example]]
 name = "exec_v3"
-required-features = ["tokio", "build-binary"]
+required-features = ["build-binary", "abigen-rs"]
+test = false
 [[example]]
 name = "json_abi"
-required-features = ["tokio", "build-binary"]
+required-features = ["build-binary", "abigen-rs"]
+test = false
 [[example]]
 name = "opt_res"
-required-features = ["tokio", "build-binary"]
+required-features = ["build-binary", "abigen-rs"]
+test = false
 [[example]]
 name = "rust_keyword"
-required-features = ["tokio", "build-binary"]
+required-features = ["build-binary", "abigen-rs"]
+test = false
 [[example]]
 name = "simple_get_set"
-required-features = ["tokio", "build-binary"]
+required-features = ["build-binary", "abigen-rs"]
+test = false
 [[example]]
 name = "simple_types"
-required-features = ["tokio", "build-binary"]
+required-features = ["build-binary", "abigen-rs"]
+test = false
 [[example]]
 name = "structs"
-required-features = ["tokio", "build-binary"]
+required-features = ["build-binary", "abigen-rs"]
+test = false

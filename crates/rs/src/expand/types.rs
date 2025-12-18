@@ -1,8 +1,8 @@
-use std::rc::Rc;
+use std::{collections::HashSet, rc::Rc};
 
 use cainome_parser::tokens::{
-    ArrayContainer, CoreBasic, Enum, Event, NamedToken, NonZeroContainer, OptionContainer,
-    ResultContainer, Struct, Token, TupleContainer,
+    ArrayContainer, Enum, Event, NamedToken, NonZeroContainer, OptionContainer, ResultContainer,
+    Struct, Token, TupleContainer, TypePath,
 };
 
 use crate::expand::{
@@ -18,13 +18,13 @@ pub trait CairoToRust {
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String;
 }
 
-impl CairoToRust for CoreBasic {
-    fn to_rust_type(&self, _: &ExpansionContext) -> String {
-        basic_types_to_rust(&self.type_name())
+impl CairoToRust for TypePath {
+    fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
+        ctx.apply_alias(self.type_path())
     }
 
-    fn to_rust_type_path(&self, _: &ExpansionContext) -> String {
-        basic_types_to_rust(&self.type_name())
+    fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
+        ctx.apply_alias(self.type_path())
     }
 }
 
@@ -179,6 +179,8 @@ impl CairoToRust for &Token {
             Token::Interface(_) => "__INTERFACE_NOT_SUPPORTED__".to_string(),
             Token::Function(_) => "__FUNCTION_NOT_SUPPORTED__".to_string(),
             Token::Placeholder => "__PLACEHOLDER__".to_string(),
+            Token::Substitute(t) => t.to_rust_type(ctx),
+            Token::Skip(t) => t.to_rust_type(ctx),
         }
     }
 
@@ -197,31 +199,13 @@ impl CairoToRust for &Token {
             Token::Interface(_) => "__INTERFACE_NOT_SUPPORTED__".to_string(),
             Token::Constructor(_) => "__CONSTRUCTOR_NOT_SUPPORTED__".to_string(),
             Token::Placeholder => "__PLACEHOLDER__".to_string(),
+            Token::Skip(t) => t.to_rust_type_path(ctx),
+            Token::Substitute(t) => t.to_rust_type_path(ctx),
         }
     }
 }
 
-fn basic_types_to_rust(type_name: &str) -> String {
-    let ccsp = utils::cainome_cairo_serde_path();
-    let snrs_types = utils::starknet_rs_types_path();
-
-    match type_name {
-        "ClassHash" => format!("{ccsp}::ClassHash"),
-        "ContractAddress" => format!("{ccsp}::ContractAddress"),
-        "EthAddress" => format!("{ccsp}::EthAddress"),
-        "felt252" => format!("{snrs_types}::Felt"),
-        "felt" => format!("{snrs_types}::Felt"),
-        "bytes31" => format!("{ccsp}::Bytes31"),
-        "ByteArray" => format!("{ccsp}::ByteArray"),
-        "NonZero" => format!("{ccsp}::NonZero"),
-        "U256" => format!("{ccsp}::U256"),
-        _ => type_name.to_string(),
-    }
-}
-
-pub fn extract_dependencies(items: &Vec<NamedToken>, ctx: &ExpansionContext) -> Vec<String> {
-    let mut deps = vec![];
-
+fn check_requires_serde_derive(items: &Vec<NamedToken>, ctx: &ExpansionContext) -> bool {
     // Unwrapping all container types to get inner types
     let unwrapped_types = items
         .iter()
@@ -239,21 +223,26 @@ pub fn extract_dependencies(items: &Vec<NamedToken>, ctx: &ExpansionContext) -> 
     for token in unwrapped_types {
         let inner_token = &*token.borrow();
 
-        // Basic types are available through core library
-        if inner_token.is_basic() {
-            continue;
-        }
-
         let type_path = inner_token.to_rust_type_path(ctx);
 
         let serde_hex = is_serde_hex_int(&type_path);
         if serde_hex != SerdeHexType::None {
-            let ccsp = utils::cainome_cairo_serde_path();
-            deps.push(ccsp);
+            return true;
         }
-
-        deps.push(type_path);
     }
 
-    return deps;
+    false
+}
+
+pub fn get_additional_derive_requirements(
+    items: &Vec<NamedToken>,
+    ctx: &ExpansionContext,
+) -> Vec<String> {
+    if check_requires_serde_derive(items, ctx) {
+        return vec![
+            "serde::Serialize".to_string(),
+            "serde::Deserialize".to_string(),
+        ];
+    }
+    vec![]
 }

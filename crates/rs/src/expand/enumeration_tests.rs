@@ -17,7 +17,7 @@ fn test_enum_expand_empty() {
     let ctx = ExpansionContext::new("ContractName");
 
     let generated = Module::new()
-        .with_registered_many(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx))
         .to_token_stream();
 
     let expected: TokenStream = parse_quote! {
@@ -29,7 +29,7 @@ fn test_enum_expand_empty() {
 
 #[test]
 fn test_enum_expand_simple_variants() {
-    let registry = TypeRegistry::new();
+    let mut registry = TypeRegistry::new();
 
     let mut enumeration = Enum::new("my::Enum", &registry).unwrap();
 
@@ -39,9 +39,10 @@ fn test_enum_expand_simple_variants() {
     });
 
     let ctx = ExpansionContext::new("ContractName");
+    registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_registered_many(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx))
         .to_token_stream();
 
     let expected: TokenStream = parse_quote! {
@@ -55,7 +56,7 @@ fn test_enum_expand_simple_variants() {
 
 #[test]
 fn test_enum_expand_core_type_variants() {
-    let registry = TypeRegistry::new();
+    let mut registry = TypeRegistry::new();
 
     let enumeration = Enum::new("my::Enum", &registry)
         .unwrap()
@@ -93,9 +94,10 @@ fn test_enum_expand_core_type_variants() {
         ]);
 
     let ctx = ExpansionContext::new("ContractName");
+    registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_registered_many(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx))
         .to_token_stream();
 
     let expected: ItemEnum = parse_quote! {
@@ -141,7 +143,7 @@ fn test_enum_expand_core_type_variants() {
 
 #[test]
 fn test_enumeration_expand_with_containers_field() {
-    let registry = TypeRegistry::new();
+    let mut registry = TypeRegistry::new();
 
     let enumeration = Enum::new("my::Type", &registry)
         .unwrap()
@@ -163,9 +165,10 @@ fn test_enumeration_expand_with_containers_field() {
         ]);
 
     let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
+    registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_registered_many(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx))
         .to_token_stream();
 
     // TODO: use cainome
@@ -218,8 +221,8 @@ fn test_enumeration_expand_with_structure_field() {
     let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
     let generated = Module::new()
-        .with_registered_many(structure.expand(&ctx))
-        .with_registered_many(enumeration.expand(&ctx))
+        .with_includes(structure.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx))
         .to_token_stream();
 
     // TODO: use cainome

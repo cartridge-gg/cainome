@@ -1,8 +1,8 @@
-use cainome_parser::tokens::{CoreBasic, Enum, NamedToken, Token};
+use cainome_parser::tokens::{Enum, NamedToken, Token, TypePath};
 use proc_macro2::TokenStream;
 use quote::quote;
 
-use crate::expand::types::{extract_dependencies, CairoToRust};
+use crate::expand::types::{get_additional_derive_requirements, CairoToRust};
 use crate::expand::{utils, Expandable, ExpansionContext, ExpansionResult};
 
 // TODO: create Enumeration struct with type_name and variants and From<Enum> and From<Event> trait implementation.
@@ -23,7 +23,7 @@ pub fn enum_declaration(
         let serde = utils::serde_hex_derive(&token.to_rust_type(ctx));
 
         match &*inner.token.borrow() {
-            Token::Basic(CoreBasic { type_path }) if type_path == "()" => {
+            Token::Basic(TypePath { type_path }) if type_path == "()" => {
                 generated_variants.push(quote!(#serde #name));
             }
             _ => {
@@ -81,7 +81,7 @@ pub fn enum_implementation(
         };
 
         match &*inner.token.borrow() {
-            Token::Basic(CoreBasic { type_path }) if type_path == "()" => {
+            Token::Basic(TypePath { type_path }) if type_path == "()" => {
                 serializations.push(quote! {
                     #enum_name::#variant_name => usize::cairo_serialize(&#variant_index)
                 });
@@ -168,13 +168,15 @@ pub fn enum_implementation(
 
 impl Expandable for Enum {
     fn expand(&self, ctx: &ExpansionContext) -> Vec<super::ExpansionResult> {
-        let module = self.type_module();
-        let name = self.type_name();
+        let full_path = ctx.apply_alias(&self.type_path_no_generic());
+        let name = full_path.split("::").last().unwrap().to_owned();
 
-        let declaration = enum_declaration(&name, &self.variants, ctx);
-        let implementation = enum_implementation(&name, &self.variants, ctx);
+        let ctx = ctx
+            .clone()
+            .with_derives(get_additional_derive_requirements(&self.variants, &ctx));
 
-        let deps = extract_dependencies(&self.variants, ctx);
+        let declaration = enum_declaration(&name, &self.variants, &ctx);
+        let implementation = enum_implementation(&name, &self.variants, &ctx);
 
         let item = quote! {
             #declaration
@@ -182,8 +184,6 @@ impl Expandable for Enum {
             #implementation
         };
 
-        vec![ExpansionResult::new(&module)
-            .with_item(&name, item)
-            .with_imports(deps)]
+        vec![ExpansionResult::new(&full_path).with_item(&name, item)]
     }
 }

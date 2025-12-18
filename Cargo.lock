@@ -324,17 +324,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cairo-test-artifacts"
-version = "0.1.0"
-dependencies = [
- "cainome",
- "cainome-cairo-serde",
- "serde",
- "serde_json",
- "starknet",
-]
-
-[[package]]
 name = "camino"
 version = "1.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -998,20 +987,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a0c10553d664a4d0bcff9f4215d0aac67a639cc68ef660840afe309b807bc9f5"
 dependencies = [
  "generic-array",
-]
-
-[[package]]
-name = "integration-tests"
-version = "0.6.0"
-dependencies = [
- "cainome-cairo-serde",
- "cainome-parser",
- "convert_case",
- "quote",
- "serde",
- "starknet",
- "syn 2.0.101",
- "thiserror 2.0.12",
 ]
 
 [[package]]

@@ -1,7 +1,7 @@
 use crate::expand::{
     enumeration::{enum_declaration, enum_implementation},
     structure::{struct_declaration, struct_implementation},
-    types::{extract_dependencies, CairoToRust},
+    types::{get_additional_derive_requirements, CairoToRust},
     utils, Expandable, ExpansionContext, ExpansionResult,
 };
 use cainome_parser::tokens::{Event, EventKind, Token};
@@ -9,8 +9,8 @@ use proc_macro2::TokenStream;
 use quote::quote;
 
 fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> TokenStream {
-    let event_name_str = event.type_name();
-
+    let full_path = ctx.apply_alias(&event.type_path_no_generic());
+    let event_name_str = full_path.split("::").last().unwrap().to_owned();
     let event_name = utils::str_to_ident(&event_name_str);
 
     let snrs_utils = utils::snrs_utils();
@@ -53,7 +53,7 @@ fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> Tok
         let inner_type_name = inner_token.to_rust_type(ctx);
 
         let inner_type_name_str = utils::str_to_litstr(&inner_type_name);
-        let inner_type_name_id = utils::str_to_ident(&inner_type_name);
+        let inner_type_name_id = utils::str_to_type(&inner_type_name);
 
         let Token::Event(Event { kind, .. }) = inner_token else {
             unreachable!("Nested event variant is always an event");
@@ -90,8 +90,8 @@ fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> Tok
 
 impl Expandable for Event {
     fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult> {
-        let module_path = self.type_module();
-        let type_name = self.type_name();
+        let full_path = self.type_path_no_generic();
+        let type_name = full_path.split("::").last().unwrap().to_owned();
         let event_name = utils::str_to_ident(&type_name);
 
         // Generate type definition, struct or enum, depending on the event type.
@@ -103,10 +103,12 @@ impl Expandable for Event {
 
                 let variants = [self.nested.clone(), self.flat.clone()].concat();
 
-                let deps = extract_dependencies(&variants, ctx);
+                let ctx = ctx
+                    .clone()
+                    .with_derives(get_additional_derive_requirements(&variants, &ctx));
 
-                let declaration = enum_declaration(&type_name, &variants, ctx);
-                let implementation = enum_implementation(&type_name, &variants, ctx);
+                let declaration = enum_declaration(&type_name, &variants, &ctx);
+                let implementation = enum_implementation(&type_name, &variants, &ctx);
 
                 let definition = quote! {
 
@@ -143,17 +145,17 @@ impl Expandable for Event {
                     }
                 };
 
-                vec![ExpansionResult::new(&module_path)
-                    .with_item(&type_name, definition)
-                    .with_imports(deps)]
+                vec![ExpansionResult::new(&full_path).with_item(&type_name, definition)]
             }
             cainome_parser::tokens::EventKind::Struct => {
                 let fields = [self.keys.clone(), self.data.clone()].concat();
 
-                let declaration = struct_declaration(&type_name, &fields, ctx);
-                let implementation = struct_implementation(&type_name, &fields, ctx);
+                let ctx = ctx
+                    .clone()
+                    .with_derives(get_additional_derive_requirements(&fields, &ctx));
 
-                let deps = extract_dependencies(&fields, ctx);
+                let declaration = struct_declaration(&type_name, &fields, &ctx);
+                let implementation = struct_implementation(&type_name, &fields, &ctx);
 
                 let definition = quote! {
                     #declaration
@@ -161,9 +163,7 @@ impl Expandable for Event {
                     #implementation
                 };
 
-                vec![ExpansionResult::new(&module_path)
-                    .with_item(&type_name, definition)
-                    .with_imports(deps)]
+                vec![ExpansionResult::new(&full_path).with_item(&type_name, definition)]
             }
         }
     }

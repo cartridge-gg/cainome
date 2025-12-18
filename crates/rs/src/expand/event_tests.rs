@@ -3,13 +3,14 @@ use cainome_parser::{
     TypeRegistry,
 };
 
+use proc_macro2::TokenStream;
 use syn::{parse_quote, ItemEnum, ItemStruct};
 
 use crate::expand::{for_tests::assert_code_has, Expandable, ExpansionContext, Module};
 
 #[test]
 fn test_struct_event_expansion() {
-    let registry = TypeRegistry::new();
+    let mut registry = TypeRegistry::new();
 
     let event = Event {
         kind: EventKind::Struct,
@@ -25,9 +26,10 @@ fn test_struct_event_expansion() {
     };
 
     let ctx = ExpansionContext::new("ContractName");
+    registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_registered_many(event.expand(&ctx))
+        .with_includes(event.expand(&ctx))
         .to_token_stream();
 
     let expected: ItemStruct = parse_quote! {
@@ -200,7 +202,11 @@ mod fixtures {
 
 #[test]
 fn test_simple_case_nested_struct_in_enum() {
-    let registry = fixtures::simple_nested_struct_enum();
+    let mut registry = fixtures::simple_nested_struct_enum();
+
+    let ctx = ExpansionContext::new("ContractName");
+    registry.apply_substitutions(&ctx.substitutions);
+
     let token = registry
         .get("contracts::abicov::events::events::Event")
         .unwrap();
@@ -209,14 +215,13 @@ fn test_simple_case_nested_struct_in_enum() {
         panic!("Token should be an Event. Something is wrong with fixture.");
     };
 
-    let ctx = ExpansionContext::new("ContractName");
     let generated = Module::new()
-        .with_registered_many(enum_event.expand(&ctx))
+        .with_includes(enum_event.expand(&ctx))
         .to_token_stream();
 
-    let expected: ItemEnum = parse_quote! {
+    let expected: TokenStream = parse_quote! {
         pub enum Event {
-            Simple(SimpleEvent)
+            Simple(crate::contracts::abicov::events::events::SimpleEvent)
         }
     };
 

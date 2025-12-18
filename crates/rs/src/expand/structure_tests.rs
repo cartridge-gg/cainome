@@ -10,14 +10,16 @@ use crate::expand::{for_tests::assert_code_has, Expandable, ExpansionContext, Mo
 
 #[test]
 fn test_structure_expand_empty() {
-    let registry = TypeRegistry::new();
+    let mut registry = TypeRegistry::new();
 
     let structure = Struct::new("my::Type", &registry).unwrap();
 
     let ctx = ExpansionContext::new("ContractName");
 
+    registry.apply_substitutions(&ctx.substitutions);
+
     let generated = Module::new()
-        .with_registered_many(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
     let expected: ItemStruct = parse_quote! {
@@ -29,7 +31,7 @@ fn test_structure_expand_empty() {
 
 #[test]
 fn test_structure_expand_basic_field() {
-    let registry = TypeRegistry::new();
+    let mut registry = TypeRegistry::new();
 
     let mut structure = Struct::new("my::Type", &registry).unwrap();
 
@@ -39,9 +41,10 @@ fn test_structure_expand_basic_field() {
     });
 
     let ctx = ExpansionContext::new("ContractName");
+    registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_registered_many(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
     let expected: ItemStruct = parse_quote! {
@@ -55,7 +58,7 @@ fn test_structure_expand_basic_field() {
 
 #[test]
 fn test_structure_expand_with_derive() {
-    let registry = TypeRegistry::new();
+    let mut registry = TypeRegistry::new();
 
     let mut structure = Struct::new("my::Type", &registry).unwrap();
 
@@ -64,14 +67,19 @@ fn test_structure_expand_with_derive() {
         token: registry.get("felt").unwrap(),
     });
 
-    let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
+    let ctx = ExpansionContext::new("ContractName").with_derives(vec![
+        "serde::Serialize",
+        "serde::Deserialize",
+        "Clone",
+    ]);
+    registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_registered_many(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
     let expected: ItemStruct = parse_quote! {
-        #[derive(Serialize, Deserialize, Clone, )]
+        #[derive(Clone, serde::Deserialize, serde::Serialize,)]
         pub struct Type {
             pub f1: starknet::core::types::Felt
         }
@@ -82,7 +90,7 @@ fn test_structure_expand_with_derive() {
 
 #[test]
 fn test_structure_expand_with_option_field() {
-    let registry = TypeRegistry::new();
+    let mut registry = TypeRegistry::new();
 
     let mut structure = Struct::new("my::Type", &registry).unwrap();
 
@@ -92,13 +100,14 @@ fn test_structure_expand_with_option_field() {
     });
 
     let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
+    registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_registered_many(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
     let expected: ItemStruct = parse_quote! {
-        #[derive(Serialize, Deserialize, Clone, )]
+        #[derive(Clone, serde::Deserialize, serde::Serialize,)]
         pub struct Type {
             pub f1: Option<starknet::core::types::Felt>
         }
@@ -109,7 +118,7 @@ fn test_structure_expand_with_option_field() {
 
 #[test]
 fn test_structure_expand_with_array_field() {
-    let registry = TypeRegistry::new();
+    let mut registry = TypeRegistry::new();
 
     let mut structure = Struct::new("my::Type", &registry).unwrap();
 
@@ -118,16 +127,19 @@ fn test_structure_expand_with_array_field() {
         token: registry.get("core::array::Array<core::felt252>").unwrap(),
     });
 
-    let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
+    let ctx = ExpansionContext::new("ContractName").with_derives(vec![
+        "serde::Serialize",
+        "serde::Deserialize",
+        "Clone",
+    ]);
+    registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_registered_many(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
-    println!("{}", generated.to_string());
-
     let expected: ItemStruct = parse_quote! {
-        #[derive(Serialize, Deserialize, Clone, )]
+        #[derive(Clone, serde::Deserialize, serde::Serialize,)]
         pub struct Type {
             pub f1: Vec<starknet::core::types::Felt>
         }
@@ -138,7 +150,7 @@ fn test_structure_expand_with_array_field() {
 
 #[test]
 fn test_structure_expand_with_non_zero_field() {
-    let registry = TypeRegistry::new();
+    let mut registry = TypeRegistry::new();
 
     let mut structure = Struct::new("my::Type", &registry).unwrap();
 
@@ -150,13 +162,14 @@ fn test_structure_expand_with_non_zero_field() {
     });
 
     let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
+    registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_registered_many(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
     let expected: TokenStream = parse_quote! {
-        #[derive(Serialize, Deserialize, Clone, )]
+        #[derive(Clone, serde::Deserialize, serde::Serialize,)]
         pub struct Type {
             pub f1: cainome::cairo_serde::NonZero<starknet::core::types::Felt>
         }
@@ -167,7 +180,9 @@ fn test_structure_expand_with_non_zero_field() {
 
 #[test]
 fn test_structure_expand_with_tuple_field() {
-    let registry = TypeRegistry::new();
+    let mut registry = TypeRegistry::new();
+    let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
+    registry.apply_substitutions(&ctx.substitutions);
 
     let mut structure = Struct::new("my::Type", &registry).unwrap();
 
@@ -178,16 +193,12 @@ fn test_structure_expand_with_tuple_field() {
             .unwrap(),
     });
 
-    let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
-
     let generated = Module::new()
-        .with_registered_many(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
-    println!("{}", generated.to_string());
-
     let expected: ItemStruct = parse_quote! {
-        #[derive(Serialize, Deserialize, Clone, )]
+        #[derive(Clone, serde::Deserialize, serde::Serialize,)]
         pub struct Type {
             pub f1: (starknet::core::types::Felt, Option<starknet::core::types::Felt>)
         }
@@ -218,16 +229,16 @@ fn test_structure_expand_with_self_reference() {
     let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
 
     let generated = Module::new()
-        .with_registered_many(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
     // TODO(@baitcode): This is incorrect. Should be Box<> or something.
     // Discuss with @glihm
 
     let expected: ItemStruct = parse_quote! {
-        #[derive(Serialize, Deserialize, Clone, )]
+        #[derive(Clone, serde::Deserialize, serde::Serialize,)]
         pub struct Type {
-            pub f1: Type
+            pub f1: crate::my::Type
         }
     };
 
@@ -236,7 +247,9 @@ fn test_structure_expand_with_self_reference() {
 
 #[test]
 fn test_structure_expand_all_core_types() {
-    let registry = TypeRegistry::new();
+    let mut registry = TypeRegistry::new();
+    let ctx = ExpansionContext::new("ContractName");
+    registry.apply_substitutions(&ctx.substitutions);
 
     let structure = Struct::new("my::Struct", &registry)
         .unwrap()
@@ -273,10 +286,8 @@ fn test_structure_expand_all_core_types() {
             ),
         ]);
 
-    let ctx = ExpansionContext::new("ContractName");
-
     let generated = Module::new()
-        .with_registered_many(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
     let expected: TokenStream = parse_quote! {
@@ -322,7 +333,7 @@ fn test_structure_expand_all_core_types() {
 
 #[test]
 fn structure_with_fields_conflicting_with_keywords() {
-    let registry = TypeRegistry::new();
+    let mut registry = TypeRegistry::new();
 
     let structure = Struct::new("my::Type", &registry)
         .unwrap()
@@ -334,9 +345,10 @@ fn structure_with_fields_conflicting_with_keywords() {
         ]);
 
     let ctx = ExpansionContext::new("ContractName");
+    registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_registered_many(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
     let expected: ItemStruct = parse_quote! {

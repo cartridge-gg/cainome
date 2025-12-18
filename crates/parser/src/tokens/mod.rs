@@ -9,7 +9,7 @@ mod constructor;
 mod enumeration;
 mod event;
 mod function;
-mod genericity;
+pub mod genericity;
 mod interface;
 mod named_token;
 mod non_zero;
@@ -19,10 +19,8 @@ mod structure;
 mod tuple;
 pub mod utils;
 
-use std::{cell::RefCell, rc::Rc};
-
 pub use array::ArrayContainer;
-pub use basic::CoreBasic;
+pub use basic::TypePath;
 pub use constructor::Constructor;
 pub use enumeration::Enum;
 pub use event::{Event, EventKind};
@@ -33,6 +31,7 @@ pub use non_zero::NonZeroContainer;
 pub use option::OptionContainer;
 pub use result::ResultContainer;
 pub use structure::Struct;
+use syn::token::Ref;
 pub use tuple::TupleContainer;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -43,7 +42,7 @@ pub enum Token {
     // Basic type is well known cairo builtin.
     // It's stored in ABI as a reference and defined in caire
     // core lib.
-    Basic(CoreBasic),
+    Basic(TypePath),
 
     // Container types are similar to Basic, but are well
     // known generic containers.
@@ -63,6 +62,13 @@ pub enum Token {
 
     // Placeholder is a service level value, those should never be exposed
     Placeholder,
+
+    // Extension token is not expanded by default, it's used to mark a token
+    // that implementation is provided externally via a custom crate
+    Substitute(TypePath),
+
+    // Types to be skipped from generation
+    Skip(TypePath),
 
     // Not needed for now
     Constructor(Constructor),

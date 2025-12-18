@@ -1,6 +1,8 @@
+use std::collections::HashSet;
+
 use cainome_parser::{
     tokens::{Function, NamedToken, Token},
-    AbiParser, TypeRegistry,
+    TypeRegistry,
 };
 use proc_macro2::TokenStream;
 use syn::parse_quote;
@@ -21,7 +23,7 @@ fn test_naive_contract_expansion() {
     };
 
     let generated = Module::new()
-        .with_registered_many(contract.expand(&ctx))
+        .with_includes(contract.expand(&ctx))
         .to_token_stream();
 
     let expected: TokenStream = parse_quote! {
@@ -63,13 +65,12 @@ fn test_naive_contract_with_view_function() {
     registry.set("some_unique_path", function);
 
     let ctx = ExpansionContext::new("ContractName");
+    registry.apply_substitutions(&ctx.substitutions);
 
-    let abi = AbiParser::create_tokenized_abi(registry.values()).unwrap();
-
-    let contract = Contract::new("ContractName", vec![], &abi);
+    let contract = Contract::new("ContractName", vec![], &registry);
 
     let generated = Module::new()
-        .with_registered_many(contract.expand(&ctx))
+        .with_includes(contract.expand(&ctx))
         .to_token_stream();
 
     let expected: TokenStream = parse_quote! {
@@ -133,13 +134,12 @@ fn test_naive_contract_with_view_mutating_function() {
     registry.set("some_unique_path", function);
 
     let ctx = ExpansionContext::new("ContractName");
+    registry.apply_substitutions(&ctx.substitutions);
 
-    let abi = AbiParser::create_tokenized_abi(registry.values()).unwrap();
-
-    let contract = Contract::new("ContractName", vec![], &abi);
+    let contract = Contract::new("ContractName", vec![], &registry);
 
     let generated = Module::new()
-        .with_registered_many(contract.expand(&ctx))
+        .with_includes(contract.expand(&ctx))
         .to_token_stream();
 
     let expected: TokenStream = parse_quote! {

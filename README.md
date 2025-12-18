@@ -4,14 +4,17 @@
 [x] tests for enum generation
 [x] tests for tuple <> brackets
 [x] tests for reserved words usage in fields
-[ ] examples conversion
 [ ] module dependencies
+[ ] examples conversion
+[ ] bindings
 
+[ ] cairo0
+
+[ ] think of substitions (external)
 [ ] tests for serialisation rules
 [ ] tests for nested events of level 2 and more
 [ ] generic structs handling. I didn't test those properly (old functionality)
-
-[ ] bindings
+[ ] prefix cainome with additional setting 
 [ ] If we can generate code, why not generate tests as well?
 [ ] event structure split (not critical)
 [ ] deploy and declare calls method

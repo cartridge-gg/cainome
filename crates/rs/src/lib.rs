@@ -1,6 +1,6 @@
 use anyhow::Result;
 use cainome_parser::tokens::Token;
-use cainome_parser::{AbiParser, TokenizedAbi};
+use cainome_parser::{AbiParser, Error, ParserContext, TokenizedAbi, TypeRegistry};
 use camino::Utf8PathBuf;
 use proc_macro2::TokenStream;
 use std::collections::HashMap;
@@ -9,8 +9,11 @@ use std::fs;
 use std::io;
 
 mod execution_version;
-mod expand;
+pub mod expand;
 pub use execution_version::{ExecutionVersion, ParseExecutionVersionError};
+
+#[cfg(test)]
+mod generation_tests;
 
 use crate::expand::contract::Contract;
 use crate::expand::{Expandable, ExpansionContext, Module};
@@ -94,7 +97,7 @@ impl Abigen {
             contract_name: contract_name.to_string(),
             abi_source: Utf8PathBuf::from(abi_source),
             types_aliases: HashMap::new(),
-            execution_version: ExecutionVersion::V1,
+            execution_version: ExecutionVersion::V3,
             derives: vec![],
             contract_derives: vec![],
             type_skips: vec![],
@@ -151,32 +154,37 @@ impl Abigen {
         self
     }
     /// Generates the contract bindings.
-    pub fn generate(&self) -> Result<ContractBindings> {
+    pub fn generate(&self) -> Result<ContractBindings, Error> {
         let file_content = std::fs::read_to_string(&self.abi_source)?;
 
-        match AbiParser::tokens_from_abi_string(&file_content, &self.types_aliases) {
-            Ok(tokens) => {
-                let expanded = abi_to_tokenstream(
-                    &self.contract_name,
-                    &tokens,
-                    self.execution_version,
-                    self.derives.clone(),
-                    &self.contract_derives,
-                    &self.type_skips,
-                );
+        let entries = AbiParser::parse_abi_string(&file_content).map_err(|e| {
+            Error::ParsingFailed(format!(
+                "Abi source {} could not be parsed {:?}. ABI file should be 
+                a JSON with an array of abi entries or a Sierra artifact.",
+                self.abi_source, e
+            ))
+        })?;
 
-                Ok(ContractBindings {
-                    name: self.contract_name.clone(),
-                    tokens: expanded,
-                })
-            }
-            Err(e) => {
-                anyhow::bail!(
-                    "Abi source {} could not be parsed {:?}. ABI file should be a JSON with an array of abi entries or a Sierra artifact.",
+        let ctx = ExpansionContext::new(&self.contract_name)
+            .with_contract_derives(&self.contract_derives)
+            .with_derives(&self.derives)
+            .with_execution(self.execution_version)
+            .with_aliases(self.types_aliases.clone())
+            .with_type_skips(&self.type_skips);
+
+        let registry =
+            AbiParser::build_registry(entries, ParserContext::from(&ctx)).map_err(|e| {
+                Error::ParsingFailed(format!("Abi source {} could not be parsed {:?}. ABI seems to have incorrect structure.",
                     self.abi_source, e
-                )
-            }
-        }
+                ))
+            })?;
+
+        let expanded = abi_to_tokenstream2(&registry, &ctx);
+
+        Ok(ContractBindings {
+            name: self.contract_name.clone(),
+            tokens: expanded,
+        })
     }
 }
 
@@ -193,38 +201,89 @@ impl Abigen {
 pub fn abi_to_tokenstream(
     contract_name: &str,
     abi_tokens: &TokenizedAbi,
-    execution_version: ExecutionVersion,
-    derives: Vec<String>,
+    execution_version: &ExecutionVersion,
+    derives: &Vec<String>,
     contract_derives: &[String],
     _type_skips: &[String],
 ) -> TokenStream {
-    let contract = Contract::new(contract_name, contract_derives.into(), abi_tokens);
-
     let ctx = ExpansionContext::new(contract_name)
-        .with_derives(derives)
-        .with_execution(execution_version);
+        .with_contract_derives(contract_derives)
+        .with_derives(&derives.clone())
+        .with_execution(execution_version.clone());
 
-    let mut root = Module::new().with_registered_many(contract.expand(&ctx));
+    let contract = Contract::new2(
+        &ctx.contract_name,
+        ctx.contract_derives.iter().cloned(),
+        abi_tokens,
+    );
 
-    let sorted_structs = abi_tokens.structs.clone();
-    let sorted_enums = abi_tokens.enums.clone();
+    let mut root = Module::new().with_includes(contract.expand(&ctx));
 
-    for structs in &sorted_structs {
+    // TOOD: sort those!
+    let not_sorted_structs = abi_tokens.structs.clone();
+    let not_sorted_enums = abi_tokens.enums.clone();
+
+    for structs in &not_sorted_structs {
         let Token::Struct(s) = &*structs.borrow() else {
             // TODO: log
             continue;
         };
 
-        root.register_many(s.expand(&ctx));
+        root.include_many(s.expand(&ctx));
     }
 
-    for enumeration in &sorted_enums {
+    for enumeration in &not_sorted_enums {
         let Token::Enum(e) = &*enumeration.borrow() else {
             // TODO: log
             continue;
         };
 
-        root.register_many(e.expand(&ctx));
+        root.include_many(e.expand(&ctx));
+    }
+
+    let expanded = root.to_token_stream();
+
+    expanded
+}
+
+/// Converts the given ABI (in it's tokenize form) into rust bindings.
+///
+/// # Arguments
+///
+/// * `contract_name` - Name of the contract.
+/// * `abi_tokens` - Tokenized ABI.
+/// * `execution_version` - The version of transaction to be executed.
+/// * `derives` - Derives to be added to the generated types.
+/// * `contract_derives` - Derives to be added to the generated contract.
+/// * `type_skips` - Types to be skipped from the generated types.
+pub fn abi_to_tokenstream2(registry: &TypeRegistry, ctx: &ExpansionContext) -> TokenStream {
+    let contract = Contract::new(
+        &ctx.contract_name,
+        ctx.contract_derives.iter().cloned().collect(),
+        &registry,
+    );
+    let mut root = Module::new().with_includes(contract.expand(ctx));
+
+    // TOOD: sort those!
+    let not_sorted_structs = registry.get_structs();
+    let not_sorted_enums = registry.get_enums();
+
+    for structs in not_sorted_structs {
+        let Token::Struct(s) = &*structs.borrow() else {
+            // TODO: log
+            continue;
+        };
+
+        root.include_many(s.expand(&ctx));
+    }
+
+    for enumeration in not_sorted_enums {
+        let Token::Enum(e) = &*enumeration.borrow() else {
+            // TODO: log
+            continue;
+        };
+
+        root.include_many(e.expand(&ctx));
     }
 
     let expanded = root.to_token_stream();

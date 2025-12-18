@@ -34,15 +34,13 @@ impl TupleContainer {
         match t {
             Type::Tuple(t) => {
                 for e in t.elems {
-                    let ty = quote::quote!(#e).to_string().replace(' ', "");
-                    inners.push(ty);
+                    inners.push(quote::quote!(#e).to_string());
                 }
             }
             Type::Paren(t) => {
                 // Tuple with one element are under `Paren` variant.
                 let e = t.elem;
-                let ty = quote::quote!(#e).to_string().replace(' ', "");
-                inners.push(ty);
+                inners.push(quote::quote!(#e).to_string());
             }
             _ => {
                 return Err(Error::TokenInitFailed(format!(
@@ -82,10 +80,6 @@ impl TupleContainer {
             type_path: type_path.to_string(),
             inners,
         }
-    }
-
-    pub fn new_token(type_path: &str, inners: Vec<Rc<RefCell<Token>>>) -> Token {
-        Token::Tuple(Self::new(type_path, inners))
     }
 }
 

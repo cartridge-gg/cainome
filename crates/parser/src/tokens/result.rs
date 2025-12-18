@@ -46,12 +46,4 @@ impl ResultContainer {
             error: Rc::clone(error),
         }
     }
-
-    pub fn new_token(
-        type_path: &str,
-        inner: &Rc<RefCell<Token>>,
-        error: &Rc<RefCell<Token>>,
-    ) -> Token {
-        Token::Result(Self::new(type_path, inner, error))
-    }
 }

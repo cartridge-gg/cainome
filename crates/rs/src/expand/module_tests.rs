@@ -12,7 +12,7 @@ fn test_simple_nested_module_expand_no_content() {
     let results =
         vec![ExpansionResult::new("module1::sub1::TypeA").with_item("some", quote::quote! {})];
 
-    let module = Module::new().with_registered_many(results);
+    let module = Module::new().with_includes(results);
 
     assert_eq!(module.name, "");
 
@@ -35,8 +35,6 @@ fn test_simple_nested_module_expand_no_content() {
         pub mod module1 { pub mod sub1 { } }
     };
 
-    println!("Generated:\n {}", generated.to_string());
-
     assert_code_has(&generated, &expected, "Incorrect module structure");
 }
 
@@ -47,7 +45,7 @@ fn test_2_nested_modules_with_common_parent_expand_no_content() {
         ExpansionResult::new("module1::sub2::TypeB").with_item("some", quote::quote! {}),
     ];
 
-    let module = Module::new().with_registered_many(results);
+    let module = Module::new().with_includes(results);
 
     let generated = module.to_token_stream();
 
@@ -55,14 +53,15 @@ fn test_2_nested_modules_with_common_parent_expand_no_content() {
         pub mod module1 { pub mod sub1 { } pub mod sub2 { } }
     };
 
-    println!("Generated:\n {}", generated.to_string());
-
     assert_code_has(&generated, &expected, "Incorrect module structure");
 }
 
 #[test]
 fn test_2_nested_modules_with_struct_and_reference() {
     let mut registry = TypeRegistry::new();
+    let ctx = ExpansionContext::new("ContractName");
+
+    registry.apply_substitutions(&ctx.substitutions);
 
     let s1 = Struct::new("module1::sub1::TypeA", &registry)
         .unwrap()
@@ -77,15 +76,13 @@ fn test_2_nested_modules_with_struct_and_reference() {
 
     registry.set("module1::sub2::TypeB", Token::Struct(s2));
 
-    let ctx = ExpansionContext::new("ContractName");
-
     let mut root = Module::new();
 
     for token_ref in registry.values() {
         let Token::Struct(structure) = &*token_ref.borrow() else {
             continue;
         };
-        root.register_many(structure.expand(&ctx));
+        root.include_many(structure.expand(&ctx));
     }
 
     let generated = root.to_token_stream();
@@ -110,4 +107,3 @@ fn test_2_nested_modules_with_struct_and_reference() {
         assert_code_has(&generated, &item, "Incorrect module structure");
     }
 }
-

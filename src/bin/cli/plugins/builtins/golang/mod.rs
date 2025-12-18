@@ -2,9 +2,7 @@ use async_trait::async_trait;
 use convert_case::{Case, Casing};
 use std::collections::HashMap;
 
-use cainome_parser::tokens::{
-    CompositeLegacy, CompositeInnerKind, CompositeType, Function, StateMutability, Token,
-};
+use cainome_parser::tokens::{Function, StateMutability, Token};
 
 #[cfg(test)]
 use cainome_rs;
@@ -100,7 +98,7 @@ impl GolangPlugin {
     }
 
     /// Gets the prefixed type name for a composite type
-    fn get_prefixed_type_name(&self, composite: &CompositeLegacy, contract_name: Option<&str>) -> String {
+    fn get_prefixed_type_name(&self, composite: &Token, contract_name: Option<&str>) -> String {
         let base_name = composite.type_name_or_alias().to_case(Case::Pascal);
 
         if let Some(contract) = contract_name {
@@ -780,7 +778,11 @@ impl GolangPlugin {
     }
 
     /// Generate unmarshal function for enum interface
-    fn generate_enum_unmarshal_function(&self, enum_name: &str, composite: &CompositeLegacy) -> String {
+    fn generate_enum_unmarshal_function(
+        &self,
+        enum_name: &str,
+        composite: &CompositeLegacy,
+    ) -> String {
         let mut code = String::new();
 
         // Generate the Unmarshal function that returns the interface
@@ -1208,7 +1210,11 @@ impl GolangPlugin {
     }
 
     /// Generates Go event interface for Cairo event enum types with a custom name
-    fn generate_event_enum_with_name(&self, composite: &CompositeLegacy, enum_name: &str) -> String {
+    fn generate_event_enum_with_name(
+        &self,
+        composite: &CompositeLegacy,
+        enum_name: &str,
+    ) -> String {
         let interface_name = enum_name.to_string();
         let mut event_def = String::new();
 

@@ -2,14 +2,15 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     tokens::{
-        constants, ArrayContainer, CoreBasic, NonZeroContainer, OptionContainer, ResultContainer,
-        Token, TupleContainer,
+        constants, ArrayContainer, NonZeroContainer, OptionContainer, ResultContainer, Token,
+        TupleContainer, TypePath,
     },
     CainomeResult, Error,
 };
 
+#[derive(Debug, Clone)]
 pub struct TypeRegistry {
-    store: HashMap<String, Rc<RefCell<Token>>>,
+    pub store: HashMap<String, Rc<RefCell<Token>>>,
 }
 
 // TODO: memoise maybe? set?
@@ -57,21 +58,31 @@ fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
     Ok(vec![type_path.to_string()])
 }
 
+// TODO: need to find a better way. This method is only solving problems for the generic types inside tuples.
+fn normalize_type_path(type_path: &str) -> CainomeResult<String> {
+    let type_path = syn::parse_str::<syn::Type>(type_path)?;
+    let type_path = quote::quote!(#type_path);
+    Ok(type_path.to_string())
+}
+
 fn wrap_generic_containers(
     type_path: &str,
     registry: &TypeRegistry,
 ) -> Result<Rc<RefCell<Token>>, Error> {
+    // TODO: It's a crotch. Need to use syn::Type everywhere.
+    let type_path = type_path.replace(" ", "");
+
     if ArrayContainer::test_path(&type_path) {
         let inner_type_path = ArrayContainer::get_inner(&type_path)?;
         let inner_type = wrap_generic_containers(&inner_type_path, registry)?;
-        let token = ArrayContainer::new_token(&type_path, &inner_type);
+        let token = Token::Array(ArrayContainer::new(&type_path, &inner_type));
         return Ok(Rc::new(RefCell::new(token)));
     }
 
     if NonZeroContainer::test_path(&type_path) {
         let inner_type_path = NonZeroContainer::get_inner(&type_path)?;
         let inner_type = wrap_generic_containers(&inner_type_path, registry)?;
-        let token = NonZeroContainer::new_token(&type_path, &inner_type);
+        let token = Token::NonZero(NonZeroContainer::new(&type_path, &inner_type));
         return Ok(Rc::new(RefCell::new(token)));
     }
 
@@ -80,7 +91,7 @@ fn wrap_generic_containers(
 
         let inner_type = wrap_generic_containers(&inner_type_path, registry)?;
 
-        let token = OptionContainer::new_token(&type_path, &inner_type);
+        let token = Token::Option(OptionContainer::new(&type_path, &inner_type));
         return Ok(Rc::new(RefCell::new(token)));
     }
 
@@ -90,7 +101,7 @@ fn wrap_generic_containers(
         let inner_type = wrap_generic_containers(&inner_type_path.inner, registry)?;
         let error_type = wrap_generic_containers(&inner_type_path.error, registry)?;
 
-        let token = ResultContainer::new_token(&type_path, &inner_type, &error_type);
+        let token = Token::Result(ResultContainer::new(&type_path, &inner_type, &error_type));
 
         return Ok(Rc::new(RefCell::new(token)));
     }
@@ -105,11 +116,13 @@ fn wrap_generic_containers(
             inners.push(wrap_generic_containers(&inner_type_path, registry)?);
         }
 
-        let token = TupleContainer::new_token(type_path, inners);
+        let token = Token::Tuple(TupleContainer::new(&type_path, inners));
+
         return Ok(Rc::new(RefCell::new(token)));
     }
 
-    if let Some(token) = registry.store.get(type_path) {
+    let type_path = normalize_type_path(&type_path)?;
+    if let Some(token) = registry.store.get(&type_path) {
         return Ok(Rc::clone(token));
     }
 
@@ -126,9 +139,9 @@ impl TypeRegistry {
         };
 
         // Register basic types by default
-        registry.set("()", Token::Basic(CoreBasic::new("()")));
+        registry.set("()", Token::Basic(TypePath::new("()")));
         for val in constants::CAIRO_CORE_BASIC {
-            registry.set(val, Token::Basic(CoreBasic::new(val)));
+            registry.set(val, Token::Basic(TypePath::new(val)));
         }
 
         registry
@@ -138,7 +151,7 @@ impl TypeRegistry {
         let inner_paths = get_generic_inner_types(path)?;
 
         for path in inner_paths.into_iter() {
-            if !self.store.contains_key(&path) {
+            if !self.store.contains_key(&normalize_type_path(&path)?) {
                 return Ok(false);
             }
         }
@@ -152,17 +165,24 @@ impl TypeRegistry {
     }
 
     pub fn set(&mut self, path: &str, token: Token) {
-        if let Some(cell) = self.store.get(path) {
+        let type_path = normalize_type_path(path).unwrap_or(path.to_string());
+
+        if let Some(cell) = self.store.get(&type_path) {
             if token == Token::Placeholder {
                 // Do not overwrite with placeholder.
                 return;
+            }
+            match &*cell.borrow() {
+                // Do not overwrite Skipped and Substituted
+                Token::Skip(_) | Token::Substitute(_) => return,
+                _ => (),
             }
 
             let mut cell = cell.as_ref().borrow_mut();
             *cell = token;
         } else {
             let reference = Rc::new(RefCell::new(token));
-            self.store.insert(path.to_string(), reference);
+            self.store.insert(type_path, reference);
         }
     }
 
@@ -184,5 +204,54 @@ impl TypeRegistry {
         }
 
         return unresolved_placeholders;
+    }
+
+    pub fn get_structs(&self) -> impl Iterator<Item = Rc<RefCell<Token>>> + '_ {
+        self.store
+            .values()
+            .filter(|token| matches!(&*token.borrow(), Token::Struct(_)))
+            .cloned()
+    }
+
+    pub fn get_enums(&self) -> impl Iterator<Item = Rc<RefCell<Token>>> + '_ {
+        self.store
+            .values()
+            .filter(|token| matches!(&*token.borrow(), Token::Enum(_)))
+            .cloned()
+    }
+
+    pub fn get_events(&self) -> impl Iterator<Item = Rc<RefCell<Token>>> + '_ {
+        self.store
+            .values()
+            .filter(|token| matches!(&*token.borrow(), Token::Event(_)))
+            .cloned()
+    }
+
+    pub fn get_functions(&self) -> impl Iterator<Item = Rc<RefCell<Token>>> + '_ {
+        self.store
+            .values()
+            .filter(|token| matches!(&*token.borrow(), Token::Function(_)))
+            .cloned()
+    }
+
+    pub fn apply_substitutions<K>(&mut self, substitutions: &HashMap<K, String>)
+    where
+        K: AsRef<str>,
+    {
+        for (target, external_path) in substitutions.iter() {
+            if let Some(val) = self.store.get(target.as_ref()) {
+                let mut mul = val.borrow_mut();
+                *mul = Token::Substitute(TypePath::new(external_path));
+            } else {
+                self.set(
+                    target.as_ref(),
+                    Token::Substitute(TypePath::new(external_path)),
+                );
+            }
+        }
+    }
+
+    pub fn get_keys(&self) -> Vec<String> {
+        self.store.keys().cloned().collect()
     }
 }

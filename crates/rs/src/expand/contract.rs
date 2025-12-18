@@ -1,6 +1,8 @@
+use std::collections::{BTreeSet, HashSet};
+
 use cainome_parser::{
     tokens::{Function, FunctionOutputKind, NamedToken, Token},
-    TokenizedAbi,
+    TokenizedAbi, TypeRegistry,
 };
 use proc_macro2::TokenStream;
 
@@ -20,7 +22,36 @@ pub struct Contract {
 }
 
 impl Contract {
-    pub fn new(name: &str, derives: Vec<String>, abi: &TokenizedAbi) -> Self {
+    pub fn new(name: &str, derives: Vec<String>, abi: &TypeRegistry) -> Self {
+        let mut readonly_methods = vec![];
+        let mut mutating_methods = vec![];
+
+        for token in abi.get_functions() {
+            let Token::Function(func) = &*token.borrow() else {
+                continue;
+            };
+            match func.state_mutability {
+                cainome_parser::tokens::StateMutability::External => {
+                    mutating_methods.push(func.clone());
+                }
+                cainome_parser::tokens::StateMutability::View => {
+                    readonly_methods.push(func.clone());
+                }
+            }
+        }
+
+        Self {
+            name: name.to_string(),
+            derives: derives,
+            mutating_methods,
+            readonly_methods,
+        }
+    }
+
+    pub fn new2<T>(name: &str, derives: T, abi: &TokenizedAbi) -> Self
+    where
+        T: Iterator<Item = String>,
+    {
         let mut readonly_methods = vec![];
         let mut mutating_methods = vec![];
 
@@ -40,7 +71,7 @@ impl Contract {
 
         Self {
             name: name.to_string(),
-            derives: derives,
+            derives: derives.collect(),
             mutating_methods,
             readonly_methods,
         }
@@ -70,11 +101,14 @@ impl Contract {
             let token = &*token.borrow();
             let ty = utils::str_to_type(&token.to_rust_type_path(ctx));
 
-            let ser = match token {
-                Token::Tuple(_) => quote! {
+            let ser = if token.is_tuple() {
+                quote! {
                     __calldata.extend(<#ty>::cairo_serialize(#name));
-                },
-                _ => quote!(__calldata.extend(#ty::cairo_serialize(#name));),
+                }
+            } else {
+                quote! {
+                    __calldata.extend(#ty::cairo_serialize(#name));
+                }
             };
 
             serializations.push(ser);

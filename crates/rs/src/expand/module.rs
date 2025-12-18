@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 
 use proc_macro2::TokenStream;
 
@@ -8,7 +8,7 @@ use quote::quote;
 pub struct Module {
     pub name: String,
     pub imports: HashSet<String>,
-    pub submodules: HashMap<String, Module>,
+    pub submodules: BTreeMap<String, Module>,
     pub content: HashMap<String, TokenStream>,
 }
 
@@ -17,12 +17,12 @@ impl Module {
         Self {
             name: ROOT_MODULE_NAME.to_string(),
             imports: HashSet::new(),
-            submodules: HashMap::new(),
+            submodules: BTreeMap::new(),
             content: HashMap::new(),
         }
     }
 
-    pub fn register(&mut self, result: ExpansionResult) {
+    pub fn include(&mut self, result: ExpansionResult) {
         let mut current_module = self;
 
         for segment in &result.path {
@@ -31,7 +31,7 @@ impl Module {
                 .entry(segment.to_string())
                 .or_insert(Module {
                     name: segment.to_string(),
-                    submodules: HashMap::new(),
+                    submodules: BTreeMap::new(),
                     content: HashMap::new(),
                     imports: HashSet::new(),
                 });
@@ -52,22 +52,26 @@ impl Module {
         current_module.content.insert(result.name, module_content);
     }
 
-    pub fn with_registered_many(mut self, results: Vec<ExpansionResult>) -> Self {
-        self.register_many(results);
+    pub fn with_includes(mut self, results: Vec<ExpansionResult>) -> Self {
+        self.include_many(results);
         self
     }
 
-    pub fn register_many(&mut self, results: Vec<ExpansionResult>) {
+    pub fn include_many(&mut self, results: Vec<ExpansionResult>) {
         for result in results {
-            self.register(result);
+            self.include(result);
         }
     }
 
     pub fn to_token_stream(self) -> TokenStream {
         let mut tokens = TokenStream::new();
 
+        // TODO: rethink
+        let mut modules = self.submodules.into_values().collect::<Vec<_>>();
+        modules.sort_by_key(|i| i.name.clone());
+
         // Flatten modules
-        for module in self.submodules.into_values() {
+        for module in modules {
             tokens.extend(module.to_token_stream())
         }
 
@@ -76,8 +80,21 @@ impl Module {
             content.extend(content_module);
         }
 
+        let imports = self
+            .imports
+            .into_iter()
+            .map(|i| syn::parse_str::<syn::UseTree>(&i).unwrap())
+            .map(|i| {
+                quote! {
+                    use #i;
+                }
+            })
+            .collect::<Vec<_>>();
+
         if self.name == ROOT_MODULE_NAME {
             quote! {
+                #(#imports)*
+
                 #tokens
 
                 #content
@@ -86,6 +103,8 @@ impl Module {
             let module_name = utils::str_to_ident(&self.name);
             quote! {
                 pub mod #module_name {
+                    #(#imports)*
+
                     #tokens
 
                     #content

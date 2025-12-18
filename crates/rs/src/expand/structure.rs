@@ -1,5 +1,5 @@
 use crate::expand::{
-    types::{extract_dependencies, CairoToRust},
+    types::{get_additional_derive_requirements, CairoToRust},
     utils, Expandable, ExpansionContext, ExpansionResult,
 };
 use cainome_parser::tokens::{NamedToken, Struct};
@@ -31,6 +31,9 @@ pub fn struct_declaration(
     let mut internal_derives = vec![];
 
     for d in ctx.derives.iter() {
+        if d.to_lowercase() == "serde" {
+            continue;
+        }
         internal_derives.push(utils::str_to_type(d));
     }
 
@@ -131,13 +134,15 @@ pub fn struct_implementation(
 
 impl Expandable for Struct {
     fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult> {
-        let module = self.type_module();
-        let name = self.type_name();
+        let full_path = self.type_path_no_generic();
+        let name = full_path.split("::").last().unwrap().to_owned();
 
-        let declaration = struct_declaration(&name, &self.fields, ctx);
-        let implementation = struct_implementation(&name, &self.fields, ctx);
+        let ctx = ctx
+            .clone()
+            .with_derives(get_additional_derive_requirements(&self.fields, &ctx));
 
-        let deps = extract_dependencies(&self.fields, ctx);
+        let declaration = struct_declaration(&name, &self.fields, &ctx);
+        let implementation = struct_implementation(&name, &self.fields, &ctx);
 
         let item = quote! {
             #declaration
@@ -145,8 +150,8 @@ impl Expandable for Struct {
             #implementation
         };
 
-        vec![ExpansionResult::new(&module)
-            .with_item(&name, item)
-            .with_imports(deps)]
+        vec![
+            ExpansionResult::new(&full_path).with_item(&name, item), // .with_imports(deps)
+        ]
     }
 }
