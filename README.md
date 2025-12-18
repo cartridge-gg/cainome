@@ -4,23 +4,22 @@
 [x] tests for enum generation
 [x] tests for tuple <> brackets
 [x] tests for reserved words usage in fields
-[ ] module dependencies
-[ ] examples conversion
+[x] module dependencies
+[x] examples conversion
+[x] cairo0
+[x] think of substitions (external)
+[x] generic structs handling. I didn't test those properly (old functionality)
+
 [ ] bindings
-
-[ ] cairo0
-
-[ ] think of substitions (external)
-[ ] tests for serialisation rules
-[ ] tests for nested events of level 2 and more
-[ ] generic structs handling. I didn't test those properly (old functionality)
 [ ] prefix cainome with additional setting 
-[ ] If we can generate code, why not generate tests as well?
+[ ] starknet-rust
+[ ] tests for nested events of level 2 and more
+[ ] tests for serialisation rules
 [ ] event structure split (not critical)
 [ ] deploy and declare calls method
-[ ] starknet-rust
 [ ] functions registry paths intersection. think on type prefixes for token paths.
 [ ] ??? integration tests. create bindings, deploy to testnet, call, assert result. ???
+[ ] If we can generate code, why not generate tests as well?
 ```rust
 fn builtin_composite_to_rust(type_name: &str) -> (String, bool) {
     let ccsp = utils::cainome_cairo_serde_path();
