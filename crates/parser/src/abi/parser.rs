@@ -1,7 +1,9 @@
 use starknet::core::types::contract::{AbiEntry, AbiEvent, SierraClass, TypedAbiEvent};
 use std::collections::HashMap;
 
-use crate::tokens::{Array, Composite, CompositeType, CoreBasic, Function, Token};
+use crate::tokens::{
+    extract_type_path_with_depth, Array, Composite, CompositeType, CoreBasic, Function, Token,
+};
 use crate::{CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -71,7 +73,37 @@ impl AbiParser {
             Self::collect_entry_token(entry, &mut token_candidates)?;
         }
 
+        // In theory this is not enough, as after deepening collisions are still possible
+        // Although possible in theory should not be a problem in practice.
+        let mut token_name_occurence: HashMap<String, usize> = HashMap::new();
+        for (_, tokens) in &token_candidates {
+            for token in tokens {
+                let name = token.type_name();
+                let val = token_name_occurence.entry(name).or_insert(0);
+                *val += 1;
+            }
+        }
+
         let tokens = Self::filter_struct_enum_tokens(token_candidates);
+
+        let mut additional_aliases: HashMap<String, String> = HashMap::new();
+        for (_, t) in &tokens {
+            let path = t.type_path();
+            // Crotch to handle cases when type with the same typename are used
+            // in same contract. For example:
+            // enum Event {
+            //   Event1(namespace1::Event),
+            //   Event2(namespace2::Event)
+            // }
+            // When name that occures several times is spotted we register a type alias
+            // (only if there is none). Will apply those later.
+            if token_name_occurence.get(&t.type_name()) > Some(&1)
+                && !type_aliases.contains_key(&path)
+            {
+                let alias = extract_type_path_with_depth(&path, 1);
+                additional_aliases.insert(path.into(), alias);
+            }
+        }
 
         let mut structs = vec![];
         let mut enums = vec![];
@@ -84,6 +116,11 @@ impl AbiParser {
         for (_, mut t) in tokens {
             for (type_path, alias) in type_aliases {
                 t.apply_alias(type_path, alias);
+            }
+
+            // NOTE: it's important that user defined aliases were applied first
+            for (type_path, alias) in &additional_aliases {
+                t.apply_alias(&type_path, &alias);
             }
 
             if let Token::Composite(ref c) = t {
