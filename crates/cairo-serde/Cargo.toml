@@ -21,4 +21,4 @@ starknet.workspace = true
 thiserror.workspace = true
 serde.workspace = true
 serde_with = { version = "3.11.0", default-features = false }
-num-bigint.workspace = true
+num.workspace = true

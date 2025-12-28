@@ -1,18 +1,60 @@
 use crate::CairoSerde;
-use num_bigint::{BigInt, BigUint, ParseBigIntError};
+use num::{bigint::ParseBigIntError, BigUint, Num};
 use serde_with::{DeserializeAs, DisplayFromStr, SerializeAs};
-use starknet::core::types::Felt;
+use starknet::core::types::{Felt, U256 as StarknetU256};
 use std::{
     cmp::Ordering,
     fmt::Display,
-    ops::{Add, BitOr, Sub},
+    ops::{Add, BitOr, Mul, Sub},
     str::FromStr,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct U256 {
     pub low: u128,
     pub high: u128,
+}
+
+impl U256 {
+    pub const ZERO: U256 = Self::from_u128(0);
+    pub const ONE: U256 = Self::from_u128(1);
+    pub const TWO: U256 = Self::from_u128(2);
+
+    const fn from_u128(value: u128) -> Self {
+        U256 {
+            low: value,
+            high: 0,
+        }
+    }
+}
+
+macro_rules! impl_from_for_u256 {
+    ($($t:ty),*) => {
+        $(
+            impl From<$t> for U256 {
+                fn from(value: $t) -> Self {
+                    Self::from_u128(value as u128)
+                }
+            }
+        )*
+    };
+}
+
+impl_from_for_u256!(u8, u16, u32, u64, u128, usize);
+
+impl From<StarknetU256> for U256 {
+    fn from(value: StarknetU256) -> Self {
+        Self {
+            low: value.low(),
+            high: value.high(),
+        }
+    }
+}
+
+impl From<U256> for StarknetU256 {
+    fn from(value: U256) -> Self {
+        StarknetU256::from_words(value.low, value.high)
+    }
 }
 
 impl PartialOrd for U256 {
@@ -59,6 +101,14 @@ impl Sub for U256 {
     }
 }
 
+impl Mul for U256 {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        (StarknetU256::from(self) * StarknetU256::from(rhs)).into()
+    }
+}
+
 impl BitOr for U256 {
     type Output = Self;
 
@@ -76,18 +126,22 @@ impl Display for U256 {
         num += BigUint::from(self.high);
         num <<= 128;
         num += BigUint::from(self.low);
-        write!(f, "{}", num)
+        write!(f, "0x{}", num.to_str_radix(16))
     }
 }
 
 impl FromStr for U256 {
     type Err = ParseBigIntError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let num = BigInt::from_str(s)?;
-        let num_big_uint = num.to_biguint().unwrap();
+        let num = if s.len() >= 2 && &s[0..2] == "0x" {
+            BigUint::from_str_radix(&s[2..], 16)
+        } else {
+            BigUint::from_str(s)
+        }
+        .unwrap();
         let mask = (BigUint::from(1u128) << 128u32) - BigUint::from(1u128);
-        let b_low: BigUint = (num_big_uint.clone() >> 0) & mask.clone();
-        let b_high: BigUint = (num_big_uint.clone() >> 128) & mask.clone();
+        let b_low: BigUint = (num.clone() >> 0) & mask.clone();
+        let b_high: BigUint = (num.clone() >> 128) & mask.clone();
 
         let mut low = 0;
         let mut high = 0;
@@ -343,7 +397,7 @@ mod tests {
             high: 0_u128,
         };
         println!("{}", u256);
-        assert_eq!(format!("{}", u256), "12");
+        assert_eq!(format!("{}", u256), "0xc");
     }
 
     #[test]
