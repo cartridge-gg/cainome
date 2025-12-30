@@ -1,39 +1,11 @@
 use core::panic;
 use katana_runner::RunnerCtx;
 use starknet::{
-    accounts::Account,
-    core::{
-        types::{Call, TransactionReceiptWithBlockInfo},
-        utils::get_selector_from_name,
-    },
-    providers::Provider,
+    accounts::Account, core::types::TransactionReceiptWithBlockInfo, providers::Provider,
 };
 use starknet_types_core::felt::Felt;
-use std::sync::Arc;
 
 use crate::bindings::{erc20::ERC20, udc};
-
-pub fn get_class_hash(
-    path: &std::path::Path,
-) -> Result<starknet::core::types::Felt, Box<dyn std::error::Error>> {
-    let sierra_class: cairo_lang_starknet_classes::contract_class::ContractClass =
-        serde_json::from_slice::<cairo_lang_starknet_classes::contract_class::ContractClass>(
-            std::fs::read(path)?.as_slice(),
-        )?;
-
-    let casm_class =
-        cairo_lang_starknet_classes::casm_contract_class::CasmContractClass::from_contract_class(
-            sierra_class,
-            false,
-            180000, // TODO: to settings
-        )?;
-
-    let class_hash = casm_class.compiled_class_hash();
-
-    Ok(starknet::core::types::Felt::from_bytes_be(
-        &class_hash.to_bytes_be(),
-    ))
-}
 
 pub async fn declare<'a, A>(
     path: &std::path::Path,
@@ -43,7 +15,20 @@ where
     A: starknet::accounts::ConnectedAccount + Sync,
     A::SignError: 'static,
 {
-    let class_hash = get_class_hash(path)?;
+    let sierra_class: cairo_lang_starknet_classes::contract_class::ContractClass =
+        serde_json::from_slice::<cairo_lang_starknet_classes::contract_class::ContractClass>(
+            std::fs::read(path)?.as_slice(),
+        )?;
+
+    let casm_class =
+        cairo_lang_starknet_classes::casm_contract_class::CasmContractClass::from_contract_class(
+            sierra_class,
+            false,
+            180000, // TODO: to context
+        )?;
+
+    let class_hash =
+        starknet::core::types::Felt::from_bytes_be(&casm_class.compiled_class_hash().to_bytes_be());
 
     let contract_artifact: starknet::core::types::contract::SierraClass =
         serde_json::from_reader(std::fs::File::open(path)?)?;
@@ -60,36 +45,8 @@ where
 
 const UDC_ADDRESS: Felt =
     Felt::from_hex_unwrap("0x41a78e741e5af2fec34b695679bc6891742439f7afb8484ecd7766661ad02bf");
+
 const SALT: Felt = Felt::from_hex_unwrap("0x123");
-
-pub async fn deploy<'a, A>(
-    account: &'a A,
-    class_hash: Felt,
-    constructor_args: Vec<Felt>,
-) -> Result<starknet::core::types::InvokeTransactionResult, Box<dyn std::error::Error>>
-where
-    A: starknet::accounts::ConnectedAccount + Sync,
-    A::SignError: 'static,
-{
-    let mut calldata = vec![
-        class_hash,                    // class hash
-        SALT,                          // salt
-        Felt::ZERO,                    // unique
-        constructor_args.len().into(), // constructor length
-    ];
-
-    calldata.extend(constructor_args);
-
-    let deploy_call = vec![Call {
-        to: UDC_ADDRESS,
-        selector: get_selector_from_name("deployContract").unwrap(),
-        calldata: calldata,
-    }];
-
-    let res = account.execute_v3(deploy_call).send().await?;
-
-    Ok(res)
-}
 
 #[tokio::test]
 #[katana_runner::test(accounts = 2, fee = false, block_time = 1)]
