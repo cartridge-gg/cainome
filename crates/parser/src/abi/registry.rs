@@ -1,9 +1,9 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, iter, rc::Rc};
 
 use crate::{
     tokens::{
-        constants, ArrayContainer, NonZeroContainer, OptionContainer, ResultContainer, Token,
-        TupleContainer, TypePath,
+        constants, ArrayContainer, Constructor, NonZeroContainer, OptionContainer, ResultContainer,
+        Token, TupleContainer, TypePath,
     },
     CainomeResult, Error,
 };
@@ -227,11 +227,42 @@ impl TypeRegistry {
             .cloned()
     }
 
+    ///
+    /// Returns all registered functions from Registry
+    ///
+    /// NOTE: This includes functions inside interfaces as well.
     pub fn get_functions(&self) -> impl Iterator<Item = Rc<RefCell<Token>>> + '_ {
-        self.store
+        let plain_functions = self
+            .store
             .values()
             .filter(|token| matches!(&*token.borrow(), Token::Function(_)))
-            .cloned()
+            .cloned();
+
+        let interfaces = self
+            .store
+            .values()
+            .filter(|token| matches!(&*token.borrow(), Token::Interface(_)));
+
+        let interface_functions = interfaces
+            .map(|token| {
+                let Token::Interface(interface) = &*token.borrow() else {
+                    unreachable!()
+                };
+                interface.functions.clone()
+            })
+            .flatten();
+
+        interface_functions.chain(plain_functions)
+    }
+
+    pub fn get_constructor(&self) -> Option<Constructor> {
+        for token in self.store.values() {
+            if let Token::Constructor(c) = &*token.borrow() {
+                return Some(c.clone());
+            }
+        }
+
+        None
     }
 
     pub fn apply_substitutions<K>(&mut self, substitutions: &HashMap<K, String>)

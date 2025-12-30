@@ -18,7 +18,6 @@ pub const CAIRO_0_ARRAY: &str = "*";
 pub struct ArrayContainer {
     pub type_path: String,
     pub inner: Rc<RefCell<Token>>,
-    pub is_legacy: bool,
 }
 
 impl ArrayContainer {
@@ -64,7 +63,6 @@ impl ArrayContainer {
         return Self {
             type_path: type_path.to_string(),
             inner: Rc::clone(inner),
-            is_legacy: false,
         };
     }
 }

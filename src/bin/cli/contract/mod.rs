@@ -1,13 +1,20 @@
-use cainome_parser::{AbiParser, ParserContext, TypeRegistry};
-use cainome_rs::expand::ExpansionContext;
+use cainome_parser::{AbiParser, Error as CainomeError, Parseable, ParserContext, TypeRegistry};
+use cainome_rs::expand::{ExpansionContext, ExpansionContextFactory};
 use camino::Utf8PathBuf;
+use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::fs;
+use std::{collections::HashMap, fs::File};
 use url::Url;
 
 use starknet::{
-    core::types::{BlockId, BlockTag, ContractClass, Felt},
+    core::types::{
+        contract::{
+            legacy::{LegacyContractClass, RawLegacyAbiEntry},
+            AbiEntry, SierraClass,
+        },
+        BlockId, BlockTag, ContractClass, Felt,
+    },
     providers::{jsonrpc::HttpTransport, AnyProvider, JsonRpcClient, Provider},
 };
 
@@ -69,7 +76,43 @@ impl Default for ContractParserConfig {
     }
 }
 
+enum AbiFile {
+    Legacy(Vec<RawLegacyAbiEntry>),
+    Sierra(Vec<AbiEntry>),
+}
+
 pub struct ContractParser {}
+
+// TODO: utility method
+fn read_abi_file(file_path: &str) -> CainomeCliResult<AbiFile> {
+    let file = File::open(file_path)?;
+
+    if let Ok(class) = serde_json::from_reader::<_, LegacyContractClass>(file) {
+        return Ok(AbiFile::Legacy(class.abi));
+    }
+
+    let file = File::open(file_path)?;
+
+    if let Ok(abi) = serde_json::from_reader::<_, Vec<RawLegacyAbiEntry>>(file) {
+        return Ok(AbiFile::Legacy(abi));
+    }
+
+    let file = File::open(file_path)?;
+
+    if let Ok(class) = serde_json::from_reader::<_, SierraClass>(file) {
+        return Ok(AbiFile::Sierra(class.abi));
+    }
+
+    let file = File::open(file_path)?;
+
+    if let Ok(abi) = serde_json::from_reader::<_, Vec<AbiEntry>>(file) {
+        return Ok(AbiFile::Sierra(abi));
+    }
+
+    Err(Error::Cainome(CainomeError::ParsingFailed(
+        "Failed to parse ABI file".to_string(),
+    )))
+}
 
 impl ContractParser {
     pub fn from_artifacts_path(
@@ -117,10 +160,7 @@ impl ContractParser {
 
             let file_name = file_path.file_name().unwrap_or("unknown");
 
-            // Read and parse the file
-            let file_content = fs::read_to_string(&file_path)?;
-
-            let content = AbiParser::parse_abi_string(&file_content)?;
+            let file_content = read_abi_file(file_path.as_str())?;
 
             let contract_name = {
                 let n = file_name.trim_end_matches(&config.sierra_extension);
@@ -133,9 +173,16 @@ impl ContractParser {
             };
 
             // TODO: This is a crotch, because expansion context has default substitues registered
-            let ctx = ExpansionContext::new(contract_name);
+            let ctx = ExpansionContextFactory::new(contract_name).build();
 
-            let registry = AbiParser::build_registry(content, ParserContext::from(&ctx))?;
+            let registry = match file_content {
+                AbiFile::Legacy(entries) => {
+                    AbiParser::build_registry(entries, ParserContext::from(&ctx))?
+                }
+                AbiFile::Sierra(entries) => {
+                    AbiParser::build_registry(entries, ParserContext::from(&ctx))?
+                }
+            };
 
             tracing::trace!("Adding {contract_name} ({file_name}) to the list of contracts");
 
@@ -164,7 +211,7 @@ impl ContractParser {
         match class {
             ContractClass::Sierra(sierra) => {
                 let content = AbiParser::parse_abi_string(&sierra.abi)?;
-                let ctx = ExpansionContext::new(name);
+                let ctx = ExpansionContextFactory::new(name).build();
                 let registry = AbiParser::build_registry(content, ParserContext::from(&ctx))?;
 
                 Ok(ContractData {

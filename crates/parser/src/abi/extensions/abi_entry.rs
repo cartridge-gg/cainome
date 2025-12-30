@@ -385,6 +385,7 @@ impl WithDependencies for RawLegacyAbiEntry {
                 .iter()
                 .map(|i| i.r#type.to_string())
                 .collect(),
+
             RawLegacyAbiEntry::Function(function) => {
                 let inputs: Vec<String> = function
                     .inputs
@@ -400,11 +401,13 @@ impl WithDependencies for RawLegacyAbiEntry {
 
                 [inputs, outputs].concat()
             }
+
             RawLegacyAbiEntry::Struct(structure) => structure
                 .members
                 .iter()
                 .map(|i| i.r#type.to_string())
                 .collect(),
+
             RawLegacyAbiEntry::L1Handler(l1_handler) => {
                 let inputs: Vec<String> = l1_handler
                     .inputs

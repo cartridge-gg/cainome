@@ -1,0 +1,25 @@
+[package]
+name = "integration-tests"
+version = "0.0.1"
+edition = "2021"
+authors = ["baitcode <batiyiv@gmail.com>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/cartridge-gg/cainome"
+homepage = "https://github.com/cartridge-gg/cainome"
+description = """
+Integration tests for cainome
+"""
+keywords = ["cairo", "starknet", "web3"]
+exclude = [".github/**", "images/**"]
+
+[dev-dependencies]
+starknet.workspace = true
+cainome-cairo-serde.workspace = true
+cainome-parser.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+katana-runner.workspace = true
+starknet-types-core.workspace = true
+cairo-lang-starknet-classes.workspace = true
+serde_json.workspace = true
+smol_str = "=0.3.2"

@@ -41,10 +41,12 @@ pub(crate) struct ContractAbi {
     pub abi: Vec<AbiEntry>,
     pub output_path: Option<String>,
     pub type_aliases: HashMap<String, String>,
+    pub type_substitutions: HashMap<String, String>,
     pub execution_version: ExecutionVersion,
     pub derives: Vec<String>,
     pub contract_derives: Vec<String>,
     pub type_skips: Vec<String>,
+    pub contract_source_path: Option<String>,
 }
 
 impl Parse for ContractAbi {
@@ -113,9 +115,11 @@ impl Parse for ContractAbi {
         let mut output_path: Option<String> = None;
         let mut execution_version = ExecutionVersion::V3;
         let mut type_aliases = HashMap::new();
+        let mut type_substitutions = HashMap::new();
         let mut derives = Vec::new();
         let mut contract_derives = Vec::new();
         let mut type_skips = Vec::new();
+        let mut contract_source_path = None;
 
         loop {
             if input.parse::<Token![,]>().is_err() {
@@ -153,6 +157,33 @@ impl Parse for ContractAbi {
 
                         let ta = type_alias.into_inner();
                         type_aliases.insert(ta.abi, ta.alias);
+                    }
+                }
+                "type_substitutions" => {
+                    let content;
+                    braced!(content in input);
+                    let parsed =
+                        content.parse_terminated(Spanned::<TypeSubstitution>::parse, Token![;])?;
+
+                    let mut abi_types = HashSet::new();
+                    let mut aliases = HashSet::new();
+
+                    for type_sub in parsed {
+                        if !abi_types.insert(type_sub.abi.clone()) {
+                            emit_error!(
+                                type_sub.span(),
+                                format!("{} duplicate abi type", type_sub.abi)
+                            );
+                        }
+                        if !aliases.insert(type_sub.sub.clone()) {
+                            emit_error!(
+                                type_sub.span(),
+                                format!("{} duplicate substitution name", type_sub.sub)
+                            );
+                        }
+
+                        let ta = type_sub.into_inner();
+                        type_substitutions.insert(ta.abi, ta.sub);
                     }
                 }
                 "output_path" => {
@@ -195,6 +226,11 @@ impl Parse for ContractAbi {
                         type_skips.push(type_skip.to_token_stream().to_string());
                     }
                 }
+                "contract_source_path" => {
+                    let content;
+                    parenthesized!(content in input);
+                    contract_source_path = Some(content.parse::<LitStr>()?.value());
+                }
                 _ => emit_error!(name.span(), format!("unexpected named parameter `{name}`")),
             }
         }
@@ -204,11 +240,31 @@ impl Parse for ContractAbi {
             abi,
             output_path,
             type_aliases,
+            type_substitutions,
             execution_version,
             derives,
             contract_derives,
             type_skips,
+            contract_source_path,
         })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct TypeSubstitution {
+    abi: String,
+    sub: String,
+}
+
+impl Parse for TypeSubstitution {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let abi = sanitize_str(&input.parse::<Type>()?.into_token_stream().to_string());
+
+        input.parse::<Token![as]>()?;
+
+        let sub = sanitize_str(&input.parse::<Type>()?.into_token_stream().to_string());
+
+        Ok(TypeSubstitution { abi, sub })
     }
 }
 

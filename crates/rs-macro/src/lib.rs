@@ -1,5 +1,5 @@
 use cainome_parser::{AbiParser, ParserContext};
-use cainome_rs::expand::ExpansionContext;
+use cainome_rs::expand::{ExpansionContext, ExpansionContextFactory};
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
@@ -27,18 +27,26 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
     let contract_abi = syn::parse_macro_input!(input as ContractAbi);
 
     let abi_entries = contract_abi.abi;
-    let contract_name = contract_abi.name;
 
-    let ctx = ExpansionContext::new(&contract_name.to_string())
+    let name_str = contract_abi.name.to_string();
+    let contract_source = contract_abi
+        .contract_source_path
+        .unwrap_or("no contract file".to_string());
+
+    let ctx = ExpansionContextFactory::new(contract_source)
         .with_contract_derives(&contract_abi.contract_derives)
         .with_derives(&contract_abi.derives)
         .with_execution(contract_abi.execution_version)
-        .with_type_skips(contract_abi.type_skips);
+        .with_type_skips(contract_abi.type_skips)
+        .with_aliases(contract_abi.type_aliases)
+        .with_substitutions(contract_abi.type_substitutions)
+        .with_contract_name(name_str)
+        .build();
 
     let registry = AbiParser::build_registry(abi_entries, ParserContext::from(&ctx))
         .expect("failed tokens parsing");
 
-    let expanded = cainome_rs::abi_to_tokenstream2(&registry, &ctx);
+    let expanded = cainome_rs::abi_to_tokenstream(&registry, &ctx);
 
     if let Some(out_path) = contract_abi.output_path {
         let content: String = expanded.to_string();
@@ -57,18 +65,27 @@ fn abigen_internal_legacy(input: TokenStream) -> TokenStream {
     let contract_abi = syn::parse_macro_input!(input as ContractAbiLegacy);
 
     let abi_entries = contract_abi.abi;
-    let contract_name = contract_abi.name;
 
-    let ctx = ExpansionContext::new(&contract_name.to_string())
+    let name_str = contract_abi.name.to_string();
+    let contract_source = contract_abi
+        .contract_source_path
+        .unwrap_or("no contract file".to_string());
+
+    let ctx = ExpansionContextFactory::new(contract_source)
         .with_contract_derives(&contract_abi.contract_derives)
         .with_derives(&contract_abi.derives)
         .with_execution(contract_abi.execution_version)
-        .with_type_skips(contract_abi.type_skips);
+        .with_type_skips(contract_abi.type_skips)
+        .with_aliases(contract_abi.type_aliases)
+        .with_substitutions(contract_abi.type_substitutions)
+        .with_contract_name(name_str)
+        .with_is_legacy(true)
+        .build();
 
     let registry = AbiParser::build_registry(abi_entries, ParserContext::from(&ctx))
         .expect("failed tokens parsing");
 
-    let expanded = cainome_rs::abi_to_tokenstream2(&registry, &ctx);
+    let expanded = cainome_rs::abi_to_tokenstream(&registry, &ctx);
 
     if let Some(out_path) = contract_abi.output_path {
         let content: String = expanded.to_string();

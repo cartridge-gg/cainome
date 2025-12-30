@@ -3,6 +3,8 @@ use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
 use syn::{Ident, LitStr, Type};
 
+use crate::expand::ExpansionContext;
+
 pub fn str_to_ident(str_in: &str) -> Ident {
     if is_rust_keyword(str_in) {
         // ie., r#ident
@@ -36,10 +38,6 @@ pub fn snrs_providers() -> Type {
     str_to_type("starknet::providers")
 }
 
-pub fn cainome_cairo_serde() -> Type {
-    str_to_type(&cainome_cairo_serde_path())
-}
-
 #[inline]
 pub fn cainome_cairo_serde_path() -> String {
     String::from("cainome::cairo_serde")
@@ -66,16 +64,16 @@ impl SerdeHexType {
 
 /// Serde derive for hex serialization of struct member or enum variant.
 /// In the case of tuples, all the elements will be serialized as hex.
-pub fn serde_hex_derive(ty: &str) -> TokenStream2 {
-    let serde_single = format!("{}::serialize_as_hex", cainome_cairo_serde_path());
-    let serde_vec = format!("{}::serialize_as_hex_vec", cainome_cairo_serde_path());
-    let serde_tuple_2 = format!("{}::serialize_as_hex_t2", cainome_cairo_serde_path());
-    let serde_tuple_3 = format!("{}::serialize_as_hex_t3", cainome_cairo_serde_path());
+pub fn serde_hex_derive(ty: &str, ctx: &ExpansionContext) -> TokenStream2 {
+    let serde_single = format!("{}::serialize_as_hex", ctx.cainome_serde_path);
+    let serde_vec = format!("{}::serialize_as_hex_vec", ctx.cainome_serde_path);
+    let serde_tuple_2 = format!("{}::serialize_as_hex_t2", ctx.cainome_serde_path);
+    let serde_tuple_3 = format!("{}::serialize_as_hex_t3", ctx.cainome_serde_path);
 
-    let deser_single = format!("{}::deserialize_from_hex", cainome_cairo_serde_path());
-    let deser_vec = format!("{}::deserialize_from_hex_vec", cainome_cairo_serde_path());
-    let deser_tuple_2 = format!("{}::deserialize_from_hex_t2", cainome_cairo_serde_path());
-    let deser_tuple_3 = format!("{}::deserialize_from_hex_t3", cainome_cairo_serde_path());
+    let deser_single = format!("{}::deserialize_from_hex", ctx.cainome_serde_path);
+    let deser_vec = format!("{}::deserialize_from_hex_vec", ctx.cainome_serde_path);
+    let deser_tuple_2 = format!("{}::deserialize_from_hex_t2", ctx.cainome_serde_path);
+    let deser_tuple_3 = format!("{}::deserialize_from_hex_t3", ctx.cainome_serde_path);
 
     let serde_hex = is_serde_hex_int(ty);
 

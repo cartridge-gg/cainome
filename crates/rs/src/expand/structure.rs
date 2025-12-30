@@ -1,6 +1,6 @@
 use crate::expand::{
     types::{get_additional_derive_requirements, CairoToRust},
-    utils, Expandable, ExpansionContext, ExpansionResult,
+    utils, Expandable, ExpansionContext, ExpansionContextFactory, ExpansionResult,
 };
 use cainome_parser::tokens::{NamedToken, Struct};
 use proc_macro2::TokenStream;
@@ -23,7 +23,7 @@ pub fn struct_declaration(
         let token = &*inner.token.borrow();
         let ty = utils::str_to_type(&token.to_rust_type(ctx));
 
-        let serde = utils::serde_hex_derive(&token.to_rust_type(ctx));
+        let serde = utils::serde_hex_derive(&token.to_rust_type(ctx), ctx);
 
         members.push(quote!(#serde pub #name: #ty));
     }
@@ -91,7 +91,7 @@ pub fn struct_implementation(
         });
     }
 
-    let ccs = utils::cainome_cairo_serde();
+    let ccs = utils::str_to_type(&ctx.cainome_serde_path);
     let snrs_types = utils::snrs_types();
 
     let (impl_line, rust_type) = (
@@ -137,9 +137,9 @@ impl Expandable for Struct {
         let full_path = self.type_path_no_generic();
         let name = full_path.split("::").last().unwrap().to_owned();
 
-        let ctx = ctx
-            .clone()
-            .with_derives(get_additional_derive_requirements(&self.fields, &ctx));
+        let ctx = ExpansionContextFactory::from(ctx)
+            .with_derives(get_additional_derive_requirements(&self.fields, &ctx))
+            .build();
 
         let declaration = struct_declaration(&name, &self.fields, &ctx);
         let implementation = struct_implementation(&name, &self.fields, &ctx);

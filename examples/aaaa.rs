@@ -1,11 +1,13 @@
 use cainome_cairo_serde::result;
 use cainome_parser::{AbiParser, ParserContext};
-use cainome_rs::expand::ExpansionContext;
+use cainome_rs::expand::{ExpansionContext, ExpansionContextFactory};
 use starknet::core::types::contract::legacy::{LegacyContractClass, RawLegacyAbiEntry};
 use starknet::core::types::contract::{AbiEntry, SierraClass};
 use std::fs::{self, File};
+use std::io::Read;
 
 fn read_file_legacy(file_path: &str) -> Vec<RawLegacyAbiEntry> {
+    println!("Reading ABI from file: {}", file_path);
     let file = File::open(file_path).unwrap();
 
     if let Ok(class) = serde_json::from_reader::<_, LegacyContractClass>(file) {
@@ -21,15 +23,18 @@ fn read_file_legacy(file_path: &str) -> Vec<RawLegacyAbiEntry> {
     panic!("Failed to parse legacy ABI file");
 }
 
-fn legacy_expand(file_path: &str, out_name: &str, ctx: &ExpansionContext) {
-    let abi = read_file_legacy(file_path);
+fn legacy_expand(out_name: &str, ctx: &ExpansionContext) {
+    let cwd = std::env::current_dir().unwrap();
+    println!("Current working directory: {:?}", cwd);
+
+    let abi = read_file_legacy(ctx.contract_source.as_ref());
 
     let ctx = ctx.clone();
 
     let registry =
         AbiParser::build_registry(abi, ParserContext::from(&ctx)).expect("failed tokens parsing");
 
-    let expanded = cainome_rs::abi_to_tokenstream2(&registry, &ctx);
+    let expanded = cainome_rs::abi_to_tokenstream(&registry, &ctx);
 
     let syntax_tree = syn::parse2::<syn::File>(expanded).unwrap();
     let s = prettyplease::unparse(&syntax_tree);
@@ -39,13 +44,13 @@ fn legacy_expand(file_path: &str, out_name: &str, ctx: &ExpansionContext) {
         s
     );
 
-    let cwd = std::env::current_dir().unwrap();
     let path = cwd.to_str().unwrap();
-    fs::write(format!("{}/tests/{}", path, out_name), content).unwrap()
+    fs::write(format!("{}/{}", path, out_name), content).unwrap()
 }
 
 fn read_file(file_path: &str) -> Vec<AbiEntry> {
-    let file = File::open(file_path).unwrap();
+    println!("Reading ABI from file: {}", file_path);
+    let file = File::open(file_path).expect(&format!("{} not found", file_path));
 
     if let Ok(class) = serde_json::from_reader::<_, SierraClass>(file) {
         return class.abi;
@@ -60,15 +65,16 @@ fn read_file(file_path: &str) -> Vec<AbiEntry> {
     panic!("Failed to parse legacy ABI file");
 }
 
-fn expand(file_path: &str, out_name: &str, ctx: &ExpansionContext) {
-    let abi = read_file(file_path);
+fn expand(out_name: &str, ctx: &ExpansionContext) {
+    let cwd = std::env::current_dir().unwrap();
+    println!("Current working directory: {:?}", cwd);
 
-    let ctx = ctx.clone();
+    let abi = read_file(ctx.contract_source.as_ref());
 
     let registry =
-        AbiParser::build_registry(abi, ParserContext::from(&ctx)).expect("failed tokens parsing");
+        AbiParser::build_registry(abi, ParserContext::from(ctx)).expect("failed tokens parsing");
 
-    let expanded = cainome_rs::abi_to_tokenstream2(&registry, &ctx);
+    let expanded = cainome_rs::abi_to_tokenstream(&registry, &ctx);
 
     let syntax_tree = syn::parse2::<syn::File>(expanded).unwrap();
     let s = prettyplease::unparse(&syntax_tree);
@@ -78,31 +84,46 @@ fn expand(file_path: &str, out_name: &str, ctx: &ExpansionContext) {
         s
     );
 
-    let cwd = std::env::current_dir().unwrap();
     let path = cwd.to_str().unwrap();
-    fs::write(format!("{}/tests/{}", path, out_name), content).unwrap()
+    fs::write(format!("{}/{}", path, out_name), content).unwrap()
 }
 
 fn main() {
+    // legacy_expand(
+    //     "./contracts/cairo0/kkrt_account_cairo0.json",
+    //     "cairo0_account.rs",
+    //     ExpansionContext::new("MyContract"),
+    // );
+    // legacy_expand(
+    //     "./contracts/cairo0/kkrt.abi.json",
+    //     "cairo0.rs",
+    //     ExpansionContext::new("MyContract"),
+    // );
+    // expand(
+    //     "./contracts/abi/gen.abi.json",
+    //     "structs.rs",
+    //     &ExpansionContext::new("MyContract").with_derives([
+    //         "Debug",
+    //         "Clone",
+    //         "PartialEq",
+    //         "serde::Serialize",
+    //         "serde::Deserialize",
+    //     ]),
+    // );
+    // expand(
+    //     "./crates/integration-tests/src/bindings/erc20.rs",
+    //     &ExpansionContextFactory::new("./crates/integration-tests/src/bindings/erc20.json")
+    //         .with_contract_name("ERC20")
+    //         .with_cainome_serde_path("cainome_cairo_serde")
+    //         .build(),
+    // );
     legacy_expand(
-        "./contracts/cairo0/kkrt_account_cairo0.json",
-        "cairo0_account.rs",
-        ExpansionContext::new("MyContract"),
-    );
-    legacy_expand(
-        "./contracts/cairo0/kkrt.abi.json",
-        "cairo0.rs",
-        ExpansionContext::new("MyContract"),
-    );
-    expand(
-        "./contracts/abi/gen.abi.json",
-        "structs.rs",
-        &ExpansionContext::new("MyContract").with_derives([
-            "Debug",
-            "Clone",
-            "PartialEq",
-            "serde::Serialize",
-            "serde::Deserialize",
-        ]),
+        "./crates/integration-tests/src/bindings/udc.rs",
+        &ExpansionContextFactory::new("./crates/integration-tests/src/bindings/udc.json")
+            .with_contract_name("UDC")
+            .with_derives(["Debug"])
+            .with_cainome_serde_path("cainome_cairo_serde")
+            .with_is_legacy(true)
+            .build(),
     );
 }

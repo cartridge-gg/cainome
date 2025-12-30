@@ -4,7 +4,11 @@ use cainome_parser::{AbiParser, ParserContext};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 
-use crate::{abi_to_tokenstream2, expand::ExpansionContext, Abigen, ExecutionVersion};
+use crate::{
+    abi_to_tokenstream,
+    expand::{ExpansionContext, ExpansionContextFactory},
+    Abigen, ExecutionVersion,
+};
 
 pub fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
     let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
@@ -147,17 +151,18 @@ fn test_complex_case() {
         String::from("MyDef"),
     );
 
-    let ctx = ExpansionContext::new("MyContract")
+    let ctx = ExpansionContextFactory::new("MyContract")
         .with_contract_derives(&vec!["Debug".to_string(), "Clone".to_string()])
         .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()])
         .with_execution(ExecutionVersion::V3)
-        .with_aliases(aliases);
+        .with_aliases(aliases)
+        .build();
 
     let entries = AbiParser::parse_abi_string(&abi).unwrap();
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
 
-    let generated = abi_to_tokenstream2(&registry.unwrap(), &ctx);
+    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx);
 
     let expected = quote! {};
 
@@ -205,15 +210,16 @@ fn test_tuple_with_custom_type_as_func_argument_case() {
         }
     ]"#;
 
-    let ctx = ExpansionContext::new("MyContract")
+    let ctx = ExpansionContextFactory::new("MyContract")
         .with_contract_derives(&vec!["Debug".to_string(), "Clone".to_string()])
-        .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()]);
+        .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()])
+        .build();
 
     let entries = AbiParser::parse_abi_string(&abi).unwrap();
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx)).unwrap();
 
-    let generated = abi_to_tokenstream2(&registry, &ctx);
+    let generated = abi_to_tokenstream(&registry, &ctx);
 
     let expected = quote! {};
 
@@ -247,15 +253,16 @@ fn test_tuple_with_custom_genetic_type_as_func_argument_case() {
         }
     ]"#;
 
-    let ctx = ExpansionContext::new("MyContract")
+    let ctx = ExpansionContextFactory::new("MyContract")
         .with_contract_derives(&vec!["Debug".to_string(), "Clone".to_string()])
-        .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()]);
+        .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()])
+        .build();
 
     let entries = AbiParser::parse_abi_string(&abi).unwrap();
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx)).unwrap();
 
-    let generated = abi_to_tokenstream2(&registry, &ctx);
+    let generated = abi_to_tokenstream(&registry, &ctx);
 
     let expected = quote! {};
 
@@ -296,16 +303,17 @@ fn test_tuple_with_custom_genetic_type_as_func_argument_case_with_alias() {
         String::from("ToAlias"),
     );
 
-    let ctx = ExpansionContext::new("MyContract")
+    let ctx = ExpansionContextFactory::new("MyContract")
         .with_contract_derives(&vec!["Debug".to_string(), "Clone".to_string()])
         .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()])
-        .with_aliases(aliases);
+        .with_aliases(aliases)
+        .build();
 
     let entries = AbiParser::parse_abi_string(&abi).unwrap();
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx)).unwrap();
 
-    let generated = abi_to_tokenstream2(&registry, &ctx);
+    let generated = abi_to_tokenstream(&registry, &ctx);
 
     let expected = quote! {};
 
@@ -350,7 +358,7 @@ fn test_tuple_with_generic_arg_with_2_parameters_resolves() {
 
     let mut registry = AbiParser::build_registry(abi_entries, ctx).unwrap();
 
-    let ctx = ExpansionContext::new("MyContract");
+    let ctx = ExpansionContextFactory::new("MyContract").build();
 
     registry.apply_substitutions(&ctx.substitutions);
 

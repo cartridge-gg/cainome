@@ -3,7 +3,9 @@ use proc_macro2::TokenStream;
 use quote::quote;
 
 use crate::expand::types::{get_additional_derive_requirements, CairoToRust};
-use crate::expand::{utils, Expandable, ExpansionContext, ExpansionResult};
+use crate::expand::{
+    utils, Expandable, ExpansionContext, ExpansionContextFactory, ExpansionResult,
+};
 
 // TODO: create Enumeration struct with type_name and variants and From<Enum> and From<Event> trait implementation.
 
@@ -20,7 +22,7 @@ pub fn enum_declaration(
         let name = utils::str_to_ident(&inner.name);
 
         let token = &*inner.token.borrow();
-        let serde = utils::serde_hex_derive(&token.to_rust_type(ctx));
+        let serde = utils::serde_hex_derive(&token.to_rust_type(ctx), ctx);
 
         match &*inner.token.borrow() {
             Token::Basic(TypePath { type_path }) if type_path == "()" => {
@@ -112,7 +114,7 @@ pub fn enum_implementation(
         }
     }
 
-    let ccs = utils::cainome_cairo_serde();
+    let ccs = utils::str_to_type(&ctx.cainome_serde_path);
 
     serialized_sizes.push(quote! {
         _ => 0
@@ -171,9 +173,9 @@ impl Expandable for Enum {
         let full_path = ctx.apply_alias(&self.type_path_no_generic());
         let name = full_path.split("::").last().unwrap().to_owned();
 
-        let ctx = ctx
-            .clone()
-            .with_derives(get_additional_derive_requirements(&self.variants, &ctx));
+        let ctx = ExpansionContextFactory::from(ctx)
+            .with_derives(get_additional_derive_requirements(&self.variants, &ctx))
+            .build();
 
         let declaration = enum_declaration(&name, &self.variants, &ctx);
         let implementation = enum_implementation(&name, &self.variants, &ctx);

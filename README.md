@@ -11,15 +11,21 @@
 [x] generic structs handling. I didn't test those properly (old functionality)
 
 [ ] bindings
-[ ] prefix cainome with additional setting 
-[ ] starknet-rust
 [ ] tests for nested events of level 2 and more
+[ ] prefix cainome with additional setting
+[ ] starknet-rust
 [ ] tests for serialisation rules
 [ ] event structure split (not critical)
 [ ] deploy and declare calls method
-[ ] functions registry paths intersection. think on type prefixes for token paths.
-[ ] ??? integration tests. create bindings, deploy to testnet, call, assert result. ???
-[ ] If we can generate code, why not generate tests as well?
+[ ] functions registry paths intersection. think on type prefixes for token paths
+[ ] ??? integration tests. create bindings, deploy to testnet, call, assert result
+[ ] If we can generate code, why not generate tests as well
+
+RELEASE:
+[ ] PR - feature parity, modules disabled by default?, skips
+[ ] Check CI, pay attention to a release order
+[ ] Review
+
 ```rust
 fn builtin_composite_to_rust(type_name: &str) -> (String, bool) {
     let ccsp = utils::cainome_cairo_serde_path();
@@ -36,7 +42,6 @@ fn builtin_composite_to_rust(type_name: &str) -> (String, bool) {
     }
 }
 ```
-
 
 # Cainome: bindings generation from Cairo ABI
 

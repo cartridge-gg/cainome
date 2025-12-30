@@ -91,6 +91,7 @@ impl ExpansionResult {
 
 #[derive(Clone)]
 pub struct ExpansionContext {
+    // TODO: expose properties through methods
     pub contract_name: String,
     pub derives: BTreeSet<String>,
     pub contract_derives: BTreeSet<String>,
@@ -98,72 +99,65 @@ pub struct ExpansionContext {
     pub substitutions: HashMap<String, String>,
     pub type_skips: Vec<String>,
     pub aliases: HashMap<String, String>,
+    pub contract_source: String,
     // TODO: syn::Type?
     pub root_module_path: String,
-}
-
-impl Default for ExpansionContext {
-    fn default() -> Self {
-        Self::new("DefaultContract")
-    }
+    pub cainome_serde_path: String,
+    pub is_legacy: bool,
 }
 
 impl ExpansionContext {
-    pub fn new(contract_name: &str) -> Self {
-        let ccsp = utils::cainome_cairo_serde_path();
-        let snrs_types = utils::starknet_rs_types_path();
+    pub fn apply_alias(&self, type_path_no_generic: &str) -> String {
+        if let Some(alias) = self.aliases.get(type_path_no_generic) {
+            alias.to_string()
+        } else {
+            type_path_no_generic.to_string()
+        }
+    }
+}
 
-        let builtin_substitutions = HashMap::from([
-            ("core::bool", "bool".to_string()),
-            ("core::integer::u8", "u8".to_string()),
-            ("core::integer::u16", "u16".to_string()),
-            ("core::integer::u32", "u32".to_string()),
-            ("core::integer::u64", "u64".to_string()),
-            ("core::integer::u128", "u128".to_string()),
-            ("core::integer::usize", "usize".to_string()),
-            ("core::integer::i8", "i8".to_string()),
-            ("core::integer::i16", "i16".to_string()),
-            ("core::integer::i32", "i32".to_string()),
-            ("core::integer::i64", "i64".to_string()),
-            ("core::integer::i128", "i128".to_string()),
-            (
-                "core::starknet::eth_address::EthAddress",
-                format!("{ccsp}::EthAddress"),
-            ),
-            (
-                "core::starknet::class_hash::ClassHash",
-                format!("{ccsp}::ClassHash"),
-            ),
-            (
-                "core::starknet::contract_address::ContractAddress",
-                format!("{ccsp}::ContractAddress"),
-            ),
-            ("core::byte_array::ByteArray", format!("{ccsp}::ByteArray")),
-            ("core::zeroable::NonZero", format!("{ccsp}::NonZero")),
-            ("core::integer::u256", format!("{ccsp}::U256")),
-            ("core::integer::BoundedInt", format!("{snrs_types}::Felt")),
-            ("felt", format!("{snrs_types}::Felt")),
-            ("core::felt252", format!("{snrs_types}::Felt")),
-            ("core::bytes_31::bytes31", format!("{ccsp}::Bytes31")),
-        ])
-        .into_iter()
-        .map(|(k, v)| (k.to_string(), v))
-        .collect();
+pub struct ExpansionContextFactory {
+    contract_name: String,
+    derives: BTreeSet<String>,
+    contract_derives: BTreeSet<String>,
+    execution_version: ExecutionVersion,
+    substitutions: HashMap<String, String>,
+    type_skips: Vec<String>,
+    aliases: HashMap<String, String>,
+    contract_source: String,
+    // TODO: syn::Type?
+    root_module_path: String,
+    cainome_serde_path: String,
+    is_legacy: bool,
+}
 
+impl ExpansionContextFactory {
+    pub fn new<S>(contract_source: S) -> Self
+    where
+        S: AsRef<str>,
+    {
         Self {
             derives: BTreeSet::new(),
             contract_derives: BTreeSet::new(),
-            contract_name: contract_name.to_string(),
+            contract_name: "Contract".to_string(),
             execution_version: crate::ExecutionVersion::V3,
             root_module_path: "crate".to_string(),
-            substitutions: builtin_substitutions,
+            substitutions: HashMap::new(),
             type_skips: vec![],
             aliases: HashMap::new(),
+            contract_source: contract_source.as_ref().to_string(),
+            cainome_serde_path: "cainome::cairo_serde".to_string(),
+            is_legacy: false,
         }
     }
 
     pub fn with_execution(mut self, execution_version: ExecutionVersion) -> Self {
         self.execution_version = execution_version;
+        self
+    }
+
+    pub fn with_is_legacy(mut self, is_legacy: bool) -> Self {
+        self.is_legacy = is_legacy;
         self
     }
 
@@ -224,11 +218,86 @@ impl ExpansionContext {
         self
     }
 
-    pub fn apply_alias(&self, type_path_no_generic: &str) -> String {
-        if let Some(alias) = self.aliases.get(type_path_no_generic) {
-            alias.to_string()
-        } else {
-            type_path_no_generic.to_string()
+    pub fn with_contract_name<S>(mut self, name: S) -> Self
+    where
+        S: AsRef<str>,
+    {
+        self.contract_name = name.as_ref().to_string();
+        self
+    }
+
+    pub fn with_cainome_serde_path<S>(mut self, path: S) -> Self
+    where
+        S: AsRef<str>,
+    {
+        self.cainome_serde_path = path.as_ref().to_string();
+        self
+    }
+
+    pub fn build(self) -> ExpansionContext {
+        let cainome_serde_path = self.cainome_serde_path;
+        let snrs_types = utils::starknet_rs_types_path();
+
+        let mut builtin_substitutions: HashMap<String, String> = HashMap::from([
+            ("core::bool", "bool".to_string()),
+            ("core::integer::u8", "u8".to_string()),
+            ("core::integer::u16", "u16".to_string()),
+            ("core::integer::u32", "u32".to_string()),
+            ("core::integer::u64", "u64".to_string()),
+            ("core::integer::u128", "u128".to_string()),
+            ("core::integer::usize", "usize".to_string()),
+            ("core::integer::i8", "i8".to_string()),
+            ("core::integer::i16", "i16".to_string()),
+            ("core::integer::i32", "i32".to_string()),
+            ("core::integer::i64", "i64".to_string()),
+            ("core::integer::i128", "i128".to_string()),
+            (
+                "core::starknet::eth_address::EthAddress",
+                format!("{cainome_serde_path}::EthAddress"),
+            ),
+            (
+                "core::starknet::class_hash::ClassHash",
+                format!("{cainome_serde_path}::ClassHash"),
+            ),
+            (
+                "core::starknet::contract_address::ContractAddress",
+                format!("{cainome_serde_path}::ContractAddress"),
+            ),
+            (
+                "core::byte_array::ByteArray",
+                format!("{cainome_serde_path}::ByteArray"),
+            ),
+            (
+                "core::zeroable::NonZero",
+                format!("{cainome_serde_path}::NonZero"),
+            ),
+            ("core::integer::u256", format!("{cainome_serde_path}::U256")),
+            ("core::integer::BoundedInt", format!("{snrs_types}::Felt")),
+            ("felt", format!("{snrs_types}::Felt")),
+            ("core::felt252", format!("{snrs_types}::Felt")),
+            (
+                "core::bytes_31::bytes31",
+                format!("{cainome_serde_path}::Bytes31"),
+            ),
+        ])
+        .into_iter()
+        .map(|(k, v)| (k.to_string(), v))
+        .collect();
+
+        builtin_substitutions.extend(self.substitutions);
+
+        ExpansionContext {
+            contract_name: self.contract_name,
+            derives: self.derives,
+            contract_derives: self.contract_derives,
+            execution_version: self.execution_version,
+            substitutions: builtin_substitutions,
+            type_skips: self.type_skips,
+            aliases: self.aliases,
+            contract_source: self.contract_source,
+            root_module_path: self.root_module_path,
+            cainome_serde_path,
+            is_legacy: self.is_legacy,
         }
     }
 }
@@ -244,6 +313,21 @@ impl From<&ExpansionContext> for ParserContext {
                     .collect(),
             )
             .with_type_skips(value.type_skips.iter().map(|s| s.as_str()).collect())
+    }
+}
+
+impl From<&ExpansionContext> for ExpansionContextFactory {
+    fn from(value: &ExpansionContext) -> Self {
+        ExpansionContextFactory::new(&value.contract_source)
+            .with_contract_name(&value.contract_name)
+            .with_derives(value.derives.iter().cloned())
+            .with_contract_derives(value.contract_derives.iter().cloned())
+            .with_execution(value.execution_version)
+            .with_substitutions(value.substitutions.clone())
+            .with_type_skips(value.type_skips.clone())
+            .with_aliases(value.aliases.clone())
+            .with_cainome_serde_path(&value.cainome_serde_path)
+            .with_is_legacy(value.is_legacy)
     }
 }
 

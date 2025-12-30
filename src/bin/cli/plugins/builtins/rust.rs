@@ -1,4 +1,4 @@
-use cainome_rs::expand::ExpansionContext;
+use cainome_rs::expand::{ExpansionContext, ExpansionContextFactory};
 use cainome_rs::{self};
 use convert_case::{Case, Casing};
 
@@ -37,13 +37,14 @@ impl BuiltinPlugin for RustPlugin {
             let derives = self.options.derives.as_deref().unwrap_or_default();
             let contract_derives = self.options.contract_derives.as_deref().unwrap_or_default();
 
-            let ctx = ExpansionContext::new(&contract_name.to_string())
+            let ctx = ExpansionContextFactory::new(&contract_name.to_string())
                 .with_contract_derives(contract_derives)
                 .with_derives(derives)
                 .with_execution(input.execution_version)
-                .with_type_skips(&input.type_skips);
+                .with_type_skips(&input.type_skips)
+                .build();
 
-            let expanded = cainome_rs::abi_to_tokenstream2(&contract.registry, &ctx);
+            let expanded = cainome_rs::abi_to_tokenstream(&contract.registry, &ctx);
 
             let filename = format!(
                 "{}.rs",

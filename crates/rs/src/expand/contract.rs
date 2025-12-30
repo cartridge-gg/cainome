@@ -1,5 +1,5 @@
 use cainome_parser::{
-    tokens::{Function, FunctionOutputKind, NamedToken, Token},
+    tokens::{Constructor, Function, FunctionOutputKind, NamedToken, Token},
     TokenizedAbi, TypeRegistry,
 };
 use proc_macro2::TokenStream;
@@ -17,6 +17,7 @@ pub struct Contract {
     pub derives: Vec<String>,
     pub readonly_methods: Vec<Function>,
     pub mutating_methods: Vec<Function>,
+    pub constructor: Option<Constructor>,
 }
 
 impl Contract {
@@ -38,40 +39,14 @@ impl Contract {
             }
         }
 
+        let constructor = abi.get_constructor();
+
         Self {
             name: name.to_string(),
             derives: derives,
             mutating_methods,
             readonly_methods,
-        }
-    }
-
-    pub fn new2<T>(name: &str, derives: T, abi: &TokenizedAbi) -> Self
-    where
-        T: Iterator<Item = String>,
-    {
-        let mut readonly_methods = vec![];
-        let mut mutating_methods = vec![];
-
-        for token in abi.functions.iter() {
-            let Token::Function(func) = &*token.borrow() else {
-                continue;
-            };
-            match func.state_mutability {
-                cainome_parser::tokens::StateMutability::External => {
-                    mutating_methods.push(func.clone());
-                }
-                cainome_parser::tokens::StateMutability::View => {
-                    readonly_methods.push(func.clone());
-                }
-            }
-        }
-
-        Self {
-            name: name.to_string(),
-            derives: derives.collect(),
-            mutating_methods,
-            readonly_methods,
+            constructor,
         }
     }
 
@@ -143,7 +118,7 @@ impl Contract {
 
         let func_name_call = utils::str_to_ident(&format!("{}_getcall", func_name));
 
-        let ccs = utils::cainome_cairo_serde();
+        let ccs = utils::str_to_type(&ctx.cainome_serde_path);
 
         let exec_type = utils::str_to_type(match &ctx.execution_version {
             ExecutionVersion::V1 => "starknet::accounts::ExecutionV1<A>",
@@ -207,7 +182,7 @@ impl Contract {
             .map(|(name, ty)| quote!(#name:#ty))
             .collect::<Vec<_>>();
 
-        let ccs = utils::cainome_cairo_serde();
+        let ccs = utils::str_to_type(&ctx.cainome_serde_path);
 
         quote! {
             #[allow(clippy::ptr_arg)]

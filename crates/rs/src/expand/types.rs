@@ -31,8 +31,8 @@ impl CairoToRust for TypePath {
 impl CairoToRust for ArrayContainer {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
         let internal_type = (&*self.inner.borrow()).to_rust_type(ctx);
-        if self.is_legacy {
-            let ccsp = utils::cainome_cairo_serde_path();
+        if ctx.is_legacy {
+            let ccsp = ctx.cainome_serde_path.to_string();
             format!("{ccsp}::CairoArrayLegacy<{internal_type}>")
         } else {
             format!("Vec<{internal_type}>")
@@ -40,8 +40,8 @@ impl CairoToRust for ArrayContainer {
     }
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
-        if self.is_legacy {
-            let ccsp = utils::cainome_cairo_serde_path();
+        if ctx.is_legacy {
+            let ccsp = ctx.cainome_serde_path.to_string();
             format!(
                 "{ccsp}::CairoArrayLegacy::<{}>",
                 (&*self.inner.borrow()).to_rust_type_path(ctx)
@@ -85,7 +85,7 @@ impl CairoToRust for ResultContainer {
 
 impl CairoToRust for NonZeroContainer {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
-        let ccsp = utils::cainome_cairo_serde_path();
+        let ccsp = ctx.cainome_serde_path.to_string();
         format!(
             "{ccsp}::NonZero<{}>",
             (&*self.inner.borrow()).to_rust_type(ctx)
@@ -93,7 +93,7 @@ impl CairoToRust for NonZeroContainer {
     }
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
-        let ccsp = utils::cainome_cairo_serde_path();
+        let ccsp = ctx.cainome_serde_path.to_string();
         format!(
             "{ccsp}::NonZero::<{}>",
             (&*self.inner.borrow()).to_rust_type_path(ctx)

@@ -8,18 +8,20 @@ use proc_macro2::TokenStream;
 use syn::parse_quote;
 
 use crate::expand::{
-    contract::Contract, for_tests::assert_code_has, Expandable, ExpansionContext, Module,
+    contract::Contract, for_tests::assert_code_has, Expandable, ExpansionContext,
+    ExpansionContextFactory, Module,
 };
 
 #[test]
 fn test_naive_contract_expansion() {
-    let ctx = ExpansionContext::new("ContractName");
+    let ctx = ExpansionContextFactory::new("ContractName").build();
 
     let contract = Contract {
         name: "ContractName".to_string(),
         derives: vec![],
         readonly_methods: vec![],
         mutating_methods: vec![],
+        constructor: None,
     };
 
     let generated = Module::new()
@@ -64,7 +66,7 @@ fn test_naive_contract_with_view_function() {
 
     registry.set("some_unique_path", function);
 
-    let ctx = ExpansionContext::new("ContractName");
+    let ctx = ExpansionContextFactory::new("ContractName").build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let contract = Contract::new("ContractName", vec![], &registry);
@@ -133,7 +135,7 @@ fn test_naive_contract_with_view_mutating_function() {
 
     registry.set("some_unique_path", function);
 
-    let ctx = ExpansionContext::new("ContractName");
+    let ctx = ExpansionContextFactory::new("ContractName").build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let contract = Contract::new("ContractName", vec![], &registry);

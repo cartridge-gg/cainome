@@ -6,7 +6,9 @@ use cainome_parser::{
 use proc_macro2::TokenStream;
 use syn::{parse_quote, ItemEnum};
 
-use crate::expand::{for_tests::assert_code_has, Expandable, ExpansionContext, Module};
+use crate::expand::{
+    for_tests::assert_code_has, Expandable, ExpansionContext, ExpansionContextFactory, Module,
+};
 
 #[test]
 fn test_enum_expand_empty() {
@@ -14,7 +16,7 @@ fn test_enum_expand_empty() {
 
     let enumeration = Enum::new("my::Enum", &registry).unwrap();
 
-    let ctx = ExpansionContext::new("ContractName");
+    let ctx = ExpansionContextFactory::new("ContractName").build();
 
     let generated = Module::new()
         .with_includes(enumeration.expand(&ctx))
@@ -38,7 +40,7 @@ fn test_enum_expand_simple_variants() {
         token: registry.get("felt").unwrap(),
     });
 
-    let ctx = ExpansionContext::new("ContractName");
+    let ctx = ExpansionContextFactory::new("ContractName").build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
@@ -93,7 +95,7 @@ fn test_enum_expand_core_type_variants() {
             ),
         ]);
 
-    let ctx = ExpansionContext::new("ContractName");
+    let ctx = ExpansionContextFactory::new("ContractName").build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
@@ -164,7 +166,9 @@ fn test_enumeration_expand_with_containers_field() {
             ),
         ]);
 
-    let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
+    let ctx = ExpansionContextFactory::new("ContractName")
+        .with_derives(vec!["Serde", "Clone"])
+        .build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
@@ -218,7 +222,9 @@ fn test_enumeration_expand_with_structure_field() {
             registry.get("my::Inner").unwrap(),
         )]);
 
-    let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
+    let ctx = ExpansionContextFactory::new("ContractName")
+        .with_derives(vec!["Serde", "Clone"])
+        .build();
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))

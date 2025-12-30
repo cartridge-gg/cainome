@@ -6,7 +6,7 @@ use cainome_parser::{
 use proc_macro2::TokenStream;
 use syn::{parse_quote, ItemStruct};
 
-use crate::expand::{for_tests::assert_code_has, Expandable, ExpansionContext, Module};
+use crate::expand::{for_tests::assert_code_has, Expandable, ExpansionContextFactory, Module};
 
 #[test]
 fn test_structure_expand_empty() {
@@ -14,7 +14,7 @@ fn test_structure_expand_empty() {
 
     let structure = Struct::new("my::Type", &registry).unwrap();
 
-    let ctx = ExpansionContext::new("ContractName");
+    let ctx = ExpansionContextFactory::new("ContractName").build();
 
     registry.apply_substitutions(&ctx.substitutions);
 
@@ -40,7 +40,7 @@ fn test_structure_expand_basic_field() {
         token: registry.get("felt").unwrap(),
     });
 
-    let ctx = ExpansionContext::new("ContractName");
+    let ctx = ExpansionContextFactory::new("ContractName").build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
@@ -67,11 +67,9 @@ fn test_structure_expand_with_derive() {
         token: registry.get("felt").unwrap(),
     });
 
-    let ctx = ExpansionContext::new("ContractName").with_derives(vec![
-        "serde::Serialize",
-        "serde::Deserialize",
-        "Clone",
-    ]);
+    let ctx = ExpansionContextFactory::new("ContractName")
+        .with_derives(vec!["serde::Serialize", "serde::Deserialize", "Clone"])
+        .build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
@@ -99,7 +97,9 @@ fn test_structure_expand_with_option_field() {
         token: registry.get("core::option::Option<felt>").unwrap(),
     });
 
-    let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
+    let ctx = ExpansionContextFactory::new("ContractName")
+        .with_derives(vec!["Serde", "Clone"])
+        .build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
@@ -127,11 +127,9 @@ fn test_structure_expand_with_array_field() {
         token: registry.get("core::array::Array<core::felt252>").unwrap(),
     });
 
-    let ctx = ExpansionContext::new("ContractName").with_derives(vec![
-        "serde::Serialize",
-        "serde::Deserialize",
-        "Clone",
-    ]);
+    let ctx = ExpansionContextFactory::new("ContractName")
+        .with_derives(vec!["serde::Serialize", "serde::Deserialize", "Clone"])
+        .build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
@@ -161,7 +159,9 @@ fn test_structure_expand_with_non_zero_field() {
             .unwrap(),
     });
 
-    let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
+    let ctx = ExpansionContextFactory::new("ContractName")
+        .with_derives(vec!["Serde", "Clone"])
+        .build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
@@ -181,7 +181,9 @@ fn test_structure_expand_with_non_zero_field() {
 #[test]
 fn test_structure_expand_with_tuple_field() {
     let mut registry = TypeRegistry::new();
-    let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
+    let ctx = ExpansionContextFactory::new("ContractName")
+        .with_derives(vec!["Serde", "Clone"])
+        .build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let mut structure = Struct::new("my::Type", &registry).unwrap();
@@ -226,7 +228,9 @@ fn test_structure_expand_with_self_reference() {
         structure
     };
 
-    let ctx = ExpansionContext::new("ContractName").with_derives(vec!["Serde", "Clone"]);
+    let ctx = ExpansionContextFactory::new("ContractName")
+        .with_derives(vec!["Serde", "Clone"])
+        .build();
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))
@@ -248,7 +252,7 @@ fn test_structure_expand_with_self_reference() {
 #[test]
 fn test_structure_expand_all_core_types() {
     let mut registry = TypeRegistry::new();
-    let ctx = ExpansionContext::new("ContractName");
+    let ctx = ExpansionContextFactory::new("ContractName").build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let structure = Struct::new("my::Struct", &registry)
@@ -344,7 +348,7 @@ fn structure_with_fields_conflicting_with_keywords() {
             NamedToken::new("final", registry.get("felt").unwrap()),
         ]);
 
-    let ctx = ExpansionContext::new("ContractName");
+    let ctx = ExpansionContextFactory::new("ContractName").build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
