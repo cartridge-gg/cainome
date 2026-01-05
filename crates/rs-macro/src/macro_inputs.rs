@@ -47,6 +47,10 @@ pub(crate) struct ContractAbi {
     pub contract_derives: Vec<String>,
     pub type_skips: Vec<String>,
     pub contract_source_path: Option<String>,
+    pub add_declaration: bool,
+    pub add_deployment: bool,
+    pub cainome_serde_path: String,
+    pub root_module_path: String,
 }
 
 impl Parse for ContractAbi {
@@ -60,8 +64,11 @@ impl Parse for ContractAbi {
         //
         // If the input starts with a `[` token then we parse it as a JSON array.
         let abi = if input.peek(syn::token::Bracket) {
-            let array_content = input.parse::<proc_macro2::TokenStream>()?;
-            let array_str = array_content.to_string();
+            let content;
+            syn::bracketed!(content in input);
+            let array_content: proc_macro2::TokenStream = content.parse()?;
+
+            let array_str = format!("[{}]", array_content.to_string());
 
             serde_json::from_str::<Vec<AbiEntry>>(&array_str)
                 .map_err(|e| syn::Error::new(input.span(), format!("Invalid ABI format: {e}")))?
@@ -120,6 +127,10 @@ impl Parse for ContractAbi {
         let mut contract_derives = Vec::new();
         let mut type_skips = Vec::new();
         let mut contract_source_path = None;
+        let mut add_declaration = true;
+        let mut add_deployment = true;
+        let mut cainome_serde_path = "cainome::cairo_serde".to_string();
+        let mut root_module_path = "self".to_string();
 
         loop {
             if input.parse::<Token![,]>().is_err() {
@@ -231,6 +242,26 @@ impl Parse for ContractAbi {
                     parenthesized!(content in input);
                     contract_source_path = Some(content.parse::<LitStr>()?.value());
                 }
+                "add_declaration" => {
+                    let content;
+                    parenthesized!(content in input);
+                    add_declaration = content.parse::<syn::LitBool>()?.value();
+                }
+                "add_deployment" => {
+                    let content;
+                    parenthesized!(content in input);
+                    add_deployment = content.parse::<syn::LitBool>()?.value();
+                }
+                "cainome_serde_path" => {
+                    let content;
+                    parenthesized!(content in input);
+                    cainome_serde_path = content.parse::<LitStr>()?.value();
+                }
+                "root_module_path" => {
+                    let content;
+                    parenthesized!(content in input);
+                    root_module_path = content.parse::<LitStr>()?.value();
+                }
                 _ => emit_error!(name.span(), format!("unexpected named parameter `{name}`")),
             }
         }
@@ -246,6 +277,10 @@ impl Parse for ContractAbi {
             contract_derives,
             type_skips,
             contract_source_path,
+            add_declaration,
+            add_deployment,
+            cainome_serde_path,
+            root_module_path,
         })
     }
 }

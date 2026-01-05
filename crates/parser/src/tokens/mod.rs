@@ -31,7 +31,6 @@ pub use non_zero::NonZeroContainer;
 pub use option::OptionContainer;
 pub use result::ResultContainer;
 pub use structure::Struct;
-use syn::token::Ref;
 pub use tuple::TupleContainer;
 
 #[derive(Debug, Clone, PartialEq)]

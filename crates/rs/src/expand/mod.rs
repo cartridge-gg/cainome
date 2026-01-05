@@ -69,6 +69,8 @@ impl ExpansionResult {
             }
         };
 
+        // println!("Created ExpansionResult for: {}", full_path);
+
         res
     }
 
@@ -100,10 +102,18 @@ pub struct ExpansionContext {
     pub type_skips: Vec<String>,
     pub aliases: HashMap<String, String>,
     pub contract_source: String,
+    pub add_declaration: bool,
+    pub add_deployment: bool,
     // TODO: syn::Type?
     pub root_module_path: String,
     pub cainome_serde_path: String,
     pub is_legacy: bool,
+
+    // TODO: proxy configuration
+    pub sierra_max_bytecode_size: usize,
+    pub sierra_add_pythonic_hints: bool,
+    pub deployer_generate_salt: bool,
+    pub deployer_is_unique: bool,
 }
 
 impl ExpansionContext {
@@ -125,6 +135,8 @@ pub struct ExpansionContextFactory {
     type_skips: Vec<String>,
     aliases: HashMap<String, String>,
     contract_source: String,
+    add_declaration: bool,
+    add_deployment: bool,
     // TODO: syn::Type?
     root_module_path: String,
     cainome_serde_path: String,
@@ -141,13 +153,15 @@ impl ExpansionContextFactory {
             contract_derives: BTreeSet::new(),
             contract_name: "Contract".to_string(),
             execution_version: crate::ExecutionVersion::V3,
-            root_module_path: "crate".to_string(),
+            root_module_path: "self".to_string(),
             substitutions: HashMap::new(),
             type_skips: vec![],
             aliases: HashMap::new(),
             contract_source: contract_source.as_ref().to_string(),
             cainome_serde_path: "cainome::cairo_serde".to_string(),
             is_legacy: false,
+            add_declaration: true,
+            add_deployment: true,
         }
     }
 
@@ -234,6 +248,24 @@ impl ExpansionContextFactory {
         self
     }
 
+    pub fn with_root_module_path<S>(mut self, path: S) -> Self
+    where
+        S: AsRef<str>,
+    {
+        self.root_module_path = path.as_ref().to_string();
+        self
+    }
+
+    pub fn with_add_declaration(mut self, declare: bool) -> Self {
+        self.add_declaration = declare;
+        self
+    }
+
+    pub fn with_add_deployment(mut self, deploy: bool) -> Self {
+        self.add_deployment = deploy;
+        self
+    }
+
     pub fn build(self) -> ExpansionContext {
         let cainome_serde_path = self.cainome_serde_path;
         let snrs_types = utils::starknet_rs_types_path();
@@ -271,6 +303,7 @@ impl ExpansionContextFactory {
                 "core::zeroable::NonZero",
                 format!("{cainome_serde_path}::NonZero"),
             ),
+            ("Uint256", format!("{cainome_serde_path}::U256")),
             ("core::integer::u256", format!("{cainome_serde_path}::U256")),
             ("core::integer::BoundedInt", format!("{snrs_types}::Felt")),
             ("felt", format!("{snrs_types}::Felt")),
@@ -298,6 +331,12 @@ impl ExpansionContextFactory {
             root_module_path: self.root_module_path,
             cainome_serde_path,
             is_legacy: self.is_legacy,
+            add_declaration: self.add_declaration,
+            add_deployment: self.add_deployment,
+            sierra_max_bytecode_size: 180000,
+            sierra_add_pythonic_hints: false,
+            deployer_generate_salt: true,
+            deployer_is_unique: true,
         }
     }
 }
@@ -328,6 +367,7 @@ impl From<&ExpansionContext> for ExpansionContextFactory {
             .with_aliases(value.aliases.clone())
             .with_cainome_serde_path(&value.cainome_serde_path)
             .with_is_legacy(value.is_legacy)
+            .with_root_module_path(value.root_module_path.clone())
     }
 }
 

@@ -2,11 +2,7 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     abi::registry::TypeRegistry,
-    tokens::{
-        genericity,
-        utils::{self, escape_rust_keywords},
-        NamedToken, Token,
-    },
+    tokens::{genericity, utils::escape_rust_keywords, NamedToken, Token},
     CainomeResult,
 };
 

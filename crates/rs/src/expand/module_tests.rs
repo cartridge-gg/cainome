@@ -4,8 +4,7 @@ use cainome_parser::{
 };
 
 use crate::expand::{
-    for_tests::assert_code_has, Expandable, ExpansionContext, ExpansionContextFactory,
-    ExpansionResult, Module,
+    for_tests::assert_code_has, Expandable, ExpansionContextFactory, ExpansionResult, Module,
 };
 
 #[test]
@@ -60,7 +59,9 @@ fn test_2_nested_modules_with_common_parent_expand_no_content() {
 #[test]
 fn test_2_nested_modules_with_struct_and_reference() {
     let mut registry = TypeRegistry::new();
-    let ctx = ExpansionContextFactory::new("ContractName").build();
+    let ctx = ExpansionContextFactory::new("ContractName")
+        .with_root_module_path("crate")
+        .build();
 
     registry.apply_substitutions(&ctx.substitutions);
 

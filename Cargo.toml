@@ -52,12 +52,12 @@ cairo-lang-starknet-classes = "=2.12.3"
 
 [dependencies]
 camino.workspace = true
+cainome-rs-macro = { version = "0.5.1", path = "crates/rs-macro", optional = true }
 
 cainome-parser.workspace = true
 cainome-cairo-serde.workspace = true
 cainome-cairo-serde-derive.workspace = true
 cainome-rs.workspace = true
-cainome-rs-macro = { version = "0.5.1", path = "crates/rs-macro", optional = true }
 
 async-trait.workspace = true
 anyhow.workspace = true
@@ -93,61 +93,6 @@ path = "src/bin/cli/main.rs"
 required-features = ["build-binary"]
 
 [[example]]
-name = "abigen_generate"
-required-features = ["build-binary", "abigen-rs"]
-test = false
-[[example]]
 name = "alias_skip"
 required-features = ["build-binary", "abigen-rs"]
 test = false
-[[example]]
-name = "byte_array"
-required-features = ["build-binary", "abigen-rs"]
-test = false
-[[example]]
-name = "cairo_serde_derive"
-test = false
-[[example]]
-name = "cairo0_account"
-required-features = ["build-binary", "abigen-rs"]
-test = false
-[[example]]
-name = "cairo0"
-required-features = ["build-binary", "abigen-rs"]
-test = false
-[[example]]
-name = "components_events"
-required-features = ["build-binary", "abigen-rs"]
-test = false
-[[example]]
-name = "exec_v3"
-required-features = ["build-binary", "abigen-rs"]
-test = false
-[[example]]
-name = "json_abi"
-required-features = ["build-binary", "abigen-rs"]
-test = false
-[[example]]
-name = "opt_res"
-required-features = ["build-binary", "abigen-rs"]
-test = false
-[[example]]
-name = "rust_keyword"
-required-features = ["build-binary", "abigen-rs"]
-test = false
-[[example]]
-name = "simple_get_set"
-required-features = ["build-binary", "abigen-rs"]
-test = false
-[[example]]
-name = "simple_types"
-required-features = ["build-binary", "abigen-rs"]
-test = false
-[[example]]
-name = "structs"
-required-features = ["build-binary", "abigen-rs"]
-test = false
-[[example]]
-name = "aaaa"
-required-features = ["build-binary", "abigen-rs"]
-

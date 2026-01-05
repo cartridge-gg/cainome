@@ -134,7 +134,7 @@ pub fn struct_implementation(
 
 impl Expandable for Struct {
     fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult> {
-        let full_path = self.type_path_no_generic();
+        let full_path = ctx.apply_alias(&self.type_path_no_generic());
         let name = full_path.split("::").last().unwrap().to_owned();
 
         let ctx = ExpansionContextFactory::from(ctx)

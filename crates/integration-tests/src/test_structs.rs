@@ -1,20 +1,9 @@
-use std::str::FromStr;
+use std::{str::FromStr, sync::Arc};
 
-use cainome::rs::abigen;
 use paste::paste;
-use starknet::core::types::Felt;
+use starknet_types_core::felt::Felt;
 
-abigen!(
-    MyContract,
-    "./contracts/abi/gen.abi.json",
-    derives(
-        Debug,
-        Clone,
-        PartialEq,
-        serde::Serialize,
-        serde::Deserialize
-    )
-);
+use crate::bindings::structs::contracts::gen::gen::{MyEnum, PlainStruct, E1};
 
 /// Uses paste since `concat_ident` is not available for stable Rust yet.
 macro_rules! test_enum {
@@ -27,8 +16,11 @@ macro_rules! test_enum {
     };
 }
 
-#[tokio::main]
-async fn main() {
+const UDC_ADDRESS: Felt =
+    Felt::from_hex_unwrap("0x41a78e741e5af2fec34b695679bc6891742439f7afb8484ecd7766661ad02bf");
+
+#[tokio::test]
+async fn assert_generated_structs() {
     assert_eq!(
         E1::event_selector(),
         Felt::from_str("0x00ba2026c84b59ce46a4007300eb97e3e275d4119261ee402d7a3eb40ad58807")
@@ -50,11 +42,9 @@ async fn main() {
     };
 
     let s_str = serde_json::to_string(&s).unwrap();
-    println!("{}", s_str);
 
     let s_deser = serde_json::from_str(&s_str).unwrap();
     assert_eq!(s, s_deser);
-    println!("{:?}", s_deser);
 
     let _s2 = s.clone();
 

@@ -43,6 +43,10 @@ pub(crate) struct ContractAbiLegacy {
     pub contract_derives: Vec<String>,
     pub type_skips: Vec<String>,
     pub contract_source_path: Option<String>,
+    pub add_declaration: bool,
+    pub add_deployment: bool,
+    pub cainome_serde_path: String,
+    pub root_module_path: String,
 }
 
 impl Parse for ContractAbiLegacy {
@@ -82,14 +86,18 @@ impl Parse for ContractAbiLegacy {
                 })?
             }
         } else {
-            if let Ok(legacy_class) =
-                serde_json::from_str::<LegacyContractClass>(&abi_or_path.value())
-            {
+            let content;
+            syn::bracketed!(content in input);
+            let array_content: proc_macro2::TokenStream = content.parse()?;
+
+            let array_str = format!("[{}]", array_content.to_string());
+
+            if let Ok(legacy_class) = serde_json::from_str::<LegacyContractClass>(&array_str) {
                 legacy_class.abi
             } else {
-                serde_json::from_str::<Vec<RawLegacyAbiEntry>>(&abi_or_path.value()).map_err(
-                    |e| syn::Error::new(abi_or_path.span(), format!("JSON parse error: {}", e)),
-                )?
+                serde_json::from_str::<Vec<RawLegacyAbiEntry>>(&array_str).map_err(|e| {
+                    syn::Error::new(abi_or_path.span(), format!("JSON parse error: {}", e))
+                })?
             }
         };
 
@@ -101,6 +109,10 @@ impl Parse for ContractAbiLegacy {
         let mut contract_derives = Vec::new();
         let mut type_skips = Vec::new();
         let mut contract_source_path: Option<String> = None;
+        let mut add_declaration = true;
+        let mut add_deployment = true;
+        let mut cainome_serde_path = "cainome::cairo_serde".to_string();
+        let mut root_module_path = "self".to_string();
 
         loop {
             if input.parse::<Token![,]>().is_err() {
@@ -212,6 +224,27 @@ impl Parse for ContractAbiLegacy {
                     parenthesized!(content in input);
                     contract_source_path = Some(content.parse::<LitStr>()?.value());
                 }
+                "add_declaration" => {
+                    let content;
+                    parenthesized!(content in input);
+                    add_declaration = content.parse::<syn::LitBool>()?.value();
+                }
+                "add_deployment" => {
+                    let content;
+                    parenthesized!(content in input);
+                    add_deployment = content.parse::<syn::LitBool>()?.value();
+                }
+                "cainome_serde_path" => {
+                    let content;
+                    parenthesized!(content in input);
+                    cainome_serde_path = content.parse::<LitStr>()?.value();
+                }
+                "root_module_path" => {
+                    let content;
+                    parenthesized!(content in input);
+                    root_module_path = content.parse::<LitStr>()?.value();
+                }
+
                 _ => emit_error!(name.span(), format!("unexpected named parameter `{name}`")),
             }
         }
@@ -227,6 +260,10 @@ impl Parse for ContractAbiLegacy {
             execution_version,
             type_skips,
             contract_source_path,
+            add_declaration,
+            add_deployment,
+            cainome_serde_path,
+            root_module_path,
         })
     }
 }

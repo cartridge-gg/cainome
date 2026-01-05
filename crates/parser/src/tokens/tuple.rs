@@ -63,18 +63,6 @@ impl TupleContainer {
     ///
     /// Returns a [`Tuple`] token if the type path is a tuple.
     /// Returns an error otherwise.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use cainome_parser::tokens::{Token, Tuple, CoreBasic};
-    ///
-    /// let tuple = Tuple::parse("(core::felt252, core::integer::u64)").unwrap();
-    /// assert_eq!(tuple.type_path, "(core::felt252, core::integer::u64)");
-    /// assert_eq!(tuple.inners.len(), 2);
-    /// assert_eq!(tuple.inners[0], Token::CoreBasic(CoreBasic { type_path: "core::felt252".to_string() }));
-    /// assert_eq!(tuple.inners[1], Token::CoreBasic(CoreBasic { type_path: "core::integer::u64".to_string() }));
-    /// ```
     pub fn new(type_path: &str, inners: Vec<Rc<RefCell<Token>>>) -> Self {
         Self {
             type_path: type_path.to_string(),

@@ -86,6 +86,9 @@ pub struct Abigen {
     /// Optional path to the contract source code.
     /// If provided, declare and deploy methods will be added to contract definition.
     pub contract_source: Option<String>,
+
+    pub add_declaration: bool,
+    pub add_deployment: bool,
 }
 
 impl Abigen {
@@ -106,6 +109,8 @@ impl Abigen {
             contract_derives: vec![],
             type_skips: vec![],
             contract_source: None,
+            add_declaration: true,
+            add_deployment: true,
         }
     }
 
@@ -159,6 +164,16 @@ impl Abigen {
         self
     }
 
+    pub fn with_add_declaration(mut self, add_declare: bool) -> Self {
+        self.add_declaration = add_declare;
+        self
+    }
+
+    pub fn with_add_deployment(mut self, add_deploy: bool) -> Self {
+        self.add_deployment = add_deploy;
+        self
+    }
+
     /// Generates the contract bindings.
     pub fn generate(self) -> Result<ContractBindings, Error> {
         let file_content = std::fs::read_to_string(&self.abi_source)?;
@@ -178,6 +193,8 @@ impl Abigen {
             .with_aliases(self.types_aliases)
             .with_type_skips(self.type_skips)
             .with_contract_name(&self.contract_name)
+            .with_add_declaration(self.add_declaration)
+            .with_add_deployment(self.add_deployment)
             .build();
 
         let registry =

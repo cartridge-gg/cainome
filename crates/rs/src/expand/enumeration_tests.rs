@@ -6,9 +6,7 @@ use cainome_parser::{
 use proc_macro2::TokenStream;
 use syn::{parse_quote, ItemEnum};
 
-use crate::expand::{
-    for_tests::assert_code_has, Expandable, ExpansionContext, ExpansionContextFactory, Module,
-};
+use crate::expand::{for_tests::assert_code_has, Expandable, ExpansionContextFactory, Module};
 
 #[test]
 fn test_enum_expand_empty() {
@@ -234,7 +232,7 @@ fn test_enumeration_expand_with_structure_field() {
     // TODO: use cainome
     let expected: TokenStream = parse_quote! {
         pub enum Type {
-            variant(crate::my::Inner)
+            variant(self::my::Inner)
         }
     };
 

@@ -4,11 +4,9 @@ use cainome_parser::{
 };
 
 use proc_macro2::TokenStream;
-use syn::{parse_quote, ItemEnum, ItemStruct};
+use syn::{parse_quote, ItemStruct};
 
-use crate::expand::{
-    for_tests::assert_code_has, Expandable, ExpansionContext, ExpansionContextFactory, Module,
-};
+use crate::expand::{for_tests::assert_code_has, Expandable, ExpansionContextFactory, Module};
 
 #[test]
 fn test_struct_event_expansion() {
@@ -85,6 +83,7 @@ mod fixtures {
         registry
     }
 
+    #[allow(dead_code)]
     pub fn simple_nested_enum_enum() -> TypeRegistry {
         let mut registry = TypeRegistry::new();
 
@@ -143,6 +142,7 @@ mod fixtures {
         registry
     }
 
+    #[allow(dead_code)]
     pub fn simple_nested_flat_enum() -> TypeRegistry {
         let mut registry = TypeRegistry::new();
 
@@ -206,7 +206,10 @@ mod fixtures {
 fn test_simple_case_nested_struct_in_enum() {
     let mut registry = fixtures::simple_nested_struct_enum();
 
-    let ctx = ExpansionContextFactory::new("ContractName").build();
+    let ctx = ExpansionContextFactory::new("ContractName")
+        .with_root_module_path("crate")
+        .build();
+
     registry.apply_substitutions(&ctx.substitutions);
 
     let token = registry

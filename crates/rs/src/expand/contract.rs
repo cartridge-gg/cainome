@@ -1,6 +1,6 @@
 use cainome_parser::{
     tokens::{Constructor, Function, FunctionOutputKind, NamedToken, Token},
-    TokenizedAbi, TypeRegistry,
+    TypeRegistry,
 };
 use proc_macro2::TokenStream;
 
@@ -17,6 +17,7 @@ pub struct Contract {
     pub derives: Vec<String>,
     pub readonly_methods: Vec<Function>,
     pub mutating_methods: Vec<Function>,
+    #[allow(dead_code)]
     pub constructor: Option<Constructor>,
 }
 
@@ -218,8 +219,10 @@ impl Expandable for Contract {
 
         let contract_name_ident = utils::str_to_ident(&contract_name);
         let snrs_types = utils::snrs_types();
+        let snrs_utils = utils::snrs_utils();
         let snrs_accounts = utils::snrs_accounts();
         let snrs_providers = utils::snrs_providers();
+        let cairo_lang = utils::cairo_lang();
 
         let internal_derives = self
             .derives
@@ -253,6 +256,115 @@ impl Expandable for Contract {
             quote! {}
         };
 
+        let declaration = if ctx.add_declaration {
+            let max_bytecode_size = ctx.sierra_max_bytecode_size;
+            let add_pythonic_hints = ctx.sierra_add_pythonic_hints;
+
+            quote! {
+                pub async fn declare(
+                    path: &std::path::Path,
+                    account: &A,
+                ) -> Result<#snrs_types::Felt, Box<dyn std::error::Error>>
+                where
+                    A::SignError: 'static,
+                {
+                    let sierra_class: #cairo_lang::contract_class::ContractClass =
+                        serde_json::from_slice::<#cairo_lang::contract_class::ContractClass>(
+                            std::fs::read(path)?.as_slice(),
+                        )?;
+
+                    let casm_class = #cairo_lang::casm_contract_class::CasmContractClass::from_contract_class(
+                        sierra_class,
+                        #add_pythonic_hints,
+                        #max_bytecode_size,
+                    )?;
+
+                    let class_hash = #snrs_types::Felt::from_bytes_be(
+                        &casm_class.compiled_class_hash().to_bytes_be(),
+                    );
+
+                    let contract_artifact: #snrs_types::contract::SierraClass =
+                        serde_json::from_reader(std::fs::File::open(path)?)?;
+
+                    let declaration = account.declare_v3(
+                        std::sync::Arc::new(contract_artifact.flatten()?),
+                        class_hash,
+                    );
+
+                    let declaration_result = declaration.send().await?;
+
+                    Ok(declaration_result.class_hash)
+                }
+            }
+        } else {
+            quote! {}
+        };
+
+        let generate_salt = ctx.deployer_generate_salt;
+        let is_unique = ctx.deployer_is_unique;
+
+        // TODO: maybe prepare UDC bindings and use them here
+        let deployment = if ctx.add_deployment {
+            quote! {
+                pub async fn deploy(
+                    deployer_address: #snrs_types::Felt,
+                    account: A,
+                    class_hash: #snrs_types::Felt,
+                    constructor_calldata: Vec<#snrs_types::Felt>,
+                ) -> Result<Self, Box<dyn std::error::Error>>
+                {
+                    let generate_salt = #generate_salt;
+                    let is_unique = #is_unique;
+
+                    let salt: #snrs_types::Felt = if generate_salt {
+                        use rand::Rng;
+                        rand::rng().random::<u128>().into()
+                    } else {
+                        #snrs_types::Felt::ZERO
+                    };
+
+                    let calldata = [
+                        vec![
+                            class_hash,
+                            salt,
+                            #snrs_types::Felt::from(is_unique),
+                            #snrs_types::Felt::from(constructor_calldata.len()),
+                        ]
+                        .as_slice(),
+                        constructor_calldata.as_slice(),
+                    ]
+                    .concat();
+
+                    let tx = account
+                        .execute_v3(vec![starknet::core::types::Call {
+                            to: deployer_address,
+                            selector: starknet::macros::selector!("deployContract"),
+                            calldata: calldata,
+                        }])
+                        .send()
+                        .await
+                        .unwrap();
+
+                    let uniqueness = if is_unique {
+                        &#snrs_utils::UdcUniqueness::Unique(#snrs_utils::UdcUniqueSettings {
+                            udc_contract_address: deployer_address,
+                            deployer_address: account.address(),
+                        })
+                    } else {
+                        &#snrs_utils::UdcUniqueness::NotUnique
+                    };
+
+                    let deployed_address = #snrs_utils::get_udc_deployed_address(
+                        salt, class_hash, uniqueness, constructor_calldata.as_slice(),
+                    );
+
+                    Ok(Self::new(deployed_address, account))
+                }
+            }
+        } else {
+            quote! {}
+        };
+
         let q = quote! {
 
             #derives
@@ -263,6 +375,7 @@ impl Expandable for Contract {
             }
 
             impl<A: #snrs_accounts::ConnectedAccount + Sync> #contract_name_ident<A> {
+
                 pub fn new(address: #snrs_types::Felt, account: A) -> Self {
                     Self {
                         address,
@@ -290,6 +403,10 @@ impl Expandable for Contract {
 
                 #(#views)*
                 #(#externals)*
+
+                #declaration
+
+                #deployment
             }
 
             #derives

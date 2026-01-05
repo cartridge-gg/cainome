@@ -1,5 +1,5 @@
 use cainome_parser::{AbiParser, ParserContext};
-use cainome_rs::expand::{ExpansionContext, ExpansionContextFactory};
+use cainome_rs::expand::ExpansionContextFactory;
 use proc_macro::TokenStream;
 use proc_macro_error::proc_macro_error;
 use quote::quote;
@@ -41,6 +41,10 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
         .with_aliases(contract_abi.type_aliases)
         .with_substitutions(contract_abi.type_substitutions)
         .with_contract_name(name_str)
+        .with_add_declaration(contract_abi.add_declaration)
+        .with_add_deployment(contract_abi.add_deployment)
+        .with_cainome_serde_path(contract_abi.cainome_serde_path)
+        .with_root_module_path(contract_abi.root_module_path)
         .build();
 
     let registry = AbiParser::build_registry(abi_entries, ParserContext::from(&ctx))
@@ -80,6 +84,10 @@ fn abigen_internal_legacy(input: TokenStream) -> TokenStream {
         .with_substitutions(contract_abi.type_substitutions)
         .with_contract_name(name_str)
         .with_is_legacy(true)
+        .with_add_declaration(contract_abi.add_declaration)
+        .with_add_deployment(contract_abi.add_deployment)
+        .with_cainome_serde_path(contract_abi.cainome_serde_path)
+        .with_root_module_path(contract_abi.root_module_path)
         .build();
 
     let registry = AbiParser::build_registry(abi_entries, ParserContext::from(&ctx))

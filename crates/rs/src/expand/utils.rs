@@ -34,6 +34,10 @@ pub fn snrs_accounts() -> Type {
     str_to_type("starknet::accounts")
 }
 
+pub fn cairo_lang() -> Type {
+    str_to_type("cairo_lang_starknet_classes")
+}
+
 pub fn snrs_providers() -> Type {
     str_to_type("starknet::providers")
 }

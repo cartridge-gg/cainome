@@ -1,4 +1,4 @@
-use std::{collections::HashSet, rc::Rc};
+use std::rc::Rc;
 
 use cainome_parser::tokens::{
     ArrayContainer, Enum, Event, NamedToken, NonZeroContainer, OptionContainer, ResultContainer,
@@ -9,8 +9,6 @@ use crate::expand::{
     utils::{is_serde_hex_int, SerdeHexType},
     ExpansionContext,
 };
-
-use super::utils;
 
 pub trait CairoToRust {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String;
@@ -135,31 +133,55 @@ impl CairoToRust for TupleContainer {
 // TODO: rewrite
 impl CairoToRust for Struct {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
-        [ctx.root_module_path.clone(), self.type_path_no_generic()].join("::")
+        [
+            ctx.root_module_path.clone(),
+            ctx.apply_alias(&self.type_path_no_generic()),
+        ]
+        .join("::")
     }
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
-        [ctx.root_module_path.clone(), self.type_path_no_generic()].join("::")
+        [
+            ctx.root_module_path.clone(),
+            ctx.apply_alias(&self.type_path_no_generic()),
+        ]
+        .join("::")
     }
 }
 
 impl CairoToRust for Event {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
-        [ctx.root_module_path.clone(), self.type_path_no_generic()].join("::")
+        [
+            ctx.root_module_path.clone(),
+            ctx.apply_alias(&self.type_path_no_generic()),
+        ]
+        .join("::")
     }
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
-        [ctx.root_module_path.clone(), self.type_path_no_generic()].join("::")
+        [
+            ctx.root_module_path.clone(),
+            ctx.apply_alias(&self.type_path_no_generic()),
+        ]
+        .join("::")
     }
 }
 
 impl CairoToRust for Enum {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
-        [ctx.root_module_path.clone(), self.type_path_no_generic()].join("::")
+        [
+            ctx.root_module_path.clone(),
+            ctx.apply_alias(&self.type_path_no_generic()),
+        ]
+        .join("::")
     }
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
-        [ctx.root_module_path.clone(), self.type_path_no_generic()].join("::")
+        [
+            ctx.root_module_path.clone(),
+            ctx.apply_alias(&self.type_path_no_generic()),
+        ]
+        .join("::")
     }
 }
 

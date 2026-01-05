@@ -1,7 +1,6 @@
-use cainome_parser::{AbiParser, Error as CainomeError, Parseable, ParserContext, TypeRegistry};
-use cainome_rs::expand::{ExpansionContext, ExpansionContextFactory};
+use cainome_parser::{AbiParser, Error as CainomeError, ParserContext, TypeRegistry};
+use cainome_rs::expand::ExpansionContextFactory;
 use camino::Utf8PathBuf;
-use serde::de::DeserializeOwned;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::{collections::HashMap, fs::File};

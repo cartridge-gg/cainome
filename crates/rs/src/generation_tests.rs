@@ -1,14 +1,10 @@
 use std::collections::HashMap;
 
-use cainome_parser::{AbiParser, ParserContext};
+use cainome_parser::{tokens::Token, AbiParser, ParserContext};
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
 
-use crate::{
-    abi_to_tokenstream,
-    expand::{ExpansionContext, ExpansionContextFactory},
-    Abigen, ExecutionVersion,
-};
+use crate::{abi_to_tokenstream, expand::ExpansionContextFactory, ExecutionVersion};
 
 pub fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
     let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
@@ -366,9 +362,9 @@ fn test_tuple_with_generic_arg_with_2_parameters_resolves() {
         .get("my::Generic::<core::felt252, core::felt252>")
         .unwrap();
 
-    // let Token::Struct(s) = &*token.borrow() else {
-    //     unreachable!()
-    // };
+    let Token::Struct(s) = &*token.borrow() else {
+        unreachable!()
+    };
 
-    // assert_eq!(s.type_path, "my::Generic::<core::felt252, core::felt252>");
+    assert_eq!(s.type_path, "my::Generic::<core::felt252, core::felt252>");
 }

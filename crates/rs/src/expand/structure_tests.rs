@@ -229,6 +229,7 @@ fn test_structure_expand_with_self_reference() {
     };
 
     let ctx = ExpansionContextFactory::new("ContractName")
+        .with_root_module_path("crate")
         .with_derives(vec!["Serde", "Clone"])
         .build();
 

@@ -1,6 +1,7 @@
 use cainome_cairo_serde::CairoSerde;
 use cainome_cairo_serde_derive::CairoSerde;
 use serde::Serialize;
+use starknet::macros::felt;
 use starknet_types_core::felt::Felt;
 
 #[derive(Debug, CairoSerde, PartialEq, Serialize)]
@@ -28,7 +29,7 @@ enum ExampleEnum {
     Struct { x: ExampleTuple, y: ExampleSimple },
 }
 
-#[derive(Debug, CairoSerde)]
+#[derive(Debug, CairoSerde, PartialEq)]
 struct SimpleTypes {
     x: u32,
     y: u64,
@@ -37,7 +38,8 @@ struct SimpleTypes {
     c: bool,
 }
 
-fn main() {
+#[tokio::test]
+async fn main() {
     let tuple = ExampleTuple(
         ExampleNested {
             x: Felt::from(1),
@@ -51,7 +53,11 @@ fn main() {
     );
 
     let s = serde_json::to_string(&tuple).unwrap();
-    println!("s = {}", s);
+
+    assert_eq!(
+        s,
+        r#"[{"x":"0x1","y":{"x":["0x2","0x3"],"y":"0x4","z":"0x6712bd50"}},["0x1"]]"#
+    );
 
     let example = ExampleEnum::Struct {
         x: tuple,
@@ -63,13 +69,29 @@ fn main() {
     };
 
     let serialized = ExampleEnum::cairo_serialize(&example);
-    println!("serialized = {:?}", serialized);
+    assert_eq!(
+        serialized,
+        vec![
+            felt!("0x3"),
+            felt!("0x1"),
+            felt!("0x2"),
+            felt!("0x2"),
+            felt!("0x3"),
+            felt!("0x4"),
+            felt!("0x6712bd50"),
+            felt!("0x1"),
+            felt!("0x1"),
+            felt!("0x2"),
+            felt!("0x5"),
+            felt!("0x6"),
+            felt!("0x7"),
+            felt!("0x6712bd50")
+        ]
+    );
 
     let deserialized = ExampleEnum::cairo_deserialize(&serialized, 0).unwrap();
 
     assert_eq!(deserialized, example);
-
-    println!("deserialized = {:?}", deserialized);
 
     let simple = SimpleTypes {
         x: 1,
@@ -80,8 +102,26 @@ fn main() {
     };
 
     let serialized = SimpleTypes::cairo_serialize(&simple);
-    println!("serialized = {:?}", serialized);
+    assert_eq!(
+        serialized,
+        vec![
+            felt!("0x1"),
+            felt!("0x2"),
+            felt!("0x3"),
+            felt!("0x4"),
+            felt!("0x1")
+        ]
+    );
 
     let deserialized = SimpleTypes::cairo_deserialize(&serialized, 0).unwrap();
-    println!("deserialized = {:?}", deserialized);
+    assert_eq!(
+        deserialized,
+        SimpleTypes {
+            x: 1,
+            y: 2,
+            a: 3,
+            b: 4,
+            c: true
+        }
+    );
 }

@@ -5,100 +5,6 @@
 #![allow(clippy::all)]
 #![allow(warnings)]
 
-pub struct UDC<A: starknet::accounts::ConnectedAccount + Sync> {
-    pub address: starknet::core::types::Felt,
-    pub account: A,
-    pub block_id: starknet::core::types::BlockId,
-}
-impl<A: starknet::accounts::ConnectedAccount + Sync> UDC<A> {
-    pub fn new(address: starknet::core::types::Felt, account: A) -> Self {
-        Self {
-            address,
-            account,
-            block_id: starknet::core::types::BlockId::Tag(
-                starknet::core::types::BlockTag::PreConfirmed,
-            ),
-        }
-    }
-    pub fn set_contract_address(&mut self, address: starknet::core::types::Felt) {
-        self.address = address;
-    }
-    pub fn provider(&self) -> &A::Provider {
-        self.account.provider()
-    }
-    pub fn set_block(&mut self, block_id: starknet::core::types::BlockId) {
-        self.block_id = block_id;
-    }
-    pub fn with_block(self, block_id: starknet::core::types::BlockId) -> Self {
-        Self { block_id, ..self }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn deployContract_getcall(
-        &self,
-        classHash: &starknet::core::types::Felt,
-        salt: &starknet::core::types::Felt,
-        unique: &starknet::core::types::Felt,
-        calldata_len: &starknet::core::types::Felt,
-        calldata: &cainome_cairo_serde::CairoArrayLegacy<starknet::core::types::Felt>,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(classHash));
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(salt));
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(unique));
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(calldata_len));
-        __calldata.extend(cainome_cairo_serde::CairoArrayLegacy::<
-            starknet::core::types::Felt,
-        >::cairo_serialize(calldata));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("deployContract"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn deployContract(
-        &self,
-        classHash: &starknet::core::types::Felt,
-        salt: &starknet::core::types::Felt,
-        unique: &starknet::core::types::Felt,
-        calldata_len: &starknet::core::types::Felt,
-        calldata: &cainome_cairo_serde::CairoArrayLegacy<starknet::core::types::Felt>,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.deployContract_getcall(classHash, salt, unique, calldata_len, calldata);
-        self.account.execute_v3(vec![__call])
-    }
-}
-pub struct UDCReader<P: starknet::providers::Provider + Sync> {
-    pub address: starknet::core::types::Felt,
-    pub provider: P,
-    pub block_id: starknet::core::types::BlockId,
-}
-impl<P: starknet::providers::Provider + Sync> UDCReader<P> {
-    pub fn new(address: starknet::core::types::Felt, provider: P) -> Self {
-        Self {
-            address,
-            provider,
-            block_id: starknet::core::types::BlockId::Tag(
-                starknet::core::types::BlockTag::PreConfirmed,
-            ),
-        }
-    }
-    pub fn set_contract_address(&mut self, address: starknet::core::types::Felt) {
-        self.address = address;
-    }
-    pub fn provider(&self) -> &P {
-        &self.provider
-    }
-    pub fn set_block(&mut self, block_id: starknet::core::types::BlockId) {
-        self.block_id = block_id;
-    }
-    pub fn with_block(self, block_id: starknet::core::types::BlockId) -> Self {
-        Self { block_id, ..self }
-    }
-}
 #[derive(Debug)]
 pub struct ContractDeployed {
     pub address: starknet::core::types::Felt,
@@ -218,5 +124,127 @@ impl TryFrom<starknet::core::types::Event> for ContractDeployed {
     type Error = String;
     fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
         Self::try_from_event(event.from_address, event.keys, event.data)
+    }
+}
+pub struct UDC<A: starknet::accounts::ConnectedAccount + Sync> {
+    pub address: starknet::core::types::Felt,
+    pub account: A,
+    pub block_id: starknet::core::types::BlockId,
+}
+impl<A: starknet::accounts::ConnectedAccount + Sync> UDC<A> {
+    pub fn new(address: starknet::core::types::Felt, account: A) -> Self {
+        Self {
+            address,
+            account,
+            block_id: starknet::core::types::BlockId::Tag(
+                starknet::core::types::BlockTag::PreConfirmed,
+            ),
+        }
+    }
+    pub fn set_contract_address(&mut self, address: starknet::core::types::Felt) {
+        self.address = address;
+    }
+    pub fn provider(&self) -> &A::Provider {
+        self.account.provider()
+    }
+    pub fn set_block(&mut self, block_id: starknet::core::types::BlockId) {
+        self.block_id = block_id;
+    }
+    pub fn with_block(self, block_id: starknet::core::types::BlockId) -> Self {
+        Self { block_id, ..self }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn deployContract_getcall(
+        &self,
+        classHash: &starknet::core::types::Felt,
+        salt: &starknet::core::types::Felt,
+        unique: &starknet::core::types::Felt,
+        calldata_len: &starknet::core::types::Felt,
+        calldata: &cainome_cairo_serde::CairoArrayLegacy<starknet::core::types::Felt>,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(classHash));
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(salt));
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(unique));
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(calldata_len));
+        __calldata.extend(cainome_cairo_serde::CairoArrayLegacy::<
+            starknet::core::types::Felt,
+        >::cairo_serialize(calldata));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("deployContract"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn deployContract(
+        &self,
+        classHash: &starknet::core::types::Felt,
+        salt: &starknet::core::types::Felt,
+        unique: &starknet::core::types::Felt,
+        calldata_len: &starknet::core::types::Felt,
+        calldata: &cainome_cairo_serde::CairoArrayLegacy<starknet::core::types::Felt>,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.deployContract_getcall(classHash, salt, unique, calldata_len, calldata);
+        self.account.execute_v3(vec![__call])
+    }
+    pub async fn declare(
+        path: &std::path::Path,
+        account: &A,
+    ) -> Result<starknet::core::types::Felt, Box<dyn std::error::Error>>
+    where
+        A::SignError: 'static,
+    {
+        let sierra_class: cairo_lang_starknet_classes::contract_class::ContractClass =
+            serde_json::from_slice::<cairo_lang_starknet_classes::contract_class::ContractClass>(
+                std::fs::read(path)?.as_slice(),
+            )?;
+        let casm_class = cairo_lang_starknet_classes::casm_contract_class::CasmContractClass::from_contract_class(
+            sierra_class,
+            false,
+            180000usize,
+        )?;
+        let class_hash = starknet::core::types::Felt::from_bytes_be(
+            &casm_class.compiled_class_hash().to_bytes_be(),
+        );
+        let contract_artifact: starknet::core::types::contract::SierraClass =
+            serde_json::from_reader(std::fs::File::open(path)?)?;
+        let declaration = account.declare_v3(
+            std::sync::Arc::new(contract_artifact.flatten()?),
+            class_hash,
+        );
+        let declaration_result = declaration.send().await?;
+        Ok(declaration_result.class_hash)
+    }
+}
+pub struct UDCReader<P: starknet::providers::Provider + Sync> {
+    pub address: starknet::core::types::Felt,
+    pub provider: P,
+    pub block_id: starknet::core::types::BlockId,
+}
+impl<P: starknet::providers::Provider + Sync> UDCReader<P> {
+    pub fn new(address: starknet::core::types::Felt, provider: P) -> Self {
+        Self {
+            address,
+            provider,
+            block_id: starknet::core::types::BlockId::Tag(
+                starknet::core::types::BlockTag::PreConfirmed,
+            ),
+        }
+    }
+    pub fn set_contract_address(&mut self, address: starknet::core::types::Felt) {
+        self.address = address;
+    }
+    pub fn provider(&self) -> &P {
+        &self.provider
+    }
+    pub fn set_block(&mut self, block_id: starknet::core::types::BlockId) {
+        self.block_id = block_id;
+    }
+    pub fn with_block(self, block_id: starknet::core::types::BlockId) -> Self {
+        Self { block_id, ..self }
     }
 }

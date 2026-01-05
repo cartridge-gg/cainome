@@ -1,4 +1,4 @@
-use cainome_rs::expand::{ExpansionContext, ExpansionContextFactory};
+use cainome_rs::expand::ExpansionContextFactory;
 use cainome_rs::{self};
 use convert_case::{Case, Casing};
 

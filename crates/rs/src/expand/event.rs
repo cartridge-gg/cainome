@@ -30,7 +30,7 @@ fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> Tok
 
         let inner_type_name = inner_token.to_rust_type(ctx);
 
-        let inner_type_name_id = utils::str_to_ident(&inner_type_name);
+        let inner_type_name_id = utils::str_to_type(&inner_type_name);
 
         let value = match event.kind {
             EventKind::Struct => unreachable!("Flat events can only be Enum"),
@@ -61,8 +61,6 @@ fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> Tok
 
         let value = match kind {
             EventKind::Struct => quote! {
-                use #ccs::CairoSerde;
-
                 if keys[0] == #snrs_utils::get_selector_from_name(#variant_name_str).unwrap_or_else(|_| panic!("Invalid selector for {}", #variant_name_str)) {
                     let res = #inner_type_name_id::cairo_deserialize(&data, 0)
                         .map_err(|e| format!("Could not deserialize {} event data: {:?}", #inner_type_name_str, e))?;
@@ -82,6 +80,8 @@ fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> Tok
     }
 
     quote! {
+        use #ccs::CairoSerde;
+
         #(#variants)*
     }
 }
@@ -90,10 +90,11 @@ fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> Tok
 
 impl Expandable for Event {
     fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult> {
-        let full_path = self.type_path_no_generic();
+        let full_path = ctx.apply_alias(&self.type_path_no_generic());
         let event_name = full_path.split("::").last().unwrap().to_owned();
         let event_name_str = utils::str_to_ident(&event_name);
         let snrs_types = utils::snrs_types();
+        let snrs_utils = utils::snrs_utils();
 
         // Generate type definition, struct or enum, depending on the event type.
         match self.kind {
@@ -116,6 +117,14 @@ impl Expandable for Event {
                     #implementation
 
                     impl #event_name_str {
+                        pub fn event_selector() -> #snrs_types::Felt {
+                            #snrs_utils::get_selector_from_name(#event_name).unwrap()
+                        }
+
+                        pub fn event_name() -> &'static str {
+                            #event_name
+                        }
+
                         pub(crate) fn try_from_event(from_address: starknet::core::types::Felt, keys: Vec<starknet::core::types::Felt>, data: Vec<starknet::core::types::Felt>) -> Result<Self, String> {
                             if keys.is_empty() {
                                 return Err("Event has no key".to_string());
@@ -147,7 +156,6 @@ impl Expandable for Event {
                 vec![ExpansionResult::new(&full_path).with_item(&event_name, definition)]
             }
             cainome_parser::tokens::EventKind::Struct => {
-                let snrs_utils = utils::snrs_utils();
                 let fields = [self.keys.clone(), self.data.clone()].concat();
 
                 let ccs = utils::str_to_type(&ctx.cainome_serde_path);
@@ -165,6 +173,14 @@ impl Expandable for Event {
                     #implementation
 
                     impl #event_name_str {
+                        pub fn event_selector() -> #snrs_types::Felt {
+                            #snrs_utils::get_selector_from_name(#event_name).unwrap()
+                        }
+
+                        pub fn event_name() -> &'static str {
+                            #event_name
+                        }
+
                         pub(crate) fn try_from_event(from_address: starknet::core::types::Felt, keys: Vec<starknet::core::types::Felt>, data: Vec<starknet::core::types::Felt>) -> Result<Self, String> {
                             if keys.is_empty() {
                                 return Err("Event has no key".to_string());

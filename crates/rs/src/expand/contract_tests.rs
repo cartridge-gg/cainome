@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use cainome_parser::{
     tokens::{Function, NamedToken, Token},
     TypeRegistry,
@@ -8,8 +6,7 @@ use proc_macro2::TokenStream;
 use syn::parse_quote;
 
 use crate::expand::{
-    contract::Contract, for_tests::assert_code_has, Expandable, ExpansionContext,
-    ExpansionContextFactory, Module,
+    contract::Contract, for_tests::assert_code_has, Expandable, ExpansionContextFactory, Module,
 };
 
 #[test]
