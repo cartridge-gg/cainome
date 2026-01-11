@@ -14,22 +14,15 @@ async fn deploy_erc_20_and_call_its_methods(runner: &RunnerCtx) {
     // Predeployed accounts in katana
     let account = runner.account(0);
 
-    let path = std::path::Path::new("./src/bindings/erc20.json");
+    let path = std::path::Path::new("../../contracts/prebuilt/erc20.json");
 
     let class_hash = ERC20::declare(path, &account).await.unwrap();
-
-    println!("Class hash: {}", class_hash.to_hex_string());
 
     runner.dev_client().generate_block().await.unwrap();
 
     let erc20 = ERC20::deploy(UDC_ADDRESS, &account, class_hash, vec![account.address()])
         .await
         .unwrap();
-
-    println!(
-        "Deployed ERC20 at address: {}",
-        erc20.address.to_hex_string()
-    );
 
     let low = Felt::from(1374587365u32);
 

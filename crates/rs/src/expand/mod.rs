@@ -8,7 +8,7 @@ mod module;
 pub(crate) use module::Module;
 
 #[cfg(test)]
-mod for_tests;
+pub mod for_tests;
 
 #[cfg(test)]
 mod module_tests;
@@ -104,6 +104,7 @@ pub struct ExpansionContext {
     pub contract_source: String,
     pub add_declaration: bool,
     pub add_deployment: bool,
+
     // TODO: syn::Type?
     pub root_module_path: String,
     pub cainome_serde_path: String,

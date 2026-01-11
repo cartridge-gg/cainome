@@ -18,11 +18,19 @@ pub trait CairoToRust {
 
 impl CairoToRust for TypePath {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
-        ctx.apply_alias(self.type_path())
+        // [
+        // ctx.root_module_path.clone(),
+        ctx.apply_alias(&self.type_path())
+        // ]
+        // .join("::")
     }
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
-        ctx.apply_alias(self.type_path())
+        // [
+        // ctx.root_module_path.clone(),
+        ctx.apply_alias(&self.type_path())
+        // ]
+        // .join("::")
     }
 }
 

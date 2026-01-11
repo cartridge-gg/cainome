@@ -2,9 +2,11 @@ use cainome_parser::{
     tokens::{Struct, Token},
     TypeRegistry,
 };
+use syn::parse_quote;
 
 use crate::expand::{
-    for_tests::assert_code_has, Expandable, ExpansionContextFactory, ExpansionResult, Module,
+    for_tests::{assert_code_has, assert_code_has_statement, assert_code_has_struct},
+    Expandable, ExpansionContextFactory, ExpansionResult, Module,
 };
 
 #[test]
@@ -89,23 +91,38 @@ fn test_2_nested_modules_with_struct_and_reference() {
 
     let generated = root.to_token_stream();
 
-    let expected = vec![
-        quote::quote! {
+    assert_code_has_statement(
+        &generated,
+        &parse_quote! {
             __size += crate::module1::sub1::TypeA::cairo_serialized_size(&__rust.f2);
         },
-        quote::quote! {
+        "Statement not found",
+    );
+
+    assert_code_has_statement(
+        &generated,
+        &parse_quote! {
             let f2 = crate::module1::sub1::TypeA::cairo_deserialize(__felts, __offset)?;
+        },
+        "Statement not found",
+    );
+
+    assert_code_has_statement(
+        &generated,
+        &parse_quote! {
             __offset += crate::module1::sub1::TypeA::cairo_serialized_size(&f2);
         },
-        quote::quote! {
+        "Statement not found",
+    );
+
+    assert_code_has_struct(
+        &generated,
+        &parse_quote! {
             pub struct TypeB {
                 pub f1: starknet::core::types::Felt,
                 pub f2: crate::module1::sub1::TypeA
             }
         },
-    ];
-
-    for item in expected {
-        assert_code_has(&generated, &item, "Incorrect module structure");
-    }
+        "Statement not found",
+    );
 }

@@ -4,7 +4,7 @@ use cainome_parser::{
 };
 
 use proc_macro2::TokenStream;
-use syn::{parse_quote, ItemStruct};
+use syn::parse_quote;
 
 use crate::expand::{for_tests::assert_code_has, Expandable, ExpansionContextFactory, Module};
 
@@ -32,7 +32,7 @@ fn test_struct_event_expansion() {
         .with_includes(event.expand(&ctx))
         .to_token_stream();
 
-    let expected: ItemStruct = parse_quote! {
+    let expected = parse_quote! {
         pub struct SimpleEvent {
             pub data: starknet::core::types::Felt
         }

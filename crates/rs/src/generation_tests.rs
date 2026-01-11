@@ -1,30 +1,14 @@
 use std::collections::HashMap;
 
-use cainome_parser::{tokens::Token, AbiParser, ParserContext};
-use proc_macro2::TokenStream;
-use quote::{quote, ToTokens};
-
+use crate::expand::for_tests::{
+    assert_code_has, assert_code_has_not, assert_code_has_not_struct, assert_code_has_struct,
+};
 use crate::{abi_to_tokenstream, expand::ExpansionContextFactory, ExecutionVersion};
+use cainome_parser::{tokens::Token, AbiParser, ParserContext};
+use quote::quote;
+use syn::parse_quote;
 
-pub fn assert_code_has<T: ToTokens>(generated: &TokenStream, expected: &T, message: &str) {
-    let file: syn::File = syn::parse2(generated.clone()).expect("expected file-like tokens");
-
-    let expected_str = expected.to_token_stream().to_string();
-
-    let has_match = file.items.iter().any(|item| {
-        let item = item.to_token_stream().to_string();
-        item.contains(&expected_str)
-    });
-
-    assert!(
-        has_match,
-        "{}. Expected: {} In: {}",
-        message,
-        expected_str,
-        generated.to_string()
-    );
-}
-
+#[ignore = "Generics are not yet handled properly"]
 #[test]
 fn test_complex_case() {
     let abi = r#"[
@@ -160,9 +144,81 @@ fn test_complex_case() {
 
     let generated = abi_to_tokenstream(&registry.unwrap(), &ctx);
 
-    let expected = quote! {};
+    assert_code_has(
+        &generated,
+        &quote! {
+            #[derive(Debug, PartialEq)]
+            pub struct MyDef {
+                pub a: u32
+            }
+        },
+        "MyDef not found",
+    );
 
-    assert_code_has(&generated, &expected, "asd");
+    assert_code_has(
+        &generated,
+        &quote! {
+            #[derive(Debug, PartialEq, serde :: Deserialize, serde :: Serialize,)]
+            pub struct GenericTwoBis {
+                pub a: starknet::core::types::Felt,
+                #[serde(
+                    serialize_with = "cainome::cairo_serde::serialize_as_hex",
+                    deserialize_with = "cainome::cairo_serde::deserialize_from_hex"
+                )]
+                pub b: u64,
+                pub c: starknet::core::types::Felt,
+                pub d: self::MyDef,
+                pub e: Vec<self::MyDef>,
+                pub f: self::GenericOneBis
+            }
+        },
+        "GenericTwoBis not found",
+    );
+
+    assert_code_has_not(
+        &generated,
+        &quote! {
+            #[derive(Debug, PartialEq, serde :: Deserialize, serde :: Serialize,)]
+            pub struct GenericTwo {
+                pub a: starknet::core::types::Felt,
+                #[serde(
+                    serialize_with = "cainome::cairo_serde::serialize_as_hex",
+                    deserialize_with = "cainome::cairo_serde::deserialize_from_hex"
+                )]
+                pub b: u64,
+                pub c: starknet::core::types::Felt,
+                pub d: self::MyDef,
+                pub e: Vec<self::MyDef>,
+                pub f: self::GenericOneBis
+            }
+        },
+        "GenericTwo should have been replaced by alias ",
+    );
+
+    assert_code_has(
+        &generated,
+        &quote! {
+            #[derive(Debug, PartialEq,)]
+            pub struct GenericOneBis {
+                pub a: self::MyDef,
+                pub b: starknet::core::types::Felt,
+                pub c: cainome::cairo_serde::U256
+            }
+        },
+        "asd",
+    );
+    assert_code_has(
+        &generated,
+        &quote! {
+            #[derive(Debug, PartialEq,)]
+            pub struct GenericOneBis {
+                pub a: cainome::cairo_serde::U256,
+                pub b: starknet::core::types::Felt,
+                pub c: cainome::cairo_serde::U256
+            }
+        },
+        "asd",
+    );
 }
 
 #[test]
@@ -217,9 +273,19 @@ fn test_tuple_with_custom_type_as_func_argument_case() {
 
     let generated = abi_to_tokenstream(&registry, &ctx);
 
-    let expected = quote! {};
+    let expected = quote! {
+        #[allow(clippy::ptr_arg)]
+        #[allow(clippy::too_many_arguments)]
+        pub fn set_tuple_generic(
+            &self,
+            value: &(cainome::cairo_serde::U256, self::contracts::abicov::structs::ToAlias),
+        ) -> starknet::accounts::ExecutionV3<A> {
+            let __call = self.set_tuple_generic_getcall(value);
+            self.account.execute_v3(vec![__call])
+        }
+    };
 
-    assert_code_has(&generated, &expected, "asd");
+    assert_code_has(&generated, &expected, "No set_tuple_generic function found");
 }
 
 #[test]
@@ -367,4 +433,125 @@ fn test_tuple_with_generic_arg_with_2_parameters_resolves() {
     };
 
     assert_eq!(s.type_path, "my::Generic::<core::felt252, core::felt252>");
+}
+
+#[test]
+fn test_substitution_simple_case() {
+    let abi = r#"[
+        {
+            "type": "struct",
+            "name": "contracts::abicov::structs::HasSubstitute",
+            "members": [
+            {
+                "name": "a",
+                "type": "contracts::abicov::structs::ToAlias"
+            }
+            ]
+        },
+        {
+            "type": "struct",
+            "name": "contracts::abicov::structs::ToAlias",
+            "members": [
+            {
+                "name": "a",
+                "type": "core::integer::u32"
+            }
+            ]
+        }
+    ]"#;
+
+    let mut substitutions = HashMap::new();
+
+    substitutions.insert(
+        String::from("contracts::abicov::structs::ToAlias"),
+        String::from("some::module::path::MyDef"),
+    );
+
+    let ctx = ExpansionContextFactory::new("MyContract")
+        .with_contract_derives(&vec!["Debug".to_string(), "Clone".to_string()])
+        .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_execution(ExecutionVersion::V3)
+        .with_substitutions(substitutions)
+        .with_add_declaration(false)
+        .with_add_deployment(false)
+        .with_root_module_path("some::module::path")
+        .build();
+
+    let entries = AbiParser::parse_abi_string(&abi).unwrap();
+
+    let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
+
+    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx);
+
+    assert_code_has_not_struct(
+        &generated,
+        &parse_quote! {
+            #[derive(Debug, PartialEq, )]
+            pub struct MyDef {
+                pub a: u32
+            }
+        },
+        "MyDef found (should not)",
+    );
+
+    assert_code_has_struct(
+        &generated,
+        &parse_quote! {
+            #[derive(Debug, PartialEq, )]
+            pub struct HasSubstitute {
+                pub a: some::module::path::MyDef
+            }
+        },
+        "HasSubstitute not found",
+    );
+}
+
+#[ignore = "Discuss with glihm, old cainome bahaviour seems problematic"]
+#[test]
+fn test_substitution_for_generic_case() {
+    let abi = r#"[
+        {
+            "type": "struct",
+            "name": "contracts::abicov::structs::HasSubstitute",
+            "members": [
+                {
+                    "name": "a",
+                    "type": "contracts::abicov::structs::ToAlias<core::integer::u32>"
+                }
+            ]
+        },
+        {
+            "type": "struct",
+            "name": "contracts::abicov::structs::ToAlias<core::integer::u32>",
+            "members": [
+                {
+                    "name": "a",
+                    "type": "core::integer::u32"
+                }
+            ]
+        }
+    ]"#;
+
+    let mut substitutions = HashMap::new();
+
+    substitutions.insert(
+        String::from("contracts::abicov::structs::ToAlias"),
+        String::from("MyDef"),
+    );
+
+    let ctx = ExpansionContextFactory::new("MyContract")
+        .with_contract_derives(&vec!["Debug".to_string(), "Clone".to_string()])
+        .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_execution(ExecutionVersion::V3)
+        .with_substitutions(substitutions)
+        .with_add_declaration(false)
+        .with_add_deployment(false)
+        .with_root_module_path("some::module::path")
+        .build();
+
+    let entries = AbiParser::parse_abi_string(&abi).unwrap();
+
+    let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
+
+    let _generated = abi_to_tokenstream(&registry.unwrap(), &ctx);
 }

@@ -119,10 +119,6 @@ impl AbiParser {
             // This branch means that we went through all the AbiEntry and could not
             // convert any. This means Abi is incorrect (well, we might have a bug though)
             if seen_since_last_removal > local_entries.len() {
-                for sss in registry.store.keys() {
-                    println!("Registered type: {}", sss);
-                }
-
                 // TODO: this branch is most likely unreachable. Think on it.
                 // TODO: sort out error types
                 return Err(Error::ParsingFailed(format!(
@@ -138,9 +134,12 @@ impl AbiParser {
 
             // Workaround to skip parsing Composite CoreBasics (like core::boolean).
             // As get also strips all the containers, those will be dropped at this point.
-            // Might also work for type duplicates, but I don't think those exist.
             // NOTE: this might move into extensions for AbiEntry
             if let Ok(token) = registry.get(&type_path) {
+                if let Token::Substitute(_) = &*token.borrow() {
+                    continue;
+                }
+
                 if let Token::Basic(_) = &*token.borrow() {
                     seen_since_last_removal = 0;
                     continue;
@@ -156,7 +155,7 @@ impl AbiParser {
                 registry.set(&type_path, Token::Placeholder);
             }
 
-            // Check if type should be skipped skipped
+            // Check if type should be skipped
             if ctx.is_type_skipped(&type_path) {
                 registry.set(&type_path, Token::Skip(TypePath::new(&type_path)));
                 continue;

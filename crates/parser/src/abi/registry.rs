@@ -172,14 +172,17 @@ impl TypeRegistry {
                 // Do not overwrite with placeholder.
                 return;
             }
-            match &*cell.borrow() {
-                // Do not overwrite Skipped and Substituted
-                Token::Skip(_) | Token::Substitute(_) => return,
-                _ => (),
-            }
 
-            let mut cell = cell.as_ref().borrow_mut();
-            *cell = token;
+            let mut stored_value = cell.borrow_mut();
+
+            match &*stored_value {
+                Token::Skip(_) | Token::Substitute(_) => return,
+                Token::Placeholder => {
+                    // Replace placeholder with real token
+                    *stored_value = token;
+                }
+                _ => *stored_value = token,
+            };
         } else {
             let reference = Rc::new(RefCell::new(token));
             self.store.insert(type_path, reference);
@@ -238,6 +241,7 @@ impl TypeRegistry {
             .filter(|token| matches!(&*token.borrow(), Token::Function(_)))
             .cloned();
 
+        // TODO: move out
         let interfaces = self
             .store
             .values()

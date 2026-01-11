@@ -4,7 +4,6 @@ use starknet::core::types::contract::legacy::{LegacyContractClass, RawLegacyAbiE
 use starknet::core::types::contract::{AbiEntry, SierraClass};
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::Read;
 
 fn read_file_legacy(file_path: &str) -> Vec<RawLegacyAbiEntry> {
     println!("Reading ABI from file: {}", file_path);
@@ -85,23 +84,24 @@ fn expand(out_name: &str, ctx: &ExpansionContext) {
     );
 
     let path = cwd.to_str().unwrap();
+
+    println!("Writing expanded code to: {}/{}", path, out_name);
+
     fs::write(format!("{}/{}", path, out_name), content).unwrap()
 }
 
 fn main() {
-    return;
-
-    // legacy_expand(
-    //     "./crates/integration-tests/src/bindings/kkrt_account_cairo0.rs",
-    //     &ExpansionContextFactory::new("./contracts/cairo0/kkrt_account_cairo0.json")
-    //         .with_contract_name("MyContract")
-    //         .with_derives(["Debug"])
-    //         .with_cainome_serde_path("cainome_cairo_serde")
-    //         .build(),
-    // );
+    legacy_expand(
+        "./src/bindings/kkrt_account_cairo0.rs",
+        &ExpansionContextFactory::new("../../contracts/cairo0/kkrt_account_cairo0.json")
+            .with_contract_name("MyContract")
+            .with_derives(["Debug"])
+            .with_cainome_serde_path("cainome_cairo_serde")
+            .build(),
+    );
     expand(
-        "./crates/integration-tests/src/bindings/structs.rs",
-        &ExpansionContextFactory::new("./contracts/abi/gen.abi.json")
+        "./src/bindings/structs.rs",
+        &ExpansionContextFactory::new("../../contracts/abi/gen.abi.json")
             .with_contract_name("Structs")
             .with_cainome_serde_path("cainome_cairo_serde")
             .with_root_module_path("crate::bindings::structs")
@@ -114,83 +114,91 @@ fn main() {
             ])
             .build(),
     );
-    // expand(
-    //     "./crates/integration-tests/src/bindings/simple_get_set.rs",
-    //     &ExpansionContextFactory::new(
-    //         "./crates/integration-tests/src/bindings/simple_get_set.json",
-    //     )
-    //     .with_contract_name("SimpleGetSet")
-    //     .with_cainome_serde_path("cainome_cairo_serde")
-    //     .with_root_module_path("crate::bindings::simple_get_set")
-    //     .build(),
-    // );
-    // expand(
-    //     "./crates/integration-tests/src/bindings/erc20.rs",
-    //     &ExpansionContextFactory::new("./crates/integration-tests/src/bindings/erc20.json")
-    //         .with_contract_name("ERC20")
-    //         .with_cainome_serde_path("cainome_cairo_serde")
-    //         .with_root_module_path("crate::bindings::erc20")
-    //         .build(),
-    // );
-    // expand(
-    //     "./crates/integration-tests/src/bindings/components_events.rs",
-    //     &ExpansionContextFactory::new(
-    //         "./crates/integration-tests/src/bindings/components_events.json",
-    //     )
-    //     .with_contract_name("ComponentsEvents")
-    //     .with_cainome_serde_path("cainome_cairo_serde")
-    //     .with_root_module_path("crate::bindings::components_events")
-    //     .build(),
-    // );
+
     expand(
-        "./crates/integration-tests/src/bindings/components_events_flat.rs",
-        &ExpansionContextFactory::new(
-            "./crates/integration-tests/src/bindings/components_events.json",
-        )
-        .with_contract_name("ComponentsEventsFlat")
-        .with_cainome_serde_path("cainome_cairo_serde")
-        .with_root_module_path("crate::bindings::components_events_flat")
-        .with_aliases(HashMap::from([
-            (
-                "contracts::abicov::components::simple_component::Event".to_string(),
-                "SimpleEvent".to_string(),
-            ),
-            (
-                "contracts::abicov::components::simple_component::Written".to_string(),
-                "SimpleWritten".to_string(),
-            ),
-            (
-                "contracts::abicov::components::simple_component::MyStruct".to_string(),
-                "MyStructSimple".to_string(),
-            ),
-            (
-                "contracts::abicov::components::simple_component_other::Event".to_string(),
-                "OtherEvent".to_string(),
-            ),
-            (
-                "contracts::abicov::components::simple_component_other::Written".to_string(),
-                "OtherWritten".to_string(),
-            ),
-            (
-                "contracts::abicov::components::simple_component_other::MyStruct".to_string(),
-                "MyStructOther".to_string(),
-            ),
-            (
-                "contracts::abicov::components::components_contract::OutterEvent".to_string(),
-                "OutterEvent".to_string(),
-            ),
-        ]))
-        .build(),
+        "./src/bindings/components_events_flat.rs",
+        &ExpansionContextFactory::new("../../contracts/abi/components.abi.json")
+            .with_contract_name("ComponentsEventsFlat")
+            .with_cainome_serde_path("cainome_cairo_serde")
+            .with_root_module_path("crate::bindings::components_events_flat")
+            .with_aliases(HashMap::from([
+                (
+                    "contracts::abicov::components::simple_component::Event".to_string(),
+                    "SimpleEvent".to_string(),
+                ),
+                (
+                    "contracts::abicov::components::simple_component::Written".to_string(),
+                    "SimpleWritten".to_string(),
+                ),
+                (
+                    "contracts::abicov::components::simple_component::MyStruct".to_string(),
+                    "MyStructSimple".to_string(),
+                ),
+                (
+                    "contracts::abicov::components::simple_component_other::Event".to_string(),
+                    "OtherEvent".to_string(),
+                ),
+                (
+                    "contracts::abicov::components::simple_component_other::Written".to_string(),
+                    "OtherWritten".to_string(),
+                ),
+                (
+                    "contracts::abicov::components::simple_component_other::MyStruct".to_string(),
+                    "MyStructOther".to_string(),
+                ),
+                (
+                    "contracts::abicov::components::components_contract::OutterEvent".to_string(),
+                    "OutterEvent".to_string(),
+                ),
+            ]))
+            .build(),
     );
-    // legacy_expand(
-    //     "./crates/integration-tests/src/bindings/udc.rs",
-    //     &ExpansionContextFactory::new("./crates/integration-tests/src/bindings/udc.json")
-    //         .with_contract_name("UDC")
-    //         .with_derives(["Debug"])
-    //         .with_cainome_serde_path("cainome_cairo_serde")
-    //         .with_is_legacy(true)
-    //         .with_add_declaration(true)
-    //         .with_add_deployment(false)
-    //         .build(),
-    // );
+    expand(
+        "./src/bindings/simple_get_set.rs",
+        &ExpansionContextFactory::new("../../contracts/abi/simple_get_set.abi.json")
+            .with_contract_name("SimpleGetSet")
+            .with_cainome_serde_path("cainome_cairo_serde")
+            .with_root_module_path("crate::bindings::simple_get_set")
+            .build(),
+    );
+    expand(
+        "./src/bindings/erc20.rs",
+        &ExpansionContextFactory::new("../../contracts/prebuilt/erc20.json")
+            .with_contract_name("ERC20")
+            .with_cainome_serde_path("cainome_cairo_serde")
+            .with_root_module_path("crate::bindings::erc20")
+            .build(),
+    );
+    expand(
+        "./src/bindings/components_events.rs",
+        &ExpansionContextFactory::new("../../contracts/abi/components.abi.json")
+            .with_contract_name("ComponentsEvents")
+            .with_cainome_serde_path("cainome_cairo_serde")
+            .with_root_module_path("crate::bindings::components_events")
+            .build(),
+    );
+    expand(
+        "./src/bindings/substitutions.rs",
+        &ExpansionContextFactory::new("../../contracts/abi/structs.abi.json")
+            .with_contract_name("Substitutions")
+            .with_cainome_serde_path("cainome_cairo_serde")
+            .with_root_module_path("crate::bindings::substitutions")
+            .with_derives(&["serde::Serialize", "serde::Deserialize"])
+            .with_substitutions(HashMap::from([(
+                "contracts::abicov::structs::GenericOne".to_string(),
+                "GenericOneBis".to_string(),
+            )]))
+            .build(),
+    );
+    legacy_expand(
+        "./src/bindings/udc.rs",
+        &ExpansionContextFactory::new("../../contracts/prebuilt/udc.json")
+            .with_contract_name("UDC")
+            .with_derives(["Debug"])
+            .with_cainome_serde_path("cainome_cairo_serde")
+            .with_is_legacy(true)
+            .with_add_declaration(true)
+            .with_add_deployment(false)
+            .build(),
+    );
 }

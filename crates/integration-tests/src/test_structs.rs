@@ -1,4 +1,4 @@
-use std::{str::FromStr, sync::Arc};
+use std::str::FromStr;
 
 use paste::paste;
 use starknet_types_core::felt::Felt;
@@ -15,9 +15,6 @@ macro_rules! test_enum {
         }
     };
 }
-
-const UDC_ADDRESS: Felt =
-    Felt::from_hex_unwrap("0x41a78e741e5af2fec34b695679bc6891742439f7afb8484ecd7766661ad02bf");
 
 #[tokio::test]
 async fn assert_generated_structs() {

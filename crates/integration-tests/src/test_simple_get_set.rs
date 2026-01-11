@@ -18,7 +18,9 @@ const UDC_ADDRESS: Felt =
 async fn deploy_simple_get_set_and_assert_state(runner: &RunnerCtx) {
     let account = runner.account(0);
 
-    let path = std::path::Path::new("./src/bindings/simple_get_set.json");
+    let path = std::path::Path::new(
+        "../../contracts/target/dev/contracts_simple_get_set.contract_class.json",
+    );
 
     let class_hash = SimpleGetSet::declare(path, &account).await.unwrap();
 

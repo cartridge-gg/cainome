@@ -32,7 +32,7 @@ pub struct MyDef {
 abigen!(
     MyContract,
     "./contracts/abi/structs.abi.json",
-    type_aliases {
+    substitutions {
         contracts::abicov::structs::GenericOne as GenericOneBis;
         contracts::abicov::structs::GenericTwo as GenericTwoBis;
         contracts::abicov::structs::ToAlias as MyDef;

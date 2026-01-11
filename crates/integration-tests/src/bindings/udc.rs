@@ -90,6 +90,12 @@ impl cainome_cairo_serde::CairoSerde for ContractDeployed {
     }
 }
 impl ContractDeployed {
+    pub fn event_selector() -> starknet::core::types::Felt {
+        starknet::core::utils::get_selector_from_name("ContractDeployed").unwrap()
+    }
+    pub fn event_name() -> &'static str {
+        "ContractDeployed"
+    }
     pub(crate) fn try_from_event(
         from_address: starknet::core::types::Felt,
         keys: Vec<starknet::core::types::Felt>,

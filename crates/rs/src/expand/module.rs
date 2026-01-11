@@ -3,8 +3,9 @@ use std::collections::{BTreeMap, HashMap, HashSet};
 use proc_macro2::TokenStream;
 
 use crate::expand::{utils, ExpansionResult, ROOT_MODULE_NAME};
-use quote::quote;
+use quote::{quote, ToTokens};
 
+#[derive(Clone)]
 pub struct Module {
     pub name: String,
     pub imports: HashSet<String>,
@@ -111,5 +112,11 @@ impl Module {
                 }
             }
         }
+    }
+}
+
+impl ToTokens for Module {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        tokens.extend(self.clone().to_token_stream());
     }
 }

@@ -9,14 +9,17 @@
 [x] cairo0
 [x] think of substitions (external)
 [x] generic structs handling. I didn't test those properly (old functionality)
+[x] prefix cainome with additional setting
+[x] deploy and declare calls method
 
-[ ] bindings
+Add v0.11.0 branch from main and create PR against it.
+
+[ ] Do proper interface impl's
+[ ] go-bindings
 [ ] tests for nested events of level 2 and more
-[ ] prefix cainome with additional setting
 [ ] starknet-rust
 [ ] tests for serialisation rules
 [ ] event structure split (not critical)
-[ ] deploy and declare calls method
 [ ] functions registry paths intersection. think on type prefixes for token paths
 [ ] ??? integration tests. create bindings, deploy to testnet, call, assert result
 [ ] If we can generate code, why not generate tests as well

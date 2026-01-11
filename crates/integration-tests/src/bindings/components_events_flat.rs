@@ -321,309 +321,6 @@ pub mod core {
         }
     }
 }
-pub struct ComponentsEventsFlat<A: starknet::accounts::ConnectedAccount + Sync> {
-    pub address: starknet::core::types::Felt,
-    pub account: A,
-    pub block_id: starknet::core::types::BlockId,
-}
-impl<A: starknet::accounts::ConnectedAccount + Sync> ComponentsEventsFlat<A> {
-    pub fn new(address: starknet::core::types::Felt, account: A) -> Self {
-        Self {
-            address,
-            account,
-            block_id: starknet::core::types::BlockId::Tag(
-                starknet::core::types::BlockTag::PreConfirmed,
-            ),
-        }
-    }
-    pub fn set_contract_address(&mut self, address: starknet::core::types::Felt) {
-        self.address = address;
-    }
-    pub fn provider(&self) -> &A::Provider {
-        self.account.provider()
-    }
-    pub fn set_block(&mut self, block_id: starknet::core::types::BlockId) {
-        self.block_id = block_id;
-    }
-    pub fn with_block(self, block_id: starknet::core::types::BlockId) -> Self {
-        Self { block_id, ..self }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn read_data(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("read_data"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn write_data_getcall(
-        &self,
-        data: &starknet::core::types::Felt,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(data));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("write_data"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn write_data(
-        &self,
-        data: &starknet::core::types::Felt,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.write_data_getcall(data);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn simple_other_getcall(&self) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("simple_other"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn simple_other(&self) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.simple_other_getcall();
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn simple_getcall(&self) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("simple"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn simple(&self) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.simple_getcall();
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn array_struct_simple_other_getcall(&self) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("array_struct_simple_other"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn array_struct_simple_other(&self) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.array_struct_simple_other_getcall();
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn array_struct_simple_getcall(&self) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("array_struct_simple"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn array_struct_simple(&self) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.array_struct_simple_getcall();
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn tuple_events_getcall(&self) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("tuple_events"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn tuple_events(&self) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.tuple_events_getcall();
-        self.account.execute_v3(vec![__call])
-    }
-    pub async fn declare(
-        path: &std::path::Path,
-        account: &A,
-    ) -> Result<starknet::core::types::Felt, Box<dyn std::error::Error>>
-    where
-        A::SignError: 'static,
-    {
-        let sierra_class: cairo_lang_starknet_classes::contract_class::ContractClass =
-            serde_json::from_slice::<cairo_lang_starknet_classes::contract_class::ContractClass>(
-                std::fs::read(path)?.as_slice(),
-            )?;
-        let casm_class = cairo_lang_starknet_classes::casm_contract_class::CasmContractClass::from_contract_class(
-            sierra_class,
-            false,
-            180000usize,
-        )?;
-        let class_hash = starknet::core::types::Felt::from_bytes_be(
-            &casm_class.compiled_class_hash().to_bytes_be(),
-        );
-        let contract_artifact: starknet::core::types::contract::SierraClass =
-            serde_json::from_reader(std::fs::File::open(path)?)?;
-        let declaration = account.declare_v3(
-            std::sync::Arc::new(contract_artifact.flatten()?),
-            class_hash,
-        );
-        let declaration_result = declaration.send().await?;
-        Ok(declaration_result.class_hash)
-    }
-    pub async fn deploy(
-        deployer_address: starknet::core::types::Felt,
-        account: A,
-        class_hash: starknet::core::types::Felt,
-        constructor_calldata: Vec<starknet::core::types::Felt>,
-    ) -> Result<Self, Box<dyn std::error::Error>> {
-        let generate_salt = true;
-        let is_unique = true;
-        let salt: starknet::core::types::Felt = if generate_salt {
-            use rand::Rng;
-            rand::rng().random::<u128>().into()
-        } else {
-            starknet::core::types::Felt::ZERO
-        };
-        let calldata = [
-            vec![
-                class_hash,
-                salt,
-                starknet::core::types::Felt::from(is_unique),
-                starknet::core::types::Felt::from(constructor_calldata.len()),
-            ]
-            .as_slice(),
-            constructor_calldata.as_slice(),
-        ]
-        .concat();
-        let tx = account
-            .execute_v3(vec![starknet::core::types::Call {
-                to: deployer_address,
-                selector: starknet::macros::selector!("deployContract"),
-                calldata: calldata,
-            }])
-            .send()
-            .await
-            .unwrap();
-        let uniqueness = if is_unique {
-            &starknet::core::utils::UdcUniqueness::Unique(
-                starknet::core::utils::UdcUniqueSettings {
-                    udc_contract_address: deployer_address,
-                    deployer_address: account.address(),
-                },
-            )
-        } else {
-            &starknet::core::utils::UdcUniqueness::NotUnique
-        };
-        let deployed_address = starknet::core::utils::get_udc_deployed_address(
-            salt,
-            class_hash,
-            uniqueness,
-            constructor_calldata.as_slice(),
-        );
-        Ok(Self::new(deployed_address, account))
-    }
-}
-pub struct ComponentsEventsFlatReader<P: starknet::providers::Provider + Sync> {
-    pub address: starknet::core::types::Felt,
-    pub provider: P,
-    pub block_id: starknet::core::types::BlockId,
-}
-impl<P: starknet::providers::Provider + Sync> ComponentsEventsFlatReader<P> {
-    pub fn new(address: starknet::core::types::Felt, provider: P) -> Self {
-        Self {
-            address,
-            provider,
-            block_id: starknet::core::types::BlockId::Tag(
-                starknet::core::types::BlockTag::PreConfirmed,
-            ),
-        }
-    }
-    pub fn set_contract_address(&mut self, address: starknet::core::types::Felt) {
-        self.address = address;
-    }
-    pub fn provider(&self) -> &P {
-        &self.provider
-    }
-    pub fn set_block(&mut self, block_id: starknet::core::types::BlockId) {
-        self.block_id = block_id;
-    }
-    pub fn with_block(self, block_id: starknet::core::types::BlockId) -> Self {
-        Self { block_id, ..self }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn read_data(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("read_data"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-}
-pub struct MyStructSimple {
-    pub a: starknet::core::types::Felt,
-    pub b: starknet::core::types::Felt,
-}
-impl cainome_cairo_serde::CairoSerde for MyStructSimple {
-    type RustType = Self;
-    const SERIALIZED_SIZE: std::option::Option<usize> = None;
-    #[inline]
-    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-        let mut __size = 0;
-        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.a);
-        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.b);
-        __size
-    }
-    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-        let mut __out: Vec<starknet::core::types::Felt> = vec![];
-        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.a));
-        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.b));
-        __out
-    }
-    fn cairo_deserialize(
-        __felts: &[starknet::core::types::Felt],
-        __offset: usize,
-    ) -> cainome_cairo_serde::Result<Self::RustType> {
-        let mut __offset = __offset;
-        let a = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&a);
-        let b = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&b);
-        Ok(MyStructSimple { a, b })
-    }
-}
 pub enum SimpleEvent {
     Written(crate::bindings::components_events_flat::SimpleWritten),
     Written88(
@@ -771,6 +468,277 @@ impl TryFrom<starknet::core::types::Event> for SimpleEvent {
         Self::try_from_event(event.from_address, event.keys, event.data)
     }
 }
+pub struct ComponentsEventsFlat<A: starknet::accounts::ConnectedAccount + Sync> {
+    pub address: starknet::core::types::Felt,
+    pub account: A,
+    pub block_id: starknet::core::types::BlockId,
+}
+impl<A: starknet::accounts::ConnectedAccount + Sync> ComponentsEventsFlat<A> {
+    pub fn new(address: starknet::core::types::Felt, account: A) -> Self {
+        Self {
+            address,
+            account,
+            block_id: starknet::core::types::BlockId::Tag(
+                starknet::core::types::BlockTag::PreConfirmed,
+            ),
+        }
+    }
+    pub fn set_contract_address(&mut self, address: starknet::core::types::Felt) {
+        self.address = address;
+    }
+    pub fn provider(&self) -> &A::Provider {
+        self.account.provider()
+    }
+    pub fn set_block(&mut self, block_id: starknet::core::types::BlockId) {
+        self.block_id = block_id;
+    }
+    pub fn with_block(self, block_id: starknet::core::types::BlockId) -> Self {
+        Self { block_id, ..self }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn read_data(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("read_data"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn write_data_getcall(
+        &self,
+        data: &starknet::core::types::Felt,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(data));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("write_data"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn write_data(
+        &self,
+        data: &starknet::core::types::Felt,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.write_data_getcall(data);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn array_struct_simple_getcall(&self) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("array_struct_simple"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn array_struct_simple(&self) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.array_struct_simple_getcall();
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn array_struct_simple_other_getcall(&self) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("array_struct_simple_other"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn array_struct_simple_other(&self) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.array_struct_simple_other_getcall();
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn simple_getcall(&self) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("simple"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn simple(&self) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.simple_getcall();
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn tuple_events_getcall(&self) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("tuple_events"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn tuple_events(&self) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.tuple_events_getcall();
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn simple_other_getcall(&self) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("simple_other"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn simple_other(&self) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.simple_other_getcall();
+        self.account.execute_v3(vec![__call])
+    }
+    pub async fn declare(
+        path: &std::path::Path,
+        account: &A,
+    ) -> Result<starknet::core::types::Felt, Box<dyn std::error::Error>>
+    where
+        A::SignError: 'static,
+    {
+        let sierra_class: cairo_lang_starknet_classes::contract_class::ContractClass =
+            serde_json::from_slice::<cairo_lang_starknet_classes::contract_class::ContractClass>(
+                std::fs::read(path)?.as_slice(),
+            )?;
+        let casm_class = cairo_lang_starknet_classes::casm_contract_class::CasmContractClass::from_contract_class(
+            sierra_class,
+            false,
+            180000usize,
+        )?;
+        let class_hash = starknet::core::types::Felt::from_bytes_be(
+            &casm_class.compiled_class_hash().to_bytes_be(),
+        );
+        let contract_artifact: starknet::core::types::contract::SierraClass =
+            serde_json::from_reader(std::fs::File::open(path)?)?;
+        let declaration = account.declare_v3(
+            std::sync::Arc::new(contract_artifact.flatten()?),
+            class_hash,
+        );
+        let declaration_result = declaration.send().await?;
+        Ok(declaration_result.class_hash)
+    }
+    pub async fn deploy(
+        deployer_address: starknet::core::types::Felt,
+        account: A,
+        class_hash: starknet::core::types::Felt,
+        constructor_calldata: Vec<starknet::core::types::Felt>,
+    ) -> Result<Self, Box<dyn std::error::Error>> {
+        let generate_salt = true;
+        let is_unique = true;
+        let salt: starknet::core::types::Felt = if generate_salt {
+            use rand::Rng;
+            rand::rng().random::<u128>().into()
+        } else {
+            starknet::core::types::Felt::ZERO
+        };
+        let calldata = [
+            vec![
+                class_hash,
+                salt,
+                starknet::core::types::Felt::from(is_unique),
+                starknet::core::types::Felt::from(constructor_calldata.len()),
+            ]
+            .as_slice(),
+            constructor_calldata.as_slice(),
+        ]
+        .concat();
+        let tx = account
+            .execute_v3(vec![starknet::core::types::Call {
+                to: deployer_address,
+                selector: starknet::macros::selector!("deployContract"),
+                calldata: calldata,
+            }])
+            .send()
+            .await
+            .unwrap();
+        let uniqueness = if is_unique {
+            &starknet::core::utils::UdcUniqueness::Unique(
+                starknet::core::utils::UdcUniqueSettings {
+                    udc_contract_address: deployer_address,
+                    deployer_address: account.address(),
+                },
+            )
+        } else {
+            &starknet::core::utils::UdcUniqueness::NotUnique
+        };
+        let deployed_address = starknet::core::utils::get_udc_deployed_address(
+            salt,
+            class_hash,
+            uniqueness,
+            constructor_calldata.as_slice(),
+        );
+        Ok(Self::new(deployed_address, account))
+    }
+}
+pub struct ComponentsEventsFlatReader<P: starknet::providers::Provider + Sync> {
+    pub address: starknet::core::types::Felt,
+    pub provider: P,
+    pub block_id: starknet::core::types::BlockId,
+}
+impl<P: starknet::providers::Provider + Sync> ComponentsEventsFlatReader<P> {
+    pub fn new(address: starknet::core::types::Felt, provider: P) -> Self {
+        Self {
+            address,
+            provider,
+            block_id: starknet::core::types::BlockId::Tag(
+                starknet::core::types::BlockTag::PreConfirmed,
+            ),
+        }
+    }
+    pub fn set_contract_address(&mut self, address: starknet::core::types::Felt) {
+        self.address = address;
+    }
+    pub fn provider(&self) -> &P {
+        &self.provider
+    }
+    pub fn set_block(&mut self, block_id: starknet::core::types::BlockId) {
+        self.block_id = block_id;
+    }
+    pub fn with_block(self, block_id: starknet::core::types::BlockId) -> Self {
+        Self { block_id, ..self }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn read_data(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("read_data"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+}
 pub struct OutterEvent {}
 impl cainome_cairo_serde::CairoSerde for OutterEvent {
     type RustType = Self;
@@ -835,24 +803,24 @@ impl TryFrom<starknet::core::types::Event> for OutterEvent {
         Self::try_from_event(event.from_address, event.keys, event.data)
     }
 }
-pub struct SimpleWritten {
-    pub before: starknet::core::types::Felt,
-    pub after: starknet::core::types::Felt,
+pub struct MyStructSimple {
+    pub a: starknet::core::types::Felt,
+    pub b: starknet::core::types::Felt,
 }
-impl cainome_cairo_serde::CairoSerde for SimpleWritten {
+impl cainome_cairo_serde::CairoSerde for MyStructSimple {
     type RustType = Self;
     const SERIALIZED_SIZE: std::option::Option<usize> = None;
     #[inline]
     fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
         let mut __size = 0;
-        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.before);
-        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.after);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.a);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.b);
         __size
     }
     fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
         let mut __out: Vec<starknet::core::types::Felt> = vec![];
-        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.before));
-        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.after));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.a));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.b));
         __out
     }
     fn cairo_deserialize(
@@ -860,71 +828,28 @@ impl cainome_cairo_serde::CairoSerde for SimpleWritten {
         __offset: usize,
     ) -> cainome_cairo_serde::Result<Self::RustType> {
         let mut __offset = __offset;
-        let before = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&before);
-        let after = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&after);
-        Ok(SimpleWritten { before, after })
+        let a = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&a);
+        let b = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&b);
+        Ok(MyStructSimple { a, b })
     }
 }
-impl SimpleWritten {
-    pub fn event_selector() -> starknet::core::types::Felt {
-        starknet::core::utils::get_selector_from_name("SimpleWritten").unwrap()
-    }
-    pub fn event_name() -> &'static str {
-        "SimpleWritten"
-    }
-    pub(crate) fn try_from_event(
-        from_address: starknet::core::types::Felt,
-        keys: Vec<starknet::core::types::Felt>,
-        data: Vec<starknet::core::types::Felt>,
-    ) -> Result<Self, String> {
-        if keys.is_empty() {
-            return Err("Event has no key".to_string());
-        }
-        use cainome_cairo_serde::CairoSerde;
-        if keys[0]
-            == starknet::core::utils::get_selector_from_name("SimpleWritten")
-                .unwrap_or_else(|_| panic!("Invalid selector for {}", "SimpleWritten"))
-        {
-            let res = SimpleWritten::cairo_deserialize(&data, 0).map_err(|e| {
-                format!(
-                    "Could not deserialize {} event data: {:?}",
-                    "SimpleWritten", e
-                )
-            })?;
-            return Ok(res);
-        }
-        Err(format!("Could not match any event from keys {:?}", keys))
-    }
+pub struct MyStructOther {
+    pub data: cainome_cairo_serde::U256,
 }
-impl TryFrom<starknet::core::types::EmittedEvent> for SimpleWritten {
-    type Error = String;
-    fn try_from(event: starknet::core::types::EmittedEvent) -> Result<Self, Self::Error> {
-        Self::try_from_event(event.from_address, event.keys, event.data)
-    }
-}
-impl TryFrom<starknet::core::types::Event> for SimpleWritten {
-    type Error = String;
-    fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
-        Self::try_from_event(event.from_address, event.keys, event.data)
-    }
-}
-pub struct OtherWritten {
-    pub data: starknet::core::types::Felt,
-}
-impl cainome_cairo_serde::CairoSerde for OtherWritten {
+impl cainome_cairo_serde::CairoSerde for MyStructOther {
     type RustType = Self;
     const SERIALIZED_SIZE: std::option::Option<usize> = None;
     #[inline]
     fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
         let mut __size = 0;
-        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.data);
+        __size += cainome_cairo_serde::U256::cairo_serialized_size(&__rust.data);
         __size
     }
     fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
         let mut __out: Vec<starknet::core::types::Felt> = vec![];
-        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.data));
+        __out.extend(cainome_cairo_serde::U256::cairo_serialize(&__rust.data));
         __out
     }
     fn cairo_deserialize(
@@ -932,52 +857,9 @@ impl cainome_cairo_serde::CairoSerde for OtherWritten {
         __offset: usize,
     ) -> cainome_cairo_serde::Result<Self::RustType> {
         let mut __offset = __offset;
-        let data = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&data);
-        Ok(OtherWritten { data })
-    }
-}
-impl OtherWritten {
-    pub fn event_selector() -> starknet::core::types::Felt {
-        starknet::core::utils::get_selector_from_name("OtherWritten").unwrap()
-    }
-    pub fn event_name() -> &'static str {
-        "OtherWritten"
-    }
-    pub(crate) fn try_from_event(
-        from_address: starknet::core::types::Felt,
-        keys: Vec<starknet::core::types::Felt>,
-        data: Vec<starknet::core::types::Felt>,
-    ) -> Result<Self, String> {
-        if keys.is_empty() {
-            return Err("Event has no key".to_string());
-        }
-        use cainome_cairo_serde::CairoSerde;
-        if keys[0]
-            == starknet::core::utils::get_selector_from_name("OtherWritten")
-                .unwrap_or_else(|_| panic!("Invalid selector for {}", "OtherWritten"))
-        {
-            let res = OtherWritten::cairo_deserialize(&data, 0).map_err(|e| {
-                format!(
-                    "Could not deserialize {} event data: {:?}",
-                    "OtherWritten", e
-                )
-            })?;
-            return Ok(res);
-        }
-        Err(format!("Could not match any event from keys {:?}", keys))
-    }
-}
-impl TryFrom<starknet::core::types::EmittedEvent> for OtherWritten {
-    type Error = String;
-    fn try_from(event: starknet::core::types::EmittedEvent) -> Result<Self, Self::Error> {
-        Self::try_from_event(event.from_address, event.keys, event.data)
-    }
-}
-impl TryFrom<starknet::core::types::Event> for OtherWritten {
-    type Error = String;
-    fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
-        Self::try_from_event(event.from_address, event.keys, event.data)
+        let data = cainome_cairo_serde::U256::cairo_deserialize(__felts, __offset)?;
+        __offset += cainome_cairo_serde::U256::cairo_serialized_size(&data);
+        Ok(MyStructOther { data })
     }
 }
 pub enum OtherEvent {
@@ -1076,21 +958,21 @@ impl TryFrom<starknet::core::types::Event> for OtherEvent {
         Self::try_from_event(event.from_address, event.keys, event.data)
     }
 }
-pub struct MyStructOther {
-    pub data: cainome_cairo_serde::U256,
+pub struct OtherWritten {
+    pub data: starknet::core::types::Felt,
 }
-impl cainome_cairo_serde::CairoSerde for MyStructOther {
+impl cainome_cairo_serde::CairoSerde for OtherWritten {
     type RustType = Self;
     const SERIALIZED_SIZE: std::option::Option<usize> = None;
     #[inline]
     fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
         let mut __size = 0;
-        __size += cainome_cairo_serde::U256::cairo_serialized_size(&__rust.data);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.data);
         __size
     }
     fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
         let mut __out: Vec<starknet::core::types::Felt> = vec![];
-        __out.extend(cainome_cairo_serde::U256::cairo_serialize(&__rust.data));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.data));
         __out
     }
     fn cairo_deserialize(
@@ -1098,8 +980,126 @@ impl cainome_cairo_serde::CairoSerde for MyStructOther {
         __offset: usize,
     ) -> cainome_cairo_serde::Result<Self::RustType> {
         let mut __offset = __offset;
-        let data = cainome_cairo_serde::U256::cairo_deserialize(__felts, __offset)?;
-        __offset += cainome_cairo_serde::U256::cairo_serialized_size(&data);
-        Ok(MyStructOther { data })
+        let data = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&data);
+        Ok(OtherWritten { data })
+    }
+}
+impl OtherWritten {
+    pub fn event_selector() -> starknet::core::types::Felt {
+        starknet::core::utils::get_selector_from_name("OtherWritten").unwrap()
+    }
+    pub fn event_name() -> &'static str {
+        "OtherWritten"
+    }
+    pub(crate) fn try_from_event(
+        from_address: starknet::core::types::Felt,
+        keys: Vec<starknet::core::types::Felt>,
+        data: Vec<starknet::core::types::Felt>,
+    ) -> Result<Self, String> {
+        if keys.is_empty() {
+            return Err("Event has no key".to_string());
+        }
+        use cainome_cairo_serde::CairoSerde;
+        if keys[0]
+            == starknet::core::utils::get_selector_from_name("OtherWritten")
+                .unwrap_or_else(|_| panic!("Invalid selector for {}", "OtherWritten"))
+        {
+            let res = OtherWritten::cairo_deserialize(&data, 0).map_err(|e| {
+                format!(
+                    "Could not deserialize {} event data: {:?}",
+                    "OtherWritten", e
+                )
+            })?;
+            return Ok(res);
+        }
+        Err(format!("Could not match any event from keys {:?}", keys))
+    }
+}
+impl TryFrom<starknet::core::types::EmittedEvent> for OtherWritten {
+    type Error = String;
+    fn try_from(event: starknet::core::types::EmittedEvent) -> Result<Self, Self::Error> {
+        Self::try_from_event(event.from_address, event.keys, event.data)
+    }
+}
+impl TryFrom<starknet::core::types::Event> for OtherWritten {
+    type Error = String;
+    fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
+        Self::try_from_event(event.from_address, event.keys, event.data)
+    }
+}
+pub struct SimpleWritten {
+    pub before: starknet::core::types::Felt,
+    pub after: starknet::core::types::Felt,
+}
+impl cainome_cairo_serde::CairoSerde for SimpleWritten {
+    type RustType = Self;
+    const SERIALIZED_SIZE: std::option::Option<usize> = None;
+    #[inline]
+    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+        let mut __size = 0;
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.before);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.after);
+        __size
+    }
+    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+        let mut __out: Vec<starknet::core::types::Felt> = vec![];
+        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.before));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.after));
+        __out
+    }
+    fn cairo_deserialize(
+        __felts: &[starknet::core::types::Felt],
+        __offset: usize,
+    ) -> cainome_cairo_serde::Result<Self::RustType> {
+        let mut __offset = __offset;
+        let before = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&before);
+        let after = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&after);
+        Ok(SimpleWritten { before, after })
+    }
+}
+impl SimpleWritten {
+    pub fn event_selector() -> starknet::core::types::Felt {
+        starknet::core::utils::get_selector_from_name("SimpleWritten").unwrap()
+    }
+    pub fn event_name() -> &'static str {
+        "SimpleWritten"
+    }
+    pub(crate) fn try_from_event(
+        from_address: starknet::core::types::Felt,
+        keys: Vec<starknet::core::types::Felt>,
+        data: Vec<starknet::core::types::Felt>,
+    ) -> Result<Self, String> {
+        if keys.is_empty() {
+            return Err("Event has no key".to_string());
+        }
+        use cainome_cairo_serde::CairoSerde;
+        if keys[0]
+            == starknet::core::utils::get_selector_from_name("SimpleWritten")
+                .unwrap_or_else(|_| panic!("Invalid selector for {}", "SimpleWritten"))
+        {
+            let res = SimpleWritten::cairo_deserialize(&data, 0).map_err(|e| {
+                format!(
+                    "Could not deserialize {} event data: {:?}",
+                    "SimpleWritten", e
+                )
+            })?;
+            return Ok(res);
+        }
+        Err(format!("Could not match any event from keys {:?}", keys))
+    }
+}
+impl TryFrom<starknet::core::types::EmittedEvent> for SimpleWritten {
+    type Error = String;
+    fn try_from(event: starknet::core::types::EmittedEvent) -> Result<Self, Self::Error> {
+        Self::try_from_event(event.from_address, event.keys, event.data)
+    }
+}
+impl TryFrom<starknet::core::types::Event> for SimpleWritten {
+    type Error = String;
+    fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
+        Self::try_from_event(event.from_address, event.keys, event.data)
     }
 }

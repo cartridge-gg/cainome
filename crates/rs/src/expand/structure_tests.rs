@@ -4,7 +4,7 @@ use cainome_parser::{
 };
 
 use proc_macro2::TokenStream;
-use syn::{parse_quote, ItemStruct};
+use syn::parse_quote;
 
 use crate::expand::{for_tests::assert_code_has, Expandable, ExpansionContextFactory, Module};
 
@@ -22,7 +22,7 @@ fn test_structure_expand_empty() {
         .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
-    let expected: ItemStruct = parse_quote! {
+    let expected = parse_quote! {
         pub struct Type {}
     };
 
@@ -47,7 +47,7 @@ fn test_structure_expand_basic_field() {
         .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
-    let expected: ItemStruct = parse_quote! {
+    let expected = parse_quote! {
         pub struct Type {
             pub f1: starknet::core::types::Felt
         }
@@ -76,7 +76,7 @@ fn test_structure_expand_with_derive() {
         .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
-    let expected: ItemStruct = parse_quote! {
+    let expected = parse_quote! {
         #[derive(Clone, serde::Deserialize, serde::Serialize,)]
         pub struct Type {
             pub f1: starknet::core::types::Felt
@@ -106,7 +106,7 @@ fn test_structure_expand_with_option_field() {
         .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
-    let expected: ItemStruct = parse_quote! {
+    let expected = parse_quote! {
         #[derive(Clone, serde::Deserialize, serde::Serialize,)]
         pub struct Type {
             pub f1: Option<starknet::core::types::Felt>
@@ -136,7 +136,7 @@ fn test_structure_expand_with_array_field() {
         .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
-    let expected: ItemStruct = parse_quote! {
+    let expected = parse_quote! {
         #[derive(Clone, serde::Deserialize, serde::Serialize,)]
         pub struct Type {
             pub f1: Vec<starknet::core::types::Felt>
@@ -199,10 +199,10 @@ fn test_structure_expand_with_tuple_field() {
         .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
-    let expected: ItemStruct = parse_quote! {
-        #[derive(Clone, serde::Deserialize, serde::Serialize,)]
+    let expected = parse_quote! {
+        #[derive(Clone, serde::Deserialize, serde::Serialize)]
         pub struct Type {
-            pub f1: (starknet::core::types::Felt, Option<starknet::core::types::Felt>)
+            pub f1: (starknet::core::types::Felt, Option<starknet::core::types::Felt>),
         }
     };
 
@@ -240,7 +240,7 @@ fn test_structure_expand_with_self_reference() {
     // TODO(@baitcode): This is incorrect. Should be Box<> or something.
     // Discuss with @glihm
 
-    let expected: ItemStruct = parse_quote! {
+    let expected = parse_quote! {
         #[derive(Clone, serde::Deserialize, serde::Serialize,)]
         pub struct Type {
             pub f1: crate::my::Type
@@ -356,7 +356,7 @@ fn structure_with_fields_conflicting_with_keywords() {
         .with_includes(structure.expand(&ctx))
         .to_token_stream();
 
-    let expected: ItemStruct = parse_quote! {
+    let expected = parse_quote! {
         pub struct Type {
             pub r#type: starknet::core::types::Felt,
             pub r#match: starknet::core::types::Felt,

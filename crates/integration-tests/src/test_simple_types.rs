@@ -6,5 +6,6 @@ abigen!(
     cainome_serde_path("cainome_cairo_serde")
 );
 
+#[allow(unused)]
 #[tokio::main]
 async fn main() {}

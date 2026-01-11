@@ -77,7 +77,7 @@ fn test_naive_contract_with_view_function() {
         #[allow(clippy::too_many_arguments)]
         pub fn get_value(
             &self,
-            in1: &starknet::core::types::Felt
+            in1: &starknet::core::types::Felt,
         ) -> cainome::cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
             use cainome::cairo_serde::CairoSerde;
             let mut __calldata = vec![];
@@ -87,7 +87,7 @@ fn test_naive_contract_with_view_function() {
                 entry_point_selector: starknet::macros::selector!("get_value"),
                 calldata: __calldata,
             };
-            cainome::cairo_serde::call::FCall::new(__call, self.provider(), )
+            cainome::cairo_serde::call::FCall::new(__call, self.provider())
         }
     };
 
@@ -98,7 +98,7 @@ fn test_naive_contract_with_view_function() {
         #[allow(clippy::too_many_arguments)]
         pub fn get_value(
             &self,
-            in1: &starknet::core::types::Felt
+            in1: &starknet::core::types::Felt,
         ) -> cainome::cairo_serde::call::FCall<P, starknet::core::types::Felt> {
             use cainome::cairo_serde::CairoSerde;
             let mut __calldata = vec![];
@@ -108,7 +108,7 @@ fn test_naive_contract_with_view_function() {
                 entry_point_selector: starknet::macros::selector!("get_value"),
                 calldata: __calldata,
             };
-            cainome::cairo_serde::call::FCall::new(__call, self.provider(), )
+            cainome::cairo_serde::call::FCall::new(__call, self.provider())
         }
     };
 
@@ -146,7 +146,7 @@ fn test_naive_contract_with_view_mutating_function() {
         #[allow(clippy::too_many_arguments)]
         pub fn get_value_getcall(
             &self,
-            in1: &starknet::core::types::Felt
+            in1: &starknet::core::types::Felt,
         ) -> starknet::core::types::Call {
             use cainome::cairo_serde::CairoSerde;
             let mut __calldata = vec![];
@@ -166,7 +166,7 @@ fn test_naive_contract_with_view_mutating_function() {
         #[allow(clippy::too_many_arguments)]
         pub fn get_value(
             &self,
-            in1: &starknet::core::types::Felt
+            in1: &starknet::core::types::Felt,
         ) -> starknet::accounts::ExecutionV3<A> {
             let __call = self.get_value_getcall(in1);
             self.account.execute_v3(vec![__call])

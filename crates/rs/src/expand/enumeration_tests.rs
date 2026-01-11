@@ -4,9 +4,12 @@ use cainome_parser::{
 };
 
 use proc_macro2::TokenStream;
-use syn::{parse_quote, ItemEnum};
+use syn::parse_quote;
 
-use crate::expand::{for_tests::assert_code_has, Expandable, ExpansionContextFactory, Module};
+use crate::expand::{
+    for_tests::{assert_code_has, assert_code_has_statement},
+    Expandable, ExpansionContextFactory, Module,
+};
 
 #[test]
 fn test_enum_expand_empty() {
@@ -47,7 +50,7 @@ fn test_enum_expand_simple_variants() {
 
     let expected: TokenStream = parse_quote! {
         pub enum Enum {
-            variant1(starknet::core::types::Felt)
+            variant1(starknet::core::types::Felt),
         }
     };
 
@@ -100,7 +103,7 @@ fn test_enum_expand_core_type_variants() {
         .with_includes(enumeration.expand(&ctx))
         .to_token_stream();
 
-    let expected: ItemEnum = parse_quote! {
+    let expected = parse_quote! {
         pub enum Enum {
             variant0(starknet::core::types::Felt),
             variant1(starknet::core::types::Felt),
@@ -134,7 +137,7 @@ fn test_enum_expand_core_type_variants() {
             variant13(i128),
             variant14(cainome::cairo_serde::ContractAddress),
             variant15(cainome::cairo_serde::ClassHash),
-            variant16(cainome::cairo_serde::Bytes31)
+            variant16(cainome::cairo_serde::Bytes31),
         }
     };
 
@@ -167,6 +170,7 @@ fn test_enumeration_expand_with_containers_field() {
     let ctx = ExpansionContextFactory::new("ContractName")
         .with_derives(vec!["Serde", "Clone"])
         .build();
+
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
@@ -184,20 +188,17 @@ fn test_enumeration_expand_with_containers_field() {
                     starknet::core::types::Felt,
                     Option<starknet::core::types::Felt>
                 )
-            )
+            ),
         }
     };
 
     assert_code_has(&generated, &expected, "Struct not found");
 
-    let expected: TokenStream = parse_quote! {
-        temp.extend(<(
-            starknet::core::types::Felt,
-            Option::<starknet::core::types::Felt>
-        )>::cairo_serialize(val));
+    let expected = parse_quote! {
+        temp.extend(<(starknet::core::types::Felt,Option::<starknet::core::types::Felt>)>::cairo_serialize(val));
     };
 
-    assert_code_has(&generated, &expected, "Tuple not found");
+    assert_code_has_statement(&generated, &expected, "Tuple not found");
 }
 
 #[test]

@@ -48,8 +48,8 @@ starknet-crypto = { git = "https://github.com/dojoengine/starknet-rs", branch = 
 starknet-types-core = { version = "1.0.0" }
 tokio = { version = "1.40", features = ["full"] }
 katana-runner = { git = "https://github.com/dojoengine/katana", branch = "types-rs-100-blake2s" }
-cairo-lang-starknet-classes = "=2.12.3"
-
+cairo-lang-starknet-classes = "=2.13.1"
+# "=2.12.3"
 [dependencies]
 camino.workspace = true
 cainome-rs-macro = { version = "0.5.1", path = "crates/rs-macro", optional = true }

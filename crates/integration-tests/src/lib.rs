@@ -30,3 +30,6 @@ pub mod test_cairo0;
 
 #[cfg(test)]
 pub mod test_option_result;
+
+#[cfg(test)]
+pub mod test_substitutions;

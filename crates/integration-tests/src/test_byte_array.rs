@@ -6,8 +6,9 @@ use cainome_rs_macro::abigen;
 
 abigen!(
     MyContract,
-    "crates/integration-tests/src/bindings/byte_array.json",
-    cainome_serde_path("cainome_cairo_serde")
+    "contracts/abi/byte_array.abi.json",
+    cainome_serde_path("cainome_cairo_serde"),
+    root_module_path("crate::test_byte_array"),
 );
 
 const UDC_ADDRESS: Felt =
@@ -16,7 +17,9 @@ const UDC_ADDRESS: Felt =
 #[tokio::main]
 #[katana_runner::test(accounts = 2, fee = false, block_time = 1)]
 async fn test_byte_array(runner: &RunnerCtx) {
-    let path = std::path::Path::new("./src/bindings/byte_array.json");
+    let path =
+        std::path::Path::new("../../contracts/target/dev/contracts_byte_array.contract_class.json");
+
     let account = runner.account(0);
 
     let class_hash = MyContract::declare(&path, &account).await.unwrap();
