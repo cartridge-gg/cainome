@@ -25,12 +25,6 @@ mod event {
         value: felt252,
     }
 
-    #[derive(Drop, Serde)]
-    enum Pizda<T> {
-        A: T,
-        B,
-        C,
-    }
 
     #[derive(Drop, starknet::Event)]
     struct MyEventC {
@@ -48,9 +42,7 @@ mod event {
     }
 
     #[external(v0)]
-    fn emit_a(
-        ref self: ContractState, header: felt252, value: Span<felt252>, test: Pizda<felt252>,
-    ) {
+    fn emit_a(ref self: ContractState, header: felt252, value: Span<felt252>) {
         self.emit(MyEventA { header, value });
     }
 
