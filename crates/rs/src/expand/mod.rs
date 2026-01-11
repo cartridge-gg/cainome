@@ -69,8 +69,6 @@ impl ExpansionResult {
             }
         };
 
-        // println!("Created ExpansionResult for: {}", full_path);
-
         res
     }
 

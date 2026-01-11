@@ -36,8 +36,6 @@ fn legacy_expand(out_name: &str, ctx: &ExpansionContext) {
 
     let expanded = cainome_rs::abi_to_tokenstream(&registry, &ctx);
 
-    println!("{}", expanded.to_string());
-
     let syntax_tree = syn::parse2::<syn::File>(expanded).unwrap();
     let s = prettyplease::unparse(&syntax_tree);
 
