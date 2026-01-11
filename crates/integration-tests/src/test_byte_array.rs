@@ -1,4 +1,5 @@
 use katana_runner::RunnerCtx;
+use starknet::contract::UdcSelector;
 use starknet_types_core::felt::Felt;
 
 use cainome_cairo_serde::ByteArray;
@@ -11,9 +12,6 @@ abigen!(
     root_module_path("crate::test_byte_array"),
 );
 
-const UDC_ADDRESS: Felt =
-    Felt::from_hex_unwrap("0x41a78e741e5af2fec34b695679bc6891742439f7afb8484ecd7766661ad02bf");
-
 #[tokio::main]
 #[katana_runner::test(accounts = 2, fee = false, block_time = 1)]
 async fn test_byte_array(runner: &RunnerCtx) {
@@ -22,11 +20,11 @@ async fn test_byte_array(runner: &RunnerCtx) {
 
     let account = runner.account(0);
 
-    let class_hash = MyContract::declare(&path, &account).await.unwrap();
+    let class_hash = MyContract::declare(&path, &account, true).await.unwrap();
 
     runner.dev_client().generate_block().await.unwrap();
 
-    let contract = MyContract::deploy(UDC_ADDRESS, account, class_hash, vec![])
+    let contract = MyContract::deploy(UdcSelector::Legacy, account, class_hash)
         .await
         .unwrap();
 

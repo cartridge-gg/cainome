@@ -26,6 +26,10 @@ pub fn snrs_types() -> Type {
     str_to_type("starknet::core::types")
 }
 
+pub fn snrs_contract() -> Type {
+    str_to_type("starknet::contract")
+}
+
 pub fn snrs_utils() -> Type {
     str_to_type("starknet::core::utils")
 }
@@ -40,11 +44,6 @@ pub fn cairo_lang() -> Type {
 
 pub fn snrs_providers() -> Type {
     str_to_type("starknet::providers")
-}
-
-#[inline]
-pub fn cainome_cairo_serde_path() -> String {
-    String::from("cainome::cairo_serde")
 }
 
 #[inline]

@@ -27,8 +27,8 @@ fn colorize_rust(code: &str) -> String {
 }
 
 pub fn output_pretty(code: &TokenStream) {
-    // let generated_ast = &syn::parse2(code.to_token_stream()).unwrap();
-    let s = code.to_token_stream().to_string();
+    let generated_ast: &File = &syn::parse2(code.to_token_stream()).unwrap();
+    let s = prettyplease::unparse(generated_ast);
     println!("{}", colorize_rust(&s));
 }
 

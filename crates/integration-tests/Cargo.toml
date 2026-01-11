@@ -37,3 +37,4 @@ cainome-cairo-serde-derive = { path = "../cairo-serde-derive" }
 smol_str = "=0.3.2"
 rand = "0.9.2"
 paste = "1.0"
+starknet_api = "=0.16.0-rc.1"

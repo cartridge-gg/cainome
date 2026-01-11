@@ -4,6 +4,7 @@ use katana_runner::{KatanaDevClient, RunnerCtx};
 
 use starknet::{
     accounts::{Account, ConnectedAccount},
+    contract::UdcSelector,
     core::types::{BlockId, BlockTag},
 };
 use starknet_types_core::felt::Felt;
@@ -22,13 +23,13 @@ async fn deploy_simple_get_set_and_assert_state(runner: &RunnerCtx) {
         "../../contracts/target/dev/contracts_simple_get_set.contract_class.json",
     );
 
-    let class_hash = SimpleGetSet::declare(path, &account).await.unwrap();
+    let class_hash = SimpleGetSet::declare(path, &account, true).await.unwrap();
 
     println!("Class hash: {}", class_hash.to_hex_string());
 
     runner.dev_client().generate_block().await.unwrap();
 
-    let simple_get_set = SimpleGetSet::deploy(UDC_ADDRESS, account.clone(), class_hash, vec![])
+    let simple_get_set = SimpleGetSet::deploy(UdcSelector::Legacy, account.clone(), class_hash)
         .await
         .unwrap();
 
@@ -39,6 +40,8 @@ async fn deploy_simple_get_set_and_assert_state(runner: &RunnerCtx) {
 
     let reader_interface =
         SimpleGetSetReader::new(simple_get_set.address, runner.starknet_provider());
+
+    runner.dev_client().generate_block().await.unwrap();
 
     // To call a view, there is no need to initialize an account. You can directly
     // use the name of the method in the ABI and then use the `call()` method.

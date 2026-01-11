@@ -3,7 +3,7 @@ use katana_runner::RunnerCtx;
 use starknet::accounts::Account;
 use starknet_types_core::felt::Felt;
 
-use crate::bindings::erc20::ERC20;
+use crate::bindings::erc20::{ERC20Calldata, ERC20};
 
 const UDC_ADDRESS: Felt =
     Felt::from_hex_unwrap("0x41a78e741e5af2fec34b695679bc6891742439f7afb8484ecd7766661ad02bf");
@@ -16,13 +16,20 @@ async fn deploy_erc_20_and_call_its_methods(runner: &RunnerCtx) {
 
     let path = std::path::Path::new("../../contracts/prebuilt/erc20.json");
 
-    let class_hash = ERC20::declare(path, &account).await.unwrap();
+    let class_hash = ERC20::declare(path, &account, true).await.unwrap();
 
     runner.dev_client().generate_block().await.unwrap();
 
-    let erc20 = ERC20::deploy(UDC_ADDRESS, &account, class_hash, vec![account.address()])
-        .await
-        .unwrap();
+    let erc20 = ERC20::deploy(
+        starknet::contract::UdcSelector::Legacy,
+        &account,
+        class_hash,
+        &ERC20Calldata {
+            owner: account.address().into(),
+        },
+    )
+    .await
+    .unwrap();
 
     let low = Felt::from(1374587365u32);
 

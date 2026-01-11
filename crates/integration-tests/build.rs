@@ -1,4 +1,5 @@
 use cainome_parser::{AbiParser, ParserContext};
+
 use cainome_rs::expand::{ExpansionContext, ExpansionContextFactory};
 use starknet::core::types::contract::legacy::{LegacyContractClass, RawLegacyAbiEntry};
 use starknet::core::types::contract::{AbiEntry, SierraClass};
@@ -34,6 +35,8 @@ fn legacy_expand(out_name: &str, ctx: &ExpansionContext) {
         AbiParser::build_registry(abi, ParserContext::from(&ctx)).expect("failed tokens parsing");
 
     let expanded = cainome_rs::abi_to_tokenstream(&registry, &ctx);
+
+    println!("{}", expanded.to_string());
 
     let syntax_tree = syn::parse2::<syn::File>(expanded).unwrap();
     let s = prettyplease::unparse(&syntax_tree);
@@ -91,12 +94,14 @@ fn expand(out_name: &str, ctx: &ExpansionContext) {
 }
 
 fn main() {
+    // return;
     legacy_expand(
         "./src/bindings/kkrt_account_cairo0.rs",
         &ExpansionContextFactory::new("../../contracts/cairo0/kkrt_account_cairo0.json")
             .with_contract_name("MyContract")
             .with_derives(["Debug"])
             .with_cainome_serde_path("cainome_cairo_serde")
+            // .with_add_deployment(false)
             .build(),
     );
     expand(

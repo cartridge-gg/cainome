@@ -200,10 +200,12 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> UDC<A> {
     pub async fn declare(
         path: &std::path::Path,
         account: &A,
+        use_blake2s_class_hash: bool,
     ) -> Result<starknet::core::types::Felt, Box<dyn std::error::Error>>
     where
         A::SignError: 'static,
     {
+        use starknet_api::contract_class::compiled_class_hash::HashableCompiledClass;
         let sierra_class: cairo_lang_starknet_classes::contract_class::ContractClass =
             serde_json::from_slice::<cairo_lang_starknet_classes::contract_class::ContractClass>(
                 std::fs::read(path)?.as_slice(),
@@ -213,8 +215,13 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> UDC<A> {
             false,
             180000usize,
         )?;
+        let hash_version = if use_blake2s_class_hash {
+            starknet_api::contract_class::compiled_class_hash::HashVersion::V2
+        } else {
+            starknet_api::contract_class::compiled_class_hash::HashVersion::V1
+        };
         let class_hash = starknet::core::types::Felt::from_bytes_be(
-            &casm_class.compiled_class_hash().to_bytes_be(),
+            &casm_class.hash(&hash_version).0.to_bytes_be(),
         );
         let contract_artifact: starknet::core::types::contract::SierraClass =
             serde_json::from_reader(std::fs::File::open(path)?)?;

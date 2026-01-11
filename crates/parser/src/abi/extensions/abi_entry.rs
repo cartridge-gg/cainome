@@ -2,10 +2,11 @@ use std::{cell::RefCell, rc::Rc};
 
 use starknet::core::types::contract::{
     legacy::{
-        RawLegacyAbiEntry, RawLegacyEvent, RawLegacyFunction, RawLegacyL1Handler, RawLegacyStruct,
+        RawLegacyAbiEntry, RawLegacyConstructor, RawLegacyEvent, RawLegacyFunction,
+        RawLegacyL1Handler, RawLegacyStruct,
     },
-    AbiEntry, AbiEnum, AbiEvent, AbiEventEnum, AbiEventStruct, AbiFunction, AbiInterface,
-    AbiStruct, EventFieldKind, TypedAbiEvent, UntypedAbiEvent,
+    AbiConstructor, AbiEntry, AbiEnum, AbiEvent, AbiEventEnum, AbiEventStruct, AbiFunction,
+    AbiInterface, AbiStruct, EventFieldKind, TypedAbiEvent, UntypedAbiEvent,
 };
 
 use crate::{
@@ -13,7 +14,7 @@ use crate::{
         parser::{Named, Parseable, WithDependencies},
         registry::TypeRegistry,
     },
-    tokens::{EventKind, Interface},
+    tokens::{Constructor, EventKind, Interface},
 };
 use crate::{
     tokens::{Enum, Event, Function, NamedToken, Struct, Token},
@@ -221,6 +222,23 @@ impl TokenConvertable for &AbiInterface {
     }
 }
 
+impl TokenConvertable for &AbiConstructor {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+        let mut constructor = Constructor::new(&self.name)?;
+
+        for input in self.inputs.iter() {
+            let token = registry.get(&input.r#type)?;
+
+            constructor.inputs.push(NamedToken {
+                name: input.name.clone(),
+                token: token,
+            });
+        }
+
+        Ok(Token::Constructor(constructor))
+    }
+}
+
 impl TryTokenConvertable for AbiEntry {
     fn try_to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Option<Token>> {
         match self {
@@ -234,8 +252,7 @@ impl TryTokenConvertable for AbiEntry {
             AbiEntry::Event(AbiEvent::Untyped(abi_event)) => abi_event.try_to_token(registry),
             AbiEntry::Struct(abi_struct) => abi_struct.try_to_token(registry),
             AbiEntry::Enum(abi_enum) => abi_enum.try_to_token(registry),
-            // TODO: should be use for contract deployment (in the future)
-            AbiEntry::Constructor(_) => Ok(None),
+            AbiEntry::Constructor(abi_constructor) => abi_constructor.try_to_token(registry),
             // TODO: Maybe rethink
             AbiEntry::Impl(_) => Ok(None),
             AbiEntry::Interface(abi_interface) => abi_interface.try_to_token(registry),
@@ -356,7 +373,7 @@ impl Parseable for AbiEntry {}
 impl TryTokenConvertable for RawLegacyAbiEntry {
     fn try_to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Option<Token>> {
         match self {
-            RawLegacyAbiEntry::Constructor(_) => Ok(None),
+            RawLegacyAbiEntry::Constructor(constructor) => Ok(constructor.try_to_token(registry)?),
             RawLegacyAbiEntry::Function(function) => function.try_to_token(registry),
             RawLegacyAbiEntry::Struct(structure) => structure.try_to_token(registry),
             RawLegacyAbiEntry::L1Handler(l1_handler) => l1_handler.try_to_token(registry),
@@ -455,6 +472,23 @@ impl TokenConvertable for &RawLegacyFunction {
         }
 
         Ok(Token::Function(function))
+    }
+}
+
+impl TokenConvertable for &RawLegacyConstructor {
+    fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
+        let mut constructor = Constructor::new(&self.name)?;
+
+        for input in self.inputs.iter() {
+            let token = registry.get(&input.r#type)?;
+
+            constructor.inputs.push(NamedToken {
+                name: input.name.clone(),
+                token: token,
+            });
+        }
+
+        Ok(Token::Constructor(constructor))
     }
 }
 
