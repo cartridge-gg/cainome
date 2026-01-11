@@ -10,6 +10,114 @@ pub mod openzeppelin {
         pub mod ownable {
             pub mod ownable {
                 pub mod OwnableComponent {
+                    pub struct OwnershipTransferred {
+                        pub previous_owner: cainome_cairo_serde::ContractAddress,
+                        pub new_owner: cainome_cairo_serde::ContractAddress,
+                    }
+                    impl cainome_cairo_serde::CairoSerde for OwnershipTransferred {
+                        type RustType = Self;
+                        const SERIALIZED_SIZE: std::option::Option<usize> = None;
+                        #[inline]
+                        fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+                            let mut __size = 0;
+                            __size += cainome_cairo_serde::ContractAddress::cairo_serialized_size(
+                                &__rust.previous_owner,
+                            );
+                            __size += cainome_cairo_serde::ContractAddress::cairo_serialized_size(
+                                &__rust.new_owner,
+                            );
+                            __size
+                        }
+                        fn cairo_serialize(
+                            __rust: &Self::RustType,
+                        ) -> Vec<starknet::core::types::Felt> {
+                            let mut __out: Vec<starknet::core::types::Felt> = vec![];
+                            __out.extend(cainome_cairo_serde::ContractAddress::cairo_serialize(
+                                &__rust.previous_owner,
+                            ));
+                            __out.extend(cainome_cairo_serde::ContractAddress::cairo_serialize(
+                                &__rust.new_owner,
+                            ));
+                            __out
+                        }
+                        fn cairo_deserialize(
+                            __felts: &[starknet::core::types::Felt],
+                            __offset: usize,
+                        ) -> cainome_cairo_serde::Result<Self::RustType> {
+                            let mut __offset = __offset;
+                            let previous_owner =
+                                cainome_cairo_serde::ContractAddress::cairo_deserialize(
+                                    __felts, __offset,
+                                )?;
+                            __offset += cainome_cairo_serde::ContractAddress::cairo_serialized_size(
+                                &previous_owner,
+                            );
+                            let new_owner =
+                                cainome_cairo_serde::ContractAddress::cairo_deserialize(
+                                    __felts, __offset,
+                                )?;
+                            __offset += cainome_cairo_serde::ContractAddress::cairo_serialized_size(
+                                &new_owner,
+                            );
+                            Ok(OwnershipTransferred {
+                                previous_owner,
+                                new_owner,
+                            })
+                        }
+                    }
+                    impl OwnershipTransferred {
+                        pub fn event_selector() -> starknet::core::types::Felt {
+                            starknet::core::utils::get_selector_from_name("OwnershipTransferred")
+                                .unwrap()
+                        }
+                        pub fn event_name() -> &'static str {
+                            "OwnershipTransferred"
+                        }
+                        pub(crate) fn try_from_event(
+                            from_address: starknet::core::types::Felt,
+                            keys: Vec<starknet::core::types::Felt>,
+                            data: Vec<starknet::core::types::Felt>,
+                        ) -> Result<Self, String> {
+                            if keys.is_empty() {
+                                return Err("Event has no key".to_string());
+                            }
+                            use cainome_cairo_serde::CairoSerde;
+                            if keys[0]
+                                == starknet::core::utils::get_selector_from_name(
+                                    "OwnershipTransferred",
+                                )
+                                .unwrap_or_else(|_| {
+                                    panic!("Invalid selector for {}", "OwnershipTransferred")
+                                })
+                            {
+                                let res = OwnershipTransferred::cairo_deserialize(&data, 0)
+                                    .map_err(|e| {
+                                        format!(
+                                            "Could not deserialize {} event data: {:?}",
+                                            "OwnershipTransferred", e
+                                        )
+                                    })?;
+                                return Ok(res);
+                            }
+                            Err(format!("Could not match any event from keys {:?}", keys))
+                        }
+                    }
+                    impl TryFrom<starknet::core::types::EmittedEvent> for OwnershipTransferred {
+                        type Error = String;
+                        fn try_from(
+                            event: starknet::core::types::EmittedEvent,
+                        ) -> Result<Self, Self::Error> {
+                            Self::try_from_event(event.from_address, event.keys, event.data)
+                        }
+                    }
+                    impl TryFrom<starknet::core::types::Event> for OwnershipTransferred {
+                        type Error = String;
+                        fn try_from(
+                            event: starknet::core::types::Event,
+                        ) -> Result<Self, Self::Error> {
+                            Self::try_from_event(event.from_address, event.keys, event.data)
+                        }
+                    }
                     pub enum Event {
                         OwnershipTransferred(
                             crate::bindings::erc20::openzeppelin::access::ownable::ownable::OwnableComponent::OwnershipTransferred,
@@ -124,114 +232,6 @@ pub mod openzeppelin {
                         }
                     }
                     impl TryFrom<starknet::core::types::Event> for Event {
-                        type Error = String;
-                        fn try_from(
-                            event: starknet::core::types::Event,
-                        ) -> Result<Self, Self::Error> {
-                            Self::try_from_event(event.from_address, event.keys, event.data)
-                        }
-                    }
-                    pub struct OwnershipTransferred {
-                        pub previous_owner: cainome_cairo_serde::ContractAddress,
-                        pub new_owner: cainome_cairo_serde::ContractAddress,
-                    }
-                    impl cainome_cairo_serde::CairoSerde for OwnershipTransferred {
-                        type RustType = Self;
-                        const SERIALIZED_SIZE: std::option::Option<usize> = None;
-                        #[inline]
-                        fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-                            let mut __size = 0;
-                            __size += cainome_cairo_serde::ContractAddress::cairo_serialized_size(
-                                &__rust.previous_owner,
-                            );
-                            __size += cainome_cairo_serde::ContractAddress::cairo_serialized_size(
-                                &__rust.new_owner,
-                            );
-                            __size
-                        }
-                        fn cairo_serialize(
-                            __rust: &Self::RustType,
-                        ) -> Vec<starknet::core::types::Felt> {
-                            let mut __out: Vec<starknet::core::types::Felt> = vec![];
-                            __out.extend(cainome_cairo_serde::ContractAddress::cairo_serialize(
-                                &__rust.previous_owner,
-                            ));
-                            __out.extend(cainome_cairo_serde::ContractAddress::cairo_serialize(
-                                &__rust.new_owner,
-                            ));
-                            __out
-                        }
-                        fn cairo_deserialize(
-                            __felts: &[starknet::core::types::Felt],
-                            __offset: usize,
-                        ) -> cainome_cairo_serde::Result<Self::RustType> {
-                            let mut __offset = __offset;
-                            let previous_owner =
-                                cainome_cairo_serde::ContractAddress::cairo_deserialize(
-                                    __felts, __offset,
-                                )?;
-                            __offset += cainome_cairo_serde::ContractAddress::cairo_serialized_size(
-                                &previous_owner,
-                            );
-                            let new_owner =
-                                cainome_cairo_serde::ContractAddress::cairo_deserialize(
-                                    __felts, __offset,
-                                )?;
-                            __offset += cainome_cairo_serde::ContractAddress::cairo_serialized_size(
-                                &new_owner,
-                            );
-                            Ok(OwnershipTransferred {
-                                previous_owner,
-                                new_owner,
-                            })
-                        }
-                    }
-                    impl OwnershipTransferred {
-                        pub fn event_selector() -> starknet::core::types::Felt {
-                            starknet::core::utils::get_selector_from_name("OwnershipTransferred")
-                                .unwrap()
-                        }
-                        pub fn event_name() -> &'static str {
-                            "OwnershipTransferred"
-                        }
-                        pub(crate) fn try_from_event(
-                            from_address: starknet::core::types::Felt,
-                            keys: Vec<starknet::core::types::Felt>,
-                            data: Vec<starknet::core::types::Felt>,
-                        ) -> Result<Self, String> {
-                            if keys.is_empty() {
-                                return Err("Event has no key".to_string());
-                            }
-                            use cainome_cairo_serde::CairoSerde;
-                            if keys[0]
-                                == starknet::core::utils::get_selector_from_name(
-                                    "OwnershipTransferred",
-                                )
-                                .unwrap_or_else(|_| {
-                                    panic!("Invalid selector for {}", "OwnershipTransferred")
-                                })
-                            {
-                                let res = OwnershipTransferred::cairo_deserialize(&data, 0)
-                                    .map_err(|e| {
-                                        format!(
-                                            "Could not deserialize {} event data: {:?}",
-                                            "OwnershipTransferred", e
-                                        )
-                                    })?;
-                                return Ok(res);
-                            }
-                            Err(format!("Could not match any event from keys {:?}", keys))
-                        }
-                    }
-                    impl TryFrom<starknet::core::types::EmittedEvent> for OwnershipTransferred {
-                        type Error = String;
-                        fn try_from(
-                            event: starknet::core::types::EmittedEvent,
-                        ) -> Result<Self, Self::Error> {
-                            Self::try_from_event(event.from_address, event.keys, event.data)
-                        }
-                    }
-                    impl TryFrom<starknet::core::types::Event> for OwnershipTransferred {
                         type Error = String;
                         fn try_from(
                             event: starknet::core::types::Event,
@@ -402,6 +402,172 @@ pub mod openzeppelin {
         pub mod erc20 {
             pub mod erc20 {
                 pub mod ERC20Component {
+                    pub enum Event {
+                        Transfer(
+                            crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Transfer,
+                        ),
+                        Approval(
+                            crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Approval,
+                        ),
+                    }
+                    impl cainome_cairo_serde::CairoSerde for Event {
+                        type RustType = Self;
+                        const SERIALIZED_SIZE: std::option::Option<usize> =
+                            std::option::Option::None;
+                        #[inline]
+                        fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+                            match __rust {
+                                Event::Transfer(val) => {
+                                    crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Transfer::cairo_serialized_size(
+                                        val,
+                                    ) + 1
+                                }
+                                Event::Approval(val) => {
+                                    crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Approval::cairo_serialized_size(
+                                        val,
+                                    ) + 1
+                                }
+                                _ => 0,
+                            }
+                        }
+                        fn cairo_serialize(
+                            __rust: &Self::RustType,
+                        ) -> Vec<starknet::core::types::Felt> {
+                            match __rust {
+                                Event::Transfer(val) => {
+                                    let mut temp = vec![];
+                                    temp.extend(usize::cairo_serialize(&0usize));
+                                    temp.extend(
+                                        crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Transfer::cairo_serialize(
+                                            val,
+                                        ),
+                                    );
+                                    temp
+                                }
+                                Event::Approval(val) => {
+                                    let mut temp = vec![];
+                                    temp.extend(usize::cairo_serialize(&1usize));
+                                    temp.extend(
+                                        crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Approval::cairo_serialize(
+                                            val,
+                                        ),
+                                    );
+                                    temp
+                                }
+                                _ => vec![],
+                            }
+                        }
+                        fn cairo_deserialize(
+                            __felts: &[starknet::core::types::Felt],
+                            __offset: usize,
+                        ) -> cainome_cairo_serde::Result<Self::RustType> {
+                            let __f = __felts[__offset];
+                            let __index =
+                                u128::from_be_bytes(__f.to_bytes_be()[16..].try_into().unwrap());
+                            match __index as usize {
+                                0usize => {
+                                    Ok(
+                                        Event::Transfer(
+                                            crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Transfer::cairo_deserialize(
+                                                __felts,
+                                                __offset + 1,
+                                            )?,
+                                        ),
+                                    )
+                                }
+                                1usize => {
+                                    Ok(
+                                        Event::Approval(
+                                            crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Approval::cairo_deserialize(
+                                                __felts,
+                                                __offset + 1,
+                                            )?,
+                                        ),
+                                    )
+                                }
+                                _ => {
+                                    return Err(
+                                        cainome_cairo_serde::Error::Deserialize(
+                                            format!("Index not handle for enum {}", "Event"),
+                                        ),
+                                    );
+                                }
+                            }
+                        }
+                    }
+                    impl Event {
+                        pub fn event_selector() -> starknet::core::types::Felt {
+                            starknet::core::utils::get_selector_from_name("Event").unwrap()
+                        }
+                        pub fn event_name() -> &'static str {
+                            "Event"
+                        }
+                        pub(crate) fn try_from_event(
+                            from_address: starknet::core::types::Felt,
+                            keys: Vec<starknet::core::types::Felt>,
+                            data: Vec<starknet::core::types::Felt>,
+                        ) -> Result<Self, String> {
+                            if keys.is_empty() {
+                                return Err("Event has no key".to_string());
+                            }
+                            use cainome_cairo_serde::CairoSerde;
+                            if keys[0]
+                                == starknet::core::utils::get_selector_from_name("Transfer")
+                                    .unwrap_or_else(|_| {
+                                        panic!("Invalid selector for {}", "Transfer")
+                                    })
+                            {
+                                let res = crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Transfer::cairo_deserialize(
+                                        &data,
+                                        0,
+                                    )
+                                    .map_err(|e| {
+                                        format!(
+                                            "Could not deserialize {} event data: {:?}",
+                                            "crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Transfer",
+                                            e
+                                        )
+                                    })?;
+                                return Ok(Event::Transfer(res));
+                            }
+                            if keys[0]
+                                == starknet::core::utils::get_selector_from_name("Approval")
+                                    .unwrap_or_else(|_| {
+                                        panic!("Invalid selector for {}", "Approval")
+                                    })
+                            {
+                                let res = crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Approval::cairo_deserialize(
+                                        &data,
+                                        0,
+                                    )
+                                    .map_err(|e| {
+                                        format!(
+                                            "Could not deserialize {} event data: {:?}",
+                                            "crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Approval",
+                                            e
+                                        )
+                                    })?;
+                                return Ok(Event::Approval(res));
+                            }
+                            Err(format!("Could not match any event from keys {:?}", keys))
+                        }
+                    }
+                    impl TryFrom<starknet::core::types::EmittedEvent> for Event {
+                        type Error = String;
+                        fn try_from(
+                            event: starknet::core::types::EmittedEvent,
+                        ) -> Result<Self, Self::Error> {
+                            Self::try_from_event(event.from_address, event.keys, event.data)
+                        }
+                    }
+                    impl TryFrom<starknet::core::types::Event> for Event {
+                        type Error = String;
+                        fn try_from(
+                            event: starknet::core::types::Event,
+                        ) -> Result<Self, Self::Error> {
+                            Self::try_from_event(event.from_address, event.keys, event.data)
+                        }
+                    }
                     pub struct Transfer {
                         pub from: cainome_cairo_serde::ContractAddress,
                         pub to: cainome_cairo_serde::ContractAddress,
@@ -615,172 +781,6 @@ pub mod openzeppelin {
                             Self::try_from_event(event.from_address, event.keys, event.data)
                         }
                     }
-                    pub enum Event {
-                        Transfer(
-                            crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Transfer,
-                        ),
-                        Approval(
-                            crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Approval,
-                        ),
-                    }
-                    impl cainome_cairo_serde::CairoSerde for Event {
-                        type RustType = Self;
-                        const SERIALIZED_SIZE: std::option::Option<usize> =
-                            std::option::Option::None;
-                        #[inline]
-                        fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-                            match __rust {
-                                Event::Transfer(val) => {
-                                    crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Transfer::cairo_serialized_size(
-                                        val,
-                                    ) + 1
-                                }
-                                Event::Approval(val) => {
-                                    crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Approval::cairo_serialized_size(
-                                        val,
-                                    ) + 1
-                                }
-                                _ => 0,
-                            }
-                        }
-                        fn cairo_serialize(
-                            __rust: &Self::RustType,
-                        ) -> Vec<starknet::core::types::Felt> {
-                            match __rust {
-                                Event::Transfer(val) => {
-                                    let mut temp = vec![];
-                                    temp.extend(usize::cairo_serialize(&0usize));
-                                    temp.extend(
-                                        crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Transfer::cairo_serialize(
-                                            val,
-                                        ),
-                                    );
-                                    temp
-                                }
-                                Event::Approval(val) => {
-                                    let mut temp = vec![];
-                                    temp.extend(usize::cairo_serialize(&1usize));
-                                    temp.extend(
-                                        crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Approval::cairo_serialize(
-                                            val,
-                                        ),
-                                    );
-                                    temp
-                                }
-                                _ => vec![],
-                            }
-                        }
-                        fn cairo_deserialize(
-                            __felts: &[starknet::core::types::Felt],
-                            __offset: usize,
-                        ) -> cainome_cairo_serde::Result<Self::RustType> {
-                            let __f = __felts[__offset];
-                            let __index =
-                                u128::from_be_bytes(__f.to_bytes_be()[16..].try_into().unwrap());
-                            match __index as usize {
-                                0usize => {
-                                    Ok(
-                                        Event::Transfer(
-                                            crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Transfer::cairo_deserialize(
-                                                __felts,
-                                                __offset + 1,
-                                            )?,
-                                        ),
-                                    )
-                                }
-                                1usize => {
-                                    Ok(
-                                        Event::Approval(
-                                            crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Approval::cairo_deserialize(
-                                                __felts,
-                                                __offset + 1,
-                                            )?,
-                                        ),
-                                    )
-                                }
-                                _ => {
-                                    return Err(
-                                        cainome_cairo_serde::Error::Deserialize(
-                                            format!("Index not handle for enum {}", "Event"),
-                                        ),
-                                    );
-                                }
-                            }
-                        }
-                    }
-                    impl Event {
-                        pub fn event_selector() -> starknet::core::types::Felt {
-                            starknet::core::utils::get_selector_from_name("Event").unwrap()
-                        }
-                        pub fn event_name() -> &'static str {
-                            "Event"
-                        }
-                        pub(crate) fn try_from_event(
-                            from_address: starknet::core::types::Felt,
-                            keys: Vec<starknet::core::types::Felt>,
-                            data: Vec<starknet::core::types::Felt>,
-                        ) -> Result<Self, String> {
-                            if keys.is_empty() {
-                                return Err("Event has no key".to_string());
-                            }
-                            use cainome_cairo_serde::CairoSerde;
-                            if keys[0]
-                                == starknet::core::utils::get_selector_from_name("Transfer")
-                                    .unwrap_or_else(|_| {
-                                        panic!("Invalid selector for {}", "Transfer")
-                                    })
-                            {
-                                let res = crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Transfer::cairo_deserialize(
-                                        &data,
-                                        0,
-                                    )
-                                    .map_err(|e| {
-                                        format!(
-                                            "Could not deserialize {} event data: {:?}",
-                                            "crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Transfer",
-                                            e
-                                        )
-                                    })?;
-                                return Ok(Event::Transfer(res));
-                            }
-                            if keys[0]
-                                == starknet::core::utils::get_selector_from_name("Approval")
-                                    .unwrap_or_else(|_| {
-                                        panic!("Invalid selector for {}", "Approval")
-                                    })
-                            {
-                                let res = crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Approval::cairo_deserialize(
-                                        &data,
-                                        0,
-                                    )
-                                    .map_err(|e| {
-                                        format!(
-                                            "Could not deserialize {} event data: {:?}",
-                                            "crate::bindings::erc20::openzeppelin::token::erc20::erc20::ERC20Component::Approval",
-                                            e
-                                        )
-                                    })?;
-                                return Ok(Event::Approval(res));
-                            }
-                            Err(format!("Could not match any event from keys {:?}", keys))
-                        }
-                    }
-                    impl TryFrom<starknet::core::types::EmittedEvent> for Event {
-                        type Error = String;
-                        fn try_from(
-                            event: starknet::core::types::EmittedEvent,
-                        ) -> Result<Self, Self::Error> {
-                            Self::try_from_event(event.from_address, event.keys, event.data)
-                        }
-                    }
-                    impl TryFrom<starknet::core::types::Event> for Event {
-                        type Error = String;
-                        fn try_from(
-                            event: starknet::core::types::Event,
-                        ) -> Result<Self, Self::Error> {
-                            Self::try_from_event(event.from_address, event.keys, event.data)
-                        }
-                    }
                 }
             }
         }
@@ -844,46 +844,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ERC20<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn name(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("name"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn symbol(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("symbol"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn decimals(&self) -> cainome_cairo_serde::call::FCall<A::Provider, u8> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("decimals"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn totalSupply(
         &self,
     ) -> cainome_cairo_serde::call::FCall<A::Provider, cainome_cairo_serde::U256> {
@@ -910,6 +870,20 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ERC20<A> {
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
             entry_point_selector: starknet::macros::selector!("balanceOf"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn owner(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, cainome_cairo_serde::ContractAddress> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("owner"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
@@ -968,17 +942,86 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ERC20<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn owner(
+    pub fn name(
         &self,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, cainome_cairo_serde::ContractAddress> {
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("owner"),
+            entry_point_selector: starknet::macros::selector!("name"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn symbol(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("symbol"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn decimals(&self) -> cainome_cairo_serde::call::FCall<A::Provider, u8> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("decimals"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn transferOwnership_getcall(
+        &self,
+        newOwner: &cainome_cairo_serde::ContractAddress,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(cainome_cairo_serde::ContractAddress::cairo_serialize(
+            newOwner,
+        ));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("transferOwnership"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn transferOwnership(
+        &self,
+        newOwner: &cainome_cairo_serde::ContractAddress,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.transferOwnership_getcall(newOwner);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn renounceOwnership_getcall(&self) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("renounceOwnership"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn renounceOwnership(&self) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.renounceOwnership_getcall();
+        self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
@@ -1012,6 +1055,49 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ERC20<A> {
         amount: &cainome_cairo_serde::U256,
     ) -> starknet::accounts::ExecutionV3<A> {
         let __call = self.transferFrom_getcall(sender, recipient, amount);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn transfer_ownership_getcall(
+        &self,
+        new_owner: &cainome_cairo_serde::ContractAddress,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(cainome_cairo_serde::ContractAddress::cairo_serialize(
+            new_owner,
+        ));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("transfer_ownership"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn transfer_ownership(
+        &self,
+        new_owner: &cainome_cairo_serde::ContractAddress,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.transfer_ownership_getcall(new_owner);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn renounce_ownership_getcall(&self) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("renounce_ownership"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn renounce_ownership(&self) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.renounce_ownership_getcall();
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
@@ -1104,92 +1190,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ERC20<A> {
         amount: &cainome_cairo_serde::U256,
     ) -> starknet::accounts::ExecutionV3<A> {
         let __call = self.approve_getcall(spender, amount);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn transfer_ownership_getcall(
-        &self,
-        new_owner: &cainome_cairo_serde::ContractAddress,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(cainome_cairo_serde::ContractAddress::cairo_serialize(
-            new_owner,
-        ));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("transfer_ownership"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn transfer_ownership(
-        &self,
-        new_owner: &cainome_cairo_serde::ContractAddress,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.transfer_ownership_getcall(new_owner);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn renounce_ownership_getcall(&self) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("renounce_ownership"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn renounce_ownership(&self) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.renounce_ownership_getcall();
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn transferOwnership_getcall(
-        &self,
-        newOwner: &cainome_cairo_serde::ContractAddress,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(cainome_cairo_serde::ContractAddress::cairo_serialize(
-            newOwner,
-        ));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("transferOwnership"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn transferOwnership(
-        &self,
-        newOwner: &cainome_cairo_serde::ContractAddress,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.transferOwnership_getcall(newOwner);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn renounceOwnership_getcall(&self) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("renounceOwnership"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn renounceOwnership(&self) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.renounceOwnership_getcall();
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
@@ -1312,42 +1312,6 @@ impl<P: starknet::providers::Provider + Sync> ERC20Reader<P> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn name(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("name"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn symbol(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("symbol"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn decimals(&self) -> cainome_cairo_serde::call::FCall<P, u8> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("decimals"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn totalSupply(&self) -> cainome_cairo_serde::call::FCall<P, cainome_cairo_serde::U256> {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
@@ -1372,6 +1336,20 @@ impl<P: starknet::providers::Provider + Sync> ERC20Reader<P> {
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
             entry_point_selector: starknet::macros::selector!("balanceOf"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn owner(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<P, cainome_cairo_serde::ContractAddress> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("owner"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
@@ -1428,14 +1406,36 @@ impl<P: starknet::providers::Provider + Sync> ERC20Reader<P> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn owner(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<P, cainome_cairo_serde::ContractAddress> {
+    pub fn name(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("owner"),
+            entry_point_selector: starknet::macros::selector!("name"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn symbol(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("symbol"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn decimals(&self) -> cainome_cairo_serde::call::FCall<P, u8> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("decimals"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())

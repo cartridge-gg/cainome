@@ -600,6 +600,7 @@ dependencies = [
  "starknet",
  "syn 2.0.111",
  "thiserror 2.0.12",
+ "tracing",
 ]
 
 [[package]]

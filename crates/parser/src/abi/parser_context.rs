@@ -30,7 +30,6 @@ impl ParserContext {
     {
         for skip in type_skips.iter() {
             self.type_skips.insert(skip.as_ref().to_string());
-            self.type_skips.insert(skip.as_ref().to_string());
         }
         self
     }

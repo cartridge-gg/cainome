@@ -165,9 +165,10 @@ impl AbiParser {
             // and contruct token.
             if let Some(unknown_field) = Self::has_unknown_dependencies(&entry, &registry, &ctx)? {
                 // We can't resolve that now, let's put to the end of the queue
-                println!(
+                tracing::info!(
                     "Deferring type: {}. Field {} is unknown",
-                    type_path, unknown_field
+                    type_path,
+                    unknown_field
                 );
 
                 local_entries.push_back(entry);
