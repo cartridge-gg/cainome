@@ -13,9 +13,7 @@
       }
     ]
   },
-  "cairo_serialized": [
-    "0x1"
-  ],
+  "cairo_serialized": ["0x1"],
   "cairo_serialized_size": 1,
   "description": "Option with None",
   "test_value": "None",

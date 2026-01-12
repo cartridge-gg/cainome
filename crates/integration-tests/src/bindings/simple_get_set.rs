@@ -188,20 +188,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> SimpleGetSet<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn get_b(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, cainome_cairo_serde::U256> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_b"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn get_set_enum(
         &self,
         v: &crate::bindings::simple_get_set::contracts::simple_get_set::simple_get_set::TestEnum,
@@ -226,14 +212,14 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> SimpleGetSet<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn get_array(
+    pub fn get_b(
         &self,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, Vec<starknet::core::types::Felt>> {
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, cainome_cairo_serde::U256> {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_array"),
+            entry_point_selector: starknet::macros::selector!("get_b"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
@@ -254,21 +240,17 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> SimpleGetSet<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn set_a_getcall(&self, a: &starknet::core::types::Felt) -> starknet::core::types::Call {
+    pub fn get_array(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, Vec<starknet::core::types::Felt>> {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(a));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("set_a"),
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_array"),
             calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn set_a(&self, a: &starknet::core::types::Felt) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.set_a_getcall(a);
-        self.account.execute_v3(vec![__call])
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
@@ -310,6 +292,24 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> SimpleGetSet<A> {
         data: &Vec<starknet::core::types::Felt>,
     ) -> starknet::accounts::ExecutionV3<A> {
         let __call = self.set_array_getcall(data);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_a_getcall(&self, a: &starknet::core::types::Felt) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(a));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("set_a"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_a(&self, a: &starknet::core::types::Felt) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.set_a_getcall(a);
         self.account.execute_v3(vec![__call])
     }
     pub async fn declare(
@@ -401,18 +401,6 @@ impl<P: starknet::providers::Provider + Sync> SimpleGetSetReader<P> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn get_b(&self) -> cainome_cairo_serde::call::FCall<P, cainome_cairo_serde::U256> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_b"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn get_set_enum(
         &self,
         v: &crate::bindings::simple_get_set::contracts::simple_get_set::simple_get_set::TestEnum,
@@ -437,14 +425,12 @@ impl<P: starknet::providers::Provider + Sync> SimpleGetSetReader<P> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn get_array(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<P, Vec<starknet::core::types::Felt>> {
+    pub fn get_b(&self) -> cainome_cairo_serde::call::FCall<P, cainome_cairo_serde::U256> {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_array"),
+            entry_point_selector: starknet::macros::selector!("get_b"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
@@ -457,6 +443,20 @@ impl<P: starknet::providers::Provider + Sync> SimpleGetSetReader<P> {
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
             entry_point_selector: starknet::macros::selector!("get_a"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn get_array(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<P, Vec<starknet::core::types::Felt>> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_array"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())

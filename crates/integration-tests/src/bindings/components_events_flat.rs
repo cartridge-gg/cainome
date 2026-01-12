@@ -281,7 +281,7 @@ pub mod contracts {
 pub mod core {
     pub mod array {
         pub struct Span {
-            pub snapshot: Vec<crate::bindings::components_events_flat::MyStructOther>,
+            pub snapshot: Vec<crate::bindings::components_events_flat::MyStructSimple>,
         }
         impl cainome_cairo_serde::CairoSerde for Span {
             type RustType = Self;
@@ -291,14 +291,14 @@ pub mod core {
                 let mut __size = 0;
                 __size
                     += Vec::<
-                        crate::bindings::components_events_flat::MyStructOther,
+                        crate::bindings::components_events_flat::MyStructSimple,
                     >::cairo_serialized_size(&__rust.snapshot);
                 __size
             }
             fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
                 let mut __out: Vec<starknet::core::types::Felt> = vec![];
                 __out.extend(
-                    Vec::<crate::bindings::components_events_flat::MyStructOther>::cairo_serialize(
+                    Vec::<crate::bindings::components_events_flat::MyStructSimple>::cairo_serialize(
                         &__rust.snapshot,
                     ),
                 );
@@ -310,138 +310,15 @@ pub mod core {
             ) -> cainome_cairo_serde::Result<Self::RustType> {
                 let mut __offset = __offset;
                 let snapshot = Vec::<
-                    crate::bindings::components_events_flat::MyStructOther,
+                    crate::bindings::components_events_flat::MyStructSimple,
                 >::cairo_deserialize(__felts, __offset)?;
                 __offset
                     += Vec::<
-                        crate::bindings::components_events_flat::MyStructOther,
+                        crate::bindings::components_events_flat::MyStructSimple,
                     >::cairo_serialized_size(&snapshot);
                 Ok(Span { snapshot })
             }
         }
-    }
-}
-pub struct MyStructOther {
-    pub data: cainome_cairo_serde::U256,
-}
-impl cainome_cairo_serde::CairoSerde for MyStructOther {
-    type RustType = Self;
-    const SERIALIZED_SIZE: std::option::Option<usize> = None;
-    #[inline]
-    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-        let mut __size = 0;
-        __size += cainome_cairo_serde::U256::cairo_serialized_size(&__rust.data);
-        __size
-    }
-    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-        let mut __out: Vec<starknet::core::types::Felt> = vec![];
-        __out.extend(cainome_cairo_serde::U256::cairo_serialize(&__rust.data));
-        __out
-    }
-    fn cairo_deserialize(
-        __felts: &[starknet::core::types::Felt],
-        __offset: usize,
-    ) -> cainome_cairo_serde::Result<Self::RustType> {
-        let mut __offset = __offset;
-        let data = cainome_cairo_serde::U256::cairo_deserialize(__felts, __offset)?;
-        __offset += cainome_cairo_serde::U256::cairo_serialized_size(&data);
-        Ok(MyStructOther { data })
-    }
-}
-pub enum OtherEvent {
-    Written(crate::bindings::components_events_flat::OtherWritten),
-}
-impl cainome_cairo_serde::CairoSerde for OtherEvent {
-    type RustType = Self;
-    const SERIALIZED_SIZE: std::option::Option<usize> = std::option::Option::None;
-    #[inline]
-    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-        match __rust {
-            OtherEvent::Written(val) => {
-                crate::bindings::components_events_flat::OtherWritten::cairo_serialized_size(val)
-                    + 1
-            }
-            _ => 0,
-        }
-    }
-    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-        match __rust {
-            OtherEvent::Written(val) => {
-                let mut temp = vec![];
-                temp.extend(usize::cairo_serialize(&0usize));
-                temp.extend(
-                    crate::bindings::components_events_flat::OtherWritten::cairo_serialize(val),
-                );
-                temp
-            }
-            _ => vec![],
-        }
-    }
-    fn cairo_deserialize(
-        __felts: &[starknet::core::types::Felt],
-        __offset: usize,
-    ) -> cainome_cairo_serde::Result<Self::RustType> {
-        let __f = __felts[__offset];
-        let __index = u128::from_be_bytes(__f.to_bytes_be()[16..].try_into().unwrap());
-        match __index as usize {
-            0usize => Ok(OtherEvent::Written(
-                crate::bindings::components_events_flat::OtherWritten::cairo_deserialize(
-                    __felts,
-                    __offset + 1,
-                )?,
-            )),
-            _ => {
-                return Err(cainome_cairo_serde::Error::Deserialize(format!(
-                    "Index not handle for enum {}",
-                    "OtherEvent"
-                )));
-            }
-        }
-    }
-}
-impl OtherEvent {
-    pub fn event_selector() -> starknet::core::types::Felt {
-        starknet::core::utils::get_selector_from_name("OtherEvent").unwrap()
-    }
-    pub fn event_name() -> &'static str {
-        "OtherEvent"
-    }
-    pub(crate) fn try_from_event(
-        from_address: starknet::core::types::Felt,
-        keys: Vec<starknet::core::types::Felt>,
-        data: Vec<starknet::core::types::Felt>,
-    ) -> Result<Self, String> {
-        if keys.is_empty() {
-            return Err("Event has no key".to_string());
-        }
-        use cainome_cairo_serde::CairoSerde;
-        if keys[0]
-            == starknet::core::utils::get_selector_from_name("Written")
-                .unwrap_or_else(|_| panic!("Invalid selector for {}", "Written"))
-        {
-            let res =
-                crate::bindings::components_events_flat::OtherWritten::cairo_deserialize(&data, 0)
-                    .map_err(|e| {
-                        format!(
-                            "Could not deserialize {} event data: {:?}",
-                            "crate::bindings::components_events_flat::OtherWritten", e
-                        )
-                    })?;
-            return Ok(OtherEvent::Written(res));
-        }
-        Err(format!("Could not match any event from keys {:?}", keys))
-    }
-}
-impl TryFrom<starknet::core::types::EmittedEvent> for OtherEvent {
-    type Error = String;
-    fn try_from(event: starknet::core::types::EmittedEvent) -> Result<Self, Self::Error> {
-        Self::try_from_event(event.from_address, event.keys, event.data)
-    }
-}
-impl TryFrom<starknet::core::types::Event> for OtherEvent {
-    type Error = String;
-    fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
-        Self::try_from_event(event.from_address, event.keys, event.data)
     }
 }
 pub enum SimpleEvent {
@@ -591,24 +468,21 @@ impl TryFrom<starknet::core::types::Event> for SimpleEvent {
         Self::try_from_event(event.from_address, event.keys, event.data)
     }
 }
-pub struct MyStructSimple {
-    pub a: starknet::core::types::Felt,
-    pub b: starknet::core::types::Felt,
+pub struct MyStructOther {
+    pub data: cainome_cairo_serde::U256,
 }
-impl cainome_cairo_serde::CairoSerde for MyStructSimple {
+impl cainome_cairo_serde::CairoSerde for MyStructOther {
     type RustType = Self;
     const SERIALIZED_SIZE: std::option::Option<usize> = None;
     #[inline]
     fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
         let mut __size = 0;
-        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.a);
-        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.b);
+        __size += cainome_cairo_serde::U256::cairo_serialized_size(&__rust.data);
         __size
     }
     fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
         let mut __out: Vec<starknet::core::types::Felt> = vec![];
-        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.a));
-        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.b));
+        __out.extend(cainome_cairo_serde::U256::cairo_serialize(&__rust.data));
         __out
     }
     fn cairo_deserialize(
@@ -616,220 +490,9 @@ impl cainome_cairo_serde::CairoSerde for MyStructSimple {
         __offset: usize,
     ) -> cainome_cairo_serde::Result<Self::RustType> {
         let mut __offset = __offset;
-        let a = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&a);
-        let b = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&b);
-        Ok(MyStructSimple { a, b })
-    }
-}
-pub struct OutterEvent {}
-impl cainome_cairo_serde::CairoSerde for OutterEvent {
-    type RustType = Self;
-    const SERIALIZED_SIZE: std::option::Option<usize> = None;
-    #[inline]
-    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-        let mut __size = 0;
-        __size
-    }
-    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-        let mut __out: Vec<starknet::core::types::Felt> = vec![];
-        __out
-    }
-    fn cairo_deserialize(
-        __felts: &[starknet::core::types::Felt],
-        __offset: usize,
-    ) -> cainome_cairo_serde::Result<Self::RustType> {
-        let mut __offset = __offset;
-        Ok(OutterEvent {})
-    }
-}
-impl OutterEvent {
-    pub fn event_selector() -> starknet::core::types::Felt {
-        starknet::core::utils::get_selector_from_name("OutterEvent").unwrap()
-    }
-    pub fn event_name() -> &'static str {
-        "OutterEvent"
-    }
-    pub(crate) fn try_from_event(
-        from_address: starknet::core::types::Felt,
-        keys: Vec<starknet::core::types::Felt>,
-        data: Vec<starknet::core::types::Felt>,
-    ) -> Result<Self, String> {
-        if keys.is_empty() {
-            return Err("Event has no key".to_string());
-        }
-        use cainome_cairo_serde::CairoSerde;
-        if keys[0]
-            == starknet::core::utils::get_selector_from_name("OutterEvent")
-                .unwrap_or_else(|_| panic!("Invalid selector for {}", "OutterEvent"))
-        {
-            let res = OutterEvent::cairo_deserialize(&data, 0).map_err(|e| {
-                format!(
-                    "Could not deserialize {} event data: {:?}",
-                    "OutterEvent", e
-                )
-            })?;
-            return Ok(res);
-        }
-        Err(format!("Could not match any event from keys {:?}", keys))
-    }
-}
-impl TryFrom<starknet::core::types::EmittedEvent> for OutterEvent {
-    type Error = String;
-    fn try_from(event: starknet::core::types::EmittedEvent) -> Result<Self, Self::Error> {
-        Self::try_from_event(event.from_address, event.keys, event.data)
-    }
-}
-impl TryFrom<starknet::core::types::Event> for OutterEvent {
-    type Error = String;
-    fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
-        Self::try_from_event(event.from_address, event.keys, event.data)
-    }
-}
-pub struct OtherWritten {
-    pub data: starknet::core::types::Felt,
-}
-impl cainome_cairo_serde::CairoSerde for OtherWritten {
-    type RustType = Self;
-    const SERIALIZED_SIZE: std::option::Option<usize> = None;
-    #[inline]
-    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-        let mut __size = 0;
-        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.data);
-        __size
-    }
-    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-        let mut __out: Vec<starknet::core::types::Felt> = vec![];
-        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.data));
-        __out
-    }
-    fn cairo_deserialize(
-        __felts: &[starknet::core::types::Felt],
-        __offset: usize,
-    ) -> cainome_cairo_serde::Result<Self::RustType> {
-        let mut __offset = __offset;
-        let data = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&data);
-        Ok(OtherWritten { data })
-    }
-}
-impl OtherWritten {
-    pub fn event_selector() -> starknet::core::types::Felt {
-        starknet::core::utils::get_selector_from_name("OtherWritten").unwrap()
-    }
-    pub fn event_name() -> &'static str {
-        "OtherWritten"
-    }
-    pub(crate) fn try_from_event(
-        from_address: starknet::core::types::Felt,
-        keys: Vec<starknet::core::types::Felt>,
-        data: Vec<starknet::core::types::Felt>,
-    ) -> Result<Self, String> {
-        if keys.is_empty() {
-            return Err("Event has no key".to_string());
-        }
-        use cainome_cairo_serde::CairoSerde;
-        if keys[0]
-            == starknet::core::utils::get_selector_from_name("OtherWritten")
-                .unwrap_or_else(|_| panic!("Invalid selector for {}", "OtherWritten"))
-        {
-            let res = OtherWritten::cairo_deserialize(&data, 0).map_err(|e| {
-                format!(
-                    "Could not deserialize {} event data: {:?}",
-                    "OtherWritten", e
-                )
-            })?;
-            return Ok(res);
-        }
-        Err(format!("Could not match any event from keys {:?}", keys))
-    }
-}
-impl TryFrom<starknet::core::types::EmittedEvent> for OtherWritten {
-    type Error = String;
-    fn try_from(event: starknet::core::types::EmittedEvent) -> Result<Self, Self::Error> {
-        Self::try_from_event(event.from_address, event.keys, event.data)
-    }
-}
-impl TryFrom<starknet::core::types::Event> for OtherWritten {
-    type Error = String;
-    fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
-        Self::try_from_event(event.from_address, event.keys, event.data)
-    }
-}
-pub struct SimpleWritten {
-    pub before: starknet::core::types::Felt,
-    pub after: starknet::core::types::Felt,
-}
-impl cainome_cairo_serde::CairoSerde for SimpleWritten {
-    type RustType = Self;
-    const SERIALIZED_SIZE: std::option::Option<usize> = None;
-    #[inline]
-    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-        let mut __size = 0;
-        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.before);
-        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.after);
-        __size
-    }
-    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-        let mut __out: Vec<starknet::core::types::Felt> = vec![];
-        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.before));
-        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.after));
-        __out
-    }
-    fn cairo_deserialize(
-        __felts: &[starknet::core::types::Felt],
-        __offset: usize,
-    ) -> cainome_cairo_serde::Result<Self::RustType> {
-        let mut __offset = __offset;
-        let before = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&before);
-        let after = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-        __offset += starknet::core::types::Felt::cairo_serialized_size(&after);
-        Ok(SimpleWritten { before, after })
-    }
-}
-impl SimpleWritten {
-    pub fn event_selector() -> starknet::core::types::Felt {
-        starknet::core::utils::get_selector_from_name("SimpleWritten").unwrap()
-    }
-    pub fn event_name() -> &'static str {
-        "SimpleWritten"
-    }
-    pub(crate) fn try_from_event(
-        from_address: starknet::core::types::Felt,
-        keys: Vec<starknet::core::types::Felt>,
-        data: Vec<starknet::core::types::Felt>,
-    ) -> Result<Self, String> {
-        if keys.is_empty() {
-            return Err("Event has no key".to_string());
-        }
-        use cainome_cairo_serde::CairoSerde;
-        if keys[0]
-            == starknet::core::utils::get_selector_from_name("SimpleWritten")
-                .unwrap_or_else(|_| panic!("Invalid selector for {}", "SimpleWritten"))
-        {
-            let res = SimpleWritten::cairo_deserialize(&data, 0).map_err(|e| {
-                format!(
-                    "Could not deserialize {} event data: {:?}",
-                    "SimpleWritten", e
-                )
-            })?;
-            return Ok(res);
-        }
-        Err(format!("Could not match any event from keys {:?}", keys))
-    }
-}
-impl TryFrom<starknet::core::types::EmittedEvent> for SimpleWritten {
-    type Error = String;
-    fn try_from(event: starknet::core::types::EmittedEvent) -> Result<Self, Self::Error> {
-        Self::try_from_event(event.from_address, event.keys, event.data)
-    }
-}
-impl TryFrom<starknet::core::types::Event> for SimpleWritten {
-    type Error = String;
-    fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
-        Self::try_from_event(event.from_address, event.keys, event.data)
+        let data = cainome_cairo_serde::U256::cairo_deserialize(__felts, __offset)?;
+        __offset += cainome_cairo_serde::U256::cairo_serialized_size(&data);
+        Ok(MyStructOther { data })
     }
 }
 pub struct ComponentsEventsFlat<A: starknet::accounts::ConnectedAccount + Sync> {
@@ -899,23 +562,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ComponentsEventsFlat<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn simple_other_getcall(&self) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("simple_other"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn simple_other(&self) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.simple_other_getcall();
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn array_struct_simple_getcall(&self) -> starknet::core::types::Call {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
@@ -929,6 +575,40 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ComponentsEventsFlat<A> {
     #[allow(clippy::too_many_arguments)]
     pub fn array_struct_simple(&self) -> starknet::accounts::ExecutionV3<A> {
         let __call = self.array_struct_simple_getcall();
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn array_struct_simple_other_getcall(&self) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("array_struct_simple_other"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn array_struct_simple_other(&self) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.array_struct_simple_other_getcall();
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn simple_other_getcall(&self) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("simple_other"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn simple_other(&self) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.simple_other_getcall();
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
@@ -963,23 +643,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ComponentsEventsFlat<A> {
     #[allow(clippy::too_many_arguments)]
     pub fn simple(&self) -> starknet::accounts::ExecutionV3<A> {
         let __call = self.simple_getcall();
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn array_struct_simple_other_getcall(&self) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("array_struct_simple_other"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn array_struct_simple_other(&self) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.array_struct_simple_other_getcall();
         self.account.execute_v3(vec![__call])
     }
     pub async fn declare(
@@ -1080,5 +743,342 @@ impl<P: starknet::providers::Provider + Sync> ComponentsEventsFlatReader<P> {
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+}
+pub struct SimpleWritten {
+    pub before: starknet::core::types::Felt,
+    pub after: starknet::core::types::Felt,
+}
+impl cainome_cairo_serde::CairoSerde for SimpleWritten {
+    type RustType = Self;
+    const SERIALIZED_SIZE: std::option::Option<usize> = None;
+    #[inline]
+    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+        let mut __size = 0;
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.before);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.after);
+        __size
+    }
+    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+        let mut __out: Vec<starknet::core::types::Felt> = vec![];
+        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.before));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.after));
+        __out
+    }
+    fn cairo_deserialize(
+        __felts: &[starknet::core::types::Felt],
+        __offset: usize,
+    ) -> cainome_cairo_serde::Result<Self::RustType> {
+        let mut __offset = __offset;
+        let before = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&before);
+        let after = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&after);
+        Ok(SimpleWritten { before, after })
+    }
+}
+impl SimpleWritten {
+    pub fn event_selector() -> starknet::core::types::Felt {
+        starknet::core::utils::get_selector_from_name("SimpleWritten").unwrap()
+    }
+    pub fn event_name() -> &'static str {
+        "SimpleWritten"
+    }
+    pub(crate) fn try_from_event(
+        from_address: starknet::core::types::Felt,
+        keys: Vec<starknet::core::types::Felt>,
+        data: Vec<starknet::core::types::Felt>,
+    ) -> Result<Self, String> {
+        if keys.is_empty() {
+            return Err("Event has no key".to_string());
+        }
+        use cainome_cairo_serde::CairoSerde;
+        if keys[0]
+            == starknet::core::utils::get_selector_from_name("SimpleWritten")
+                .unwrap_or_else(|_| panic!("Invalid selector for {}", "SimpleWritten"))
+        {
+            let res = SimpleWritten::cairo_deserialize(&data, 0).map_err(|e| {
+                format!(
+                    "Could not deserialize {} event data: {:?}",
+                    "SimpleWritten", e
+                )
+            })?;
+            return Ok(res);
+        }
+        Err(format!("Could not match any event from keys {:?}", keys))
+    }
+}
+impl TryFrom<starknet::core::types::EmittedEvent> for SimpleWritten {
+    type Error = String;
+    fn try_from(event: starknet::core::types::EmittedEvent) -> Result<Self, Self::Error> {
+        Self::try_from_event(event.from_address, event.keys, event.data)
+    }
+}
+impl TryFrom<starknet::core::types::Event> for SimpleWritten {
+    type Error = String;
+    fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
+        Self::try_from_event(event.from_address, event.keys, event.data)
+    }
+}
+pub struct OtherWritten {
+    pub data: starknet::core::types::Felt,
+}
+impl cainome_cairo_serde::CairoSerde for OtherWritten {
+    type RustType = Self;
+    const SERIALIZED_SIZE: std::option::Option<usize> = None;
+    #[inline]
+    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+        let mut __size = 0;
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.data);
+        __size
+    }
+    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+        let mut __out: Vec<starknet::core::types::Felt> = vec![];
+        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.data));
+        __out
+    }
+    fn cairo_deserialize(
+        __felts: &[starknet::core::types::Felt],
+        __offset: usize,
+    ) -> cainome_cairo_serde::Result<Self::RustType> {
+        let mut __offset = __offset;
+        let data = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&data);
+        Ok(OtherWritten { data })
+    }
+}
+impl OtherWritten {
+    pub fn event_selector() -> starknet::core::types::Felt {
+        starknet::core::utils::get_selector_from_name("OtherWritten").unwrap()
+    }
+    pub fn event_name() -> &'static str {
+        "OtherWritten"
+    }
+    pub(crate) fn try_from_event(
+        from_address: starknet::core::types::Felt,
+        keys: Vec<starknet::core::types::Felt>,
+        data: Vec<starknet::core::types::Felt>,
+    ) -> Result<Self, String> {
+        if keys.is_empty() {
+            return Err("Event has no key".to_string());
+        }
+        use cainome_cairo_serde::CairoSerde;
+        if keys[0]
+            == starknet::core::utils::get_selector_from_name("OtherWritten")
+                .unwrap_or_else(|_| panic!("Invalid selector for {}", "OtherWritten"))
+        {
+            let res = OtherWritten::cairo_deserialize(&data, 0).map_err(|e| {
+                format!(
+                    "Could not deserialize {} event data: {:?}",
+                    "OtherWritten", e
+                )
+            })?;
+            return Ok(res);
+        }
+        Err(format!("Could not match any event from keys {:?}", keys))
+    }
+}
+impl TryFrom<starknet::core::types::EmittedEvent> for OtherWritten {
+    type Error = String;
+    fn try_from(event: starknet::core::types::EmittedEvent) -> Result<Self, Self::Error> {
+        Self::try_from_event(event.from_address, event.keys, event.data)
+    }
+}
+impl TryFrom<starknet::core::types::Event> for OtherWritten {
+    type Error = String;
+    fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
+        Self::try_from_event(event.from_address, event.keys, event.data)
+    }
+}
+pub struct MyStructSimple {
+    pub a: starknet::core::types::Felt,
+    pub b: starknet::core::types::Felt,
+}
+impl cainome_cairo_serde::CairoSerde for MyStructSimple {
+    type RustType = Self;
+    const SERIALIZED_SIZE: std::option::Option<usize> = None;
+    #[inline]
+    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+        let mut __size = 0;
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.a);
+        __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.b);
+        __size
+    }
+    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+        let mut __out: Vec<starknet::core::types::Felt> = vec![];
+        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.a));
+        __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.b));
+        __out
+    }
+    fn cairo_deserialize(
+        __felts: &[starknet::core::types::Felt],
+        __offset: usize,
+    ) -> cainome_cairo_serde::Result<Self::RustType> {
+        let mut __offset = __offset;
+        let a = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&a);
+        let b = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+        __offset += starknet::core::types::Felt::cairo_serialized_size(&b);
+        Ok(MyStructSimple { a, b })
+    }
+}
+pub enum OtherEvent {
+    Written(crate::bindings::components_events_flat::OtherWritten),
+}
+impl cainome_cairo_serde::CairoSerde for OtherEvent {
+    type RustType = Self;
+    const SERIALIZED_SIZE: std::option::Option<usize> = std::option::Option::None;
+    #[inline]
+    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+        match __rust {
+            OtherEvent::Written(val) => {
+                crate::bindings::components_events_flat::OtherWritten::cairo_serialized_size(val)
+                    + 1
+            }
+            _ => 0,
+        }
+    }
+    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+        match __rust {
+            OtherEvent::Written(val) => {
+                let mut temp = vec![];
+                temp.extend(usize::cairo_serialize(&0usize));
+                temp.extend(
+                    crate::bindings::components_events_flat::OtherWritten::cairo_serialize(val),
+                );
+                temp
+            }
+            _ => vec![],
+        }
+    }
+    fn cairo_deserialize(
+        __felts: &[starknet::core::types::Felt],
+        __offset: usize,
+    ) -> cainome_cairo_serde::Result<Self::RustType> {
+        let __f = __felts[__offset];
+        let __index = u128::from_be_bytes(__f.to_bytes_be()[16..].try_into().unwrap());
+        match __index as usize {
+            0usize => Ok(OtherEvent::Written(
+                crate::bindings::components_events_flat::OtherWritten::cairo_deserialize(
+                    __felts,
+                    __offset + 1,
+                )?,
+            )),
+            _ => {
+                return Err(cainome_cairo_serde::Error::Deserialize(format!(
+                    "Index not handle for enum {}",
+                    "OtherEvent"
+                )));
+            }
+        }
+    }
+}
+impl OtherEvent {
+    pub fn event_selector() -> starknet::core::types::Felt {
+        starknet::core::utils::get_selector_from_name("OtherEvent").unwrap()
+    }
+    pub fn event_name() -> &'static str {
+        "OtherEvent"
+    }
+    pub(crate) fn try_from_event(
+        from_address: starknet::core::types::Felt,
+        keys: Vec<starknet::core::types::Felt>,
+        data: Vec<starknet::core::types::Felt>,
+    ) -> Result<Self, String> {
+        if keys.is_empty() {
+            return Err("Event has no key".to_string());
+        }
+        use cainome_cairo_serde::CairoSerde;
+        if keys[0]
+            == starknet::core::utils::get_selector_from_name("Written")
+                .unwrap_or_else(|_| panic!("Invalid selector for {}", "Written"))
+        {
+            let res =
+                crate::bindings::components_events_flat::OtherWritten::cairo_deserialize(&data, 0)
+                    .map_err(|e| {
+                        format!(
+                            "Could not deserialize {} event data: {:?}",
+                            "crate::bindings::components_events_flat::OtherWritten", e
+                        )
+                    })?;
+            return Ok(OtherEvent::Written(res));
+        }
+        Err(format!("Could not match any event from keys {:?}", keys))
+    }
+}
+impl TryFrom<starknet::core::types::EmittedEvent> for OtherEvent {
+    type Error = String;
+    fn try_from(event: starknet::core::types::EmittedEvent) -> Result<Self, Self::Error> {
+        Self::try_from_event(event.from_address, event.keys, event.data)
+    }
+}
+impl TryFrom<starknet::core::types::Event> for OtherEvent {
+    type Error = String;
+    fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
+        Self::try_from_event(event.from_address, event.keys, event.data)
+    }
+}
+pub struct OutterEvent {}
+impl cainome_cairo_serde::CairoSerde for OutterEvent {
+    type RustType = Self;
+    const SERIALIZED_SIZE: std::option::Option<usize> = None;
+    #[inline]
+    fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+        let mut __size = 0;
+        __size
+    }
+    fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+        let mut __out: Vec<starknet::core::types::Felt> = vec![];
+        __out
+    }
+    fn cairo_deserialize(
+        __felts: &[starknet::core::types::Felt],
+        __offset: usize,
+    ) -> cainome_cairo_serde::Result<Self::RustType> {
+        let mut __offset = __offset;
+        Ok(OutterEvent {})
+    }
+}
+impl OutterEvent {
+    pub fn event_selector() -> starknet::core::types::Felt {
+        starknet::core::utils::get_selector_from_name("OutterEvent").unwrap()
+    }
+    pub fn event_name() -> &'static str {
+        "OutterEvent"
+    }
+    pub(crate) fn try_from_event(
+        from_address: starknet::core::types::Felt,
+        keys: Vec<starknet::core::types::Felt>,
+        data: Vec<starknet::core::types::Felt>,
+    ) -> Result<Self, String> {
+        if keys.is_empty() {
+            return Err("Event has no key".to_string());
+        }
+        use cainome_cairo_serde::CairoSerde;
+        if keys[0]
+            == starknet::core::utils::get_selector_from_name("OutterEvent")
+                .unwrap_or_else(|_| panic!("Invalid selector for {}", "OutterEvent"))
+        {
+            let res = OutterEvent::cairo_deserialize(&data, 0).map_err(|e| {
+                format!(
+                    "Could not deserialize {} event data: {:?}",
+                    "OutterEvent", e
+                )
+            })?;
+            return Ok(res);
+        }
+        Err(format!("Could not match any event from keys {:?}", keys))
+    }
+}
+impl TryFrom<starknet::core::types::EmittedEvent> for OutterEvent {
+    type Error = String;
+    fn try_from(event: starknet::core::types::EmittedEvent) -> Result<Self, Self::Error> {
+        Self::try_from_event(event.from_address, event.keys, event.data)
+    }
+}
+impl TryFrom<starknet::core::types::Event> for OutterEvent {
+    type Error = String;
+    fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
+        Self::try_from_event(event.from_address, event.keys, event.data)
     }
 }

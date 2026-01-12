@@ -29,11 +29,7 @@
       }
     ]
   },
-  "cairo_serialized": [
-    "0x1",
-    "0x315",
-    "0x0"
-  ],
+  "cairo_serialized": ["0x1", "0x315", "0x0"],
   "cairo_serialized_size": 3,
   "description": "TypedEnum with u256 variant",
   "test_value": "TypedEnum::Variant2(U256 { low: 789, high: 0 })",

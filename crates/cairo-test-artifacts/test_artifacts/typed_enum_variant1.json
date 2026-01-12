@@ -29,10 +29,7 @@
       }
     ]
   },
-  "cairo_serialized": [
-    "0x0",
-    "0x456"
-  ],
+  "cairo_serialized": ["0x0", "0x456"],
   "cairo_serialized_size": 2,
   "description": "TypedEnum with felt252 variant",
   "test_value": "TypedEnum::Variant1(0x456)",

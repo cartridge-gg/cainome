@@ -2601,118 +2601,49 @@
   ],
   "sierra_program_debug_info": {
     "type_names": [
-      [
-        0,
-        "RangeCheck"
-      ],
-      [
-        1,
-        "Box<dojo::meta::introspect::Ty>"
-      ],
-      [
-        2,
-        "Unit"
-      ],
+      [0, "RangeCheck"],
+      [1, "Box<dojo::meta::introspect::Ty>"],
+      [2, "Unit"],
       [
         3,
         "core::option::Option::<core::box::Box::<@dojo::meta::introspect::Ty>>"
       ],
-      [
-        4,
-        "Array<dojo::meta::introspect::Ty>"
-      ],
-      [
-        5,
-        "Snapshot<Array<dojo::meta::introspect::Ty>>"
-      ],
-      [
-        6,
-        "Uninitialized<Snapshot<Array<dojo::meta::introspect::Ty>>>"
-      ],
-      [
-        7,
-        "Box<Tuple<felt252, dojo::meta::introspect::Ty>>"
-      ],
+      [4, "Array<dojo::meta::introspect::Ty>"],
+      [5, "Snapshot<Array<dojo::meta::introspect::Ty>>"],
+      [6, "Uninitialized<Snapshot<Array<dojo::meta::introspect::Ty>>>"],
+      [7, "Box<Tuple<felt252, dojo::meta::introspect::Ty>>"],
       [
         8,
         "core::option::Option::<core::box::Box::<@(core::felt252, dojo::meta::introspect::Ty)>>"
       ],
-      [
-        9,
-        "Array<Tuple<felt252, dojo::meta::introspect::Ty>>"
-      ],
-      [
-        10,
-        "Snapshot<Array<Tuple<felt252, dojo::meta::introspect::Ty>>>"
-      ],
+      [9, "Array<Tuple<felt252, dojo::meta::introspect::Ty>>"],
+      [10, "Snapshot<Array<Tuple<felt252, dojo::meta::introspect::Ty>>>"],
       [
         11,
         "Uninitialized<Snapshot<Array<Tuple<felt252, dojo::meta::introspect::Ty>>>>"
       ],
-      [
-        12,
-        "Const<felt252, 1637570914057682275393755530660268060279989363>"
-      ],
-      [
-        13,
-        "Const<felt252, 155785504323917466144735657540098748279>"
-      ],
-      [
-        14,
-        "Const<u32, 1>"
-      ],
-      [
-        15,
-        "Box<core::option::Option::<core::integer::u32>>"
-      ],
-      [
-        16,
-        "Box<dojo::meta::layout::Layout>"
-      ],
+      [12, "Const<felt252, 1637570914057682275393755530660268060279989363>"],
+      [13, "Const<felt252, 155785504323917466144735657540098748279>"],
+      [14, "Const<u32, 1>"],
+      [15, "Box<core::option::Option::<core::integer::u32>>"],
+      [16, "Box<dojo::meta::layout::Layout>"],
       [
         17,
         "core::option::Option::<core::box::Box::<@dojo::meta::layout::Layout>>"
       ],
-      [
-        18,
-        "Array<dojo::meta::layout::Layout>"
-      ],
-      [
-        19,
-        "Snapshot<Array<dojo::meta::layout::Layout>>"
-      ],
-      [
-        20,
-        "Uninitialized<Snapshot<Array<dojo::meta::layout::Layout>>>"
-      ],
-      [
-        21,
-        "Box<dojo::meta::layout::FieldLayout>"
-      ],
+      [18, "Array<dojo::meta::layout::Layout>"],
+      [19, "Snapshot<Array<dojo::meta::layout::Layout>>"],
+      [20, "Uninitialized<Snapshot<Array<dojo::meta::layout::Layout>>>"],
+      [21, "Box<dojo::meta::layout::FieldLayout>"],
       [
         22,
         "core::option::Option::<core::box::Box::<@dojo::meta::layout::FieldLayout>>"
       ],
-      [
-        23,
-        "Array<dojo::meta::layout::FieldLayout>"
-      ],
-      [
-        24,
-        "Snapshot<Array<dojo::meta::layout::FieldLayout>>"
-      ],
-      [
-        25,
-        "Uninitialized<Snapshot<Array<dojo::meta::layout::FieldLayout>>>"
-      ],
-      [
-        26,
-        "Box<u8>"
-      ],
-      [
-        27,
-        "core::option::Option::<core::box::Box::<@core::integer::u8>>"
-      ],
+      [23, "Array<dojo::meta::layout::FieldLayout>"],
+      [24, "Snapshot<Array<dojo::meta::layout::FieldLayout>>"],
+      [25, "Uninitialized<Snapshot<Array<dojo::meta::layout::FieldLayout>>>"],
+      [26, "Box<u8>"],
+      [27, "core::option::Option::<core::box::Box::<@core::integer::u8>>"],
       [
         28,
         "Const<felt252, 1562650340145569253950719432037265790742673175178595332874263451893627119048>"
@@ -2777,174 +2708,54 @@
         43,
         "Const<felt252, 1535950522884166232440588477617087873991906994117965032220331681621151332260>"
       ],
-      [
-        44,
-        "felt252"
-      ],
-      [
-        45,
-        "Array<felt252>"
-      ],
-      [
-        46,
-        "Snapshot<Array<felt252>>"
-      ],
-      [
-        47,
-        "core::array::Span::<core::felt252>"
-      ],
-      [
-        48,
-        "Array<dojo::meta::introspect::Member>"
-      ],
-      [
-        49,
-        "Snapshot<Array<dojo::meta::introspect::Member>>"
-      ],
-      [
-        50,
-        "core::array::Span::<dojo::meta::introspect::Member>"
-      ],
-      [
-        51,
-        "dojo::meta::introspect::Struct"
-      ],
-      [
-        52,
-        "core::array::Span::<(core::felt252, dojo::meta::introspect::Ty)>"
-      ],
-      [
-        53,
-        "dojo::meta::introspect::Enum"
-      ],
-      [
-        54,
-        "core::array::Span::<dojo::meta::introspect::Ty>"
-      ],
-      [
-        55,
-        "dojo::meta::introspect::Ty"
-      ],
-      [
-        56,
-        "Tuple<felt252, dojo::meta::introspect::Ty>"
-      ],
-      [
-        57,
-        "u8"
-      ],
-      [
-        58,
-        "u16"
-      ],
-      [
-        59,
-        "tournament::ls15_components::models::loot_survivor::Item"
-      ],
+      [44, "felt252"],
+      [45, "Array<felt252>"],
+      [46, "Snapshot<Array<felt252>>"],
+      [47, "core::array::Span::<core::felt252>"],
+      [48, "Array<dojo::meta::introspect::Member>"],
+      [49, "Snapshot<Array<dojo::meta::introspect::Member>>"],
+      [50, "core::array::Span::<dojo::meta::introspect::Member>"],
+      [51, "dojo::meta::introspect::Struct"],
+      [52, "core::array::Span::<(core::felt252, dojo::meta::introspect::Ty)>"],
+      [53, "dojo::meta::introspect::Enum"],
+      [54, "core::array::Span::<dojo::meta::introspect::Ty>"],
+      [55, "dojo::meta::introspect::Ty"],
+      [56, "Tuple<felt252, dojo::meta::introspect::Ty>"],
+      [57, "u8"],
+      [58, "u16"],
+      [59, "tournament::ls15_components::models::loot_survivor::Item"],
       [
         60,
         "core::option::Option::<tournament::ls15_components::models::loot_survivor::Item>"
       ],
-      [
-        61,
-        "Array<bytes31>"
-      ],
-      [
-        62,
-        "Uninitialized<Array<bytes31>>"
-      ],
-      [
-        63,
-        "Tuple<dojo::meta::introspect::Struct>"
-      ],
-      [
-        64,
-        "Uninitialized<Tuple<dojo::meta::introspect::Struct>>"
-      ],
-      [
-        65,
-        "Uninitialized<Array<dojo::meta::layout::FieldLayout>>"
-      ],
-      [
-        66,
-        "Const<u32, 8>"
-      ],
-      [
-        67,
-        "u32"
-      ],
-      [
-        68,
-        "Tuple<u32, u32, u32>"
-      ],
-      [
-        69,
-        "core::panics::Panic"
-      ],
-      [
-        70,
-        "Tuple<core::panics::Panic, Array<felt252>>"
-      ],
+      [61, "Array<bytes31>"],
+      [62, "Uninitialized<Array<bytes31>>"],
+      [63, "Tuple<dojo::meta::introspect::Struct>"],
+      [64, "Uninitialized<Tuple<dojo::meta::introspect::Struct>>"],
+      [65, "Uninitialized<Array<dojo::meta::layout::FieldLayout>>"],
+      [66, "Const<u32, 8>"],
+      [67, "u32"],
+      [68, "Tuple<u32, u32, u32>"],
+      [69, "core::panics::Panic"],
+      [70, "Tuple<core::panics::Panic, Array<felt252>>"],
       [
         71,
         "core::panics::PanicResult::<(core::integer::u32, core::integer::u32, core::integer::u32)>"
       ],
-      [
-        72,
-        "core::bool"
-      ],
-      [
-        73,
-        "Tuple<core::bool, u32, Unit>"
-      ],
-      [
-        74,
-        "core::panics::PanicResult::<(core::bool, core::integer::u32, ())>"
-      ],
-      [
-        75,
-        "Const<u32, 0>"
-      ],
-      [
-        76,
-        "Array<core::option::Option::<core::integer::u32>>"
-      ],
-      [
-        77,
-        "Snapshot<Array<core::option::Option::<core::integer::u32>>>"
-      ],
-      [
-        78,
-        "Const<u32, 2>"
-      ],
-      [
-        79,
-        "Const<u32, 7>"
-      ],
-      [
-        80,
-        "Uninitialized<Array<core::option::Option::<core::integer::u32>>>"
-      ],
-      [
-        81,
-        "Const<felt252, 5>"
-      ],
-      [
-        82,
-        "Const<felt252, 4>"
-      ],
-      [
-        83,
-        "Const<felt252, 3>"
-      ],
-      [
-        84,
-        "Const<felt252, 2>"
-      ],
-      [
-        85,
-        "core::array::Span::<dojo::meta::layout::Layout>"
-      ],
+      [72, "core::bool"],
+      [73, "Tuple<core::bool, u32, Unit>"],
+      [74, "core::panics::PanicResult::<(core::bool, core::integer::u32, ())>"],
+      [75, "Const<u32, 0>"],
+      [76, "Array<core::option::Option::<core::integer::u32>>"],
+      [77, "Snapshot<Array<core::option::Option::<core::integer::u32>>>"],
+      [78, "Const<u32, 2>"],
+      [79, "Const<u32, 7>"],
+      [80, "Uninitialized<Array<core::option::Option::<core::integer::u32>>>"],
+      [81, "Const<felt252, 5>"],
+      [82, "Const<felt252, 4>"],
+      [83, "Const<felt252, 3>"],
+      [84, "Const<felt252, 2>"],
+      [85, "core::array::Span::<dojo::meta::layout::Layout>"],
       [
         86,
         "Const<felt252, 574309727720695247115689782451661382556664447271675519966902004655208739601>"
@@ -2953,18 +2764,12 @@
         87,
         "Const<felt252, 1657775627065729684904516438971679060661276509154067415102022456094096240279>"
       ],
-      [
-        88,
-        "Const<Tuple<u8>, Const<u8, 1>>"
-      ],
+      [88, "Const<Tuple<u8>, Const<u8, 1>>"],
       [
         89,
         "Const<felt252, 1155638894664455070500468617936349742991597829297752898339671615487490390013>"
       ],
-      [
-        90,
-        "Const<u8, 1>"
-      ],
+      [90, "Const<u8, 1>"],
       [
         91,
         "Const<felt252, 331560845427717049601945052515960786209786157839872737469575998996628216058>"
@@ -2977,18 +2782,12 @@
         93,
         "Const<felt252, 1149339311624590281882224421873203269554645602019386441580917110963443180544>"
       ],
-      [
-        94,
-        "Const<Tuple<u8>, Const<u8, 8>>"
-      ],
+      [94, "Const<Tuple<u8>, Const<u8, 8>>"],
       [
         95,
         "Const<felt252, 1012480395816719811250414850795459896885190327882959988422096450802848612335>"
       ],
-      [
-        96,
-        "Const<u8, 8>"
-      ],
+      [96, "Const<u8, 8>"],
       [
         97,
         "Const<felt252, 70178920214545354537298868807007585610213062887858840861456479606807550384>"
@@ -2997,286 +2796,100 @@
         98,
         "Const<felt252, 1064310921837860037904864412523212736221803344766422796024845498163995837666>"
       ],
-      [
-        99,
-        "Array<u8>"
-      ],
-      [
-        100,
-        "Snapshot<Array<u8>>"
-      ],
-      [
-        101,
-        "core::array::Span::<core::integer::u8>"
-      ],
+      [99, "Array<u8>"],
+      [100, "Snapshot<Array<u8>>"],
+      [101, "core::array::Span::<core::integer::u8>"],
       [
         102,
         "Const<felt252, 10081705603222233110711583073880238465441675299724638350815334665239107538>"
       ],
-      [
-        103,
-        "Tuple<u8>"
-      ],
-      [
-        104,
-        "Const<Tuple<u8>, Const<u8, 16>>"
-      ],
-      [
-        105,
-        "Box<Tuple<u8>>"
-      ],
-      [
-        106,
-        "Const<u8, 16>"
-      ],
-      [
-        107,
-        "Box<dojo::meta::introspect::Member>"
-      ],
+      [103, "Tuple<u8>"],
+      [104, "Const<Tuple<u8>, Const<u8, 16>>"],
+      [105, "Box<Tuple<u8>>"],
+      [106, "Const<u8, 16>"],
+      [107, "Box<dojo::meta::introspect::Member>"],
       [
         108,
         "core::option::Option::<core::box::Box::<@dojo::meta::introspect::Member>>"
       ],
-      [
-        109,
-        "dojo::meta::introspect::Member"
-      ],
-      [
-        110,
-        "Uninitialized<dojo::meta::introspect::Member>"
-      ],
-      [
-        111,
-        "Uninitialized<Snapshot<Array<dojo::meta::introspect::Member>>>"
-      ],
-      [
-        112,
-        "Const<felt252, 308807027140413483017586>"
-      ],
-      [
-        113,
-        "Const<felt252, 459922754592242129855858>"
-      ],
+      [109, "dojo::meta::introspect::Member"],
+      [110, "Uninitialized<dojo::meta::introspect::Member>"],
+      [111, "Uninitialized<Snapshot<Array<dojo::meta::introspect::Member>>>"],
+      [112, "Const<felt252, 308807027140413483017586>"],
+      [113, "Const<felt252, 459922754592242129855858>"],
       [
         114,
         "Const<felt252, 36466483476867276038681604549105886697525537570647155>"
       ],
-      [
-        115,
-        "Const<felt252, 1651470188>"
-      ],
-      [
-        116,
-        "Const<felt252, 30809915173135716>"
-      ],
-      [
-        117,
-        "Const<felt252, 2193962548699216292614674323235470475328319092>"
-      ],
-      [
-        118,
-        "Const<felt252, 1281000897716112682612>"
-      ],
-      [
-        119,
-        "Const<felt252, 1871296708074818334324>"
-      ],
-      [
-        120,
-        "Const<felt252, 1919512167>"
-      ],
-      [
-        121,
-        "Const<felt252, 1852138347>"
-      ],
-      [
-        122,
-        "Const<felt252, 1751215716>"
-      ],
-      [
-        123,
-        "Const<felt252, 1718579060>"
-      ],
-      [
-        124,
-        "Const<felt252, 512735409012>"
-      ],
-      [
-        125,
-        "Const<felt252, 1751474532>"
-      ],
-      [
-        126,
-        "Const<felt252, 426953241460>"
-      ],
-      [
-        127,
-        "Const<felt252, 1232364909>"
-      ],
-      [
-        128,
-        "Const<felt252, 131277310160750>"
-      ],
-      [
-        129,
-        "Const<felt252, 26980>"
-      ],
-      [
-        130,
-        "Const<felt252, 358434829427>"
-      ],
-      [
-        131,
-        "Const<felt252, 495873782899>"
-      ],
-      [
-        132,
-        "Const<felt252, 1819632491>"
-      ],
-      [
-        133,
-        "Const<felt252, 7163082351356112225>"
-      ],
-      [
-        134,
-        "Const<felt252, 131294791233389>"
-      ],
-      [
-        135,
-        "Const<felt252, 32629457536844741095214441317>"
-      ],
-      [
-        136,
-        "Const<felt252, 8532478930809615481>"
-      ],
-      [
-        137,
-        "Const<felt252, 1851986129345051194489>"
-      ],
-      [
-        138,
-        "Const<felt252, 8319400191629685864>"
-      ],
-      [
-        139,
-        "Const<felt252, 30008>"
-      ],
+      [115, "Const<felt252, 1651470188>"],
+      [116, "Const<felt252, 30809915173135716>"],
+      [117, "Const<felt252, 2193962548699216292614674323235470475328319092>"],
+      [118, "Const<felt252, 1281000897716112682612>"],
+      [119, "Const<felt252, 1871296708074818334324>"],
+      [120, "Const<felt252, 1919512167>"],
+      [121, "Const<felt252, 1852138347>"],
+      [122, "Const<felt252, 1751215716>"],
+      [123, "Const<felt252, 1718579060>"],
+      [124, "Const<felt252, 512735409012>"],
+      [125, "Const<felt252, 1751474532>"],
+      [126, "Const<felt252, 426953241460>"],
+      [127, "Const<felt252, 1232364909>"],
+      [128, "Const<felt252, 131277310160750>"],
+      [129, "Const<felt252, 26980>"],
+      [130, "Const<felt252, 358434829427>"],
+      [131, "Const<felt252, 495873782899>"],
+      [132, "Const<felt252, 1819632491>"],
+      [133, "Const<felt252, 7163082351356112225>"],
+      [134, "Const<felt252, 131294791233389>"],
+      [135, "Const<felt252, 32629457536844741095214441317>"],
+      [136, "Const<felt252, 8532478930809615481>"],
+      [137, "Const<felt252, 1851986129345051194489>"],
+      [138, "Const<felt252, 8319400191629685864>"],
+      [139, "Const<felt252, 30008>"],
       [
         140,
         "Const<felt252, 11058354882626306356101947498984683213030746117139229797>"
       ],
-      [
-        141,
-        "Const<felt252, 30452092669582836929680667752>"
-      ],
-      [
-        142,
-        "Const<felt252, 1735355492>"
-      ],
-      [
-        143,
-        "Const<felt252, 30832>"
-      ],
-      [
-        144,
-        "Const<felt252, 7680310>"
-      ],
-      [
-        145,
-        "Const<felt252, 114784635483240>"
-      ],
-      [
-        146,
-        "Const<felt252, 28821964104807730>"
-      ],
-      [
-        147,
-        "Const<felt252, 7716223397109038136891784784228>"
-      ],
-      [
-        148,
-        "Const<felt252, 7038329>"
-      ],
-      [
-        149,
-        "Box<bytes31>"
-      ],
+      [141, "Const<felt252, 30452092669582836929680667752>"],
+      [142, "Const<felt252, 1735355492>"],
+      [143, "Const<felt252, 30832>"],
+      [144, "Const<felt252, 7680310>"],
+      [145, "Const<felt252, 114784635483240>"],
+      [146, "Const<felt252, 28821964104807730>"],
+      [147, "Const<felt252, 7716223397109038136891784784228>"],
+      [148, "Const<felt252, 7038329>"],
+      [149, "Box<bytes31>"],
       [
         150,
         "core::option::Option::<core::box::Box::<@core::bytes_31::bytes31>>"
       ],
-      [
-        151,
-        "NonZero<felt252>"
-      ],
-      [
-        152,
-        "tournament::ls15_components::models::loot_survivor::Equipment"
-      ],
+      [151, "NonZero<felt252>"],
+      [152, "tournament::ls15_components::models::loot_survivor::Equipment"],
       [
         153,
         "core::option::Option::<tournament::ls15_components::models::loot_survivor::Equipment>"
       ],
-      [
-        154,
-        "tournament::ls15_components::models::loot_survivor::Stats"
-      ],
+      [154, "tournament::ls15_components::models::loot_survivor::Stats"],
       [
         155,
         "core::option::Option::<tournament::ls15_components::models::loot_survivor::Stats>"
       ],
-      [
-        156,
-        "Box<felt252>"
-      ],
-      [
-        157,
-        "core::option::Option::<core::box::Box::<@core::felt252>>"
-      ],
-      [
-        158,
-        "core::byte_array::ByteArray"
-      ],
-      [
-        159,
-        "core::array::Span::<dojo::meta::layout::FieldLayout>"
-      ],
-      [
-        160,
-        "dojo::meta::layout::Layout"
-      ],
-      [
-        161,
-        "core::option::Option::<core::integer::u32>"
-      ],
-      [
-        162,
-        "dojo::model::definition::ModelDef"
-      ],
-      [
-        163,
-        "Snapshot<dojo::model::definition::ModelDef>"
-      ],
-      [
-        164,
-        "Tuple<dojo::model::definition::ModelDef>"
-      ],
+      [156, "Box<felt252>"],
+      [157, "core::option::Option::<core::box::Box::<@core::felt252>>"],
+      [158, "core::byte_array::ByteArray"],
+      [159, "core::array::Span::<dojo::meta::layout::FieldLayout>"],
+      [160, "dojo::meta::layout::Layout"],
+      [161, "core::option::Option::<core::integer::u32>"],
+      [162, "dojo::model::definition::ModelDef"],
+      [163, "Snapshot<dojo::model::definition::ModelDef>"],
+      [164, "Tuple<dojo::model::definition::ModelDef>"],
       [
         165,
         "core::panics::PanicResult::<(dojo::model::definition::ModelDef,)>"
       ],
-      [
-        166,
-        "Const<felt252, 1>"
-      ],
-      [
-        167,
-        "Const<felt252, 0>"
-      ],
-      [
-        168,
-        "Tuple<core::option::Option::<core::integer::u32>>"
-      ],
+      [166, "Const<felt252, 1>"],
+      [167, "Const<felt252, 0>"],
+      [168, "Tuple<core::option::Option::<core::integer::u32>>"],
       [
         169,
         "core::panics::PanicResult::<(core::option::Option::<core::integer::u32>,)>"
@@ -3285,74 +2898,29 @@
         170,
         "Const<felt252, 749380586961727072018731206412639157887364770643871151114870710297486048416>"
       ],
-      [
-        171,
-        "dojo::meta::layout::FieldLayout"
-      ],
-      [
-        172,
-        "core::panics::PanicResult::<(dojo::meta::introspect::Struct,)>"
-      ],
-      [
-        173,
-        "Uninitialized<dojo::meta::introspect::Struct>"
-      ],
-      [
-        174,
-        "Tuple<Array<felt252>, Unit>"
-      ],
+      [171, "dojo::meta::layout::FieldLayout"],
+      [172, "core::panics::PanicResult::<(dojo::meta::introspect::Struct,)>"],
+      [173, "Uninitialized<dojo::meta::introspect::Struct>"],
+      [174, "Tuple<Array<felt252>, Unit>"],
       [
         175,
         "core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>"
       ],
-      [
-        176,
-        "Snapshot<Array<bytes31>>"
-      ],
-      [
-        177,
-        "core::array::Span::<core::bytes_31::bytes31>"
-      ],
-      [
-        178,
-        "Snapshot<core::byte_array::ByteArray>"
-      ],
-      [
-        179,
-        "Const<u32, 15>"
-      ],
-      [
-        180,
-        "Const<felt252, 339536917079823439226364047875401068>"
-      ],
-      [
-        181,
-        "bytes31"
-      ],
-      [
-        182,
-        "Uninitialized<core::byte_array::ByteArray>"
-      ],
+      [176, "Snapshot<Array<bytes31>>"],
+      [177, "core::array::Span::<core::bytes_31::bytes31>"],
+      [178, "Snapshot<core::byte_array::ByteArray>"],
+      [179, "Const<u32, 15>"],
+      [180, "Const<felt252, 339536917079823439226364047875401068>"],
+      [181, "bytes31"],
+      [182, "Uninitialized<core::byte_array::ByteArray>"],
       [
         183,
         "Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>"
       ],
-      [
-        184,
-        "Const<felt252, 375233589013918064796019>"
-      ],
-      [
-        185,
-        "Tuple<core::array::Span::<core::felt252>>"
-      ],
-      [
-        186,
-        "BuiltinCosts"
-      ],
-      [
-        187,
-        "System"
-      ],
+      [184, "Const<felt252, 375233589013918064796019>"],
+      [185, "Tuple<core::array::Span::<core::felt252>>"],
+      [186, "BuiltinCosts"],
+      [187, "System"],
       [
         188,
         "core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>"
@@ -3361,10 +2929,7 @@
         189,
         "Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>"
       ],
-      [
-        190,
-        "tournament::ls15_components::models::loot_survivor::Adventurer"
-      ],
+      [190, "tournament::ls15_components::models::loot_survivor::Adventurer"],
       [
         191,
         "tournament::ls15_components::models::loot_survivor::AdventurerModel"
@@ -3377,88 +2942,28 @@
         193,
         "core::option::Option::<tournament::ls15_components::models::loot_survivor::Adventurer>"
       ],
-      [
-        194,
-        "core::option::Option::<core::felt252>"
-      ],
-      [
-        195,
-        "GasBuiltin"
-      ]
+      [194, "core::option::Option::<core::felt252>"],
+      [195, "GasBuiltin"]
     ],
     "libfunc_names": [
-      [
-        0,
-        "revoke_ap_tracking"
-      ],
-      [
-        1,
-        "withdraw_gas"
-      ],
-      [
-        2,
-        "branch_align"
-      ],
-      [
-        3,
-        "struct_deconstruct<core::array::Span::<core::felt252>>"
-      ],
-      [
-        4,
-        "enable_ap_tracking"
-      ],
-      [
-        5,
-        "store_temp<RangeCheck>"
-      ],
-      [
-        6,
-        "array_snapshot_pop_front<felt252>"
-      ],
-      [
-        7,
-        "unbox<felt252>"
-      ],
-      [
-        8,
-        "rename<felt252>"
-      ],
-      [
-        9,
-        "enum_init<core::option::Option::<core::felt252>, 0>"
-      ],
-      [
-        10,
-        "store_temp<Snapshot<Array<felt252>>>"
-      ],
-      [
-        11,
-        "store_temp<core::option::Option::<core::felt252>>"
-      ],
-      [
-        12,
-        "jump"
-      ],
-      [
-        13,
-        "struct_construct<Unit>"
-      ],
-      [
-        14,
-        "enum_init<core::option::Option::<core::felt252>, 1>"
-      ],
-      [
-        15,
-        "enum_match<core::option::Option::<core::felt252>>"
-      ],
-      [
-        16,
-        "struct_construct<core::array::Span::<core::felt252>>"
-      ],
-      [
-        17,
-        "store_temp<core::array::Span::<core::felt252>>"
-      ],
+      [0, "revoke_ap_tracking"],
+      [1, "withdraw_gas"],
+      [2, "branch_align"],
+      [3, "struct_deconstruct<core::array::Span::<core::felt252>>"],
+      [4, "enable_ap_tracking"],
+      [5, "store_temp<RangeCheck>"],
+      [6, "array_snapshot_pop_front<felt252>"],
+      [7, "unbox<felt252>"],
+      [8, "rename<felt252>"],
+      [9, "enum_init<core::option::Option::<core::felt252>, 0>"],
+      [10, "store_temp<Snapshot<Array<felt252>>>"],
+      [11, "store_temp<core::option::Option::<core::felt252>>"],
+      [12, "jump"],
+      [13, "struct_construct<Unit>"],
+      [14, "enum_init<core::option::Option::<core::felt252>, 1>"],
+      [15, "enum_match<core::option::Option::<core::felt252>>"],
+      [16, "struct_construct<core::array::Span::<core::felt252>>"],
+      [17, "store_temp<core::array::Span::<core::felt252>>"],
       [
         18,
         "function_call<user@tournament::ls15_components::models::loot_survivor::AdventurerSerde::deserialize>"
@@ -3479,10 +2984,7 @@
         22,
         "store_temp<core::option::Option::<tournament::ls15_components::models::loot_survivor::AdventurerModel>>"
       ],
-      [
-        23,
-        "drop<felt252>"
-      ],
+      [23, "drop<felt252>"],
       [
         24,
         "enum_init<core::option::Option::<tournament::ls15_components::models::loot_survivor::AdventurerModel>, 1>"
@@ -3495,182 +2997,71 @@
         26,
         "drop<tournament::ls15_components::models::loot_survivor::AdventurerModel>"
       ],
-      [
-        27,
-        "disable_ap_tracking"
-      ],
-      [
-        28,
-        "drop<Snapshot<Array<felt252>>>"
-      ],
-      [
-        29,
-        "drop<Box<felt252>>"
-      ],
-      [
-        30,
-        "array_new<felt252>"
-      ],
+      [27, "disable_ap_tracking"],
+      [28, "drop<Snapshot<Array<felt252>>>"],
+      [29, "drop<Box<felt252>>"],
+      [30, "array_new<felt252>"],
       [
         31,
         "const_as_immediate<Const<felt252, 7733229381460288120802334208475838166080759535023995805565484692595>>"
       ],
-      [
-        32,
-        "store_temp<felt252>"
-      ],
-      [
-        33,
-        "array_append<felt252>"
-      ],
-      [
-        34,
-        "struct_construct<core::panics::Panic>"
-      ],
-      [
-        35,
-        "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"
-      ],
+      [32, "store_temp<felt252>"],
+      [33, "array_append<felt252>"],
+      [34, "struct_construct<core::panics::Panic>"],
+      [35, "struct_construct<Tuple<core::panics::Panic, Array<felt252>>>"],
       [
         36,
         "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 1>"
       ],
-      [
-        37,
-        "store_temp<GasBuiltin>"
-      ],
-      [
-        38,
-        "store_temp<System>"
-      ],
+      [37, "store_temp<GasBuiltin>"],
+      [38, "store_temp<System>"],
       [
         39,
         "store_temp<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>>"
       ],
-      [
-        40,
-        "get_builtin_costs"
-      ],
-      [
-        41,
-        "store_temp<BuiltinCosts>"
-      ],
-      [
-        42,
-        "withdraw_gas_all"
-      ],
-      [
-        43,
-        "snapshot_take<Array<felt252>>"
-      ],
-      [
-        44,
-        "drop<Array<felt252>>"
-      ],
-      [
-        45,
-        "struct_construct<Tuple<core::array::Span::<core::felt252>>>"
-      ],
+      [40, "get_builtin_costs"],
+      [41, "store_temp<BuiltinCosts>"],
+      [42, "withdraw_gas_all"],
+      [43, "snapshot_take<Array<felt252>>"],
+      [44, "drop<Array<felt252>>"],
+      [45, "struct_construct<Tuple<core::array::Span::<core::felt252>>>"],
       [
         46,
         "enum_init<core::panics::PanicResult::<(core::array::Span::<core::felt252>,)>, 0>"
       ],
-      [
-        47,
-        "const_as_immediate<Const<felt252, 375233589013918064796019>>"
-      ],
-      [
-        48,
-        "drop<Unit>"
-      ],
+      [47, "const_as_immediate<Const<felt252, 375233589013918064796019>>"],
+      [48, "drop<Unit>"],
       [
         49,
         "const_as_immediate<Const<felt252, 485748461484230571791265682659113160264223489397539653310998840191492913>>"
       ],
-      [
-        50,
-        "drop<core::array::Span::<core::felt252>>"
-      ],
+      [50, "drop<core::array::Span::<core::felt252>>"],
       [
         51,
         "drop<tournament::ls15_components::models::loot_survivor::Adventurer>"
       ],
-      [
-        52,
-        "alloc_local<core::byte_array::ByteArray>"
-      ],
-      [
-        53,
-        "finalize_locals"
-      ],
-      [
-        54,
-        "drop<Uninitialized<core::byte_array::ByteArray>>"
-      ],
-      [
-        55,
-        "array_new<bytes31>"
-      ],
+      [52, "alloc_local<core::byte_array::ByteArray>"],
+      [53, "finalize_locals"],
+      [54, "drop<Uninitialized<core::byte_array::ByteArray>>"],
+      [55, "array_new<bytes31>"],
       [
         56,
         "const_as_immediate<Const<felt252, 339536917079823439226364047875401068>>"
       ],
-      [
-        57,
-        "const_as_immediate<Const<u32, 15>>"
-      ],
-      [
-        58,
-        "struct_construct<core::byte_array::ByteArray>"
-      ],
-      [
-        59,
-        "store_local<core::byte_array::ByteArray>"
-      ],
-      [
-        60,
-        "snapshot_take<core::byte_array::ByteArray>"
-      ],
-      [
-        61,
-        "drop<core::byte_array::ByteArray>"
-      ],
-      [
-        62,
-        "dup<Snapshot<core::byte_array::ByteArray>>"
-      ],
-      [
-        63,
-        "struct_snapshot_deconstruct<core::byte_array::ByteArray>"
-      ],
-      [
-        64,
-        "drop<u32>"
-      ],
-      [
-        65,
-        "dup<Snapshot<Array<bytes31>>>"
-      ],
-      [
-        66,
-        "array_len<bytes31>"
-      ],
-      [
-        67,
-        "u32_to_felt252"
-      ],
-      [
-        68,
-        "struct_construct<core::array::Span::<core::bytes_31::bytes31>>"
-      ],
-      [
-        69,
-        "store_temp<core::array::Span::<core::bytes_31::bytes31>>"
-      ],
-      [
-        70,
-        "store_temp<Array<felt252>>"
-      ],
+      [57, "const_as_immediate<Const<u32, 15>>"],
+      [58, "struct_construct<core::byte_array::ByteArray>"],
+      [59, "store_local<core::byte_array::ByteArray>"],
+      [60, "snapshot_take<core::byte_array::ByteArray>"],
+      [61, "drop<core::byte_array::ByteArray>"],
+      [62, "dup<Snapshot<core::byte_array::ByteArray>>"],
+      [63, "struct_snapshot_deconstruct<core::byte_array::ByteArray>"],
+      [64, "drop<u32>"],
+      [65, "dup<Snapshot<Array<bytes31>>>"],
+      [66, "array_len<bytes31>"],
+      [67, "u32_to_felt252"],
+      [68, "struct_construct<core::array::Span::<core::bytes_31::bytes31>>"],
+      [69, "store_temp<core::array::Span::<core::bytes_31::bytes31>>"],
+      [70, "store_temp<Array<felt252>>"],
       [
         71,
         "function_call<user@core::array::serialize_array_helper::<core::bytes_31::bytes31, core::serde::into_felt252_based::SerdeImpl::<core::bytes_31::bytes31, core::bytes_31::bytes31Copy, core::bytes_31::Bytes31IntoFelt252, core::bytes_31::Felt252TryIntoBytes31>, core::bytes_31::bytes31Drop>>"
@@ -3679,30 +3070,12 @@
         72,
         "enum_match<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>"
       ],
-      [
-        73,
-        "struct_deconstruct<Tuple<Array<felt252>, Unit>>"
-      ],
-      [
-        74,
-        "drop<Snapshot<Array<bytes31>>>"
-      ],
-      [
-        75,
-        "rename<u32>"
-      ],
-      [
-        76,
-        "drop<Snapshot<core::byte_array::ByteArray>>"
-      ],
-      [
-        77,
-        "alloc_local<dojo::meta::introspect::Struct>"
-      ],
-      [
-        78,
-        "drop<Uninitialized<dojo::meta::introspect::Struct>>"
-      ],
+      [73, "struct_deconstruct<Tuple<Array<felt252>, Unit>>"],
+      [74, "drop<Snapshot<Array<bytes31>>>"],
+      [75, "rename<u32>"],
+      [76, "drop<Snapshot<core::byte_array::ByteArray>>"],
+      [77, "alloc_local<dojo::meta::introspect::Struct>"],
+      [78, "drop<Uninitialized<dojo::meta::introspect::Struct>>"],
       [
         79,
         "function_call<user@dojo::model::model::ModelImpl::<tournament::ls15_components::models::loot_survivor::AdventurerModel, tournament::ls15_components::models::loot_survivor::AdventurerModelModelParser, tournament::ls15_components::models::loot_survivor::m_AdventurerModel_definition::AdventurerModelDefinitionImpl::<tournament::ls15_components::models::loot_survivor::AdventurerModel>, tournament::ls15_components::models::loot_survivor::AdventurerModelSerde>::schema>"
@@ -3711,82 +3084,34 @@
         80,
         "enum_match<core::panics::PanicResult::<(dojo::meta::introspect::Struct,)>>"
       ],
-      [
-        81,
-        "struct_deconstruct<Tuple<dojo::meta::introspect::Struct>>"
-      ],
-      [
-        82,
-        "store_local<dojo::meta::introspect::Struct>"
-      ],
-      [
-        83,
-        "snapshot_take<dojo::meta::introspect::Struct>"
-      ],
-      [
-        84,
-        "drop<dojo::meta::introspect::Struct>"
-      ],
-      [
-        85,
-        "dup<dojo::meta::introspect::Struct>"
-      ],
-      [
-        86,
-        "struct_deconstruct<dojo::meta::introspect::Struct>"
-      ],
-      [
-        87,
-        "drop<core::array::Span::<dojo::meta::introspect::Member>>"
-      ],
-      [
-        88,
-        "dup<core::array::Span::<core::felt252>>"
-      ],
-      [
-        89,
-        "rename<core::array::Span::<core::felt252>>"
-      ],
-      [
-        90,
-        "array_len<felt252>"
-      ],
+      [81, "struct_deconstruct<Tuple<dojo::meta::introspect::Struct>>"],
+      [82, "store_local<dojo::meta::introspect::Struct>"],
+      [83, "snapshot_take<dojo::meta::introspect::Struct>"],
+      [84, "drop<dojo::meta::introspect::Struct>"],
+      [85, "dup<dojo::meta::introspect::Struct>"],
+      [86, "struct_deconstruct<dojo::meta::introspect::Struct>"],
+      [87, "drop<core::array::Span::<dojo::meta::introspect::Member>>"],
+      [88, "dup<core::array::Span::<core::felt252>>"],
+      [89, "rename<core::array::Span::<core::felt252>>"],
+      [90, "array_len<felt252>"],
       [
         91,
         "function_call<user@core::array::serialize_array_helper::<core::felt252, core::Felt252Serde, core::felt252Drop>>"
       ],
-      [
-        92,
-        "dup<core::array::Span::<dojo::meta::introspect::Member>>"
-      ],
-      [
-        93,
-        "rename<core::array::Span::<dojo::meta::introspect::Member>>"
-      ],
+      [92, "dup<core::array::Span::<dojo::meta::introspect::Member>>"],
+      [93, "rename<core::array::Span::<dojo::meta::introspect::Member>>"],
       [
         94,
         "struct_deconstruct<core::array::Span::<dojo::meta::introspect::Member>>"
       ],
-      [
-        95,
-        "array_len<dojo::meta::introspect::Member>"
-      ],
-      [
-        96,
-        "store_temp<core::array::Span::<dojo::meta::introspect::Member>>"
-      ],
+      [95, "array_len<dojo::meta::introspect::Member>"],
+      [96, "store_temp<core::array::Span::<dojo::meta::introspect::Member>>"],
       [
         97,
         "function_call<user@core::array::serialize_array_helper::<dojo::meta::introspect::Member, dojo::meta::introspect::MemberSerde, dojo::meta::introspect::MemberDrop>>"
       ],
-      [
-        98,
-        "store_temp<Tuple<core::panics::Panic, Array<felt252>>>"
-      ],
-      [
-        99,
-        "array_new<dojo::meta::layout::FieldLayout>"
-      ],
+      [98, "store_temp<Tuple<core::panics::Panic, Array<felt252>>>"],
+      [99, "array_new<dojo::meta::layout::FieldLayout>"],
       [
         100,
         "function_call<user@tournament::ls15_components::models::loot_survivor::AdventurerIntrospect::layout>"
@@ -3795,50 +3120,20 @@
         101,
         "const_as_immediate<Const<felt252, 749380586961727072018731206412639157887364770643871151114870710297486048416>>"
       ],
-      [
-        102,
-        "struct_construct<dojo::meta::layout::FieldLayout>"
-      ],
-      [
-        103,
-        "store_temp<dojo::meta::layout::FieldLayout>"
-      ],
-      [
-        104,
-        "array_append<dojo::meta::layout::FieldLayout>"
-      ],
-      [
-        105,
-        "snapshot_take<Array<dojo::meta::layout::FieldLayout>>"
-      ],
-      [
-        106,
-        "drop<Array<dojo::meta::layout::FieldLayout>>"
-      ],
+      [102, "struct_construct<dojo::meta::layout::FieldLayout>"],
+      [103, "store_temp<dojo::meta::layout::FieldLayout>"],
+      [104, "array_append<dojo::meta::layout::FieldLayout>"],
+      [105, "snapshot_take<Array<dojo::meta::layout::FieldLayout>>"],
+      [106, "drop<Array<dojo::meta::layout::FieldLayout>>"],
       [
         107,
         "struct_construct<core::array::Span::<dojo::meta::layout::FieldLayout>>"
       ],
-      [
-        108,
-        "enum_init<dojo::meta::layout::Layout, 1>"
-      ],
-      [
-        109,
-        "snapshot_take<dojo::meta::layout::Layout>"
-      ],
-      [
-        110,
-        "drop<dojo::meta::layout::Layout>"
-      ],
-      [
-        111,
-        "store_temp<dojo::meta::layout::Layout>"
-      ],
-      [
-        112,
-        "function_call<user@dojo::meta::layout::LayoutSerde::serialize>"
-      ],
+      [108, "enum_init<dojo::meta::layout::Layout, 1>"],
+      [109, "snapshot_take<dojo::meta::layout::Layout>"],
+      [110, "drop<dojo::meta::layout::Layout>"],
+      [111, "store_temp<dojo::meta::layout::Layout>"],
+      [112, "function_call<user@dojo::meta::layout::LayoutSerde::serialize>"],
       [
         113,
         "function_call<user@dojo::model::model::ModelImpl::<tournament::ls15_components::models::loot_survivor::AdventurerModel, tournament::ls15_components::models::loot_survivor::AdventurerModelModelParser, tournament::ls15_components::models::loot_survivor::m_AdventurerModel_definition::AdventurerModelDefinitionImpl::<tournament::ls15_components::models::loot_survivor::AdventurerModel>, tournament::ls15_components::models::loot_survivor::AdventurerModelSerde>::unpacked_size>"
@@ -3851,34 +3146,13 @@
         115,
         "struct_deconstruct<Tuple<core::option::Option::<core::integer::u32>>>"
       ],
-      [
-        116,
-        "snapshot_take<core::option::Option::<core::integer::u32>>"
-      ],
-      [
-        117,
-        "drop<core::option::Option::<core::integer::u32>>"
-      ],
-      [
-        118,
-        "enum_match<core::option::Option::<core::integer::u32>>"
-      ],
-      [
-        119,
-        "const_as_immediate<Const<felt252, 0>>"
-      ],
-      [
-        120,
-        "const_as_immediate<Const<felt252, 1>>"
-      ],
-      [
-        121,
-        "enum_init<core::option::Option::<core::integer::u32>, 1>"
-      ],
-      [
-        122,
-        "store_temp<core::option::Option::<core::integer::u32>>"
-      ],
+      [116, "snapshot_take<core::option::Option::<core::integer::u32>>"],
+      [117, "drop<core::option::Option::<core::integer::u32>>"],
+      [118, "enum_match<core::option::Option::<core::integer::u32>>"],
+      [119, "const_as_immediate<Const<felt252, 0>>"],
+      [120, "const_as_immediate<Const<felt252, 1>>"],
+      [121, "enum_init<core::option::Option::<core::integer::u32>, 1>"],
+      [122, "store_temp<core::option::Option::<core::integer::u32>>"],
       [
         123,
         "function_call<user@dojo::model::model::ModelImpl::<tournament::ls15_components::models::loot_survivor::AdventurerModel, tournament::ls15_components::models::loot_survivor::AdventurerModelModelParser, tournament::ls15_components::models::loot_survivor::m_AdventurerModel_definition::AdventurerModelDefinitionImpl::<tournament::ls15_components::models::loot_survivor::AdventurerModel>, tournament::ls15_components::models::loot_survivor::AdventurerModelSerde>::definition>"
@@ -3887,22 +3161,10 @@
         124,
         "enum_match<core::panics::PanicResult::<(dojo::model::definition::ModelDef,)>>"
       ],
-      [
-        125,
-        "struct_deconstruct<Tuple<dojo::model::definition::ModelDef>>"
-      ],
-      [
-        126,
-        "snapshot_take<dojo::model::definition::ModelDef>"
-      ],
-      [
-        127,
-        "drop<dojo::model::definition::ModelDef>"
-      ],
-      [
-        128,
-        "store_temp<Snapshot<dojo::model::definition::ModelDef>>"
-      ],
+      [125, "struct_deconstruct<Tuple<dojo::model::definition::ModelDef>>"],
+      [126, "snapshot_take<dojo::model::definition::ModelDef>"],
+      [127, "drop<dojo::model::definition::ModelDef>"],
+      [128, "store_temp<Snapshot<dojo::model::definition::ModelDef>>"],
       [
         129,
         "function_call<user@dojo::model::definition::ModelDefSerde::serialize>"
@@ -3919,22 +3181,13 @@
         132,
         "enum_init<core::option::Option::<core::box::Box::<@core::felt252>>, 1>"
       ],
-      [
-        133,
-        "dup<Snapshot<Array<felt252>>>"
-      ],
+      [133, "dup<Snapshot<Array<felt252>>>"],
       [
         134,
         "enum_match<core::option::Option::<core::box::Box::<@core::felt252>>>"
       ],
-      [
-        135,
-        "u16_try_from_felt252"
-      ],
-      [
-        136,
-        "u8_try_from_felt252"
-      ],
+      [135, "u16_try_from_felt252"],
+      [136, "u8_try_from_felt252"],
       [
         137,
         "function_call<user@tournament::ls15_components::models::loot_survivor::StatsSerde::deserialize>"
@@ -3951,30 +3204,12 @@
         140,
         "enum_match<core::option::Option::<tournament::ls15_components::models::loot_survivor::Equipment>>"
       ],
-      [
-        141,
-        "felt252_is_zero"
-      ],
-      [
-        142,
-        "enum_init<core::bool, 1>"
-      ],
-      [
-        143,
-        "store_temp<core::bool>"
-      ],
-      [
-        144,
-        "drop<NonZero<felt252>>"
-      ],
-      [
-        145,
-        "enum_init<core::bool, 0>"
-      ],
-      [
-        146,
-        "bool_not_impl"
-      ],
+      [141, "felt252_is_zero"],
+      [142, "enum_init<core::bool, 1>"],
+      [143, "store_temp<core::bool>"],
+      [144, "drop<NonZero<felt252>>"],
+      [145, "enum_init<core::bool, 0>"],
+      [146, "bool_not_impl"],
       [
         147,
         "struct_construct<tournament::ls15_components::models::loot_survivor::Adventurer>"
@@ -3987,46 +3222,25 @@
         149,
         "store_temp<core::option::Option::<tournament::ls15_components::models::loot_survivor::Adventurer>>"
       ],
-      [
-        150,
-        "drop<u16>"
-      ],
-      [
-        151,
-        "drop<core::bool>"
-      ],
-      [
-        152,
-        "drop<u8>"
-      ],
+      [150, "drop<u16>"],
+      [151, "drop<core::bool>"],
+      [152, "drop<u8>"],
       [
         153,
         "drop<tournament::ls15_components::models::loot_survivor::Equipment>"
       ],
-      [
-        154,
-        "drop<tournament::ls15_components::models::loot_survivor::Stats>"
-      ],
+      [154, "drop<tournament::ls15_components::models::loot_survivor::Stats>"],
       [
         155,
         "enum_init<core::option::Option::<tournament::ls15_components::models::loot_survivor::Adventurer>, 1>"
       ],
-      [
-        156,
-        "struct_deconstruct<core::array::Span::<core::bytes_31::bytes31>>"
-      ],
-      [
-        157,
-        "array_snapshot_pop_front<bytes31>"
-      ],
+      [156, "struct_deconstruct<core::array::Span::<core::bytes_31::bytes31>>"],
+      [157, "array_snapshot_pop_front<bytes31>"],
       [
         158,
         "enum_init<core::option::Option::<core::box::Box::<@core::bytes_31::bytes31>>, 0>"
       ],
-      [
-        159,
-        "store_temp<Snapshot<Array<bytes31>>>"
-      ],
+      [159, "store_temp<Snapshot<Array<bytes31>>>"],
       [
         160,
         "store_temp<core::option::Option::<core::box::Box::<@core::bytes_31::bytes31>>>"
@@ -4039,22 +3253,10 @@
         162,
         "enum_match<core::option::Option::<core::box::Box::<@core::bytes_31::bytes31>>>"
       ],
-      [
-        163,
-        "unbox<bytes31>"
-      ],
-      [
-        164,
-        "rename<bytes31>"
-      ],
-      [
-        165,
-        "bytes31_to_felt252"
-      ],
-      [
-        166,
-        "struct_construct<Tuple<Array<felt252>, Unit>>"
-      ],
+      [163, "unbox<bytes31>"],
+      [164, "rename<bytes31>"],
+      [165, "bytes31_to_felt252"],
+      [166, "struct_construct<Tuple<Array<felt252>, Unit>>"],
       [
         167,
         "enum_init<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, 0>"
@@ -4063,62 +3265,26 @@
         168,
         "store_temp<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>>"
       ],
-      [
-        169,
-        "drop<core::array::Span::<core::bytes_31::bytes31>>"
-      ],
+      [169, "drop<core::array::Span::<core::bytes_31::bytes31>>"],
       [
         170,
         "enum_init<core::panics::PanicResult::<(core::array::Array::<core::felt252>, ())>, 1>"
       ],
-      [
-        171,
-        "array_new<dojo::meta::introspect::Member>"
-      ],
-      [
-        172,
-        "const_as_immediate<Const<felt252, 7038329>>"
-      ],
+      [171, "array_new<dojo::meta::introspect::Member>"],
+      [172, "const_as_immediate<Const<felt252, 7038329>>"],
       [
         173,
         "const_as_immediate<Const<felt252, 7716223397109038136891784784228>>"
       ],
-      [
-        174,
-        "const_as_immediate<Const<felt252, 28821964104807730>>"
-      ],
-      [
-        175,
-        "enum_init<dojo::meta::introspect::Ty, 0>"
-      ],
-      [
-        176,
-        "struct_construct<dojo::meta::introspect::Member>"
-      ],
-      [
-        177,
-        "store_temp<dojo::meta::introspect::Member>"
-      ],
-      [
-        178,
-        "array_append<dojo::meta::introspect::Member>"
-      ],
-      [
-        179,
-        "const_as_immediate<Const<felt252, 114784635483240>>"
-      ],
-      [
-        180,
-        "const_as_immediate<Const<felt252, 7680310>>"
-      ],
-      [
-        181,
-        "const_as_immediate<Const<felt252, 30832>>"
-      ],
-      [
-        182,
-        "const_as_immediate<Const<felt252, 1735355492>>"
-      ],
+      [174, "const_as_immediate<Const<felt252, 28821964104807730>>"],
+      [175, "enum_init<dojo::meta::introspect::Ty, 0>"],
+      [176, "struct_construct<dojo::meta::introspect::Member>"],
+      [177, "store_temp<dojo::meta::introspect::Member>"],
+      [178, "array_append<dojo::meta::introspect::Member>"],
+      [179, "const_as_immediate<Const<felt252, 114784635483240>>"],
+      [180, "const_as_immediate<Const<felt252, 7680310>>"],
+      [181, "const_as_immediate<Const<felt252, 30832>>"],
+      [182, "const_as_immediate<Const<felt252, 1735355492>>"],
       [
         183,
         "const_as_immediate<Const<felt252, 30452092669582836929680667752>>"
@@ -4127,142 +3293,52 @@
         184,
         "const_as_immediate<Const<felt252, 11058354882626306356101947498984683213030746117139229797>>"
       ],
-      [
-        185,
-        "const_as_immediate<Const<felt252, 30008>>"
-      ],
-      [
-        186,
-        "const_as_immediate<Const<felt252, 8319400191629685864>>"
-      ],
-      [
-        187,
-        "const_as_immediate<Const<felt252, 1851986129345051194489>>"
-      ],
-      [
-        188,
-        "const_as_immediate<Const<felt252, 8532478930809615481>>"
-      ],
+      [185, "const_as_immediate<Const<felt252, 30008>>"],
+      [186, "const_as_immediate<Const<felt252, 8319400191629685864>>"],
+      [187, "const_as_immediate<Const<felt252, 1851986129345051194489>>"],
+      [188, "const_as_immediate<Const<felt252, 8532478930809615481>>"],
       [
         189,
         "const_as_immediate<Const<felt252, 32629457536844741095214441317>>"
       ],
-      [
-        190,
-        "const_as_immediate<Const<felt252, 131294791233389>>"
-      ],
-      [
-        191,
-        "const_as_immediate<Const<felt252, 7163082351356112225>>"
-      ],
-      [
-        192,
-        "const_as_immediate<Const<felt252, 1819632491>>"
-      ],
-      [
-        193,
-        "const_as_immediate<Const<felt252, 495873782899>>"
-      ],
-      [
-        194,
-        "const_as_immediate<Const<felt252, 358434829427>>"
-      ],
-      [
-        195,
-        "snapshot_take<Array<dojo::meta::introspect::Member>>"
-      ],
-      [
-        196,
-        "drop<Array<dojo::meta::introspect::Member>>"
-      ],
+      [190, "const_as_immediate<Const<felt252, 131294791233389>>"],
+      [191, "const_as_immediate<Const<felt252, 7163082351356112225>>"],
+      [192, "const_as_immediate<Const<felt252, 1819632491>>"],
+      [193, "const_as_immediate<Const<felt252, 495873782899>>"],
+      [194, "const_as_immediate<Const<felt252, 358434829427>>"],
+      [195, "snapshot_take<Array<dojo::meta::introspect::Member>>"],
+      [196, "drop<Array<dojo::meta::introspect::Member>>"],
       [
         197,
         "struct_construct<core::array::Span::<dojo::meta::introspect::Member>>"
       ],
-      [
-        198,
-        "struct_construct<dojo::meta::introspect::Struct>"
-      ],
-      [
-        199,
-        "enum_init<dojo::meta::introspect::Ty, 1>"
-      ],
-      [
-        200,
-        "const_as_immediate<Const<felt252, 26980>>"
-      ],
-      [
-        201,
-        "const_as_immediate<Const<felt252, 131277310160750>>"
-      ],
-      [
-        202,
-        "const_as_immediate<Const<felt252, 1232364909>>"
-      ],
-      [
-        203,
-        "const_as_immediate<Const<felt252, 426953241460>>"
-      ],
-      [
-        204,
-        "const_as_immediate<Const<felt252, 1751474532>>"
-      ],
-      [
-        205,
-        "const_as_immediate<Const<felt252, 512735409012>>"
-      ],
-      [
-        206,
-        "const_as_immediate<Const<felt252, 1718579060>>"
-      ],
-      [
-        207,
-        "const_as_immediate<Const<felt252, 1751215716>>"
-      ],
-      [
-        208,
-        "const_as_immediate<Const<felt252, 1852138347>>"
-      ],
-      [
-        209,
-        "const_as_immediate<Const<felt252, 1919512167>>"
-      ],
-      [
-        210,
-        "const_as_immediate<Const<felt252, 1871296708074818334324>>"
-      ],
-      [
-        211,
-        "const_as_immediate<Const<felt252, 1281000897716112682612>>"
-      ],
+      [198, "struct_construct<dojo::meta::introspect::Struct>"],
+      [199, "enum_init<dojo::meta::introspect::Ty, 1>"],
+      [200, "const_as_immediate<Const<felt252, 26980>>"],
+      [201, "const_as_immediate<Const<felt252, 131277310160750>>"],
+      [202, "const_as_immediate<Const<felt252, 1232364909>>"],
+      [203, "const_as_immediate<Const<felt252, 426953241460>>"],
+      [204, "const_as_immediate<Const<felt252, 1751474532>>"],
+      [205, "const_as_immediate<Const<felt252, 512735409012>>"],
+      [206, "const_as_immediate<Const<felt252, 1718579060>>"],
+      [207, "const_as_immediate<Const<felt252, 1751215716>>"],
+      [208, "const_as_immediate<Const<felt252, 1852138347>>"],
+      [209, "const_as_immediate<Const<felt252, 1919512167>>"],
+      [210, "const_as_immediate<Const<felt252, 1871296708074818334324>>"],
+      [211, "const_as_immediate<Const<felt252, 1281000897716112682612>>"],
       [
         212,
         "const_as_immediate<Const<felt252, 2193962548699216292614674323235470475328319092>>"
       ],
-      [
-        213,
-        "const_as_immediate<Const<felt252, 30809915173135716>>"
-      ],
-      [
-        214,
-        "const_as_immediate<Const<felt252, 1651470188>>"
-      ],
+      [213, "const_as_immediate<Const<felt252, 30809915173135716>>"],
+      [214, "const_as_immediate<Const<felt252, 1651470188>>"],
       [
         215,
         "const_as_immediate<Const<felt252, 36466483476867276038681604549105886697525537570647155>>"
       ],
-      [
-        216,
-        "const_as_immediate<Const<felt252, 459922754592242129855858>>"
-      ],
-      [
-        217,
-        "const_as_immediate<Const<felt252, 308807027140413483017586>>"
-      ],
-      [
-        218,
-        "struct_construct<Tuple<dojo::meta::introspect::Struct>>"
-      ],
+      [216, "const_as_immediate<Const<felt252, 459922754592242129855858>>"],
+      [217, "const_as_immediate<Const<felt252, 308807027140413483017586>>"],
+      [218, "struct_construct<Tuple<dojo::meta::introspect::Struct>>"],
       [
         219,
         "enum_init<core::panics::PanicResult::<(dojo::meta::introspect::Struct,)>, 0>"
@@ -4271,26 +3347,14 @@
         220,
         "store_temp<core::panics::PanicResult::<(dojo::meta::introspect::Struct,)>>"
       ],
-      [
-        221,
-        "alloc_local<Snapshot<Array<dojo::meta::introspect::Member>>>"
-      ],
-      [
-        222,
-        "alloc_local<dojo::meta::introspect::Member>"
-      ],
-      [
-        223,
-        "array_snapshot_pop_front<dojo::meta::introspect::Member>"
-      ],
+      [221, "alloc_local<Snapshot<Array<dojo::meta::introspect::Member>>>"],
+      [222, "alloc_local<dojo::meta::introspect::Member>"],
+      [223, "array_snapshot_pop_front<dojo::meta::introspect::Member>"],
       [
         224,
         "enum_init<core::option::Option::<core::box::Box::<@dojo::meta::introspect::Member>>, 0>"
       ],
-      [
-        225,
-        "store_temp<Snapshot<Array<dojo::meta::introspect::Member>>>"
-      ],
+      [225, "store_temp<Snapshot<Array<dojo::meta::introspect::Member>>>"],
       [
         226,
         "store_temp<core::option::Option::<core::box::Box::<@dojo::meta::introspect::Member>>>"
@@ -4299,78 +3363,33 @@
         227,
         "enum_init<core::option::Option::<core::box::Box::<@dojo::meta::introspect::Member>>, 1>"
       ],
-      [
-        228,
-        "store_local<Snapshot<Array<dojo::meta::introspect::Member>>>"
-      ],
+      [228, "store_local<Snapshot<Array<dojo::meta::introspect::Member>>>"],
       [
         229,
         "enum_match<core::option::Option::<core::box::Box::<@dojo::meta::introspect::Member>>>"
       ],
-      [
-        230,
-        "unbox<dojo::meta::introspect::Member>"
-      ],
-      [
-        231,
-        "store_local<dojo::meta::introspect::Member>"
-      ],
-      [
-        232,
-        "dup<dojo::meta::introspect::Member>"
-      ],
-      [
-        233,
-        "struct_deconstruct<dojo::meta::introspect::Member>"
-      ],
-      [
-        234,
-        "drop<dojo::meta::introspect::Ty>"
-      ],
-      [
-        235,
-        "store_temp<dojo::meta::introspect::Ty>"
-      ],
-      [
-        236,
-        "function_call<user@dojo::meta::introspect::TySerde::serialize>"
-      ],
-      [
-        237,
-        "drop<Snapshot<Array<dojo::meta::introspect::Member>>>"
-      ],
-      [
-        238,
-        "drop<dojo::meta::introspect::Member>"
-      ],
-      [
-        239,
-        "drop<Uninitialized<dojo::meta::introspect::Member>>"
-      ],
+      [230, "unbox<dojo::meta::introspect::Member>"],
+      [231, "store_local<dojo::meta::introspect::Member>"],
+      [232, "dup<dojo::meta::introspect::Member>"],
+      [233, "struct_deconstruct<dojo::meta::introspect::Member>"],
+      [234, "drop<dojo::meta::introspect::Ty>"],
+      [235, "store_temp<dojo::meta::introspect::Ty>"],
+      [236, "function_call<user@dojo::meta::introspect::TySerde::serialize>"],
+      [237, "drop<Snapshot<Array<dojo::meta::introspect::Member>>>"],
+      [238, "drop<dojo::meta::introspect::Member>"],
+      [239, "drop<Uninitialized<dojo::meta::introspect::Member>>"],
       [
         240,
         "drop<Uninitialized<Snapshot<Array<dojo::meta::introspect::Member>>>>"
       ],
-      [
-        241,
-        "const_as_box<Const<Tuple<u8>, Const<u8, 16>>, 0>"
-      ],
-      [
-        242,
-        "span_from_tuple<Tuple<u8>>"
-      ],
+      [241, "const_as_box<Const<Tuple<u8>, Const<u8, 16>>, 0>"],
+      [242, "span_from_tuple<Tuple<u8>>"],
       [
         243,
         "const_as_immediate<Const<felt252, 10081705603222233110711583073880238465441675299724638350815334665239107538>>"
       ],
-      [
-        244,
-        "struct_construct<core::array::Span::<core::integer::u8>>"
-      ],
-      [
-        245,
-        "enum_init<dojo::meta::layout::Layout, 0>"
-      ],
+      [244, "struct_construct<core::array::Span::<core::integer::u8>>"],
+      [245, "enum_init<dojo::meta::layout::Layout, 0>"],
       [
         246,
         "const_as_immediate<Const<felt252, 1064310921837860037904864412523212736221803344766422796024845498163995837666>>"
@@ -4383,10 +3402,7 @@
         248,
         "const_as_immediate<Const<felt252, 1012480395816719811250414850795459896885190327882959988422096450802848612335>>"
       ],
-      [
-        249,
-        "const_as_box<Const<Tuple<u8>, Const<u8, 8>>, 0>"
-      ],
+      [249, "const_as_box<Const<Tuple<u8>, Const<u8, 8>>, 0>"],
       [
         250,
         "const_as_immediate<Const<felt252, 1149339311624590281882224421873203269554645602019386441580917110963443180544>>"
@@ -4411,10 +3427,7 @@
         255,
         "const_as_immediate<Const<felt252, 1155638894664455070500468617936349742991597829297752898339671615487490390013>>"
       ],
-      [
-        256,
-        "const_as_box<Const<Tuple<u8>, Const<u8, 1>>, 0>"
-      ],
+      [256, "const_as_box<Const<Tuple<u8>, Const<u8, 1>>, 0>"],
       [
         257,
         "const_as_immediate<Const<felt252, 1657775627065729684904516438971679060661276509154067415102022456094096240279>>"
@@ -4423,182 +3436,77 @@
         258,
         "const_as_immediate<Const<felt252, 574309727720695247115689782451661382556664447271675519966902004655208739601>>"
       ],
-      [
-        259,
-        "enum_match<dojo::meta::layout::Layout>"
-      ],
-      [
-        260,
-        "dup<core::array::Span::<core::integer::u8>>"
-      ],
-      [
-        261,
-        "rename<core::array::Span::<core::integer::u8>>"
-      ],
-      [
-        262,
-        "struct_deconstruct<core::array::Span::<core::integer::u8>>"
-      ],
-      [
-        263,
-        "array_len<u8>"
-      ],
-      [
-        264,
-        "store_temp<core::array::Span::<core::integer::u8>>"
-      ],
+      [259, "enum_match<dojo::meta::layout::Layout>"],
+      [260, "dup<core::array::Span::<core::integer::u8>>"],
+      [261, "rename<core::array::Span::<core::integer::u8>>"],
+      [262, "struct_deconstruct<core::array::Span::<core::integer::u8>>"],
+      [263, "array_len<u8>"],
+      [264, "store_temp<core::array::Span::<core::integer::u8>>"],
       [
         265,
         "function_call<user@core::array::serialize_array_helper::<core::integer::u8, core::serde::into_felt252_based::SerdeImpl::<core::integer::u8, core::integer::u8Copy, core::integer::U8IntoFelt252, core::integer::Felt252TryIntoU8>, core::integer::u8Drop>>"
       ],
-      [
-        266,
-        "dup<core::array::Span::<dojo::meta::layout::FieldLayout>>"
-      ],
-      [
-        267,
-        "rename<core::array::Span::<dojo::meta::layout::FieldLayout>>"
-      ],
+      [266, "dup<core::array::Span::<dojo::meta::layout::FieldLayout>>"],
+      [267, "rename<core::array::Span::<dojo::meta::layout::FieldLayout>>"],
       [
         268,
         "struct_deconstruct<core::array::Span::<dojo::meta::layout::FieldLayout>>"
       ],
-      [
-        269,
-        "array_len<dojo::meta::layout::FieldLayout>"
-      ],
-      [
-        270,
-        "store_temp<core::array::Span::<dojo::meta::layout::FieldLayout>>"
-      ],
+      [269, "array_len<dojo::meta::layout::FieldLayout>"],
+      [270, "store_temp<core::array::Span::<dojo::meta::layout::FieldLayout>>"],
       [
         271,
         "function_call<user@core::array::serialize_array_helper::<dojo::meta::layout::FieldLayout, dojo::meta::layout::FieldLayoutSerde, dojo::meta::layout::FieldLayoutDrop>>"
       ],
-      [
-        272,
-        "const_as_immediate<Const<felt252, 2>>"
-      ],
-      [
-        273,
-        "dup<core::array::Span::<dojo::meta::layout::Layout>>"
-      ],
-      [
-        274,
-        "rename<core::array::Span::<dojo::meta::layout::Layout>>"
-      ],
+      [272, "const_as_immediate<Const<felt252, 2>>"],
+      [273, "dup<core::array::Span::<dojo::meta::layout::Layout>>"],
+      [274, "rename<core::array::Span::<dojo::meta::layout::Layout>>"],
       [
         275,
         "struct_deconstruct<core::array::Span::<dojo::meta::layout::Layout>>"
       ],
-      [
-        276,
-        "array_len<dojo::meta::layout::Layout>"
-      ],
-      [
-        277,
-        "store_temp<core::array::Span::<dojo::meta::layout::Layout>>"
-      ],
+      [276, "array_len<dojo::meta::layout::Layout>"],
+      [277, "store_temp<core::array::Span::<dojo::meta::layout::Layout>>"],
       [
         278,
         "function_call<user@core::array::serialize_array_helper::<dojo::meta::layout::Layout, dojo::meta::layout::LayoutSerde, dojo::meta::layout::LayoutDrop>>"
       ],
-      [
-        279,
-        "const_as_immediate<Const<felt252, 3>>"
-      ],
-      [
-        280,
-        "const_as_immediate<Const<felt252, 4>>"
-      ],
-      [
-        281,
-        "const_as_immediate<Const<felt252, 5>>"
-      ],
-      [
-        282,
-        "alloc_local<Array<core::option::Option::<core::integer::u32>>>"
-      ],
-      [
-        283,
-        "array_new<core::option::Option::<core::integer::u32>>"
-      ],
-      [
-        284,
-        "const_as_immediate<Const<u32, 7>>"
-      ],
-      [
-        285,
-        "enum_init<core::option::Option::<core::integer::u32>, 0>"
-      ],
-      [
-        286,
-        "array_append<core::option::Option::<core::integer::u32>>"
-      ],
-      [
-        287,
-        "const_as_immediate<Const<u32, 2>>"
-      ],
-      [
-        288,
-        "store_local<Array<core::option::Option::<core::integer::u32>>>"
-      ],
-      [
-        289,
-        "snapshot_take<Array<core::option::Option::<core::integer::u32>>>"
-      ],
-      [
-        290,
-        "const_as_immediate<Const<u32, 0>>"
-      ],
-      [
-        291,
-        "store_temp<u32>"
-      ],
+      [279, "const_as_immediate<Const<felt252, 3>>"],
+      [280, "const_as_immediate<Const<felt252, 4>>"],
+      [281, "const_as_immediate<Const<felt252, 5>>"],
+      [282, "alloc_local<Array<core::option::Option::<core::integer::u32>>>"],
+      [283, "array_new<core::option::Option::<core::integer::u32>>"],
+      [284, "const_as_immediate<Const<u32, 7>>"],
+      [285, "enum_init<core::option::Option::<core::integer::u32>, 0>"],
+      [286, "array_append<core::option::Option::<core::integer::u32>>"],
+      [287, "const_as_immediate<Const<u32, 2>>"],
+      [288, "store_local<Array<core::option::Option::<core::integer::u32>>>"],
+      [289, "snapshot_take<Array<core::option::Option::<core::integer::u32>>>"],
+      [290, "const_as_immediate<Const<u32, 0>>"],
+      [291, "store_temp<u32>"],
       [
         292,
         "store_temp<Snapshot<Array<core::option::Option::<core::integer::u32>>>>"
       ],
-      [
-        293,
-        "function_call<user@dojo::utils::misc::any_none[expr23]>"
-      ],
+      [293, "function_call<user@dojo::utils::misc::any_none[expr23]>"],
       [
         294,
         "enum_match<core::panics::PanicResult::<(core::bool, core::integer::u32, ())>>"
       ],
-      [
-        295,
-        "struct_deconstruct<Tuple<core::bool, u32, Unit>>"
-      ],
-      [
-        296,
-        "enum_match<core::bool>"
-      ],
-      [
-        297,
-        "drop<Array<core::option::Option::<core::integer::u32>>>"
-      ],
-      [
-        298,
-        "function_call<user@dojo::utils::misc::sum[expr24]>"
-      ],
+      [295, "struct_deconstruct<Tuple<core::bool, u32, Unit>>"],
+      [296, "enum_match<core::bool>"],
+      [297, "drop<Array<core::option::Option::<core::integer::u32>>>"],
+      [298, "function_call<user@dojo::utils::misc::sum[expr24]>"],
       [
         299,
         "enum_match<core::panics::PanicResult::<(core::integer::u32, core::integer::u32, core::integer::u32)>>"
       ],
-      [
-        300,
-        "struct_deconstruct<Tuple<u32, u32, u32>>"
-      ],
+      [300, "struct_deconstruct<Tuple<u32, u32, u32>>"],
       [
         301,
         "drop<Uninitialized<Array<core::option::Option::<core::integer::u32>>>>"
       ],
-      [
-        302,
-        "const_as_immediate<Const<u32, 8>>"
-      ],
+      [302, "const_as_immediate<Const<u32, 8>>"],
       [
         303,
         "struct_construct<Tuple<core::option::Option::<core::integer::u32>>>"
@@ -4615,38 +3523,14 @@
         306,
         "enum_init<core::panics::PanicResult::<(core::option::Option::<core::integer::u32>,)>, 1>"
       ],
-      [
-        307,
-        "alloc_local<Array<dojo::meta::layout::FieldLayout>>"
-      ],
-      [
-        308,
-        "alloc_local<Tuple<dojo::meta::introspect::Struct>>"
-      ],
-      [
-        309,
-        "alloc_local<Array<bytes31>>"
-      ],
-      [
-        310,
-        "store_local<Array<bytes31>>"
-      ],
-      [
-        311,
-        "store_local<Array<dojo::meta::layout::FieldLayout>>"
-      ],
-      [
-        312,
-        "store_local<Tuple<dojo::meta::introspect::Struct>>"
-      ],
-      [
-        313,
-        "struct_construct<dojo::model::definition::ModelDef>"
-      ],
-      [
-        314,
-        "struct_construct<Tuple<dojo::model::definition::ModelDef>>"
-      ],
+      [307, "alloc_local<Array<dojo::meta::layout::FieldLayout>>"],
+      [308, "alloc_local<Tuple<dojo::meta::introspect::Struct>>"],
+      [309, "alloc_local<Array<bytes31>>"],
+      [310, "store_local<Array<bytes31>>"],
+      [311, "store_local<Array<dojo::meta::layout::FieldLayout>>"],
+      [312, "store_local<Tuple<dojo::meta::introspect::Struct>>"],
+      [313, "struct_construct<dojo::model::definition::ModelDef>"],
+      [314, "struct_construct<Tuple<dojo::model::definition::ModelDef>>"],
       [
         315,
         "enum_init<core::panics::PanicResult::<(dojo::model::definition::ModelDef,)>, 0>"
@@ -4655,34 +3539,16 @@
         316,
         "store_temp<core::panics::PanicResult::<(dojo::model::definition::ModelDef,)>>"
       ],
-      [
-        317,
-        "drop<Array<bytes31>>"
-      ],
-      [
-        318,
-        "drop<Tuple<dojo::meta::introspect::Struct>>"
-      ],
+      [317, "drop<Array<bytes31>>"],
+      [318, "drop<Tuple<dojo::meta::introspect::Struct>>"],
       [
         319,
         "enum_init<core::panics::PanicResult::<(dojo::model::definition::ModelDef,)>, 1>"
       ],
-      [
-        320,
-        "drop<Uninitialized<Tuple<dojo::meta::introspect::Struct>>>"
-      ],
-      [
-        321,
-        "dup<Snapshot<dojo::model::definition::ModelDef>>"
-      ],
-      [
-        322,
-        "struct_snapshot_deconstruct<dojo::model::definition::ModelDef>"
-      ],
-      [
-        323,
-        "drop<Snapshot<dojo::model::definition::ModelDef>>"
-      ],
+      [320, "drop<Uninitialized<Tuple<dojo::meta::introspect::Struct>>>"],
+      [321, "dup<Snapshot<dojo::model::definition::ModelDef>>"],
+      [322, "struct_snapshot_deconstruct<dojo::model::definition::ModelDef>"],
+      [323, "drop<Snapshot<dojo::model::definition::ModelDef>>"],
       [
         324,
         "struct_construct<tournament::ls15_components::models::loot_survivor::Stats>"
@@ -4715,10 +3581,7 @@
         331,
         "enum_init<core::option::Option::<tournament::ls15_components::models::loot_survivor::Item>, 1>"
       ],
-      [
-        332,
-        "rename<RangeCheck>"
-      ],
+      [332, "rename<RangeCheck>"],
       [
         333,
         "enum_match<core::option::Option::<tournament::ls15_components::models::loot_survivor::Item>>"
@@ -4735,26 +3598,14 @@
         336,
         "store_temp<core::option::Option::<tournament::ls15_components::models::loot_survivor::Equipment>>"
       ],
-      [
-        337,
-        "drop<tournament::ls15_components::models::loot_survivor::Item>"
-      ],
+      [337, "drop<tournament::ls15_components::models::loot_survivor::Item>"],
       [
         338,
         "enum_init<core::option::Option::<tournament::ls15_components::models::loot_survivor::Equipment>, 1>"
       ],
-      [
-        339,
-        "enum_match<dojo::meta::introspect::Ty>"
-      ],
-      [
-        340,
-        "dup<dojo::meta::introspect::Enum>"
-      ],
-      [
-        341,
-        "struct_deconstruct<dojo::meta::introspect::Enum>"
-      ],
+      [339, "enum_match<dojo::meta::introspect::Ty>"],
+      [340, "dup<dojo::meta::introspect::Enum>"],
+      [341, "struct_deconstruct<dojo::meta::introspect::Enum>"],
       [
         342,
         "drop<core::array::Span::<(core::felt252, dojo::meta::introspect::Ty)>>"
@@ -4771,10 +3622,7 @@
         345,
         "struct_deconstruct<core::array::Span::<(core::felt252, dojo::meta::introspect::Ty)>>"
       ],
-      [
-        346,
-        "array_len<Tuple<felt252, dojo::meta::introspect::Ty>>"
-      ],
+      [346, "array_len<Tuple<felt252, dojo::meta::introspect::Ty>>"],
       [
         347,
         "store_temp<core::array::Span::<(core::felt252, dojo::meta::introspect::Ty)>>"
@@ -4783,30 +3631,15 @@
         348,
         "function_call<user@core::array::serialize_array_helper::<(core::felt252, dojo::meta::introspect::Ty), core::serde::SerdeTuple::<(core::felt252, dojo::meta::introspect::Ty), core::metaprogramming::TupleSnapForwardTupleSize2::<core::felt252, dojo::meta::introspect::Ty>, core::serde::SerializeTupleNext::<(@core::felt252, @dojo::meta::introspect::Ty), core::metaprogramming::TupleSplitTupleSize2::<@core::felt252, @dojo::meta::introspect::Ty>, core::serde::SerdeBasedSerializeTuple::<core::felt252, core::Felt252Serde>, core::serde::SerializeTupleNext::<(@dojo::meta::introspect::Ty,), core::metaprogramming::TupleSplitTupleSize1::<@dojo::meta::introspect::Ty>, core::serde::SerdeBasedSerializeTuple::<dojo::meta::introspect::Ty, dojo::meta::introspect::TySerde>, core::serde::SerializeTupleBaseTuple, core::traits::TupleSize0Drop>, core::traits::TupleNextDrop::<(@dojo::meta::introspect::Ty,), core::metaprogramming::TupleSplitTupleSize1::<@dojo::meta::introspect::Ty>, core::metaprogramming::IsTupleTupleSize1::<@dojo::meta::introspect::Ty>, core::traits::SnapshotDrop::<dojo::meta::introspect::Ty>, core::traits::TupleSize0Drop>>, core::serde::DeserializeTupleNext::<(core::felt252, dojo::meta::introspect::Ty), core::metaprogramming::TupleSplitTupleSize2::<core::felt252, dojo::meta::introspect::Ty>, core::Felt252Serde, core::serde::DeserializeTupleNext::<(dojo::meta::introspect::Ty,), core::metaprogramming::TupleSplitTupleSize1::<dojo::meta::introspect::Ty>, dojo::meta::introspect::TySerde, core::serde::DeserializeTupleBaseTuple, dojo::meta::introspect::TyDrop>, core::felt252Drop>>, core::traits::TupleNextDrop::<(core::felt252, dojo::meta::introspect::Ty), core::metaprogramming::TupleSplitTupleSize2::<core::felt252, dojo::meta::introspect::Ty>, core::metaprogramming::IsTupleTupleSize2::<core::felt252, dojo::meta::introspect::Ty>, core::felt252Drop, core::traits::TupleNextDrop::<(dojo::meta::introspect::Ty,), core::metaprogramming::TupleSplitTupleSize1::<dojo::meta::introspect::Ty>, core::metaprogramming::IsTupleTupleSize1::<dojo::meta::introspect::Ty>, dojo::meta::introspect::TyDrop, core::traits::TupleSize0Drop>>>>"
       ],
-      [
-        349,
-        "drop<dojo::meta::introspect::Enum>"
-      ],
-      [
-        350,
-        "dup<core::array::Span::<dojo::meta::introspect::Ty>>"
-      ],
-      [
-        351,
-        "rename<core::array::Span::<dojo::meta::introspect::Ty>>"
-      ],
+      [349, "drop<dojo::meta::introspect::Enum>"],
+      [350, "dup<core::array::Span::<dojo::meta::introspect::Ty>>"],
+      [351, "rename<core::array::Span::<dojo::meta::introspect::Ty>>"],
       [
         352,
         "struct_deconstruct<core::array::Span::<dojo::meta::introspect::Ty>>"
       ],
-      [
-        353,
-        "array_len<dojo::meta::introspect::Ty>"
-      ],
-      [
-        354,
-        "store_temp<core::array::Span::<dojo::meta::introspect::Ty>>"
-      ],
+      [353, "array_len<dojo::meta::introspect::Ty>"],
+      [354, "store_temp<core::array::Span::<dojo::meta::introspect::Ty>>"],
       [
         355,
         "function_call<user@core::array::serialize_array_helper::<dojo::meta::introspect::Ty, dojo::meta::introspect::TySerde, dojo::meta::introspect::TyDrop>>"
@@ -4875,18 +3708,12 @@
         371,
         "const_as_immediate<Const<felt252, 1562650340145569253950719432037265790742673175178595332874263451893627119048>>"
       ],
-      [
-        372,
-        "array_snapshot_pop_front<u8>"
-      ],
+      [372, "array_snapshot_pop_front<u8>"],
       [
         373,
         "enum_init<core::option::Option::<core::box::Box::<@core::integer::u8>>, 0>"
       ],
-      [
-        374,
-        "store_temp<Snapshot<Array<u8>>>"
-      ],
+      [374, "store_temp<Snapshot<Array<u8>>>"],
       [
         375,
         "store_temp<core::option::Option::<core::box::Box::<@core::integer::u8>>>"
@@ -4899,42 +3726,18 @@
         377,
         "enum_match<core::option::Option::<core::box::Box::<@core::integer::u8>>>"
       ],
-      [
-        378,
-        "unbox<u8>"
-      ],
-      [
-        379,
-        "rename<u8>"
-      ],
-      [
-        380,
-        "u8_to_felt252"
-      ],
-      [
-        381,
-        "drop<Snapshot<Array<u8>>>"
-      ],
-      [
-        382,
-        "drop<core::array::Span::<core::integer::u8>>"
-      ],
-      [
-        383,
-        "alloc_local<Snapshot<Array<dojo::meta::layout::FieldLayout>>>"
-      ],
-      [
-        384,
-        "array_snapshot_pop_front<dojo::meta::layout::FieldLayout>"
-      ],
+      [378, "unbox<u8>"],
+      [379, "rename<u8>"],
+      [380, "u8_to_felt252"],
+      [381, "drop<Snapshot<Array<u8>>>"],
+      [382, "drop<core::array::Span::<core::integer::u8>>"],
+      [383, "alloc_local<Snapshot<Array<dojo::meta::layout::FieldLayout>>>"],
+      [384, "array_snapshot_pop_front<dojo::meta::layout::FieldLayout>"],
       [
         385,
         "enum_init<core::option::Option::<core::box::Box::<@dojo::meta::layout::FieldLayout>>, 0>"
       ],
-      [
-        386,
-        "store_temp<Snapshot<Array<dojo::meta::layout::FieldLayout>>>"
-      ],
+      [386, "store_temp<Snapshot<Array<dojo::meta::layout::FieldLayout>>>"],
       [
         387,
         "store_temp<core::option::Option::<core::box::Box::<@dojo::meta::layout::FieldLayout>>>"
@@ -4943,54 +3746,27 @@
         388,
         "enum_init<core::option::Option::<core::box::Box::<@dojo::meta::layout::FieldLayout>>, 1>"
       ],
-      [
-        389,
-        "store_local<Snapshot<Array<dojo::meta::layout::FieldLayout>>>"
-      ],
+      [389, "store_local<Snapshot<Array<dojo::meta::layout::FieldLayout>>>"],
       [
         390,
         "enum_match<core::option::Option::<core::box::Box::<@dojo::meta::layout::FieldLayout>>>"
       ],
-      [
-        391,
-        "unbox<dojo::meta::layout::FieldLayout>"
-      ],
-      [
-        392,
-        "dup<dojo::meta::layout::FieldLayout>"
-      ],
-      [
-        393,
-        "struct_deconstruct<dojo::meta::layout::FieldLayout>"
-      ],
-      [
-        394,
-        "drop<Snapshot<Array<dojo::meta::layout::FieldLayout>>>"
-      ],
+      [391, "unbox<dojo::meta::layout::FieldLayout>"],
+      [392, "dup<dojo::meta::layout::FieldLayout>"],
+      [393, "struct_deconstruct<dojo::meta::layout::FieldLayout>"],
+      [394, "drop<Snapshot<Array<dojo::meta::layout::FieldLayout>>>"],
       [
         395,
         "drop<Uninitialized<Snapshot<Array<dojo::meta::layout::FieldLayout>>>>"
       ],
-      [
-        396,
-        "drop<core::array::Span::<dojo::meta::layout::FieldLayout>>"
-      ],
-      [
-        397,
-        "alloc_local<Snapshot<Array<dojo::meta::layout::Layout>>>"
-      ],
-      [
-        398,
-        "array_snapshot_pop_front<dojo::meta::layout::Layout>"
-      ],
+      [396, "drop<core::array::Span::<dojo::meta::layout::FieldLayout>>"],
+      [397, "alloc_local<Snapshot<Array<dojo::meta::layout::Layout>>>"],
+      [398, "array_snapshot_pop_front<dojo::meta::layout::Layout>"],
       [
         399,
         "enum_init<core::option::Option::<core::box::Box::<@dojo::meta::layout::Layout>>, 0>"
       ],
-      [
-        400,
-        "store_temp<Snapshot<Array<dojo::meta::layout::Layout>>>"
-      ],
+      [400, "store_temp<Snapshot<Array<dojo::meta::layout::Layout>>>"],
       [
         401,
         "store_temp<core::option::Option::<core::box::Box::<@dojo::meta::layout::Layout>>>"
@@ -4999,58 +3775,28 @@
         402,
         "enum_init<core::option::Option::<core::box::Box::<@dojo::meta::layout::Layout>>, 1>"
       ],
-      [
-        403,
-        "store_local<Snapshot<Array<dojo::meta::layout::Layout>>>"
-      ],
+      [403, "store_local<Snapshot<Array<dojo::meta::layout::Layout>>>"],
       [
         404,
         "enum_match<core::option::Option::<core::box::Box::<@dojo::meta::layout::Layout>>>"
       ],
-      [
-        405,
-        "unbox<dojo::meta::layout::Layout>"
-      ],
+      [405, "unbox<dojo::meta::layout::Layout>"],
       [
         406,
         "struct_construct<core::array::Span::<dojo::meta::layout::Layout>>"
       ],
-      [
-        407,
-        "drop<Snapshot<Array<dojo::meta::layout::Layout>>>"
-      ],
-      [
-        408,
-        "drop<Uninitialized<Snapshot<Array<dojo::meta::layout::Layout>>>>"
-      ],
-      [
-        409,
-        "drop<core::array::Span::<dojo::meta::layout::Layout>>"
-      ],
-      [
-        410,
-        "dup<Snapshot<Array<core::option::Option::<core::integer::u32>>>>"
-      ],
-      [
-        411,
-        "array_len<core::option::Option::<core::integer::u32>>"
-      ],
-      [
-        412,
-        "dup<u32>"
-      ],
-      [
-        413,
-        "u32_overflowing_sub"
-      ],
+      [407, "drop<Snapshot<Array<dojo::meta::layout::Layout>>>"],
+      [408, "drop<Uninitialized<Snapshot<Array<dojo::meta::layout::Layout>>>>"],
+      [409, "drop<core::array::Span::<dojo::meta::layout::Layout>>"],
+      [410, "dup<Snapshot<Array<core::option::Option::<core::integer::u32>>>>"],
+      [411, "array_len<core::option::Option::<core::integer::u32>>"],
+      [412, "dup<u32>"],
+      [413, "u32_overflowing_sub"],
       [
         414,
         "drop<Snapshot<Array<core::option::Option::<core::integer::u32>>>>"
       ],
-      [
-        415,
-        "struct_construct<Tuple<core::bool, u32, Unit>>"
-      ],
+      [415, "struct_construct<Tuple<core::bool, u32, Unit>>"],
       [
         416,
         "enum_init<core::panics::PanicResult::<(core::bool, core::integer::u32, ())>, 0>"
@@ -5059,26 +3805,11 @@
         417,
         "store_temp<core::panics::PanicResult::<(core::bool, core::integer::u32, ())>>"
       ],
-      [
-        418,
-        "array_get<core::option::Option::<core::integer::u32>>"
-      ],
-      [
-        419,
-        "store_temp<Box<core::option::Option::<core::integer::u32>>>"
-      ],
-      [
-        420,
-        "unbox<core::option::Option::<core::integer::u32>>"
-      ],
-      [
-        421,
-        "const_as_immediate<Const<u32, 1>>"
-      ],
-      [
-        422,
-        "u32_overflowing_add"
-      ],
+      [418, "array_get<core::option::Option::<core::integer::u32>>"],
+      [419, "store_temp<Box<core::option::Option::<core::integer::u32>>>"],
+      [420, "unbox<core::option::Option::<core::integer::u32>>"],
+      [421, "const_as_immediate<Const<u32, 1>>"],
+      [422, "u32_overflowing_add"],
       [
         423,
         "const_as_immediate<Const<felt252, 155785504323917466144735657540098748279>>"
@@ -5091,10 +3822,7 @@
         425,
         "const_as_immediate<Const<felt252, 1637570914057682275393755530660268060279989363>>"
       ],
-      [
-        426,
-        "struct_construct<Tuple<u32, u32, u32>>"
-      ],
+      [426, "struct_construct<Tuple<u32, u32, u32>>"],
       [
         427,
         "enum_init<core::panics::PanicResult::<(core::integer::u32, core::integer::u32, core::integer::u32)>, 0>"
@@ -5103,10 +3831,7 @@
         428,
         "store_temp<core::panics::PanicResult::<(core::integer::u32, core::integer::u32, core::integer::u32)>>"
       ],
-      [
-        429,
-        "rename<core::option::Option::<core::integer::u32>>"
-      ],
+      [429, "rename<core::option::Option::<core::integer::u32>>"],
       [
         430,
         "enum_init<core::panics::PanicResult::<(core::integer::u32, core::integer::u32, core::integer::u32)>, 1>"
@@ -5143,14 +3868,8 @@
         438,
         "enum_match<core::option::Option::<core::box::Box::<@(core::felt252, dojo::meta::introspect::Ty)>>>"
       ],
-      [
-        439,
-        "unbox<Tuple<felt252, dojo::meta::introspect::Ty>>"
-      ],
-      [
-        440,
-        "struct_deconstruct<Tuple<felt252, dojo::meta::introspect::Ty>>"
-      ],
+      [439, "unbox<Tuple<felt252, dojo::meta::introspect::Ty>>"],
+      [440, "struct_deconstruct<Tuple<felt252, dojo::meta::introspect::Ty>>"],
       [
         441,
         "struct_construct<core::array::Span::<(core::felt252, dojo::meta::introspect::Ty)>>"
@@ -5163,22 +3882,13 @@
         443,
         "drop<Uninitialized<Snapshot<Array<Tuple<felt252, dojo::meta::introspect::Ty>>>>>"
       ],
-      [
-        444,
-        "alloc_local<Snapshot<Array<dojo::meta::introspect::Ty>>>"
-      ],
-      [
-        445,
-        "array_snapshot_pop_front<dojo::meta::introspect::Ty>"
-      ],
+      [444, "alloc_local<Snapshot<Array<dojo::meta::introspect::Ty>>>"],
+      [445, "array_snapshot_pop_front<dojo::meta::introspect::Ty>"],
       [
         446,
         "enum_init<core::option::Option::<core::box::Box::<@dojo::meta::introspect::Ty>>, 0>"
       ],
-      [
-        447,
-        "store_temp<Snapshot<Array<dojo::meta::introspect::Ty>>>"
-      ],
+      [447, "store_temp<Snapshot<Array<dojo::meta::introspect::Ty>>>"],
       [
         448,
         "store_temp<core::option::Option::<core::box::Box::<@dojo::meta::introspect::Ty>>>"
@@ -5187,34 +3897,19 @@
         449,
         "enum_init<core::option::Option::<core::box::Box::<@dojo::meta::introspect::Ty>>, 1>"
       ],
-      [
-        450,
-        "store_local<Snapshot<Array<dojo::meta::introspect::Ty>>>"
-      ],
+      [450, "store_local<Snapshot<Array<dojo::meta::introspect::Ty>>>"],
       [
         451,
         "enum_match<core::option::Option::<core::box::Box::<@dojo::meta::introspect::Ty>>>"
       ],
-      [
-        452,
-        "unbox<dojo::meta::introspect::Ty>"
-      ],
+      [452, "unbox<dojo::meta::introspect::Ty>"],
       [
         453,
         "struct_construct<core::array::Span::<dojo::meta::introspect::Ty>>"
       ],
-      [
-        454,
-        "drop<Snapshot<Array<dojo::meta::introspect::Ty>>>"
-      ],
-      [
-        455,
-        "drop<Uninitialized<Snapshot<Array<dojo::meta::introspect::Ty>>>>"
-      ],
-      [
-        456,
-        "drop<core::array::Span::<dojo::meta::introspect::Ty>>"
-      ]
+      [454, "drop<Snapshot<Array<dojo::meta::introspect::Ty>>>"],
+      [455, "drop<Uninitialized<Snapshot<Array<dojo::meta::introspect::Ty>>>>"],
+      [456, "drop<core::array::Span::<dojo::meta::introspect::Ty>>"]
     ],
     "user_func_names": [
       [
@@ -5277,10 +3972,7 @@
         14,
         "tournament::ls15_components::models::loot_survivor::AdventurerIntrospect::layout"
       ],
-      [
-        15,
-        "dojo::meta::layout::LayoutSerde::serialize"
-      ],
+      [15, "dojo::meta::layout::LayoutSerde::serialize"],
       [
         16,
         "dojo::model::model::ModelImpl::<tournament::ls15_components::models::loot_survivor::AdventurerModel, tournament::ls15_components::models::loot_survivor::AdventurerModelModelParser, tournament::ls15_components::models::loot_survivor::m_AdventurerModel_definition::AdventurerModelDefinitionImpl::<tournament::ls15_components::models::loot_survivor::AdventurerModel>, tournament::ls15_components::models::loot_survivor::AdventurerModelSerde>::unpacked_size"
@@ -5289,10 +3981,7 @@
         17,
         "dojo::model::model::ModelImpl::<tournament::ls15_components::models::loot_survivor::AdventurerModel, tournament::ls15_components::models::loot_survivor::AdventurerModelModelParser, tournament::ls15_components::models::loot_survivor::m_AdventurerModel_definition::AdventurerModelDefinitionImpl::<tournament::ls15_components::models::loot_survivor::AdventurerModel>, tournament::ls15_components::models::loot_survivor::AdventurerModelSerde>::definition"
       ],
-      [
-        18,
-        "dojo::model::definition::ModelDefSerde::serialize"
-      ],
+      [18, "dojo::model::definition::ModelDefSerde::serialize"],
       [
         19,
         "tournament::ls15_components::models::loot_survivor::StatsSerde::deserialize"
@@ -5301,10 +3990,7 @@
         20,
         "tournament::ls15_components::models::loot_survivor::EquipmentSerde::deserialize"
       ],
-      [
-        21,
-        "dojo::meta::introspect::TySerde::serialize"
-      ],
+      [21, "dojo::meta::introspect::TySerde::serialize"],
       [
         22,
         "tournament::ls15_components::models::loot_survivor::StatsIntrospect::layout"
@@ -5325,14 +4011,8 @@
         26,
         "core::array::serialize_array_helper::<dojo::meta::layout::Layout, dojo::meta::layout::LayoutSerde, dojo::meta::layout::LayoutDrop>"
       ],
-      [
-        27,
-        "dojo::utils::misc::any_none[expr23]"
-      ],
-      [
-        28,
-        "dojo::utils::misc::sum[expr24]"
-      ],
+      [27, "dojo::utils::misc::any_none[expr23]"],
+      [28, "dojo::utils::misc::sum[expr24]"],
       [
         29,
         "core::array::serialize_array_helper::<(core::felt252, dojo::meta::introspect::Ty), core::serde::SerdeTuple::<(core::felt252, dojo::meta::introspect::Ty), core::metaprogramming::TupleSnapForwardTupleSize2::<core::felt252, dojo::meta::introspect::Ty>, core::serde::SerializeTupleNext::<(@core::felt252, @dojo::meta::introspect::Ty), core::metaprogramming::TupleSplitTupleSize2::<@core::felt252, @dojo::meta::introspect::Ty>, core::serde::SerdeBasedSerializeTuple::<core::felt252, core::Felt252Serde>, core::serde::SerializeTupleNext::<(@dojo::meta::introspect::Ty,), core::metaprogramming::TupleSplitTupleSize1::<@dojo::meta::introspect::Ty>, core::serde::SerdeBasedSerializeTuple::<dojo::meta::introspect::Ty, dojo::meta::introspect::TySerde>, core::serde::SerializeTupleBaseTuple, core::traits::TupleSize0Drop>, core::traits::TupleNextDrop::<(@dojo::meta::introspect::Ty,), core::metaprogramming::TupleSplitTupleSize1::<@dojo::meta::introspect::Ty>, core::metaprogramming::IsTupleTupleSize1::<@dojo::meta::introspect::Ty>, core::traits::SnapshotDrop::<dojo::meta::introspect::Ty>, core::traits::TupleSize0Drop>>, core::serde::DeserializeTupleNext::<(core::felt252, dojo::meta::introspect::Ty), core::metaprogramming::TupleSplitTupleSize2::<core::felt252, dojo::meta::introspect::Ty>, core::Felt252Serde, core::serde::DeserializeTupleNext::<(dojo::meta::introspect::Ty,), core::metaprogramming::TupleSplitTupleSize1::<dojo::meta::introspect::Ty>, dojo::meta::introspect::TySerde, core::serde::DeserializeTupleBaseTuple, dojo::meta::introspect::TyDrop>, core::felt252Drop>>, core::traits::TupleNextDrop::<(core::felt252, dojo::meta::introspect::Ty), core::metaprogramming::TupleSplitTupleSize2::<core::felt252, dojo::meta::introspect::Ty>, core::metaprogramming::IsTupleTupleSize2::<core::felt252, dojo::meta::introspect::Ty>, core::felt252Drop, core::traits::TupleNextDrop::<(dojo::meta::introspect::Ty,), core::metaprogramming::TupleSplitTupleSize1::<dojo::meta::introspect::Ty>, core::metaprogramming::IsTupleTupleSize1::<dojo::meta::introspect::Ty>, dojo::meta::introspect::TyDrop, core::traits::TupleSize0Drop>>>"

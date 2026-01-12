@@ -17,11 +17,7 @@
     "name": "core::byte_array::ByteArray",
     "type": "struct"
   },
-  "cairo_serialized": [
-    "0x0",
-    "0x0",
-    "0x0"
-  ],
+  "cairo_serialized": ["0x0", "0x0", "0x0"],
   "cairo_serialized_size": 3,
   "description": "Empty ByteArray",
   "test_value": "\"\"",

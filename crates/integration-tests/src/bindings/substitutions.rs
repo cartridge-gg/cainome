@@ -79,123 +79,6 @@ pub mod contracts {
                 }
             }
             #[derive(serde::Deserialize, serde::Serialize)]
-            pub struct ToAlias {
-                pub a: u32,
-            }
-            impl cainome_cairo_serde::CairoSerde for ToAlias {
-                type RustType = Self;
-                const SERIALIZED_SIZE: std::option::Option<usize> = None;
-                #[inline]
-                fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-                    let mut __size = 0;
-                    __size += u32::cairo_serialized_size(&__rust.a);
-                    __size
-                }
-                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-                    let mut __out: Vec<starknet::core::types::Felt> = vec![];
-                    __out.extend(u32::cairo_serialize(&__rust.a));
-                    __out
-                }
-                fn cairo_deserialize(
-                    __felts: &[starknet::core::types::Felt],
-                    __offset: usize,
-                ) -> cainome_cairo_serde::Result<Self::RustType> {
-                    let mut __offset = __offset;
-                    let a = u32::cairo_deserialize(__felts, __offset)?;
-                    __offset += u32::cairo_serialized_size(&a);
-                    Ok(ToAlias { a })
-                }
-            }
-            #[derive(serde::Deserialize, serde::Serialize)]
-            pub struct GenericTwo {
-                pub a: starknet::core::types::Felt,
-                pub b: cainome_cairo_serde::U256,
-                pub c: starknet::core::types::Felt,
-                pub d: crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
-                pub e: Vec<crate::bindings::substitutions::contracts::abicov::structs::ToAlias>,
-                pub f: crate::bindings::substitutions::contracts::abicov::structs::GenericOne,
-            }
-            impl cainome_cairo_serde::CairoSerde for GenericTwo {
-                type RustType = Self;
-                const SERIALIZED_SIZE: std::option::Option<usize> = None;
-                #[inline]
-                fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-                    let mut __size = 0;
-                    __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.a);
-                    __size += cainome_cairo_serde::U256::cairo_serialized_size(&__rust.b);
-                    __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.c);
-                    __size
-                        += crate::bindings::substitutions::contracts::abicov::structs::ToAlias::cairo_serialized_size(
-                            &__rust.d,
-                        );
-                    __size += Vec::<
-                        crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
-                    >::cairo_serialized_size(&__rust.e);
-                    __size
-                        += crate::bindings::substitutions::contracts::abicov::structs::GenericOne::cairo_serialized_size(
-                            &__rust.f,
-                        );
-                    __size
-                }
-                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-                    let mut __out: Vec<starknet::core::types::Felt> = vec![];
-                    __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.a));
-                    __out.extend(cainome_cairo_serde::U256::cairo_serialize(&__rust.b));
-                    __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.c));
-                    __out
-                        .extend(
-                            crate::bindings::substitutions::contracts::abicov::structs::ToAlias::cairo_serialize(
-                                &__rust.d,
-                            ),
-                        );
-                    __out.extend(Vec::<
-                        crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
-                    >::cairo_serialize(&__rust.e));
-                    __out
-                        .extend(
-                            crate::bindings::substitutions::contracts::abicov::structs::GenericOne::cairo_serialize(
-                                &__rust.f,
-                            ),
-                        );
-                    __out
-                }
-                fn cairo_deserialize(
-                    __felts: &[starknet::core::types::Felt],
-                    __offset: usize,
-                ) -> cainome_cairo_serde::Result<Self::RustType> {
-                    let mut __offset = __offset;
-                    let a = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-                    __offset += starknet::core::types::Felt::cairo_serialized_size(&a);
-                    let b = cainome_cairo_serde::U256::cairo_deserialize(__felts, __offset)?;
-                    __offset += cainome_cairo_serde::U256::cairo_serialized_size(&b);
-                    let c = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-                    __offset += starknet::core::types::Felt::cairo_serialized_size(&c);
-                    let d = crate::bindings::substitutions::contracts::abicov::structs::ToAlias::cairo_deserialize(
-                        __felts,
-                        __offset,
-                    )?;
-                    __offset
-                        += crate::bindings::substitutions::contracts::abicov::structs::ToAlias::cairo_serialized_size(
-                            &d,
-                        );
-                    let e = Vec::<
-                        crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
-                    >::cairo_deserialize(__felts, __offset)?;
-                    __offset += Vec::<
-                        crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
-                    >::cairo_serialized_size(&e);
-                    let f = crate::bindings::substitutions::contracts::abicov::structs::GenericOne::cairo_deserialize(
-                        __felts,
-                        __offset,
-                    )?;
-                    __offset
-                        += crate::bindings::substitutions::contracts::abicov::structs::GenericOne::cairo_serialized_size(
-                            &f,
-                        );
-                    Ok(GenericTwo { a, b, c, d, e, f })
-                }
-            }
-            #[derive(serde::Deserialize, serde::Serialize)]
             pub struct GenericOne {
                 #[serde(
                     serialize_with = "cainome_cairo_serde::serialize_as_hex",
@@ -235,6 +118,34 @@ pub mod contracts {
                     let c = cainome_cairo_serde::U256::cairo_deserialize(__felts, __offset)?;
                     __offset += cainome_cairo_serde::U256::cairo_serialized_size(&c);
                     Ok(GenericOne { a, b, c })
+                }
+            }
+            #[derive(serde::Deserialize, serde::Serialize)]
+            pub struct ToAlias {
+                pub a: u32,
+            }
+            impl cainome_cairo_serde::CairoSerde for ToAlias {
+                type RustType = Self;
+                const SERIALIZED_SIZE: std::option::Option<usize> = None;
+                #[inline]
+                fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+                    let mut __size = 0;
+                    __size += u32::cairo_serialized_size(&__rust.a);
+                    __size
+                }
+                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+                    let mut __out: Vec<starknet::core::types::Felt> = vec![];
+                    __out.extend(u32::cairo_serialize(&__rust.a));
+                    __out
+                }
+                fn cairo_deserialize(
+                    __felts: &[starknet::core::types::Felt],
+                    __offset: usize,
+                ) -> cainome_cairo_serde::Result<Self::RustType> {
+                    let mut __offset = __offset;
+                    let a = u32::cairo_deserialize(__felts, __offset)?;
+                    __offset += u32::cairo_serialized_size(&a);
+                    Ok(ToAlias { a })
                 }
             }
             #[derive(serde::Deserialize, serde::Serialize)]
@@ -389,6 +300,99 @@ pub mod contracts {
                     })
                 }
             }
+            #[derive(serde::Deserialize, serde::Serialize)]
+            pub struct GenericTwo {
+                pub a: starknet::core::types::Felt,
+                #[serde(
+                    serialize_with = "cainome_cairo_serde::serialize_as_hex",
+                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex"
+                )]
+                pub b: u64,
+                pub c: starknet::core::types::Felt,
+                pub d: crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
+                pub e: Vec<crate::bindings::substitutions::contracts::abicov::structs::ToAlias>,
+                pub f: crate::bindings::substitutions::contracts::abicov::structs::GenericOne,
+            }
+            impl cainome_cairo_serde::CairoSerde for GenericTwo {
+                type RustType = Self;
+                const SERIALIZED_SIZE: std::option::Option<usize> = None;
+                #[inline]
+                fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+                    let mut __size = 0;
+                    __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.a);
+                    __size += u64::cairo_serialized_size(&__rust.b);
+                    __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.c);
+                    __size
+                        += crate::bindings::substitutions::contracts::abicov::structs::ToAlias::cairo_serialized_size(
+                            &__rust.d,
+                        );
+                    __size += Vec::<
+                        crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
+                    >::cairo_serialized_size(&__rust.e);
+                    __size
+                        += crate::bindings::substitutions::contracts::abicov::structs::GenericOne::cairo_serialized_size(
+                            &__rust.f,
+                        );
+                    __size
+                }
+                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+                    let mut __out: Vec<starknet::core::types::Felt> = vec![];
+                    __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.a));
+                    __out.extend(u64::cairo_serialize(&__rust.b));
+                    __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.c));
+                    __out
+                        .extend(
+                            crate::bindings::substitutions::contracts::abicov::structs::ToAlias::cairo_serialize(
+                                &__rust.d,
+                            ),
+                        );
+                    __out.extend(Vec::<
+                        crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
+                    >::cairo_serialize(&__rust.e));
+                    __out
+                        .extend(
+                            crate::bindings::substitutions::contracts::abicov::structs::GenericOne::cairo_serialize(
+                                &__rust.f,
+                            ),
+                        );
+                    __out
+                }
+                fn cairo_deserialize(
+                    __felts: &[starknet::core::types::Felt],
+                    __offset: usize,
+                ) -> cainome_cairo_serde::Result<Self::RustType> {
+                    let mut __offset = __offset;
+                    let a = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+                    __offset += starknet::core::types::Felt::cairo_serialized_size(&a);
+                    let b = u64::cairo_deserialize(__felts, __offset)?;
+                    __offset += u64::cairo_serialized_size(&b);
+                    let c = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+                    __offset += starknet::core::types::Felt::cairo_serialized_size(&c);
+                    let d = crate::bindings::substitutions::contracts::abicov::structs::ToAlias::cairo_deserialize(
+                        __felts,
+                        __offset,
+                    )?;
+                    __offset
+                        += crate::bindings::substitutions::contracts::abicov::structs::ToAlias::cairo_serialized_size(
+                            &d,
+                        );
+                    let e = Vec::<
+                        crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
+                    >::cairo_deserialize(__felts, __offset)?;
+                    __offset += Vec::<
+                        crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
+                    >::cairo_serialized_size(&e);
+                    let f = crate::bindings::substitutions::contracts::abicov::structs::GenericOne::cairo_deserialize(
+                        __felts,
+                        __offset,
+                    )?;
+                    __offset
+                        += crate::bindings::substitutions::contracts::abicov::structs::GenericOne::cairo_serialized_size(
+                            &f,
+                        );
+                    Ok(GenericTwo { a, b, c, d, e, f })
+                }
+            }
         }
     }
 }
@@ -396,7 +400,8 @@ pub mod core {
     pub mod array {
         #[derive(serde::Deserialize, serde::Serialize)]
         pub struct Span {
-            pub snapshot: Vec<starknet::core::types::Felt>,
+            pub snapshot:
+                Vec<crate::bindings::substitutions::contracts::abicov::structs::GenericOne>,
         }
         impl cainome_cairo_serde::CairoSerde for Span {
             type RustType = Self;
@@ -404,15 +409,16 @@ pub mod core {
             #[inline]
             fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
                 let mut __size = 0;
-                __size +=
-                    Vec::<starknet::core::types::Felt>::cairo_serialized_size(&__rust.snapshot);
+                __size += Vec::<
+                    crate::bindings::substitutions::contracts::abicov::structs::GenericOne,
+                >::cairo_serialized_size(&__rust.snapshot);
                 __size
             }
             fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
                 let mut __out: Vec<starknet::core::types::Felt> = vec![];
-                __out.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
-                    &__rust.snapshot,
-                ));
+                __out.extend(Vec::<
+                    crate::bindings::substitutions::contracts::abicov::structs::GenericOne,
+                >::cairo_serialize(&__rust.snapshot));
                 __out
             }
             fn cairo_deserialize(
@@ -420,9 +426,12 @@ pub mod core {
                 __offset: usize,
             ) -> cainome_cairo_serde::Result<Self::RustType> {
                 let mut __offset = __offset;
-                let snapshot =
-                    Vec::<starknet::core::types::Felt>::cairo_deserialize(__felts, __offset)?;
-                __offset += Vec::<starknet::core::types::Felt>::cairo_serialized_size(&snapshot);
+                let snapshot = Vec::<
+                    crate::bindings::substitutions::contracts::abicov::structs::GenericOne,
+                >::cairo_deserialize(__felts, __offset)?;
+                __offset += Vec::<
+                    crate::bindings::substitutions::contracts::abicov::structs::GenericOne,
+                >::cairo_serialized_size(&snapshot);
                 Ok(Span { snapshot })
             }
         }
@@ -523,74 +532,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Substitutions<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn get_simple(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<
-        A::Provider,
-        crate::bindings::substitutions::contracts::abicov::structs::Simple,
-    > {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_simple"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn get_generic_one_array(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<
-        A::Provider,
-        crate::bindings::substitutions::contracts::abicov::structs::GenericOne,
-    > {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_generic_one_array"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn get_struct_w_struct(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<
-        A::Provider,
-        crate::bindings::substitutions::contracts::abicov::structs::StructWithStruct,
-    > {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_struct_w_struct"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn get_generic_two(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<
-        A::Provider,
-        crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
-    > {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_generic_two"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn get_tuple_of_array_generic(
         &self,
     ) -> cainome_cairo_serde::call::FCall<
@@ -628,112 +569,96 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Substitutions<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn set_from_alias_getcall(
+    pub fn get_struct_w_struct(
         &self,
-        value: &Vec<crate::bindings::substitutions::contracts::abicov::structs::ToAlias>,
+    ) -> cainome_cairo_serde::call::FCall<
+        A::Provider,
+        crate::bindings::substitutions::contracts::abicov::structs::StructWithStruct,
+    > {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_struct_w_struct"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn get_generic_one_array(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<
+        A::Provider,
+        crate::bindings::substitutions::contracts::abicov::structs::GenericOne,
+    > {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_generic_one_array"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn get_simple(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<
+        A::Provider,
+        crate::bindings::substitutions::contracts::abicov::structs::Simple,
+    > {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_simple"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn get_generic_two(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<
+        A::Provider,
+        crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
+    > {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_generic_two"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_struct_w_optional_struct_getcall(
+        &self,
+        sws: &Option<crate::bindings::substitutions::contracts::abicov::structs::StructWithStruct>,
     ) -> starknet::core::types::Call {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
-        __calldata.extend(Vec::<
-            crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
-        >::cairo_serialize(value));
+        __calldata.extend(Option::<
+            crate::bindings::substitutions::contracts::abicov::structs::StructWithStruct,
+        >::cairo_serialize(sws));
         starknet::core::types::Call {
             to: self.address,
-            selector: starknet::macros::selector!("set_from_alias"),
+            selector: starknet::macros::selector!("set_struct_w_optional_struct"),
             calldata: __calldata,
         }
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn set_from_alias(
+    pub fn set_struct_w_optional_struct(
         &self,
-        value: &Vec<crate::bindings::substitutions::contracts::abicov::structs::ToAlias>,
+        sws: &Option<crate::bindings::substitutions::contracts::abicov::structs::StructWithStruct>,
     ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.set_from_alias_getcall(value);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn set_simple_getcall(
-        &self,
-        simple: &crate::bindings::substitutions::contracts::abicov::structs::Simple,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(
-            crate::bindings::substitutions::contracts::abicov::structs::Simple::cairo_serialize(
-                simple,
-            ),
-        );
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("set_simple"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn set_simple(
-        &self,
-        simple: &crate::bindings::substitutions::contracts::abicov::structs::Simple,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.set_simple_getcall(simple);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn set_generic_two_0_getcall(
-        &self,
-        generic: &crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(
-            crate::bindings::substitutions::contracts::abicov::structs::GenericTwo::cairo_serialize(
-                generic,
-            ),
-        );
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("set_generic_two_0"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn set_generic_two_0(
-        &self,
-        generic: &crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.set_generic_two_0_getcall(generic);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn set_generic_two_2_getcall(
-        &self,
-        generic: &crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(
-            crate::bindings::substitutions::contracts::abicov::structs::GenericTwo::cairo_serialize(
-                generic,
-            ),
-        );
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("set_generic_two_2"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn set_generic_two_2(
-        &self,
-        generic: &crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.set_generic_two_2_getcall(generic);
+        let __call = self.set_struct_w_optional_struct_getcall(sws);
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
@@ -766,6 +691,34 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Substitutions<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
+    pub fn set_generic_two_0_getcall(
+        &self,
+        generic: &crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(
+            crate::bindings::substitutions::contracts::abicov::structs::GenericTwo::cairo_serialize(
+                generic,
+            ),
+        );
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("set_generic_two_0"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_generic_two_0(
+        &self,
+        generic: &crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.set_generic_two_0_getcall(generic);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
     pub fn set_struct_w_struct_getcall(
         &self,
         sws: &crate::bindings::substitutions::contracts::abicov::structs::StructWithStruct,
@@ -791,6 +744,88 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Substitutions<A> {
         sws: &crate::bindings::substitutions::contracts::abicov::structs::StructWithStruct,
     ) -> starknet::accounts::ExecutionV3<A> {
         let __call = self.set_struct_w_struct_getcall(sws);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_from_alias_getcall(
+        &self,
+        value: &Vec<crate::bindings::substitutions::contracts::abicov::structs::ToAlias>,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(Vec::<
+            crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
+        >::cairo_serialize(value));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("set_from_alias"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_from_alias(
+        &self,
+        value: &Vec<crate::bindings::substitutions::contracts::abicov::structs::ToAlias>,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.set_from_alias_getcall(value);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_generic_two_getcall(
+        &self,
+        generic: &crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(
+            crate::bindings::substitutions::contracts::abicov::structs::GenericTwo::cairo_serialize(
+                generic,
+            ),
+        );
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("set_generic_two"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_generic_two(
+        &self,
+        generic: &crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.set_generic_two_getcall(generic);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_simple_getcall(
+        &self,
+        simple: &crate::bindings::substitutions::contracts::abicov::structs::Simple,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(
+            crate::bindings::substitutions::contracts::abicov::structs::Simple::cairo_serialize(
+                simple,
+            ),
+        );
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("set_simple"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_simple(
+        &self,
+        simple: &crate::bindings::substitutions::contracts::abicov::structs::Simple,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.set_simple_getcall(simple);
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
@@ -828,7 +863,7 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Substitutions<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn set_generic_two_getcall(
+    pub fn set_generic_two_2_getcall(
         &self,
         generic: &crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
     ) -> starknet::core::types::Call {
@@ -841,43 +876,17 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Substitutions<A> {
         );
         starknet::core::types::Call {
             to: self.address,
-            selector: starknet::macros::selector!("set_generic_two"),
+            selector: starknet::macros::selector!("set_generic_two_2"),
             calldata: __calldata,
         }
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn set_generic_two(
+    pub fn set_generic_two_2(
         &self,
         generic: &crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
     ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.set_generic_two_getcall(generic);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn set_struct_w_optional_struct_getcall(
-        &self,
-        sws: &Option<crate::bindings::substitutions::contracts::abicov::structs::StructWithStruct>,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(Option::<
-            crate::bindings::substitutions::contracts::abicov::structs::StructWithStruct,
-        >::cairo_serialize(sws));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("set_struct_w_optional_struct"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn set_struct_w_optional_struct(
-        &self,
-        sws: &Option<crate::bindings::substitutions::contracts::abicov::structs::StructWithStruct>,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.set_struct_w_optional_struct_getcall(sws);
+        let __call = self.set_generic_two_2_getcall(generic);
         self.account.execute_v3(vec![__call])
     }
     pub async fn declare(
@@ -969,74 +978,6 @@ impl<P: starknet::providers::Provider + Sync> SubstitutionsReader<P> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn get_simple(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<
-        P,
-        crate::bindings::substitutions::contracts::abicov::structs::Simple,
-    > {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_simple"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn get_generic_one_array(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<
-        P,
-        crate::bindings::substitutions::contracts::abicov::structs::GenericOne,
-    > {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_generic_one_array"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn get_struct_w_struct(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<
-        P,
-        crate::bindings::substitutions::contracts::abicov::structs::StructWithStruct,
-    > {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_struct_w_struct"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn get_generic_two(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<
-        P,
-        crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
-    > {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_generic_two"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn get_tuple_of_array_generic(
         &self,
     ) -> cainome_cairo_serde::call::FCall<
@@ -1068,6 +1009,74 @@ impl<P: starknet::providers::Provider + Sync> SubstitutionsReader<P> {
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
             entry_point_selector: starknet::macros::selector!("get_generic_one"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn get_struct_w_struct(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<
+        P,
+        crate::bindings::substitutions::contracts::abicov::structs::StructWithStruct,
+    > {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_struct_w_struct"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn get_generic_one_array(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<
+        P,
+        crate::bindings::substitutions::contracts::abicov::structs::GenericOne,
+    > {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_generic_one_array"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn get_simple(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<
+        P,
+        crate::bindings::substitutions::contracts::abicov::structs::Simple,
+    > {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_simple"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn get_generic_two(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<
+        P,
+        crate::bindings::substitutions::contracts::abicov::structs::GenericTwo,
+    > {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_generic_two"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
