@@ -15,23 +15,23 @@ pub struct TypeRegistry {
 
 // TODO: memoise maybe? set?
 fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
-    if ArrayContainer::test_path(&type_path) {
-        let inner_type_path = ArrayContainer::get_inner(&type_path)?;
+    if ArrayContainer::test_path(type_path) {
+        let inner_type_path = ArrayContainer::get_inner(type_path)?;
         return get_generic_inner_types(&inner_type_path);
     }
 
-    if NonZeroContainer::test_path(&type_path) {
-        let inner_type_path = NonZeroContainer::get_inner(&type_path)?;
+    if NonZeroContainer::test_path(type_path) {
+        let inner_type_path = NonZeroContainer::get_inner(type_path)?;
         return get_generic_inner_types(&inner_type_path);
     }
 
-    if OptionContainer::test_path(&type_path) {
-        let inner_type_path = OptionContainer::get_inner(&type_path)?;
+    if OptionContainer::test_path(type_path) {
+        let inner_type_path = OptionContainer::get_inner(type_path)?;
         return get_generic_inner_types(&inner_type_path);
     }
 
-    if ResultContainer::test_path(&type_path) {
-        let inner_type_path = ResultContainer::get_inner(&type_path)?;
+    if ResultContainer::test_path(type_path) {
+        let inner_type_path = ResultContainer::get_inner(type_path)?;
 
         let mut inners = vec![];
         inners.append(&mut get_generic_inner_types(&inner_type_path.inner)?);
@@ -40,13 +40,13 @@ fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
         return Ok(inners);
     }
 
-    if TupleContainer::test_path(&type_path) {
-        let inner_type_paths = TupleContainer::get_inner(&type_path)?;
+    if TupleContainer::test_path(type_path) {
+        let inner_type_paths = TupleContainer::get_inner(type_path)?;
 
         let mut inners = vec![];
 
         for inner_type_path in inner_type_paths.iter() {
-            let mut tuple_elements = get_generic_inner_types(&inner_type_path)?;
+            let mut tuple_elements = get_generic_inner_types(inner_type_path)?;
             inners.append(&mut tuple_elements);
         }
 
@@ -113,7 +113,7 @@ fn wrap_generic_containers(
         let mut inners = vec![];
 
         for inner_type_path in inner_type_paths.iter() {
-            inners.push(wrap_generic_containers(&inner_type_path, registry)?);
+            inners.push(wrap_generic_containers(inner_type_path, registry)?);
         }
 
         let token = Token::Tuple(TupleContainer::new(&type_path, inners));
@@ -127,8 +127,7 @@ fn wrap_generic_containers(
     }
 
     Err(Error::ParsingFailed(format!(
-        "Could not match '{}' against generic container or existent types",
-        type_path,
+        "Could not match '{type_path}' against generic container or existent types",
     )))
 }
 
@@ -160,7 +159,7 @@ impl TypeRegistry {
     }
 
     pub fn get(&self, path: &str) -> Result<Rc<RefCell<Token>>, Error> {
-        let generic_token_chain = wrap_generic_containers(path, &self)?;
+        let generic_token_chain = wrap_generic_containers(path, self)?;
         return Ok(generic_token_chain);
     }
 

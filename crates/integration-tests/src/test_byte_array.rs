@@ -1,6 +1,5 @@
 use katana_runner::RunnerCtx;
 use starknet::contract::UdcSelector;
-use starknet_types_core::felt::Felt;
 
 use cainome_cairo_serde::ByteArray;
 use cainome_rs_macro::abigen;

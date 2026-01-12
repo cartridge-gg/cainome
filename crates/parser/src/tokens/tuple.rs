@@ -1,11 +1,11 @@
-//! A tuple is a collection of types which can be of different types.
+//! A TupleContainer is a container for tuple type grouping other tokens
 //!
 //! An empty tuple is considered as a unit type `()`, and has its own management
-//! in the [`crate::tokens::CoreBasic`] module.
+//! in the [`crate::tokens::basic::TypePath`] module.
 //!
 //! A tuple can contain generic in cairo code, however in the ABI,
 //! generic types are actually always replaced by their concrete types.
-//! So a [`Tuple`] is not a generic type itself in the context of cainome.
+//! So a [`TupleContainer`] is not a generic type itself in the context of cainome.
 use std::{cell::RefCell, rc::Rc};
 
 use syn::Type;
@@ -44,8 +44,7 @@ impl TupleContainer {
             }
             _ => {
                 return Err(Error::TokenInitFailed(format!(
-                    "Tuple couldn't be initialized from `{}`.",
-                    type_path,
+                    "Tuple couldn't be initialized from `{type_path}`.",
                 )));
             }
         }
@@ -57,11 +56,11 @@ impl TupleContainer {
     ///
     /// # Arguments
     ///
-    /// * `type_path` - The type path to parse.
-    ///
+    /// * `type_path` - The full type path from ABI to parse. (example: `core::integer::u64`)
+    /// * `inners` - The inner tokens of the tuple.
     /// # Returns
     ///
-    /// Returns a [`Tuple`] token if the type path is a tuple.
+    /// Returns a [`TupleContainer`] token if the type path is a tuple.
     /// Returns an error otherwise.
     pub fn new(type_path: &str, inners: Vec<Rc<RefCell<Token>>>) -> Self {
         Self {

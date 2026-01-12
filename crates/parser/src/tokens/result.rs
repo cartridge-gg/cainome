@@ -27,7 +27,7 @@ impl ResultContainer {
     }
 
     pub fn get_inner(type_path: &str) -> CainomeResult<ResultContainerInnerTypes, Error> {
-        let generic_args = genericity::extract_generics_args(&type_path)?;
+        let generic_args = genericity::extract_generics_args(type_path)?;
 
         if generic_args.len() != 2 {
             return Err(Error::InvalidOptionTypePath(type_path.to_string()));

@@ -210,26 +210,24 @@ fn test_parsing_all_core_type_struct_fields() {
 
 #[test]
 fn check_array_container_is_parsed() {
-    let abi_json = format!(
-        r#"[
-                {{
+    let abi_json = r#"[
+                {
                     "type": "struct",
                     "name": "my::package::AllInOne",
                     "members": [
-                        {{
+                        {
                             "name": "f1",
                             "type": "core::array::Span::<felt>"
-                        }},
-                        {{
+                        },
+                        {
                             "name": "f2",
                             "type": "core::array::Array::<felt>"
-                        }}
+                        }
                     ]
-                }}
-            ]"#,
-    );
+                }
+            ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.structs.len(), 1);
 
     let Some(token) = result.structs.iter().next() else {
@@ -264,22 +262,20 @@ fn check_array_container_is_parsed() {
 
 #[test]
 fn check_tuple_container_is_parsed() {
-    let abi_json = format!(
-        r#"[
-                {{
+    let abi_json = r#"[
+                {
                     "type": "struct",
                     "name": "my::package::AllInOne",
                     "members": [
-                        {{
+                        {
                             "name": "f1",
                             "type": "(felt, core::integer::i32)"
-                        }}
+                        }
                     ]
-                }}
-            ]"#,
-    );
+                }
+            ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.structs.len(), 1);
 
     let Some(token) = result.structs.iter().next() else {
@@ -311,22 +307,20 @@ fn check_tuple_container_is_parsed() {
 
 #[test]
 fn check_nested_tuple_container_is_parsed() {
-    let abi_json = format!(
-        r#"[
-                {{
+    let abi_json = r#"[
+                {
                     "type": "struct",
                     "name": "my::package::AllInOne",
                     "members": [
-                        {{
+                        {
                             "name": "f1",
                             "type": "(felt, (felt, core::integer::i32))"
-                        }}
+                        }
                     ]
-                }}
-            ]"#,
-    );
+                }
+            ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.structs.len(), 1);
 
     let Some(token) = result.structs.iter().next() else {
@@ -368,52 +362,48 @@ fn check_nested_tuple_container_is_parsed() {
 
 #[test]
 fn check_bool_enum_is_ignored_on_parse() {
-    let abi_json = format!(
-        r#"[
-                {{
+    let abi_json = r#"[
+                {
                     "name": "core::bool",
                     "type": "enum",
                     "variants": [
-                        {{
+                        {
                             "name": "False",
                             "type": "()"
-                        }},
-                        {{
+                        },
+                        {
                             "name": "True",
                             "type": "()"
-                        }}
+                        }
                     ]
-                }}
-            ]"#,
-    );
+                }
+            ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.structs.len(), 0);
     assert_eq!(result.enums.len(), 0);
 }
 
 #[test]
 fn check_basic_enum_is_parsed() {
-    let abi_json = format!(
-        r#"[
-                {{
+    let abi_json = r#"[
+                {
                     "name": "contracts::abicov::enums::MixedEnum",
                     "type": "enum",
                     "variants": [
-                        {{
+                        {
                             "name": "Variant1",
                             "type": "core::felt252"
-                        }},
-                        {{
+                        },
+                        {
                             "name": "Variant2",
                             "type": "()"
-                        }}
+                        }
                     ]
-                }}
-            ]"#,
-    );
+                }
+            ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.enums.len(), 1);
 
     let Some(token) = result.enums.iter().next() else {
@@ -442,76 +432,74 @@ fn check_basic_enum_is_parsed() {
 
 #[test]
 fn check_complex_enum_is_parsed() {
-    let abi_json = format!(
-        r#"[
-                {{
+    let abi_json = r#"[
+                {
                     "type": "struct",
                     "name": "core::integer::u256",
                     "members": [
-                        {{
+                        {
                             "name": "low",
                             "type": "core::integer::u128"
-                        }},
-                        {{
+                        },
+                        {
                             "name": "high",
                             "type": "core::integer::u128"
-                        }}
+                        }
                     ]
-                }},
-                {{
+                },
+                {
                     "name": "contracts::abicov::enums::TypedEnum",
                     "type": "enum",
                     "variants": [
-                        {{
+                        {
                             "name": "Variant1",
                             "type": "core::felt252"
-                        }},
-                        {{
+                        },
+                        {
                             "name": "Variant2",
                             "type": "core::integer::u256"
-                        }},
-                        {{
+                        },
+                        {
                             "name": "Variant3",
                             "type": "(core::felt252, core::integer::u256)"
-                        }},
-                        {{
+                        },
+                        {
                             "name": "Variant4",
                             "type": "core::starknet::contract_address::ContractAddress"
-                        }},
-                        {{
+                        },
+                        {
                             "name": "Variant5",
                             "type": "contracts::abicov::enums::Simple"
-                        }},
-                        {{
+                        },
+                        {
                             "name": "Variant6",
                             "type": "contracts::abicov::enums::StructWithStruct"
-                        }}
+                        }
                     ]
-                }},
-                {{
+                },
+                {
                     "type": "struct",
                     "name": "contracts::abicov::enums::StructWithStruct",
                     "members": [
-                        {{
+                        {
                             "name": "simple",
                             "type": "contracts::abicov::enums::Simple"
-                        }}
+                        }
                     ]
-                }},
-                {{
+                },
+                {
                     "type": "struct",
                     "name": "contracts::abicov::enums::Simple",
                     "members": [
-                        {{
+                        {
                             "name": "span",
                             "type": "felt"
-                        }}
+                        }
                     ]
-                }}
-            ]"#,
-    );
+                }
+            ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.enums.len(), 1);
     assert_eq!(result.structs.len(), 3);
 }
@@ -566,22 +554,20 @@ fn test_abi_struct_with_link_to_other_struct_and_nonzero_container() {
 
 #[test]
 fn test_option_is_resolved_as_a_part_of_struct() {
-    let abi_json = format!(
-        r#"[
-                {{
+    let abi_json = r#"[
+                {
                     "name": "baitcode::TestStruct",
                     "type": "struct",
                     "members": [
-                        {{
+                        {
                             "name": "option",
                             "type": "core::option::Option::<core::felt252>"
-                        }}
+                        }
                     ]
-                }}
-            ]"#,
-    );
+                }
+            ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.enums.len(), 0);
     assert_eq!(result.structs.len(), 1);
     assert_eq!(result.interfaces.len(), 0);
@@ -612,22 +598,20 @@ fn test_option_is_resolved_as_a_part_of_struct() {
 
 #[test]
 fn test_result_is_resolved_as_a_part_of_struct() {
-    let abi_json = format!(
-        r#"[
-                {{
+    let abi_json = r#"[
+                {
                     "name": "baitcode::TestStruct",
                     "type": "struct",
                     "members": [
-                        {{
+                        {
                             "name": "result",
                             "type": "core::result::Result::<core::felt252, core::integer::u32>"
-                        }}
+                        }
                     ]
-                }}
-            ]"#,
-    );
+                }
+            ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.enums.len(), 0);
     assert_eq!(result.structs.len(), 1);
     assert_eq!(result.interfaces.len(), 0);
@@ -663,22 +647,20 @@ fn test_result_is_resolved_as_a_part_of_struct() {
 
 #[test]
 fn test_non_zero_is_resolved_as_a_part_of_struct() {
-    let abi_json = format!(
-        r#"[
-                {{
+    let abi_json = r#"[
+                {
                     "name": "baitcode::TestStruct",
                     "type": "struct",
                     "members": [
-                        {{
+                        {
                             "name": "result",
                             "type": "core::zeroable::NonZero::<core::felt252>"
-                        }}
+                        }
                     ]
-                }}
-            ]"#,
-    );
+                }
+            ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.enums.len(), 0);
     assert_eq!(result.structs.len(), 1);
     assert_eq!(result.interfaces.len(), 0);
@@ -709,29 +691,27 @@ fn test_non_zero_is_resolved_as_a_part_of_struct() {
 
 #[test]
 fn test_simple_event_struct_parsing() {
-    let abi_json = format!(
-        r#"[
-                {{
+    let abi_json = r#"[
+                {
                     "type": "event",
                     "name": "contracts::abicov::simple_events::simple_events::EventWithOtherName",
                     "kind": "struct",
                     "members": [
-                      {{
+                      {
                         "name": "value1",
                         "type": "core::felt252",
                         "kind": "data"
-                      }},
-                      {{
+                      },
+                      {
                         "name": "value2",
                         "type": "core::felt252",
                         "kind": "key"
-                      }}
+                      }
                     ]
-                }}
-            ]"#,
-    );
+                }
+            ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.enums.len(), 0);
     assert_eq!(result.structs.len(), 0);
     assert_eq!(result.interfaces.len(), 0);
@@ -766,46 +746,44 @@ fn test_simple_event_struct_parsing() {
 
 #[test]
 fn test_nested_event_struct_parsing() {
-    let abi_json = format!(
-        r#"[
-                {{
+    let abi_json = r#"[
+                {
                     "type": "event",
                     "name": "contracts::Event",
                     "kind": "struct",
                     "members": [
-                      {{
+                      {
                         "name": "value1",
                         "type": "core::felt252",
                         "kind": "data"
-                      }},
-                      {{
+                      },
+                      {
                         "name": "value2",
                         "type": "core::felt252",
                         "kind": "key"
-                      }}
+                      }
                     ]
-                }},
-                {{
+                },
+                {
                     "type": "event",
                     "name": "contracts::EventComplex",
                     "kind": "enum",
                     "variants": [
-                      {{
+                      {
                         "name": "Event1",
                         "type": "contracts::Event",
                         "kind": "nested"
-                      }},
-                      {{
+                      },
+                      {
                         "name": "Event2",
                         "type": "contracts::Event",
                         "kind": "nested"
-                      }}
+                      }
                     ]
-                }}
-            ]"#,
-    );
+                }
+            ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.enums.len(), 0);
     assert_eq!(result.structs.len(), 0);
     assert_eq!(result.interfaces.len(), 0);
@@ -862,42 +840,40 @@ fn test_nested_event_struct_parsing() {
 
 #[test]
 fn test_function_parsing() {
-    let abi_json = format!(
-        r#"[
-                {{
+    let abi_json = r#"[
+                {
                     "type": "function",
                     "name": "procedure",
                     "inputs": [],
                     "outputs": [],
                     "state_mutability": "external"  
-                }},
-                {{
+                },
+                {
                     "type": "function",
                     "name": "procedure2",
                     "inputs": [],
                     "outputs": [],
                     "state_mutability": "view"  
-                }},
-                {{
+                },
+                {
                     "type": "function",
                     "name": "func",
                     "inputs": [
-                        {{
+                        {
                             "name": "arg",
                             "type": "felt"
-                        }}
+                        }
                     ],
                     "outputs": [
-                        {{
+                        {
                             "type": "felt"
-                        }}
+                        }
                     ],
                     "state_mutability": "external"  
-                }}
-            ]"#,
-    );
+                }
+            ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
 
     assert_eq!(result.enums.len(), 0);
     assert_eq!(result.structs.len(), 0);
@@ -945,46 +921,44 @@ fn test_function_parsing() {
 
 #[test]
 fn test_interface_parsing() {
-    let abi_json = format!(
-        r#"[
-                {{
+    let abi_json = r#"[
+                {
                     "type": "impl",
                     "name": "MyInterfaceImpl",
                     "interface_name": "contracts::abicov::simple_interface::MyInterface"
-                }},
-                {{
+                },
+                {
                     "type": "interface",
                     "name": "contracts::abicov::simple_interface::MyInterface",
                     "items": [
-                        {{
+                        {
                             "type": "function",
                             "name": "get_value",
                             "inputs": [],
                             "outputs": [
-                                {{
+                                {
                                     "type": "core::felt252"
-                                }}
+                                }
                             ],
                             "state_mutability": "view"
-                        }},
-                        {{
+                        },
+                        {
                             "type": "function",
                             "name": "set_value",
                             "inputs": [
-                                {{
+                                {
                                     "name": "value",
                                     "type": "core::felt252"
-                                }}
+                                }
                             ],
                             "outputs": [],
                             "state_mutability": "external"
-                        }}
+                        }
                     ]
-                }}
-            ]"#,
-    );
+                }
+            ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
 
     assert_eq!(result.enums.len(), 0);
     assert_eq!(result.structs.len(), 0);
@@ -993,7 +967,7 @@ fn test_interface_parsing() {
     assert_eq!(result.events.len(), 0);
     assert_eq!(result.functions.len(), 0);
 
-    let Some(token) = result.interfaces_new.iter().next() else {
+    let Some(token) = result.interfaces_new.first() else {
         panic!("At least one element should be present in interfaces_new");
     };
 
@@ -1099,119 +1073,117 @@ fn test_collect_tokens() {
 
 #[test]
 fn events_parsing() {
-    let abi_json = format!(
-        r#"[
-            {{
+    let abi_json = r#"[
+            {
                 "type": "event",
                 "name": "zzz::HelloStarknet::BookAdded",
                 "kind": "struct",
                 "members": [
-                    {{
+                    {
                         "name": "id",
                         "type": "core::integer::u32",
                         "kind": "data"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "title",
                         "type": "core::felt252",
                         "kind": "data"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "author",
                         "type": "core::felt252",
                         "kind": "key"
-                    }}
+                    }
                 ]
-            }},
-            {{
+            },
+            {
                 "type": "event",
                 "name": "zzz::HelloStarknet::UpdatedTitleData",
                 "kind": "struct",
                 "members": [
-                    {{
+                    {
                         "name": "id",
                         "type": "core::integer::u32",
                         "kind": "key"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "new_title",
                         "type": "core::felt252",
                         "kind": "data"
-                    }}
+                    }
                 ]
-            }},
-            {{
+            },
+            {
                 "type": "event",
                 "name": "zzz::HelloStarknet::UpdatedAuthorData",
                 "kind": "struct",
                 "members": [
-                    {{
+                    {
                         "name": "id",
                         "type": "core::integer::u32",
                         "kind": "key"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "new_author",
                         "type": "core::felt252",
                         "kind": "data"
-                    }}
+                    }
                 ]
-            }},
-            {{
+            },
+            {
                 "type": "event",
                 "name": "zzz::HelloStarknet::FieldUpdated",
                 "kind": "enum",
                 "variants": [
-                    {{
+                    {
                         "name": "Title",
                         "type": "zzz::HelloStarknet::UpdatedTitleData",
                         "kind": "nested"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "Author",
                         "type": "zzz::HelloStarknet::UpdatedAuthorData",
                         "kind": "nested"
-                    }}
+                    }
                 ]
-            }},
-            {{
+            },
+            {
                 "type": "event",
                 "name": "zzz::HelloStarknet::BookRemoved",
                 "kind": "struct",
                 "members": [
-                    {{
+                    {
                         "name": "id",
                         "type": "core::integer::u32",
                         "kind": "data"
-                    }}
+                    }
                 ]
-            }},
-            {{
+            },
+            {
                 "type": "event",
                 "name": "zzz::HelloStarknet::Event",
                 "kind": "enum",
                 "variants": [
-                    {{
+                    {
                         "name": "BookAdded",
                         "type": "zzz::HelloStarknet::BookAdded",
                         "kind": "nested"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "FieldUpdated",
                         "type": "zzz::HelloStarknet::FieldUpdated",
                         "kind": "flat"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "BookRemoved",
                         "type": "zzz::HelloStarknet::BookRemoved",
                         "kind": "nested"
-                    }}
+                    }
                 ]
-            }}
-        ]"#
-    );
+            }
+        ]"#;
 
-    let result = AbiParser::tokens_from_abi_string(&abi_json, HashMap::new()).unwrap();
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
 
     assert_eq!(result.enums.len(), 0);
     assert_eq!(result.structs.len(), 0);
@@ -1274,32 +1246,30 @@ fn events_parsing() {
 
 #[test]
 fn test_unresolved_type_raiees_error() {
-    let abi_json = format!(
-        r#"[
-            {{
+    let abi_json = r#"[
+            {
                 "type": "struct",
                 "name": "contracts::abicov::structs::GenericOne::<core::felt252>",
                 "members": [
-                    {{
+                    {
                         "name": "a",
                         "type": "core::felt252"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "b",
                         "type": "core::felt252"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "c",
                         "type": "core::integer::u256"
-                    }}
+                    }
                 ]
-            }}
-        ]"#
-    );
+            }
+        ]"#;
 
     let ctx = ParserContext::new();
 
-    let abi_entries = AbiParser::parse_abi_string(&abi_json).unwrap();
+    let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
 
     let result = AbiParser::build_registry(abi_entries, ctx);
 
@@ -1311,32 +1281,30 @@ fn test_unresolved_type_raiees_error() {
 
 #[test]
 fn test_skip_type_incomplete_type() {
-    let abi_json = format!(
-        r#"[
-            {{
+    let abi_json = r#"[
+            {
                 "type": "struct",
                 "name": "contracts::abicov::structs::GenericOne::<core::felt252>",
                 "members": [
-                    {{
+                    {
                         "name": "a",
                         "type": "core::felt252"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "b",
                         "type": "core::felt252"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "c",
                         "type": "core::integer::u256"
-                    }}
+                    }
                 ]
-            }}
-        ]"#
-    );
+            }
+        ]"#;
 
     let ctx = ParserContext::new().with_type_skips(vec!["core::integer::u256"]);
 
-    let abi_entries = AbiParser::parse_abi_string(&abi_json).unwrap();
+    let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
 
     let result = AbiParser::build_registry(abi_entries, ctx);
 
@@ -1348,32 +1316,30 @@ fn test_skip_type_incomplete_type() {
 
 #[test]
 fn test_skip_type() {
-    let abi_json = format!(
-        r#"[
-            {{
+    let abi_json = r#"[
+            {
                 "type": "struct",
                 "name": "contracts::abicov::structs::GenericOne::<core::felt252>",
                 "members": [
-                    {{
+                    {
                         "name": "a",
                         "type": "core::felt252"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "b",
                         "type": "core::felt252"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "c",
                         "type": "core::integer::u256"
-                    }}
+                    }
                 ]
-            }}
-        ]"#
-    );
+            }
+        ]"#;
 
     let ctx = ParserContext::new().with_type_skips(vec!["contracts::abicov::structs::GenericOne"]);
 
-    let abi_entries = AbiParser::parse_abi_string(&abi_json).unwrap();
+    let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
 
     let result = AbiParser::build_registry(abi_entries, ctx);
 
@@ -1382,35 +1348,33 @@ fn test_skip_type() {
 
 #[test]
 fn test_substitute_type() {
-    let abi_json = format!(
-        r#"[
-            {{
+    let abi_json = r#"[
+            {
                 "type": "struct",
                 "name": "contracts::abicov::structs::GenericOne::<core::felt252>",
                 "members": [
-                    {{
+                    {
                         "name": "a",
                         "type": "core::felt252"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "b",
                         "type": "core::felt252"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "c",
                         "type": "core::integer::u256"
-                    }}
+                    }
                 ]
-            }}
-        ]"#
-    );
+            }
+        ]"#;
 
     let ctx = ParserContext::new().with_substitutions(HashMap::from([(
         "core::integer::u256",
         "cainome::cairo_serde::U256",
     )]));
 
-    let abi_entries = AbiParser::parse_abi_string(&abi_json).unwrap();
+    let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
 
     let result = AbiParser::build_registry(abi_entries, ctx);
 
@@ -1419,32 +1383,30 @@ fn test_substitute_type() {
 
 #[test]
 fn test_skip_generic_type() {
-    let abi_json = format!(
-        r#"[
-            {{
+    let abi_json = r#"[
+            {
                 "type": "struct",
                 "name": "contracts::abicov::structs::GenericOne::<core::felt252>",
                 "members": [
-                    {{
+                    {
                         "name": "a",
                         "type": "core::felt252"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "b",
                         "type": "core::felt252"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "c",
                         "type": "core::integer::u256"
-                    }}
+                    }
                 ]
-            }}
-        ]"#
-    );
+            }
+        ]"#;
 
     let ctx = ParserContext::new().with_type_skips(vec!["contracts::abicov::structs::GenericOne"]);
 
-    let abi_entries = AbiParser::parse_abi_string(&abi_json).unwrap();
+    let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
 
     let result = AbiParser::build_registry(abi_entries, ctx);
 

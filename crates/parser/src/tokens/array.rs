@@ -91,7 +91,7 @@ mod tests {
             }],
         })];
 
-        return AbiParser::build_registry(data, ParserContext::default());
+        AbiParser::build_registry(data, ParserContext::default())
     }
 
     #[test]

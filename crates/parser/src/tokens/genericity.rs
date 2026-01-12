@@ -10,10 +10,9 @@ use crate::CainomeResult;
 ///
 /// # Returns
 ///
-/// Returns a vector of tuples, where each tuple contains a string and a [`Token`].
-/// The string is the name of the generic argument, starting to 'A' and incrementing
-/// by 1 for each generic argument. The token is the token representing the generic
-/// argument type.
+/// Returns a vector of tuples, where each tuple contains a pair: generic argument name and current argument's
+/// type path. Generic argument starts at 'A' and incrementing by 1 over the ASCII table for each generic
+/// argument.
 pub fn extract_generics_args(type_path: &str) -> CainomeResult<Vec<(String, String)>> {
     let t: Type = syn::parse_str(type_path)?;
 

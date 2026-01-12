@@ -5,9 +5,6 @@ use starknet_types_core::felt::Felt;
 
 use crate::bindings::erc20::{ERC20Calldata, ERC20};
 
-const UDC_ADDRESS: Felt =
-    Felt::from_hex_unwrap("0x41a78e741e5af2fec34b695679bc6891742439f7afb8484ecd7766661ad02bf");
-
 #[tokio::test]
 #[katana_runner::test(accounts = 2, fee = false, block_time = 1)]
 async fn deploy_erc_20_and_call_its_methods(runner: &RunnerCtx) {
