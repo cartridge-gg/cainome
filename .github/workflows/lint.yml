@@ -30,7 +30,7 @@ jobs:
 
       - name: Install prettier
         run: |
-          yarn global add prettier
+          yarn global add prettier@3.7.4
 
       - name: Setup Scarb
         uses: software-mansion/setup-scarb@v1
