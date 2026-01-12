@@ -23,7 +23,7 @@ fn test_naive_contract_expansion() {
 
     let generated = Module::new()
         .with_includes(contract.expand(&ctx))
-        .to_token_stream();
+        .token_stream();
 
     let expected: TokenStream = parse_quote! {
         pub struct ContractName<A: starknet::accounts::ConnectedAccount + Sync> {
@@ -70,7 +70,7 @@ fn test_naive_contract_with_view_function() {
 
     let generated = Module::new()
         .with_includes(contract.expand(&ctx))
-        .to_token_stream();
+        .token_stream();
 
     let expected: TokenStream = parse_quote! {
         #[allow(clippy::ptr_arg)]
@@ -139,7 +139,7 @@ fn test_naive_contract_with_view_mutating_function() {
 
     let generated = Module::new()
         .with_includes(contract.expand(&ctx))
-        .to_token_stream();
+        .token_stream();
 
     let expected: TokenStream = parse_quote! {
         #[allow(clippy::ptr_arg)]

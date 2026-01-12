@@ -15,7 +15,7 @@ pub fn str_to_ident(str_in: &str) -> Ident {
 }
 
 pub fn str_to_type(str_in: &str) -> Type {
-    syn::parse_str(str_in).unwrap_or_else(|_| panic!("Can't convert {} to syn::Type", str_in))
+    syn::parse_str(str_in).unwrap_or_else(|_| panic!("Can't convert {str_in} to syn::Type"))
 }
 
 pub fn str_to_litstr(str_in: &str) -> LitStr {
@@ -94,7 +94,7 @@ pub fn serde_hex_derive(ty: &str, ctx: &ExpansionContext) -> TokenStream2 {
         SerdeHexType::Vec => quote! {
             #[serde(serialize_with = #serde_vec, deserialize_with = #deser_vec)]
         },
-        _ => panic!("Unsupported type {} for serde_hex", ty),
+        _ => panic!("Unsupported type {ty} for serde_hex"),
     }
 }
 
@@ -180,7 +180,7 @@ mod tests {
         let keywords = vec!["let", "match", "type", "impl", "fn", "struct", "move"];
         for keyword in keywords {
             let ident = str_to_ident(keyword);
-            assert_eq!(ident.to_string(), format!("r#{}", keyword));
+            assert_eq!(ident.to_string(), format!("r#{keyword}"));
         }
     }
 

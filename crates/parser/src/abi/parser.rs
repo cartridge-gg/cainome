@@ -115,7 +115,7 @@ impl AbiParser {
         // TODO: probably need to remove skipped types from registry right away
 
         // We will be converting AbiEntries to tokens and drop them upon converting
-        while local_entries.len() > 0 {
+        while !local_entries.is_empty() {
             // This branch means that we went through all the AbiEntry and could not
             // convert any. This means Abi is incorrect (well, we might have a bug though)
             if seen_since_last_removal > local_entries.len() {
@@ -191,7 +191,7 @@ impl AbiParser {
         let uninitialised_placeholders = registry.get_uninitialised_placeholders();
 
         // Check for unresolved placeholders
-        if uninitialised_placeholders.len() > 0 {
+        if !uninitialised_placeholders.is_empty() {
             return Err(Error::ParsingFailed(format!(
                 "Can't resolve ABI types. Unresolved: [{}]",
                 uninitialised_placeholders

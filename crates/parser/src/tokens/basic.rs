@@ -10,9 +10,9 @@ pub struct TypePath {
 
 impl TypePath {
     pub fn new(type_path: &str) -> Self {
-        return Self {
+        Self {
             type_path: type_path.to_string(),
-        };
+        }
     }
 
     pub fn type_path(&self) -> &str {

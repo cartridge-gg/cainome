@@ -60,10 +60,10 @@ impl ArrayContainer {
     }
 
     pub fn new(type_path: &str, inner: &Rc<RefCell<Token>>) -> Self {
-        return Self {
+        Self {
             type_path: type_path.to_string(),
             inner: Rc::clone(inner),
-        };
+        }
     }
 }
 

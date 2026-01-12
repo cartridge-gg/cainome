@@ -19,7 +19,7 @@ async fn test_byte_array(runner: &RunnerCtx) {
 
     let account = runner.account(0);
 
-    let class_hash = MyContract::declare(&path, &account, true).await.unwrap();
+    let class_hash = MyContract::declare(path, &account, true).await.unwrap();
 
     runner.dev_client().generate_block().await.unwrap();
 

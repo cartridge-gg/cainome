@@ -68,7 +68,7 @@ impl Parse for ContractAbi {
             syn::bracketed!(content in input);
             let array_content: proc_macro2::TokenStream = content.parse()?;
 
-            let array_str = format!("[{}]", array_content.to_string());
+            let array_str = format!("[{array_content}]");
 
             serde_json::from_str::<Vec<AbiEntry>>(&array_str)
                 .map_err(|e| syn::Error::new(input.span(), format!("Invalid ABI format: {e}")))?
@@ -114,7 +114,7 @@ impl Parse for ContractAbi {
                 }
             } else {
                 serde_json::from_str::<Vec<AbiEntry>>(&abi_str_or_path.value()).map_err(|e| {
-                    syn::Error::new(abi_str_or_path.span(), format!("JSON parse error: {}", e))
+                    syn::Error::new(abi_str_or_path.span(), format!("JSON parse error: {e}"))
                 })?
             }
         };
@@ -207,7 +207,7 @@ impl Parse for ContractAbi {
                     parenthesized!(content in input);
                     let ev = content.parse::<LitStr>()?.value();
                     execution_version = ExecutionVersion::from_str(&ev).map_err(|e| {
-                        syn::Error::new(content.span(), format!("Invalid execution version: {}", e))
+                        syn::Error::new(content.span(), format!("Invalid execution version: {e}"))
                     })?;
                 }
                 "derives" => {
@@ -329,7 +329,7 @@ fn open_json_file(file_path: &str) -> Result<File> {
     File::open(file_path).map_err(|e| {
         syn::Error::new(
             str_to_litstr(file_path).span(),
-            format!("JSON open file {} error: {}", file_path, e),
+            format!("JSON open file {file_path} error: {e}"),
         )
     })
 }

@@ -43,7 +43,7 @@ where
     S: serde::Serializer,
     T: serde::Serialize + std::fmt::LowerHex,
 {
-    serializer.serialize_str(&format!("{:#x}", value))
+    serializer.serialize_str(&format!("{value:#x}"))
 }
 
 /// Serialize a vector of values as a hex string.
@@ -56,8 +56,8 @@ where
     T: serde::Serialize + std::fmt::LowerHex,
 {
     let mut seq = serializer.serialize_seq(Some(value.len()))?;
-    for v in value {
-        seq.serialize_element(&format!("{:#x}", v))?;
+    for item in value {
+        seq.serialize_element(&format!("{item:#x}"))?;
     }
     seq.end()
 }

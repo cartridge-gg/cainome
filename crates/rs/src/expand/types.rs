@@ -18,19 +18,11 @@ pub trait CairoToRust {
 
 impl CairoToRust for TypePath {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
-        // [
-        // ctx.root_module_path.clone(),
-        ctx.apply_alias(&self.type_path())
-        // ]
-        // .join("::")
+        ctx.apply_alias(self.type_path())
     }
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
-        // [
-        // ctx.root_module_path.clone(),
-        ctx.apply_alias(&self.type_path())
-        // ]
-        // .join("::")
+        ctx.apply_alias(self.type_path())
     }
 }
 
@@ -235,7 +227,7 @@ impl CairoToRust for &Token {
     }
 }
 
-fn check_requires_serde_derive(items: &Vec<NamedToken>, ctx: &ExpansionContext) -> bool {
+fn check_requires_serde_derive(items: &[NamedToken], ctx: &ExpansionContext) -> bool {
     // Unwrapping all container types to get inner types
     let unwrapped_types = items
         .iter()
@@ -244,7 +236,7 @@ fn check_requires_serde_derive(items: &Vec<NamedToken>, ctx: &ExpansionContext) 
             Token::Option(t) => vec![Rc::clone(&t.inner)],
             Token::Result(t) => vec![Rc::clone(&t.inner), Rc::clone(&t.error)],
             Token::NonZero(t) => vec![Rc::clone(&t.inner)],
-            Token::Tuple(t) => t.inners.iter().map(|el| Rc::clone(el)).collect(),
+            Token::Tuple(t) => t.inners.iter().map(Rc::clone).collect(),
             // Composite types are added as is as those are imported from their modules
             // Basic types are also added but only to be skipped later
             _ => vec![Rc::clone(&named_token.token)],
@@ -265,7 +257,7 @@ fn check_requires_serde_derive(items: &Vec<NamedToken>, ctx: &ExpansionContext) 
 }
 
 pub fn get_additional_derive_requirements(
-    items: &Vec<NamedToken>,
+    items: &[NamedToken],
     ctx: &ExpansionContext,
 ) -> Vec<String> {
     if check_requires_serde_derive(items, ctx) {

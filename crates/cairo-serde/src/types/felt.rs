@@ -11,8 +11,7 @@ impl CairoSerde for Felt {
     fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType> {
         if offset >= felts.len() {
             return Err(Error::Deserialize(format!(
-                "Buffer too short to deserialize a felt: offset ({}) : buffer {:?}",
-                offset, felts,
+                "Buffer too short to deserialize a felt: offset ({offset}) : buffer {felts:?}",
             )));
         }
 

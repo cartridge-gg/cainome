@@ -31,7 +31,7 @@ fn test_simple_nested_module_expand_no_content() {
         1
     );
 
-    let generated = module.to_token_stream();
+    let generated = module.token_stream();
 
     let expected = quote::quote! {
         pub mod module1 { pub mod sub1 { } }
@@ -49,7 +49,7 @@ fn test_2_nested_modules_with_common_parent_expand_no_content() {
 
     let module = Module::new().with_includes(results);
 
-    let generated = module.to_token_stream();
+    let generated = module.token_stream();
 
     let expected = quote::quote! {
         pub mod module1 { pub mod sub1 { } pub mod sub2 { } }
@@ -89,7 +89,7 @@ fn test_2_nested_modules_with_struct_and_reference() {
         root.include_many(structure.expand(&ctx));
     }
 
-    let generated = root.to_token_stream();
+    let generated = root.token_stream();
 
     assert_code_has_statement(
         &generated,

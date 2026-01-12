@@ -30,7 +30,7 @@ fn test_struct_event_expansion() {
 
     let generated = Module::new()
         .with_includes(event.expand(&ctx))
-        .to_token_stream();
+        .token_stream();
 
     let expected = parse_quote! {
         pub struct SimpleEvent {
@@ -222,7 +222,7 @@ fn test_simple_case_nested_struct_in_enum() {
 
     let generated = Module::new()
         .with_includes(enum_event.expand(&ctx))
-        .to_token_stream();
+        .token_stream();
 
     let expected: TokenStream = parse_quote! {
         pub enum Event {

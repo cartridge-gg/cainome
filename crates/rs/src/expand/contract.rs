@@ -46,7 +46,7 @@ impl Contract {
 
         Self {
             name: name.to_string(),
-            derives: derives,
+            derives,
             mutating_methods,
             readonly_methods,
             constructor,
@@ -89,7 +89,7 @@ impl Contract {
 
             serializations.push(ser);
         }
-        return serializations;
+        serializations
     }
 
     fn get_func_output_type(f: &Function, ctx: &ExpansionContext) -> syn::Type {
@@ -109,7 +109,7 @@ impl Contract {
 
         let serializations = Self::get_serializations_for_func(f, ctx);
 
-        let inputs = Self::get_inputs_for_func(&f, ctx);
+        let inputs = Self::get_inputs_for_func(f, ctx);
         let input_names = inputs
             .iter()
             .map(|(name, _ty)| name.clone())
@@ -119,7 +119,7 @@ impl Contract {
             .map(|(name, ty)| quote!(#name:#ty))
             .collect::<Vec<_>>();
 
-        let func_name_call = utils::str_to_ident(&format!("{}_getcall", func_name));
+        let func_name_call = utils::str_to_ident(&format!("{func_name}_getcall"));
 
         let ccs = utils::str_to_type(&ctx.cainome_serde_path);
 
@@ -180,7 +180,7 @@ impl Contract {
 
         let serializations = Self::get_serializations_for_func(f, ctx);
 
-        let inputs_sub = Self::get_inputs_for_func(&f, ctx)
+        let inputs_sub = Self::get_inputs_for_func(f, ctx)
             .iter()
             .map(|(name, ty)| quote!(#name:#ty))
             .collect::<Vec<_>>();
@@ -217,8 +217,8 @@ impl Contract {
 impl Expandable for Contract {
     fn expand(&self, ctx: &super::ExpansionContext) -> Vec<ExpansionResult> {
         let contract_name = self.name.clone();
-        let constructor_calldata_name = format!("{}Calldata", contract_name);
-        let reader = utils::str_to_ident(format!("{}Reader", contract_name).as_str());
+        let constructor_calldata_name = format!("{contract_name}Calldata");
+        let reader = utils::str_to_ident(format!("{contract_name}Reader").as_str());
 
         let contract_name_ident = utils::str_to_ident(&contract_name);
         let constructor_calldata_name_ident = utils::str_to_ident(&constructor_calldata_name);
@@ -238,22 +238,22 @@ impl Expandable for Contract {
         let externals = self
             .mutating_methods
             .iter()
-            .map(|f| Self::expand_mutable_method(f, &ctx))
+            .map(|f| Self::expand_mutable_method(f, ctx))
             .collect::<Vec<_>>();
 
         let views = self
             .readonly_methods
             .iter()
-            .map(|f| Self::expand_readonly_method(f, "A::Provider", &ctx))
+            .map(|f| Self::expand_readonly_method(f, "A::Provider", ctx))
             .collect::<Vec<_>>();
 
         let reader_views = self
             .readonly_methods
             .iter()
-            .map(|f| Self::expand_readonly_method(f, "P", &ctx))
+            .map(|f| Self::expand_readonly_method(f, "P", ctx))
             .collect::<Vec<_>>();
 
-        let derives = if internal_derives.len() > 0 {
+        let derives = if !internal_derives.is_empty() {
             quote! {
                 #[derive(#(#internal_derives,)*)]
             }
@@ -323,9 +323,9 @@ impl Expandable for Contract {
         if let Some(constructor) = &self.constructor {
             if !constructor.inputs.is_empty() {
                 let declaration =
-                    struct_declaration(&constructor_calldata_name, &constructor.inputs, &ctx);
+                    struct_declaration(&constructor_calldata_name, &constructor.inputs, ctx);
                 let implementation =
-                    struct_implementation(&constructor_calldata_name, &constructor.inputs, &ctx);
+                    struct_implementation(&constructor_calldata_name, &constructor.inputs, ctx);
 
                 constructor_calldata = quote! {
                     #declaration

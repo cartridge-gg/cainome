@@ -64,7 +64,7 @@ impl Module {
         }
     }
 
-    pub fn to_token_stream(self) -> TokenStream {
+    pub fn token_stream(self) -> TokenStream {
         let mut tokens = TokenStream::new();
 
         // TODO: rethink
@@ -73,7 +73,7 @@ impl Module {
 
         // Flatten modules
         for module in modules {
-            tokens.extend(module.to_token_stream())
+            tokens.extend(module.token_stream())
         }
 
         let mut content = TokenStream::new();
@@ -117,6 +117,6 @@ impl Module {
 
 impl ToTokens for Module {
     fn to_tokens(&self, tokens: &mut TokenStream) {
-        tokens.extend(self.clone().to_token_stream());
+        tokens.extend(self.clone().token_stream());
     }
 }

@@ -11,10 +11,10 @@ use crate::expand::{
 
 pub fn enum_declaration(
     type_name: &str,
-    variants: &Vec<NamedToken>,
+    variants: &[NamedToken],
     ctx: &ExpansionContext,
 ) -> TokenStream {
-    let enum_name = utils::str_to_ident(&type_name);
+    let enum_name = utils::str_to_ident(type_name);
 
     let mut generated_variants: Vec<TokenStream> = vec![];
 
@@ -41,7 +41,7 @@ pub fn enum_declaration(
         internal_derives.push(utils::str_to_type(d));
     }
 
-    let derive = if internal_derives.len() > 0 {
+    let derive = if !internal_derives.is_empty() {
         quote! { #[derive(#(#internal_derives,)*)] }
     } else {
         quote! {}
@@ -58,7 +58,7 @@ pub fn enum_declaration(
 
 pub fn enum_implementation(
     type_name: &str,
-    variants: &Vec<NamedToken>,
+    variants: &[NamedToken],
     ctx: &ExpansionContext,
 ) -> TokenStream {
     let enum_name = utils::str_to_ident(type_name);
@@ -174,7 +174,7 @@ impl Expandable for Enum {
         let name = full_path.split("::").last().unwrap().to_owned();
 
         let ctx = ExpansionContextFactory::from(ctx)
-            .with_derives(get_additional_derive_requirements(&self.variants, &ctx))
+            .with_derives(get_additional_derive_requirements(&self.variants, ctx))
             .build();
 
         let declaration = enum_declaration(&name, &self.variants, &ctx);

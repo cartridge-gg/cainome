@@ -37,7 +37,7 @@ impl BuiltinPlugin for RustPlugin {
             let derives = self.options.derives.as_deref().unwrap_or_default();
             let contract_derives = self.options.contract_derives.as_deref().unwrap_or_default();
 
-            let ctx = ExpansionContextFactory::new(&contract_name.to_string())
+            let ctx = ExpansionContextFactory::new(&contract_name)
                 .with_contract_derives(contract_derives)
                 .with_derives(derives)
                 .with_execution(input.execution_version)

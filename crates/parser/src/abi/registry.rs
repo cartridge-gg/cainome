@@ -131,6 +131,12 @@ fn wrap_generic_containers(
     )))
 }
 
+impl Default for TypeRegistry {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TypeRegistry {
     pub fn new() -> Self {
         let mut registry = Self {
@@ -155,12 +161,12 @@ impl TypeRegistry {
             }
         }
 
-        return Ok(true);
+        Ok(true)
     }
 
     pub fn get(&self, path: &str) -> Result<Rc<RefCell<Token>>, Error> {
         let generic_token_chain = wrap_generic_containers(path, self)?;
-        return Ok(generic_token_chain);
+        Ok(generic_token_chain)
     }
 
     pub fn set(&mut self, path: &str, token: Token) {
@@ -175,7 +181,7 @@ impl TypeRegistry {
             let mut stored_value = cell.borrow_mut();
 
             match &*stored_value {
-                Token::Skip(_) | Token::Substitute(_) => return,
+                Token::Skip(_) | Token::Substitute(_) => (),
                 Token::Placeholder => {
                     // Replace placeholder with real token
                     *stored_value = token;
@@ -205,7 +211,7 @@ impl TypeRegistry {
             }
         }
 
-        return unresolved_placeholders;
+        unresolved_placeholders
     }
 
     pub fn get_structs(&self) -> impl Iterator<Item = Rc<RefCell<Token>>> + '_ {
@@ -246,14 +252,12 @@ impl TypeRegistry {
             .values()
             .filter(|token| matches!(&*token.borrow(), Token::Interface(_)));
 
-        let interface_functions = interfaces
-            .map(|token| {
-                let Token::Interface(interface) = &*token.borrow() else {
-                    unreachable!()
-                };
-                interface.functions.clone()
-            })
-            .flatten();
+        let interface_functions = interfaces.flat_map(|token| {
+            let Token::Interface(interface) = &*token.borrow() else {
+                unreachable!()
+            };
+            interface.functions.clone()
+        });
 
         interface_functions.chain(plain_functions)
     }

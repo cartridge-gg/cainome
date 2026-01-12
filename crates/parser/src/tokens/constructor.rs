@@ -8,9 +8,9 @@ pub struct Constructor {
 
 impl Constructor {
     pub fn new(type_path: &str) -> CainomeResult<Self> {
-        return Ok(Self {
+        Ok(Self {
             type_path: type_path.to_string(),
             inputs: vec![],
-        });
+        })
     }
 }

@@ -188,7 +188,7 @@ impl ContractParser {
             contracts.push(ContractData {
                 name: contract_name.to_string(),
                 origin: ContractOrigin::SierraClassFile(file_name.to_string()),
-                registry: registry,
+                registry,
             });
         }
 
@@ -216,7 +216,7 @@ impl ContractParser {
                 Ok(ContractData {
                     name: name.to_string(),
                     origin: ContractOrigin::FetchedFromChain(address),
-                    registry: registry,
+                    registry,
                 })
             }
             ContractClass::Legacy(_) => Err(Error::Other(

@@ -39,15 +39,15 @@ impl Event {
             .map(|(name, path)| (name, registry.get(&path).unwrap()))
             .collect();
 
-        return Ok(Self {
-            kind: kind,
+        Ok(Self {
+            kind,
             type_path,
             generic_args: generic_args_with_types,
             keys: vec![],
             data: vec![],
             flat: vec![],
             nested: vec![],
-        });
+        })
     }
 
     pub fn type_path_no_generic(&self) -> String {

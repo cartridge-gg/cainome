@@ -75,20 +75,12 @@ pub enum Token {
 
 impl Token {
     pub fn is_basic(&self) -> bool {
-        if let Token::Basic(_) = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, Token::Basic(_))
     }
 
     // TODO: this is only used to add brackets around tuple types in enum and struct fields.
     // Consider moving this logic elsewhere. ??? Tuple.to_rust_type_path
     pub fn is_tuple(&self) -> bool {
-        if let Token::Tuple(_) = self {
-            true
-        } else {
-            false
-        }
+        matches!(self, Token::Tuple(_))
     }
 }

@@ -190,7 +190,7 @@ fn field_ident_and_type((i, field): (usize, syn::Field)) -> (TokenStream, Type) 
             .clone()
             .map(|ident| quote! { #ident })
             .unwrap_or({
-                let i = syn::Ident::new(&format!("__self_{}", i), Span::call_site());
+                let i = syn::Ident::new(&format!("__self_{i}"), Span::call_site());
                 quote! { #i }
             }),
         field.ty,

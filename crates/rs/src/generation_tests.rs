@@ -132,13 +132,13 @@ fn test_complex_case() {
     );
 
     let ctx = ExpansionContextFactory::new("MyContract")
-        .with_contract_derives(&vec!["Debug".to_string(), "Clone".to_string()])
-        .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
+        .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
         .with_execution(ExecutionVersion::V3)
         .with_aliases(aliases)
         .build();
 
-    let entries = AbiParser::parse_abi_string(&abi).unwrap();
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
 
@@ -263,11 +263,11 @@ fn test_tuple_with_custom_type_as_func_argument_case() {
     ]"#;
 
     let ctx = ExpansionContextFactory::new("MyContract")
-        .with_contract_derives(&vec!["Debug".to_string(), "Clone".to_string()])
-        .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
+        .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
         .build();
 
-    let entries = AbiParser::parse_abi_string(&abi).unwrap();
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx)).unwrap();
 
@@ -316,11 +316,11 @@ fn test_tuple_with_custom_genetic_type_as_func_argument_case() {
     ]"#;
 
     let ctx = ExpansionContextFactory::new("MyContract")
-        .with_contract_derives(&vec!["Debug".to_string(), "Clone".to_string()])
-        .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
+        .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
         .build();
 
-    let entries = AbiParser::parse_abi_string(&abi).unwrap();
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx)).unwrap();
 
@@ -366,12 +366,12 @@ fn test_tuple_with_custom_genetic_type_as_func_argument_case_with_alias() {
     );
 
     let ctx = ExpansionContextFactory::new("MyContract")
-        .with_contract_derives(&vec!["Debug".to_string(), "Clone".to_string()])
-        .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
+        .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
         .with_aliases(aliases)
         .build();
 
-    let entries = AbiParser::parse_abi_string(&abi).unwrap();
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx)).unwrap();
 
@@ -384,39 +384,37 @@ fn test_tuple_with_custom_genetic_type_as_func_argument_case_with_alias() {
 
 #[test]
 fn test_tuple_with_generic_arg_with_2_parameters_resolves() {
-    let abi_json = format!(
-        r#"[
-            {{
+    let abi_json = r#"[
+            {
                 "type": "struct",
                 "name": "my::Generic::<core::felt252, core::felt252>", 
                 "members": [
-                    {{
+                    {
                         "name": "f1",
                         "type": "core::felt252"
-                    }},
-                    {{
+                    },
+                    {
                         "name": "f2",
                         "type": "core::felt252"
-                    }}
+                    }
                 ]
-            }},
-            {{
+            },
+            {
                 "type": "struct",
                 "name": "my::New", 
                 "members": [
-                    {{
+                    {
                         "name": "f1",
                         "type": "(my::Generic::<core::felt252, core::felt252>)"
-                    }}
+                    }
                 ]
-            }}
+            }
 
-        ]"#
-    );
+        ]"#;
 
     let ctx = ParserContext::new();
 
-    let abi_entries = AbiParser::parse_abi_string(&abi_json).unwrap();
+    let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
 
     let mut registry = AbiParser::build_registry(abi_entries, ctx).unwrap();
 
@@ -468,8 +466,8 @@ fn test_substitution_simple_case() {
     );
 
     let ctx = ExpansionContextFactory::new("MyContract")
-        .with_contract_derives(&vec!["Debug".to_string(), "Clone".to_string()])
-        .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
+        .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
         .with_execution(ExecutionVersion::V3)
         .with_substitutions(substitutions)
         .with_add_declaration(false)
@@ -477,7 +475,7 @@ fn test_substitution_simple_case() {
         .with_root_module_path("some::module::path")
         .build();
 
-    let entries = AbiParser::parse_abi_string(&abi).unwrap();
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
 
@@ -540,8 +538,8 @@ fn test_substitution_for_generic_case() {
     );
 
     let ctx = ExpansionContextFactory::new("MyContract")
-        .with_contract_derives(&vec!["Debug".to_string(), "Clone".to_string()])
-        .with_derives(&vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
+        .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
         .with_execution(ExecutionVersion::V3)
         .with_substitutions(substitutions)
         .with_add_declaration(false)
@@ -549,7 +547,7 @@ fn test_substitution_for_generic_case() {
         .with_root_module_path("some::module::path")
         .build();
 
-    let entries = AbiParser::parse_abi_string(&abi).unwrap();
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
 

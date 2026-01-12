@@ -34,8 +34,8 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
         .unwrap_or("no contract file".to_string());
 
     let ctx = ExpansionContextFactory::new(contract_source)
-        .with_contract_derives(&contract_abi.contract_derives)
-        .with_derives(&contract_abi.derives)
+        .with_contract_derives(contract_abi.contract_derives)
+        .with_derives(contract_abi.derives)
         .with_execution(contract_abi.execution_version)
         .with_type_skips(contract_abi.type_skips)
         .with_aliases(contract_abi.type_aliases)
@@ -56,7 +56,7 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
         let content: String = expanded.to_string();
         match std::fs::write(out_path, content) {
             Ok(_) => (),
-            Err(e) => panic!("Failed to write to file: {}", e),
+            Err(e) => panic!("Failed to write to file: {e}"),
         }
 
         quote!().into()
@@ -99,7 +99,7 @@ fn abigen_internal_legacy(input: TokenStream) -> TokenStream {
         let content: String = expanded.to_string();
         match std::fs::write(out_path, content) {
             Ok(_) => (),
-            Err(e) => panic!("Failed to write to file: {}", e),
+            Err(e) => panic!("Failed to write to file: {e}"),
         }
 
         quote!().into()

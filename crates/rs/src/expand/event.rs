@@ -104,7 +104,7 @@ impl Expandable for Event {
                 let variants = [self.nested.clone(), self.flat.clone()].concat();
 
                 let ctx = ExpansionContextFactory::from(ctx)
-                    .with_derives(get_additional_derive_requirements(&variants, &ctx))
+                    .with_derives(get_additional_derive_requirements(&variants, ctx))
                     .build();
 
                 let declaration = enum_declaration(&event_name, &variants, &ctx);
@@ -161,7 +161,7 @@ impl Expandable for Event {
                 let ccs = utils::str_to_type(&ctx.cainome_serde_path);
 
                 let ctx = ExpansionContextFactory::from(ctx)
-                    .with_derives(get_additional_derive_requirements(&fields, &ctx))
+                    .with_derives(get_additional_derive_requirements(&fields, ctx))
                     .build();
 
                 let declaration = struct_declaration(&event_name, &fields, &ctx);

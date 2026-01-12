@@ -81,22 +81,20 @@ impl Parse for ContractAbiLegacy {
                 serde_json::from_reader::<_, Vec<RawLegacyAbiEntry>>(open_json_file(
                     &json_path.value(),
                 )?)
-                .map_err(|e| {
-                    syn::Error::new(json_path.span(), format!("JSON parse error: {}", e))
-                })?
+                .map_err(|e| syn::Error::new(json_path.span(), format!("JSON parse error: {e}")))?
             }
         } else {
             let content;
             syn::bracketed!(content in input);
             let array_content: proc_macro2::TokenStream = content.parse()?;
 
-            let array_str = format!("[{}]", array_content.to_string());
+            let array_str = format!("[{array_content}]");
 
             if let Ok(legacy_class) = serde_json::from_str::<LegacyContractClass>(&array_str) {
                 legacy_class.abi
             } else {
                 serde_json::from_str::<Vec<RawLegacyAbiEntry>>(&array_str).map_err(|e| {
-                    syn::Error::new(abi_or_path.span(), format!("JSON parse error: {}", e))
+                    syn::Error::new(abi_or_path.span(), format!("JSON parse error: {e}"))
                 })?
             }
         };
@@ -184,7 +182,7 @@ impl Parse for ContractAbiLegacy {
                     parenthesized!(content in input);
                     let ev = content.parse::<LitStr>()?.value();
                     execution_version = ExecutionVersion::from_str(&ev).map_err(|e| {
-                        syn::Error::new(content.span(), format!("Invalid execution version: {}", e))
+                        syn::Error::new(content.span(), format!("Invalid execution version: {e}"))
                     })?;
                 }
                 "output_path" => {
@@ -316,7 +314,7 @@ fn open_json_file(file_path: &str) -> Result<File> {
     File::open(file_path).map_err(|e| {
         syn::Error::new(
             str_to_litstr(file_path).span(),
-            format!("JSON open file {} error: {}", file_path, e),
+            format!("JSON open file {file_path} error: {e}"),
         )
     })
 }

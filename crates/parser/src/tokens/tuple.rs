@@ -49,7 +49,7 @@ impl TupleContainer {
             }
         }
 
-        return Ok(inners);
+        Ok(inners)
     }
 
     /// Parses a tuple from a type path.

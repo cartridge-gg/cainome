@@ -15,7 +15,7 @@ pub fn struct_declaration(
 ) -> TokenStream {
     let _ = ctx;
 
-    let struct_name = utils::str_to_ident(&type_name);
+    let struct_name = utils::str_to_ident(type_name);
 
     let mut members: Vec<TokenStream> = vec![];
     for inner in fields {
@@ -37,7 +37,7 @@ pub fn struct_declaration(
         internal_derives.push(utils::str_to_type(d));
     }
 
-    let derive = if internal_derives.len() > 0 {
+    let derive = if !internal_derives.is_empty() {
         quote! { #[derive(#(#internal_derives,)*)] }
     } else {
         quote! {}
@@ -56,7 +56,7 @@ pub fn struct_implementation(
     fields: &Vec<NamedToken>,
     ctx: &ExpansionContext,
 ) -> TokenStream {
-    let struct_name = utils::str_to_ident(&type_name);
+    let struct_name = utils::str_to_ident(type_name);
 
     let mut sizes: Vec<TokenStream> = vec![];
     let mut sers: Vec<TokenStream> = vec![];
@@ -139,7 +139,7 @@ impl Expandable for Struct {
         let name = full_path.split("::").last().unwrap().to_owned();
 
         let ctx = ExpansionContextFactory::from(ctx)
-            .with_derives(get_additional_derive_requirements(&self.fields, &ctx))
+            .with_derives(get_additional_derive_requirements(&self.fields, ctx))
             .build();
 
         let declaration = struct_declaration(&name, &self.fields, &ctx);

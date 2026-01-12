@@ -8,55 +8,6 @@
 pub mod contracts {
     pub mod simple_get_set {
         pub mod simple_get_set {
-            pub enum TestEnum {
-                V1(starknet::core::types::Felt),
-                V2,
-            }
-            impl cainome_cairo_serde::CairoSerde for TestEnum {
-                type RustType = Self;
-                const SERIALIZED_SIZE: std::option::Option<usize> = std::option::Option::None;
-                #[inline]
-                fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-                    match __rust {
-                        TestEnum::V1(val) => {
-                            starknet::core::types::Felt::cairo_serialized_size(val) + 1
-                        }
-                        TestEnum::V2 => 1,
-                        _ => 0,
-                    }
-                }
-                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-                    match __rust {
-                        TestEnum::V1(val) => {
-                            let mut temp = vec![];
-                            temp.extend(usize::cairo_serialize(&0usize));
-                            temp.extend(starknet::core::types::Felt::cairo_serialize(val));
-                            temp
-                        }
-                        TestEnum::V2 => usize::cairo_serialize(&1usize),
-                        _ => vec![],
-                    }
-                }
-                fn cairo_deserialize(
-                    __felts: &[starknet::core::types::Felt],
-                    __offset: usize,
-                ) -> cainome_cairo_serde::Result<Self::RustType> {
-                    let __f = __felts[__offset];
-                    let __index = u128::from_be_bytes(__f.to_bytes_be()[16..].try_into().unwrap());
-                    match __index as usize {
-                        0usize => Ok(TestEnum::V1(
-                            starknet::core::types::Felt::cairo_deserialize(__felts, __offset + 1)?,
-                        )),
-                        1usize => Ok(TestEnum::V2),
-                        _ => {
-                            return Err(cainome_cairo_serde::Error::Deserialize(format!(
-                                "Index not handle for enum {}",
-                                "TestEnum"
-                            )));
-                        }
-                    }
-                }
-            }
             pub enum Event {}
             impl cainome_cairo_serde::CairoSerde for Event {
                 type RustType = Self;
@@ -119,6 +70,55 @@ pub mod contracts {
                 type Error = String;
                 fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
                     Self::try_from_event(event.from_address, event.keys, event.data)
+                }
+            }
+            pub enum TestEnum {
+                V1(starknet::core::types::Felt),
+                V2,
+            }
+            impl cainome_cairo_serde::CairoSerde for TestEnum {
+                type RustType = Self;
+                const SERIALIZED_SIZE: std::option::Option<usize> = std::option::Option::None;
+                #[inline]
+                fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+                    match __rust {
+                        TestEnum::V1(val) => {
+                            starknet::core::types::Felt::cairo_serialized_size(val) + 1
+                        }
+                        TestEnum::V2 => 1,
+                        _ => 0,
+                    }
+                }
+                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+                    match __rust {
+                        TestEnum::V1(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&0usize));
+                            temp.extend(starknet::core::types::Felt::cairo_serialize(val));
+                            temp
+                        }
+                        TestEnum::V2 => usize::cairo_serialize(&1usize),
+                        _ => vec![],
+                    }
+                }
+                fn cairo_deserialize(
+                    __felts: &[starknet::core::types::Felt],
+                    __offset: usize,
+                ) -> cainome_cairo_serde::Result<Self::RustType> {
+                    let __f = __felts[__offset];
+                    let __index = u128::from_be_bytes(__f.to_bytes_be()[16..].try_into().unwrap());
+                    match __index as usize {
+                        0usize => Ok(TestEnum::V1(
+                            starknet::core::types::Felt::cairo_deserialize(__felts, __offset + 1)?,
+                        )),
+                        1usize => Ok(TestEnum::V2),
+                        _ => {
+                            return Err(cainome_cairo_serde::Error::Deserialize(format!(
+                                "Index not handle for enum {}",
+                                "TestEnum"
+                            )));
+                        }
+                    }
                 }
             }
         }
@@ -202,20 +202,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> SimpleGetSet<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn get_array(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, Vec<starknet::core::types::Felt>> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_array"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn get_set_enum(
         &self,
         v: &crate::bindings::simple_get_set::contracts::simple_get_set::simple_get_set::TestEnum,
@@ -240,6 +226,20 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> SimpleGetSet<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
+    pub fn get_array(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, Vec<starknet::core::types::Felt>> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_array"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
     pub fn get_a(
         &self,
     ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
@@ -251,6 +251,24 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> SimpleGetSet<A> {
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_a_getcall(&self, a: &starknet::core::types::Felt) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(a));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("set_a"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_a(&self, a: &starknet::core::types::Felt) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.set_a_getcall(a);
+        self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
@@ -292,24 +310,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> SimpleGetSet<A> {
         data: &Vec<starknet::core::types::Felt>,
     ) -> starknet::accounts::ExecutionV3<A> {
         let __call = self.set_array_getcall(data);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn set_a_getcall(&self, a: &starknet::core::types::Felt) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(a));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("set_a"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn set_a(&self, a: &starknet::core::types::Felt) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.set_a_getcall(a);
         self.account.execute_v3(vec![__call])
     }
     pub async fn declare(
@@ -413,20 +413,6 @@ impl<P: starknet::providers::Provider + Sync> SimpleGetSetReader<P> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn get_array(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<P, Vec<starknet::core::types::Felt>> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_array"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn get_set_enum(
         &self,
         v: &crate::bindings::simple_get_set::contracts::simple_get_set::simple_get_set::TestEnum,
@@ -445,6 +431,20 @@ impl<P: starknet::providers::Provider + Sync> SimpleGetSetReader<P> {
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
             entry_point_selector: starknet::macros::selector!("get_set_enum"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn get_array(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<P, Vec<starknet::core::types::Felt>> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_array"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())

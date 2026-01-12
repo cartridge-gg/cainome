@@ -14,7 +14,7 @@ use crate::{
         parser::{Named, Parseable, WithDependencies},
         registry::TypeRegistry,
     },
-    tokens::{Constructor, EventKind, Interface},
+    tokens::{Constructor, EventKind, Interface, StateMutability},
 };
 use crate::{
     tokens::{Enum, Event, Function, NamedToken, Struct, Token},
@@ -34,7 +34,7 @@ where
     T: TokenConvertable,
 {
     fn try_to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Option<Token>> {
-        return self.to_token(registry).map(|res| Some(res));
+        self.to_token(registry).map(Some)
     }
 }
 
@@ -47,7 +47,7 @@ impl TokenConvertable for &AbiStruct {
 
             structure.fields.push(NamedToken {
                 name: field.name.clone(),
-                token: token,
+                token,
             });
         }
 
@@ -64,7 +64,7 @@ impl TokenConvertable for &AbiEnum {
 
             enumeration.variants.push(NamedToken {
                 name: field.name.clone(),
-                token: token,
+                token,
             });
         }
 
@@ -81,7 +81,7 @@ impl TokenConvertable for &UntypedAbiEvent {
 
             event.data.push(NamedToken {
                 name: field.name.clone(),
-                token: token,
+                token,
             });
         }
 
@@ -98,7 +98,7 @@ impl TokenConvertable for &AbiEventStruct {
 
             let inner = NamedToken {
                 name: m.name.clone(),
-                token: token,
+                token,
             };
 
             // TODO: seems like it's a problem with ABI spec. nested and flat should not be here.
@@ -123,7 +123,7 @@ impl TokenConvertable for &AbiEventEnum {
 
             let inner = NamedToken {
                 name: m.name.clone(),
-                token: token,
+                token,
             };
 
             match m.kind {
@@ -148,7 +148,7 @@ impl TokenConvertable for &RawLegacyEvent {
 
             event.data.push(NamedToken {
                 name: m.name.clone(),
-                token: token,
+                token,
             });
         }
 
@@ -157,7 +157,7 @@ impl TokenConvertable for &RawLegacyEvent {
 
             event.keys.push(NamedToken {
                 name: m.name.clone(),
-                token: token,
+                token,
             });
         }
 
@@ -174,7 +174,7 @@ impl TokenConvertable for &RawLegacyStruct {
 
             structure.fields.push(NamedToken {
                 name: field.name.clone(),
-                token: token,
+                token,
             });
         }
 
@@ -184,14 +184,16 @@ impl TokenConvertable for &RawLegacyStruct {
 
 impl TokenConvertable for &AbiFunction {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
-        let mut function = Function::new(&self.name, self.state_mutability.clone().into());
+        let state_mutability = StateMutability::from(self.state_mutability.clone());
+
+        let mut function = Function::new(&self.name, state_mutability);
 
         for input in self.inputs.iter() {
             let token = registry.get(&input.r#type)?;
 
             function.inputs.push(NamedToken {
                 name: input.name.clone(),
-                token: token,
+                token,
             });
         }
 
@@ -231,7 +233,7 @@ impl TokenConvertable for &AbiConstructor {
 
             constructor.inputs.push(NamedToken {
                 name: input.name.clone(),
-                token: token,
+                token,
             });
         }
 
@@ -455,14 +457,16 @@ impl Parseable for RawLegacyAbiEntry {}
 
 impl TokenConvertable for &RawLegacyFunction {
     fn to_token(&self, registry: &mut TypeRegistry) -> CainomeResult<Token> {
-        let mut function = Function::new(&self.name, self.state_mutability.clone().into());
+        let state_mutability = StateMutability::from(self.state_mutability);
+
+        let mut function = Function::new(&self.name, state_mutability);
 
         for input in self.inputs.iter() {
             let token = registry.get(&input.r#type)?;
 
             function.inputs.push(NamedToken {
                 name: input.name.clone(),
-                token: token,
+                token,
             });
         }
 
@@ -484,7 +488,7 @@ impl TokenConvertable for &RawLegacyConstructor {
 
             constructor.inputs.push(NamedToken {
                 name: input.name.clone(),
-                token: token,
+                token,
             });
         }
 
@@ -501,7 +505,7 @@ impl TokenConvertable for &RawLegacyL1Handler {
 
             function.inputs.push(NamedToken {
                 name: input.name.clone(),
-                token: token,
+                token,
             });
         }
 

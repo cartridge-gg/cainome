@@ -98,7 +98,7 @@ pub fn assert_code_has_statement<T: ToTokens>(generated: &T, expected: &Stmt, me
     );
 }
 
-fn find_struct_in_file<'ast>(generated: &'ast File, expected: &ItemStruct) -> bool {
+fn find_struct_in_file(generated: &File, expected: &ItemStruct) -> bool {
     struct Finder<'ast> {
         pub expected: &'ast ItemStruct,
         pub found: bool,
@@ -127,7 +127,7 @@ fn find_struct_in_file<'ast>(generated: &'ast File, expected: &ItemStruct) -> bo
 
     finder.visit_file(generated);
 
-    return finder.found;
+    finder.found
 }
 
 pub fn assert_code_has_struct<T: ToTokens>(generated: &T, expected: &ItemStruct, message: &str) {

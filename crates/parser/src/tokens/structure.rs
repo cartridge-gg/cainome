@@ -33,7 +33,7 @@ impl Struct {
     pub fn with_field(mut self, name: &str, token: Rc<RefCell<Token>>) -> Self {
         self.fields.push(NamedToken {
             name: name.to_string(),
-            token: token,
+            token,
         });
         self
     }

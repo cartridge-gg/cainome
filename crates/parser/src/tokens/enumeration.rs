@@ -25,12 +25,12 @@ impl Enum {
             .map(|(name, path)| (name, registry.get(&path).unwrap()))
             .collect();
 
-        return Ok(Self {
+        Ok(Self {
             type_path,
             generic_args: generic_args_with_types,
             variants: vec![],
             alias: None,
-        });
+        })
     }
 
     pub fn with_variant(self, name: &str, token: Rc<RefCell<Token>>) -> Self {

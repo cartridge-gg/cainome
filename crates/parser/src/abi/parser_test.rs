@@ -34,7 +34,7 @@ fn recursive_struct_parsing() {
     assert_eq!(result.functions.len(), 0);
     assert_eq!(result.enums.len(), 0);
 
-    let Some(token) = result.structs.iter().next() else {
+    let Some(token) = result.structs.first() else {
         panic!("At least one element should be present in structs");
     };
 
@@ -120,7 +120,7 @@ fn recursive_enum_parsing() {
     assert_eq!(result.functions.len(), 0);
     assert_eq!(result.enums.len(), 0);
 
-    let Some(token) = result.structs.iter().next() else {
+    let Some(token) = result.structs.first() else {
         panic!("At least one element should be present in structs");
     };
 
@@ -171,7 +171,7 @@ fn test_parsing_all_core_type_struct_fields() {
 
     let mut members = vec![];
     for (name, ttype) in core_fields.iter() {
-        members.push(format!(r#"{{"name": "{}", "type": "{}"}}"#, name, ttype));
+        members.push(format!(r#"{{"name": "{name}", "type": "{ttype}"}}"#));
     }
 
     let abi_json = format!(
@@ -189,7 +189,7 @@ fn test_parsing_all_core_type_struct_fields() {
 
     assert_eq!(result.structs.len(), 1);
 
-    let Some(token) = result.structs.iter().next() else {
+    let Some(token) = result.structs.first() else {
         panic!("At least one element should be present in structs");
     };
 
@@ -230,7 +230,7 @@ fn check_array_container_is_parsed() {
     let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.structs.len(), 1);
 
-    let Some(token) = result.structs.iter().next() else {
+    let Some(token) = result.structs.first() else {
         panic!("At least one element should be present in structs");
     };
 
@@ -278,7 +278,7 @@ fn check_tuple_container_is_parsed() {
     let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.structs.len(), 1);
 
-    let Some(token) = result.structs.iter().next() else {
+    let Some(token) = result.structs.first() else {
         panic!("At least one element should be present in structs");
     };
 
@@ -323,7 +323,7 @@ fn check_nested_tuple_container_is_parsed() {
     let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.structs.len(), 1);
 
-    let Some(token) = result.structs.iter().next() else {
+    let Some(token) = result.structs.first() else {
         panic!("At least one element should be present in structs");
     };
 
@@ -406,7 +406,7 @@ fn check_basic_enum_is_parsed() {
     let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.enums.len(), 1);
 
-    let Some(token) = result.enums.iter().next() else {
+    let Some(token) = result.enums.first() else {
         panic!("At least one element should be present in enums");
     };
 
@@ -574,7 +574,7 @@ fn test_option_is_resolved_as_a_part_of_struct() {
     assert_eq!(result.events.len(), 0);
     assert_eq!(result.functions.len(), 0);
 
-    let Some(token) = result.structs.iter().next() else {
+    let Some(token) = result.structs.first() else {
         panic!("At least one element should be present in structs");
     };
 
@@ -618,7 +618,7 @@ fn test_result_is_resolved_as_a_part_of_struct() {
     assert_eq!(result.events.len(), 0);
     assert_eq!(result.functions.len(), 0);
 
-    let Some(token) = result.structs.iter().next() else {
+    let Some(token) = result.structs.first() else {
         panic!("At least one element should be present in structs");
     };
 
@@ -667,7 +667,7 @@ fn test_non_zero_is_resolved_as_a_part_of_struct() {
     assert_eq!(result.events.len(), 0);
     assert_eq!(result.functions.len(), 0);
 
-    let Some(token) = result.structs.iter().next() else {
+    let Some(token) = result.structs.first() else {
         panic!("At least one element should be present in structs");
     };
 
@@ -718,7 +718,7 @@ fn test_simple_event_struct_parsing() {
     assert_eq!(result.events.len(), 1);
     assert_eq!(result.functions.len(), 0);
 
-    let Some(token) = result.events.iter().next() else {
+    let Some(token) = result.events.first() else {
         panic!("At least one element should be present in events");
     };
 

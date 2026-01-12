@@ -28,6 +28,6 @@ async fn test_rust_keyworkds_type_fields(runner: &RunnerCtx) {
     let provider = runner.provider();
 
     let contract = MyContractEmbedReader::new(Felt::from_hex("0x1337").unwrap(), &provider);
-    let _ = contract.r#move().call().await.unwrap();
-    let _ = contract.r#break().call().await.unwrap();
+    contract.r#move().call().await.unwrap();
+    contract.r#break().call().await.unwrap();
 }
