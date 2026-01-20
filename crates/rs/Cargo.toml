@@ -29,3 +29,4 @@ prettyplease = "0.2.19"
 
 [dev-dependencies]
 syntect = "5"
+tracing.workspace = true

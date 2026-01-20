@@ -46,17 +46,15 @@ impl ArrayContainer {
 
         let generic_args = genericity::extract_generics_args(type_path)?;
 
-        if generic_args.len() != 1 {
+        let [(_name, token_path)] = generic_args.as_slice() else {
             return Err(Error::TokenInitFailed(format!(
                 "Array/Span are expected exactly one generic argument, found {} in `{}`.",
                 generic_args.len(),
                 type_path,
             )));
-        }
+        };
 
-        let generic_arg_token = generic_args.into_iter().next().map(|(_, token)| token);
-
-        Ok(generic_arg_token.unwrap())
+        Ok(token_path.to_owned())
     }
 
     pub fn new(type_path: &str, inner: &Rc<RefCell<Token>>) -> Self {

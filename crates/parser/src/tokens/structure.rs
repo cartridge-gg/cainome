@@ -18,10 +18,13 @@ impl Struct {
         let type_path = escape_rust_keywords(type_path);
         let generic_args = genericity::extract_generics_args(&type_path)?;
 
-        let generic_args_with_types: Vec<(String, Rc<RefCell<Token>>)> = generic_args
+        let Ok(generic_args_with_types) = generic_args
             .into_iter()
-            .map(|(name, path)| (name, registry.get(&path).unwrap()))
-            .collect();
+            .map(|(name, path)| registry.get(&path).map(|t| (name, t)))
+            .collect::<Result<Vec<_>, _>>()
+        else {
+            unreachable!("Generic args should be registered in the registry");
+        };
 
         Ok(Self {
             type_path,

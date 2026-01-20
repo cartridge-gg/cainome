@@ -86,7 +86,7 @@ fn test_2_nested_modules_with_struct_and_reference() {
         let Token::Struct(structure) = &*token_ref.borrow() else {
             continue;
         };
-        root.include_many(structure.expand(&ctx));
+        root.include_many(structure.expand(&ctx)).unwrap();
     }
 
     let generated = root.token_stream();

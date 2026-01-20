@@ -619,6 +619,7 @@ dependencies = [
  "syn 2.0.111",
  "syntect",
  "thiserror 2.0.12",
+ "tracing",
 ]
 
 [[package]]

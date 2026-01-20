@@ -30,12 +30,10 @@ impl NonZeroContainer {
     pub fn get_inner(type_path: &str) -> CainomeResult<String, Error> {
         let generic_args = genericity::extract_generics_args(type_path)?;
 
-        if generic_args.len() != 1 {
+        let [(_name, token_path)] = generic_args.as_slice() else {
             return Err(Error::InvalidNonZeroTypePath(type_path.to_string()));
-        }
+        };
 
-        let generic_arg_token = generic_args.into_iter().next().map(|(_, token)| token);
-
-        Ok(generic_arg_token.unwrap())
+        Ok(token_path.to_owned())
     }
 }
