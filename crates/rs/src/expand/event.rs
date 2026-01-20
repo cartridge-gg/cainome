@@ -86,8 +86,6 @@ fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> Tok
     }
 }
 
-// TODO: create EventCairo struct with enum field and variants and From<Enum> trait implementation. For uniformity with StructCairo and ContractCairo.
-
 impl Expandable for Event {
     fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult> {
         let full_path = ctx.apply_alias(&self.type_path_no_generic());

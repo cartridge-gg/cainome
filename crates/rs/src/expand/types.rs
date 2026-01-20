@@ -130,7 +130,6 @@ impl CairoToRust for TupleContainer {
     }
 }
 
-// TODO: rewrite
 impl CairoToRust for Struct {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
         [

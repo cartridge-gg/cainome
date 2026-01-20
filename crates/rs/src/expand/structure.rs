@@ -6,8 +6,6 @@ use cainome_parser::tokens::{NamedToken, Struct};
 use proc_macro2::TokenStream;
 use quote::quote;
 
-// TODO: create Structure struct with type_name and variants and From<Enum> and From<Event> trait implementation.
-
 pub fn struct_declaration(
     type_name: &str,
     fields: &Vec<NamedToken>,

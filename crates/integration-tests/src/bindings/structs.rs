@@ -9,372 +9,6 @@ pub mod contracts {
     pub mod gen {
         pub mod gen {
             #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
-            pub struct PlainStruct {
-                pub f1: u8,
-                pub f2: u16,
-                pub f3: u32,
-                #[serde(
-                    serialize_with = "cainome_cairo_serde::serialize_as_hex",
-                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex"
-                )]
-                pub f4: u64,
-                #[serde(
-                    serialize_with = "cainome_cairo_serde::serialize_as_hex",
-                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex"
-                )]
-                pub f5: u128,
-                pub f6: starknet::core::types::Felt,
-                #[serde(
-                    serialize_with = "cainome_cairo_serde::serialize_as_hex_t2",
-                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex_t2"
-                )]
-                pub f7: (starknet::core::types::Felt, u64),
-                pub f8: Vec<u8>,
-                #[serde(
-                    serialize_with = "cainome_cairo_serde::serialize_as_hex_vec",
-                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex_vec"
-                )]
-                pub f9: Vec<u128>,
-            }
-            impl cainome_cairo_serde::CairoSerde for PlainStruct {
-                type RustType = Self;
-                const SERIALIZED_SIZE: std::option::Option<usize> = None;
-                #[inline]
-                fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-                    let mut __size = 0;
-                    __size += u8::cairo_serialized_size(&__rust.f1);
-                    __size += u16::cairo_serialized_size(&__rust.f2);
-                    __size += u32::cairo_serialized_size(&__rust.f3);
-                    __size += u64::cairo_serialized_size(&__rust.f4);
-                    __size += u128::cairo_serialized_size(&__rust.f5);
-                    __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.f6);
-                    __size +=
-                        <(starknet::core::types::Felt, u64)>::cairo_serialized_size(&__rust.f7);
-                    __size += Vec::<u8>::cairo_serialized_size(&__rust.f8);
-                    __size += Vec::<u128>::cairo_serialized_size(&__rust.f9);
-                    __size
-                }
-                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-                    let mut __out: Vec<starknet::core::types::Felt> = vec![];
-                    __out.extend(u8::cairo_serialize(&__rust.f1));
-                    __out.extend(u16::cairo_serialize(&__rust.f2));
-                    __out.extend(u32::cairo_serialize(&__rust.f3));
-                    __out.extend(u64::cairo_serialize(&__rust.f4));
-                    __out.extend(u128::cairo_serialize(&__rust.f5));
-                    __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.f6));
-                    __out.extend(<(starknet::core::types::Felt, u64)>::cairo_serialize(
-                        &__rust.f7,
-                    ));
-                    __out.extend(Vec::<u8>::cairo_serialize(&__rust.f8));
-                    __out.extend(Vec::<u128>::cairo_serialize(&__rust.f9));
-                    __out
-                }
-                fn cairo_deserialize(
-                    __felts: &[starknet::core::types::Felt],
-                    __offset: usize,
-                ) -> cainome_cairo_serde::Result<Self::RustType> {
-                    let mut __offset = __offset;
-                    let f1 = u8::cairo_deserialize(__felts, __offset)?;
-                    __offset += u8::cairo_serialized_size(&f1);
-                    let f2 = u16::cairo_deserialize(__felts, __offset)?;
-                    __offset += u16::cairo_serialized_size(&f2);
-                    let f3 = u32::cairo_deserialize(__felts, __offset)?;
-                    __offset += u32::cairo_serialized_size(&f3);
-                    let f4 = u64::cairo_deserialize(__felts, __offset)?;
-                    __offset += u64::cairo_serialized_size(&f4);
-                    let f5 = u128::cairo_deserialize(__felts, __offset)?;
-                    __offset += u128::cairo_serialized_size(&f5);
-                    let f6 = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-                    __offset += starknet::core::types::Felt::cairo_serialized_size(&f6);
-                    let f7 =
-                        <(starknet::core::types::Felt, u64)>::cairo_deserialize(__felts, __offset)?;
-                    __offset += <(starknet::core::types::Felt, u64)>::cairo_serialized_size(&f7);
-                    let f8 = Vec::<u8>::cairo_deserialize(__felts, __offset)?;
-                    __offset += Vec::<u8>::cairo_serialized_size(&f8);
-                    let f9 = Vec::<u128>::cairo_deserialize(__felts, __offset)?;
-                    __offset += Vec::<u128>::cairo_serialized_size(&f9);
-                    Ok(PlainStruct {
-                        f1,
-                        f2,
-                        f3,
-                        f4,
-                        f5,
-                        f6,
-                        f7,
-                        f8,
-                        f9,
-                    })
-                }
-            }
-            #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
-            pub enum MyEnum {
-                One(u8),
-                Two(u16),
-                Three(u32),
-                #[serde(
-                    serialize_with = "cainome_cairo_serde::serialize_as_hex",
-                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex"
-                )]
-                Four(u64),
-                #[serde(
-                    serialize_with = "cainome_cairo_serde::serialize_as_hex",
-                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex"
-                )]
-                Five(u128),
-                Six(starknet::core::types::Felt),
-                Seven(i32),
-                #[serde(
-                    serialize_with = "cainome_cairo_serde::serialize_as_hex",
-                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex"
-                )]
-                Eight(i64),
-                #[serde(
-                    serialize_with = "cainome_cairo_serde::serialize_as_hex",
-                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex"
-                )]
-                Nine(i128),
-                #[serde(
-                    serialize_with = "cainome_cairo_serde::serialize_as_hex_t2",
-                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex_t2"
-                )]
-                Ten((u8, u128)),
-                #[serde(
-                    serialize_with = "cainome_cairo_serde::serialize_as_hex_t3",
-                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex_t3"
-                )]
-                Eleven((starknet::core::types::Felt, u8, u128)),
-            }
-            impl cainome_cairo_serde::CairoSerde for MyEnum {
-                type RustType = Self;
-                const SERIALIZED_SIZE: std::option::Option<usize> = std::option::Option::None;
-                #[inline]
-                fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-                    match __rust {
-                        MyEnum::One(val) => u8::cairo_serialized_size(val) + 1,
-                        MyEnum::Two(val) => u16::cairo_serialized_size(val) + 1,
-                        MyEnum::Three(val) => u32::cairo_serialized_size(val) + 1,
-                        MyEnum::Four(val) => u64::cairo_serialized_size(val) + 1,
-                        MyEnum::Five(val) => u128::cairo_serialized_size(val) + 1,
-                        MyEnum::Six(val) => {
-                            starknet::core::types::Felt::cairo_serialized_size(val) + 1
-                        }
-                        MyEnum::Seven(val) => i32::cairo_serialized_size(val) + 1,
-                        MyEnum::Eight(val) => i64::cairo_serialized_size(val) + 1,
-                        MyEnum::Nine(val) => i128::cairo_serialized_size(val) + 1,
-                        MyEnum::Ten(val) => <(u8, u128)>::cairo_serialized_size(val) + 1,
-                        MyEnum::Eleven(val) => {
-                            <(starknet::core::types::Felt, u8, u128)>::cairo_serialized_size(val)
-                                + 1
-                        }
-                        _ => 0,
-                    }
-                }
-                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-                    match __rust {
-                        MyEnum::One(val) => {
-                            let mut temp = vec![];
-                            temp.extend(usize::cairo_serialize(&0usize));
-                            temp.extend(u8::cairo_serialize(val));
-                            temp
-                        }
-                        MyEnum::Two(val) => {
-                            let mut temp = vec![];
-                            temp.extend(usize::cairo_serialize(&1usize));
-                            temp.extend(u16::cairo_serialize(val));
-                            temp
-                        }
-                        MyEnum::Three(val) => {
-                            let mut temp = vec![];
-                            temp.extend(usize::cairo_serialize(&2usize));
-                            temp.extend(u32::cairo_serialize(val));
-                            temp
-                        }
-                        MyEnum::Four(val) => {
-                            let mut temp = vec![];
-                            temp.extend(usize::cairo_serialize(&3usize));
-                            temp.extend(u64::cairo_serialize(val));
-                            temp
-                        }
-                        MyEnum::Five(val) => {
-                            let mut temp = vec![];
-                            temp.extend(usize::cairo_serialize(&4usize));
-                            temp.extend(u128::cairo_serialize(val));
-                            temp
-                        }
-                        MyEnum::Six(val) => {
-                            let mut temp = vec![];
-                            temp.extend(usize::cairo_serialize(&5usize));
-                            temp.extend(starknet::core::types::Felt::cairo_serialize(val));
-                            temp
-                        }
-                        MyEnum::Seven(val) => {
-                            let mut temp = vec![];
-                            temp.extend(usize::cairo_serialize(&6usize));
-                            temp.extend(i32::cairo_serialize(val));
-                            temp
-                        }
-                        MyEnum::Eight(val) => {
-                            let mut temp = vec![];
-                            temp.extend(usize::cairo_serialize(&7usize));
-                            temp.extend(i64::cairo_serialize(val));
-                            temp
-                        }
-                        MyEnum::Nine(val) => {
-                            let mut temp = vec![];
-                            temp.extend(usize::cairo_serialize(&8usize));
-                            temp.extend(i128::cairo_serialize(val));
-                            temp
-                        }
-                        MyEnum::Ten(val) => {
-                            let mut temp = vec![];
-                            temp.extend(usize::cairo_serialize(&9usize));
-                            temp.extend(<(u8, u128)>::cairo_serialize(val));
-                            temp
-                        }
-                        MyEnum::Eleven(val) => {
-                            let mut temp = vec![];
-                            temp.extend(usize::cairo_serialize(&10usize));
-                            temp.extend(
-                                <(starknet::core::types::Felt, u8, u128)>::cairo_serialize(val),
-                            );
-                            temp
-                        }
-                        _ => vec![],
-                    }
-                }
-                fn cairo_deserialize(
-                    __felts: &[starknet::core::types::Felt],
-                    __offset: usize,
-                ) -> cainome_cairo_serde::Result<Self::RustType> {
-                    let __f = __felts[__offset];
-                    let __index = u128::from_be_bytes(__f.to_bytes_be()[16..].try_into().unwrap());
-                    match __index as usize {
-                        0usize => Ok(MyEnum::One(u8::cairo_deserialize(__felts, __offset + 1)?)),
-                        1usize => Ok(MyEnum::Two(u16::cairo_deserialize(__felts, __offset + 1)?)),
-                        2usize => Ok(MyEnum::Three(u32::cairo_deserialize(
-                            __felts,
-                            __offset + 1,
-                        )?)),
-                        3usize => Ok(MyEnum::Four(u64::cairo_deserialize(__felts, __offset + 1)?)),
-                        4usize => Ok(MyEnum::Five(u128::cairo_deserialize(
-                            __felts,
-                            __offset + 1,
-                        )?)),
-                        5usize => Ok(MyEnum::Six(starknet::core::types::Felt::cairo_deserialize(
-                            __felts,
-                            __offset + 1,
-                        )?)),
-                        6usize => Ok(MyEnum::Seven(i32::cairo_deserialize(
-                            __felts,
-                            __offset + 1,
-                        )?)),
-                        7usize => Ok(MyEnum::Eight(i64::cairo_deserialize(
-                            __felts,
-                            __offset + 1,
-                        )?)),
-                        8usize => Ok(MyEnum::Nine(i128::cairo_deserialize(
-                            __felts,
-                            __offset + 1,
-                        )?)),
-                        9usize => Ok(MyEnum::Ten(<(u8, u128)>::cairo_deserialize(
-                            __felts,
-                            __offset + 1,
-                        )?)),
-                        10usize => Ok(MyEnum::Eleven(
-                            <(starknet::core::types::Felt, u8, u128)>::cairo_deserialize(
-                                __felts,
-                                __offset + 1,
-                            )?,
-                        )),
-                        _ => {
-                            return Err(cainome_cairo_serde::Error::Deserialize(format!(
-                                "Index not handle for enum {}",
-                                "MyEnum"
-                            )));
-                        }
-                    }
-                }
-            }
-            #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
-            pub struct E1 {
-                pub key: starknet::core::types::Felt,
-                pub value: Vec<starknet::core::types::Felt>,
-            }
-            impl cainome_cairo_serde::CairoSerde for E1 {
-                type RustType = Self;
-                const SERIALIZED_SIZE: std::option::Option<usize> = None;
-                #[inline]
-                fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
-                    let mut __size = 0;
-                    __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.key);
-                    __size +=
-                        Vec::<starknet::core::types::Felt>::cairo_serialized_size(&__rust.value);
-                    __size
-                }
-                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
-                    let mut __out: Vec<starknet::core::types::Felt> = vec![];
-                    __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.key));
-                    __out.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
-                        &__rust.value,
-                    ));
-                    __out
-                }
-                fn cairo_deserialize(
-                    __felts: &[starknet::core::types::Felt],
-                    __offset: usize,
-                ) -> cainome_cairo_serde::Result<Self::RustType> {
-                    let mut __offset = __offset;
-                    let key = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-                    __offset += starknet::core::types::Felt::cairo_serialized_size(&key);
-                    let value =
-                        Vec::<starknet::core::types::Felt>::cairo_deserialize(__felts, __offset)?;
-                    __offset += Vec::<starknet::core::types::Felt>::cairo_serialized_size(&value);
-                    Ok(E1 { key, value })
-                }
-            }
-            impl E1 {
-                pub fn event_selector() -> starknet::core::types::Felt {
-                    starknet::core::utils::get_selector_from_name("E1").unwrap()
-                }
-                pub fn event_name() -> &'static str {
-                    "E1"
-                }
-                pub(crate) fn try_from_event(
-                    from_address: starknet::core::types::Felt,
-                    keys: Vec<starknet::core::types::Felt>,
-                    data: Vec<starknet::core::types::Felt>,
-                ) -> Result<Self, String> {
-                    if keys.is_empty() {
-                        return Err("Event has no key".to_string());
-                    }
-                    use cainome_cairo_serde::CairoSerde;
-                    if keys[0]
-                        == starknet::core::utils::get_selector_from_name("E1")
-                            .unwrap_or_else(|_| panic!("Invalid selector for {}", "E1"))
-                    {
-                        let res = E1::cairo_deserialize(&data, 0).map_err(|e| {
-                            format!("Could not deserialize {} event data: {:?}", "E1", e)
-                        })?;
-                        return Ok(res);
-                    }
-                    Err(format!("Could not match any event from keys {:?}", keys))
-                }
-            }
-            impl TryFrom<starknet::core::types::EmittedEvent> for E1 {
-                type Error = String;
-                fn try_from(
-                    event: starknet::core::types::EmittedEvent,
-                ) -> Result<Self, Self::Error> {
-                    Self::try_from_event(event.from_address, event.keys, event.data)
-                }
-            }
-            impl TryFrom<starknet::core::types::Event> for E1 {
-                type Error = String;
-                fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
-                    Self::try_from_event(event.from_address, event.keys, event.data)
-                }
-            }
-            #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
             pub struct MyStructInnerGeneric {
                 pub f1: starknet::core::types::Felt,
                 pub f2: crate::bindings::structs::contracts::gen::gen::MyStruct,
@@ -567,6 +201,372 @@ pub mod contracts {
                     Ok(MyStruct { f1, f2, f3 })
                 }
             }
+            #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+            pub struct E1 {
+                pub key: starknet::core::types::Felt,
+                pub value: Vec<starknet::core::types::Felt>,
+            }
+            impl cainome_cairo_serde::CairoSerde for E1 {
+                type RustType = Self;
+                const SERIALIZED_SIZE: std::option::Option<usize> = None;
+                #[inline]
+                fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+                    let mut __size = 0;
+                    __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.key);
+                    __size +=
+                        Vec::<starknet::core::types::Felt>::cairo_serialized_size(&__rust.value);
+                    __size
+                }
+                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+                    let mut __out: Vec<starknet::core::types::Felt> = vec![];
+                    __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.key));
+                    __out.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
+                        &__rust.value,
+                    ));
+                    __out
+                }
+                fn cairo_deserialize(
+                    __felts: &[starknet::core::types::Felt],
+                    __offset: usize,
+                ) -> cainome_cairo_serde::Result<Self::RustType> {
+                    let mut __offset = __offset;
+                    let key = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+                    __offset += starknet::core::types::Felt::cairo_serialized_size(&key);
+                    let value =
+                        Vec::<starknet::core::types::Felt>::cairo_deserialize(__felts, __offset)?;
+                    __offset += Vec::<starknet::core::types::Felt>::cairo_serialized_size(&value);
+                    Ok(E1 { key, value })
+                }
+            }
+            impl E1 {
+                pub fn event_selector() -> starknet::core::types::Felt {
+                    starknet::core::utils::get_selector_from_name("E1").unwrap()
+                }
+                pub fn event_name() -> &'static str {
+                    "E1"
+                }
+                pub(crate) fn try_from_event(
+                    from_address: starknet::core::types::Felt,
+                    keys: Vec<starknet::core::types::Felt>,
+                    data: Vec<starknet::core::types::Felt>,
+                ) -> Result<Self, String> {
+                    if keys.is_empty() {
+                        return Err("Event has no key".to_string());
+                    }
+                    use cainome_cairo_serde::CairoSerde;
+                    if keys[0]
+                        == starknet::core::utils::get_selector_from_name("E1")
+                            .unwrap_or_else(|_| panic!("Invalid selector for {}", "E1"))
+                    {
+                        let res = E1::cairo_deserialize(&data, 0).map_err(|e| {
+                            format!("Could not deserialize {} event data: {:?}", "E1", e)
+                        })?;
+                        return Ok(res);
+                    }
+                    Err(format!("Could not match any event from keys {:?}", keys))
+                }
+            }
+            impl TryFrom<starknet::core::types::EmittedEvent> for E1 {
+                type Error = String;
+                fn try_from(
+                    event: starknet::core::types::EmittedEvent,
+                ) -> Result<Self, Self::Error> {
+                    Self::try_from_event(event.from_address, event.keys, event.data)
+                }
+            }
+            impl TryFrom<starknet::core::types::Event> for E1 {
+                type Error = String;
+                fn try_from(event: starknet::core::types::Event) -> Result<Self, Self::Error> {
+                    Self::try_from_event(event.from_address, event.keys, event.data)
+                }
+            }
+            #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+            pub enum MyEnum {
+                One(u8),
+                Two(u16),
+                Three(u32),
+                #[serde(
+                    serialize_with = "cainome_cairo_serde::serialize_as_hex",
+                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex"
+                )]
+                Four(u64),
+                #[serde(
+                    serialize_with = "cainome_cairo_serde::serialize_as_hex",
+                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex"
+                )]
+                Five(u128),
+                Six(starknet::core::types::Felt),
+                Seven(i32),
+                #[serde(
+                    serialize_with = "cainome_cairo_serde::serialize_as_hex",
+                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex"
+                )]
+                Eight(i64),
+                #[serde(
+                    serialize_with = "cainome_cairo_serde::serialize_as_hex",
+                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex"
+                )]
+                Nine(i128),
+                #[serde(
+                    serialize_with = "cainome_cairo_serde::serialize_as_hex_t2",
+                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex_t2"
+                )]
+                Ten((u8, u128)),
+                #[serde(
+                    serialize_with = "cainome_cairo_serde::serialize_as_hex_t3",
+                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex_t3"
+                )]
+                Eleven((starknet::core::types::Felt, u8, u128)),
+            }
+            impl cainome_cairo_serde::CairoSerde for MyEnum {
+                type RustType = Self;
+                const SERIALIZED_SIZE: std::option::Option<usize> = std::option::Option::None;
+                #[inline]
+                fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+                    match __rust {
+                        MyEnum::One(val) => u8::cairo_serialized_size(val) + 1,
+                        MyEnum::Two(val) => u16::cairo_serialized_size(val) + 1,
+                        MyEnum::Three(val) => u32::cairo_serialized_size(val) + 1,
+                        MyEnum::Four(val) => u64::cairo_serialized_size(val) + 1,
+                        MyEnum::Five(val) => u128::cairo_serialized_size(val) + 1,
+                        MyEnum::Six(val) => {
+                            starknet::core::types::Felt::cairo_serialized_size(val) + 1
+                        }
+                        MyEnum::Seven(val) => i32::cairo_serialized_size(val) + 1,
+                        MyEnum::Eight(val) => i64::cairo_serialized_size(val) + 1,
+                        MyEnum::Nine(val) => i128::cairo_serialized_size(val) + 1,
+                        MyEnum::Ten(val) => <(u8, u128)>::cairo_serialized_size(val) + 1,
+                        MyEnum::Eleven(val) => {
+                            <(starknet::core::types::Felt, u8, u128)>::cairo_serialized_size(val)
+                                + 1
+                        }
+                        _ => 0,
+                    }
+                }
+                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+                    match __rust {
+                        MyEnum::One(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&0usize));
+                            temp.extend(u8::cairo_serialize(val));
+                            temp
+                        }
+                        MyEnum::Two(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&1usize));
+                            temp.extend(u16::cairo_serialize(val));
+                            temp
+                        }
+                        MyEnum::Three(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&2usize));
+                            temp.extend(u32::cairo_serialize(val));
+                            temp
+                        }
+                        MyEnum::Four(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&3usize));
+                            temp.extend(u64::cairo_serialize(val));
+                            temp
+                        }
+                        MyEnum::Five(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&4usize));
+                            temp.extend(u128::cairo_serialize(val));
+                            temp
+                        }
+                        MyEnum::Six(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&5usize));
+                            temp.extend(starknet::core::types::Felt::cairo_serialize(val));
+                            temp
+                        }
+                        MyEnum::Seven(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&6usize));
+                            temp.extend(i32::cairo_serialize(val));
+                            temp
+                        }
+                        MyEnum::Eight(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&7usize));
+                            temp.extend(i64::cairo_serialize(val));
+                            temp
+                        }
+                        MyEnum::Nine(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&8usize));
+                            temp.extend(i128::cairo_serialize(val));
+                            temp
+                        }
+                        MyEnum::Ten(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&9usize));
+                            temp.extend(<(u8, u128)>::cairo_serialize(val));
+                            temp
+                        }
+                        MyEnum::Eleven(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&10usize));
+                            temp.extend(
+                                <(starknet::core::types::Felt, u8, u128)>::cairo_serialize(val),
+                            );
+                            temp
+                        }
+                        _ => vec![],
+                    }
+                }
+                fn cairo_deserialize(
+                    __felts: &[starknet::core::types::Felt],
+                    __offset: usize,
+                ) -> cainome_cairo_serde::Result<Self::RustType> {
+                    let __f = __felts[__offset];
+                    let __index = u128::from_be_bytes(__f.to_bytes_be()[16..].try_into().unwrap());
+                    match __index as usize {
+                        0usize => Ok(MyEnum::One(u8::cairo_deserialize(__felts, __offset + 1)?)),
+                        1usize => Ok(MyEnum::Two(u16::cairo_deserialize(__felts, __offset + 1)?)),
+                        2usize => Ok(MyEnum::Three(u32::cairo_deserialize(
+                            __felts,
+                            __offset + 1,
+                        )?)),
+                        3usize => Ok(MyEnum::Four(u64::cairo_deserialize(__felts, __offset + 1)?)),
+                        4usize => Ok(MyEnum::Five(u128::cairo_deserialize(
+                            __felts,
+                            __offset + 1,
+                        )?)),
+                        5usize => Ok(MyEnum::Six(starknet::core::types::Felt::cairo_deserialize(
+                            __felts,
+                            __offset + 1,
+                        )?)),
+                        6usize => Ok(MyEnum::Seven(i32::cairo_deserialize(
+                            __felts,
+                            __offset + 1,
+                        )?)),
+                        7usize => Ok(MyEnum::Eight(i64::cairo_deserialize(
+                            __felts,
+                            __offset + 1,
+                        )?)),
+                        8usize => Ok(MyEnum::Nine(i128::cairo_deserialize(
+                            __felts,
+                            __offset + 1,
+                        )?)),
+                        9usize => Ok(MyEnum::Ten(<(u8, u128)>::cairo_deserialize(
+                            __felts,
+                            __offset + 1,
+                        )?)),
+                        10usize => Ok(MyEnum::Eleven(
+                            <(starknet::core::types::Felt, u8, u128)>::cairo_deserialize(
+                                __felts,
+                                __offset + 1,
+                            )?,
+                        )),
+                        _ => {
+                            return Err(cainome_cairo_serde::Error::Deserialize(format!(
+                                "Index not handle for enum {}",
+                                "MyEnum"
+                            )));
+                        }
+                    }
+                }
+            }
+            #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+            pub struct PlainStruct {
+                pub f1: u8,
+                pub f2: u16,
+                pub f3: u32,
+                #[serde(
+                    serialize_with = "cainome_cairo_serde::serialize_as_hex",
+                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex"
+                )]
+                pub f4: u64,
+                #[serde(
+                    serialize_with = "cainome_cairo_serde::serialize_as_hex",
+                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex"
+                )]
+                pub f5: u128,
+                pub f6: starknet::core::types::Felt,
+                #[serde(
+                    serialize_with = "cainome_cairo_serde::serialize_as_hex_t2",
+                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex_t2"
+                )]
+                pub f7: (starknet::core::types::Felt, u64),
+                pub f8: Vec<u8>,
+                #[serde(
+                    serialize_with = "cainome_cairo_serde::serialize_as_hex_vec",
+                    deserialize_with = "cainome_cairo_serde::deserialize_from_hex_vec"
+                )]
+                pub f9: Vec<u128>,
+            }
+            impl cainome_cairo_serde::CairoSerde for PlainStruct {
+                type RustType = Self;
+                const SERIALIZED_SIZE: std::option::Option<usize> = None;
+                #[inline]
+                fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+                    let mut __size = 0;
+                    __size += u8::cairo_serialized_size(&__rust.f1);
+                    __size += u16::cairo_serialized_size(&__rust.f2);
+                    __size += u32::cairo_serialized_size(&__rust.f3);
+                    __size += u64::cairo_serialized_size(&__rust.f4);
+                    __size += u128::cairo_serialized_size(&__rust.f5);
+                    __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.f6);
+                    __size +=
+                        <(starknet::core::types::Felt, u64)>::cairo_serialized_size(&__rust.f7);
+                    __size += Vec::<u8>::cairo_serialized_size(&__rust.f8);
+                    __size += Vec::<u128>::cairo_serialized_size(&__rust.f9);
+                    __size
+                }
+                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+                    let mut __out: Vec<starknet::core::types::Felt> = vec![];
+                    __out.extend(u8::cairo_serialize(&__rust.f1));
+                    __out.extend(u16::cairo_serialize(&__rust.f2));
+                    __out.extend(u32::cairo_serialize(&__rust.f3));
+                    __out.extend(u64::cairo_serialize(&__rust.f4));
+                    __out.extend(u128::cairo_serialize(&__rust.f5));
+                    __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.f6));
+                    __out.extend(<(starknet::core::types::Felt, u64)>::cairo_serialize(
+                        &__rust.f7,
+                    ));
+                    __out.extend(Vec::<u8>::cairo_serialize(&__rust.f8));
+                    __out.extend(Vec::<u128>::cairo_serialize(&__rust.f9));
+                    __out
+                }
+                fn cairo_deserialize(
+                    __felts: &[starknet::core::types::Felt],
+                    __offset: usize,
+                ) -> cainome_cairo_serde::Result<Self::RustType> {
+                    let mut __offset = __offset;
+                    let f1 = u8::cairo_deserialize(__felts, __offset)?;
+                    __offset += u8::cairo_serialized_size(&f1);
+                    let f2 = u16::cairo_deserialize(__felts, __offset)?;
+                    __offset += u16::cairo_serialized_size(&f2);
+                    let f3 = u32::cairo_deserialize(__felts, __offset)?;
+                    __offset += u32::cairo_serialized_size(&f3);
+                    let f4 = u64::cairo_deserialize(__felts, __offset)?;
+                    __offset += u64::cairo_serialized_size(&f4);
+                    let f5 = u128::cairo_deserialize(__felts, __offset)?;
+                    __offset += u128::cairo_serialized_size(&f5);
+                    let f6 = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
+                    __offset += starknet::core::types::Felt::cairo_serialized_size(&f6);
+                    let f7 =
+                        <(starknet::core::types::Felt, u64)>::cairo_deserialize(__felts, __offset)?;
+                    __offset += <(starknet::core::types::Felt, u64)>::cairo_serialized_size(&f7);
+                    let f8 = Vec::<u8>::cairo_deserialize(__felts, __offset)?;
+                    __offset += Vec::<u8>::cairo_serialized_size(&f8);
+                    let f9 = Vec::<u128>::cairo_deserialize(__felts, __offset)?;
+                    __offset += Vec::<u128>::cairo_serialized_size(&f9);
+                    Ok(PlainStruct {
+                        f1,
+                        f2,
+                        f3,
+                        f4,
+                        f5,
+                        f6,
+                        f7,
+                        f8,
+                        f9,
+                    })
+                }
+            }
         }
     }
 }
@@ -687,7 +687,7 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Structs<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn func1_getcall(
+    pub fn func2_getcall(
         &self,
         a: &crate::bindings::structs::contracts::gen::gen::MyStruct,
     ) -> starknet::core::types::Call {
@@ -697,17 +697,17 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Structs<A> {
             .extend(crate::bindings::structs::contracts::gen::gen::MyStruct::cairo_serialize(a));
         starknet::core::types::Call {
             to: self.address,
-            selector: starknet::macros::selector!("func1"),
+            selector: starknet::macros::selector!("func2"),
             calldata: __calldata,
         }
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn func1(
+    pub fn func2(
         &self,
         a: &crate::bindings::structs::contracts::gen::gen::MyStruct,
     ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.func1_getcall(a);
+        let __call = self.func2_getcall(a);
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
@@ -738,7 +738,7 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Structs<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn func2_getcall(
+    pub fn func1_getcall(
         &self,
         a: &crate::bindings::structs::contracts::gen::gen::MyStruct,
     ) -> starknet::core::types::Call {
@@ -748,17 +748,17 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Structs<A> {
             .extend(crate::bindings::structs::contracts::gen::gen::MyStruct::cairo_serialize(a));
         starknet::core::types::Call {
             to: self.address,
-            selector: starknet::macros::selector!("func2"),
+            selector: starknet::macros::selector!("func1"),
             calldata: __calldata,
         }
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn func2(
+    pub fn func1(
         &self,
         a: &crate::bindings::structs::contracts::gen::gen::MyStruct,
     ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.func2_getcall(a);
+        let __call = self.func1_getcall(a);
         self.account.execute_v3(vec![__call])
     }
     pub async fn declare(

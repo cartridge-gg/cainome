@@ -112,15 +112,12 @@ impl AbiParser {
         let mut unknown_fields: HashSet<String> = HashSet::new();
 
         registry.apply_substitutions(&ctx.substitutions);
-        // TODO: probably need to remove skipped types from registry right away
 
         // We will be converting AbiEntries to tokens and drop them upon converting
         while !local_entries.is_empty() {
             // This branch means that we went through all the AbiEntry and could not
             // convert any. This means Abi is incorrect (well, we might have a bug though)
             if seen_since_last_removal > local_entries.len() {
-                // TODO: this branch is most likely unreachable. Think on it.
-                // TODO: sort out error types
                 return Err(Error::ParsingFailed(format!(
                     "Can't resolve ABI types. Some type might be missing. Check: [{}]",
                     unknown_fields.into_iter().collect::<Vec<_>>().join(", ")
@@ -220,8 +217,6 @@ impl AbiParser {
                 Token::Interface(interface) => {
                     interfaces_new.push(Rc::clone(&token));
 
-                    // Legacy
-                    // TODO: remove
                     let mut new_function_tokens = vec![];
 
                     for function_token in interface.functions.iter() {

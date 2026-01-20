@@ -30,7 +30,6 @@ async fn deploy_erc_20_and_call_its_methods(runner: &RunnerCtx) {
 
     let low = Felt::from(1374587365u32);
 
-    // TODO: migrate u256. check core library implementation.
     // Let's mint some!
     erc20
         .mint(

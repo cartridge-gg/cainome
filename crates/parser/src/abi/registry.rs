@@ -2,8 +2,8 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     tokens::{
-        constants, ArrayContainer, Constructor, NonZeroContainer, OptionContainer, ResultContainer,
-        Token, TupleContainer, TypePath,
+        constants, genericity, ArrayContainer, Constructor, NonZeroContainer, OptionContainer,
+        ResultContainer, Struct, Token, TupleContainer, TypePath,
     },
     CainomeResult, Error,
 };
@@ -13,7 +13,6 @@ pub struct TypeRegistry {
     store: HashMap<String, Rc<RefCell<Token>>>,
 }
 
-// TODO: memoise maybe? set?
 fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
     if ArrayContainer::test_path(type_path) {
         let inner_type_path = ArrayContainer::get_inner(type_path)?;
@@ -53,12 +52,15 @@ fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
         return Ok(inners);
     }
 
-    // TODO: Struct?
+    let paths = genericity::extract_generics_args(type_path)?
+        .into_iter()
+        .map(|it| it.1)
+        .collect::<Vec<_>>();
 
-    Ok(vec![type_path.to_string()])
+    Ok(paths)
 }
 
-// TODO: need to find a better way. This method is only solving problems for the generic types inside tuples.
+// TODO(baitcode): need to find a better way. This method is only solving problems for the generic types inside tuples.
 fn normalize_type_path(type_path: &str) -> CainomeResult<String> {
     let type_path = syn::parse_str::<syn::Type>(type_path)?;
     let type_path = quote::quote!(#type_path);
@@ -69,7 +71,7 @@ fn wrap_generic_containers(
     type_path: &str,
     registry: &TypeRegistry,
 ) -> Result<Rc<RefCell<Token>>, Error> {
-    // TODO: It's a crotch. Need to use syn::Type everywhere.
+    // TODO(baitcode): It's a crotch. Need to use syn::Type everywhere.
     let type_path = type_path.replace(" ", "");
 
     if ArrayContainer::test_path(&type_path) {
@@ -106,7 +108,6 @@ fn wrap_generic_containers(
         return Ok(Rc::new(RefCell::new(token)));
     }
 
-    // TODO: Tuple should not be here
     if TupleContainer::test_path(&type_path) {
         let inner_type_paths = TupleContainer::get_inner(&type_path)?;
 

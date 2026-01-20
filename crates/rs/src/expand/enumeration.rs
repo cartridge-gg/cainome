@@ -7,8 +7,6 @@ use crate::expand::{
     utils, Expandable, ExpansionContext, ExpansionContextFactory, ExpansionResult,
 };
 
-// TODO: create Enumeration struct with type_name and variants and From<Enum> and From<Event> trait implementation.
-
 pub fn enum_declaration(
     type_name: &str,
     variants: &[NamedToken],

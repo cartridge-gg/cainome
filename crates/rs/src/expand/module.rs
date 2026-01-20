@@ -84,7 +84,6 @@ impl Module {
     pub fn token_stream(self) -> TokenStream {
         let mut tokens = TokenStream::new();
 
-        // TODO: rethink
         let mut modules = self.submodules.into_values().collect::<Vec<_>>();
         modules.sort_by_key(|i| i.name.clone());
 

@@ -9,8 +9,6 @@
 //! Loading from a file with only the ABI array.
 //! abigen!(ContractName, "path/to/abi.json"
 //!
-//! TODO: support the full artifact JSON to be able to
-//! deploy contracts from abigen.
 use proc_macro_error::emit_error;
 use quote::ToTokens;
 use starknet::core::types::contract::legacy::{LegacyContractClass, RawLegacyAbiEntry};

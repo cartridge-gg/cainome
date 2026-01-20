@@ -109,7 +109,6 @@ impl TokenConvertable for &AbiEventStruct {
                 token,
             };
 
-            // TODO: seems like it's a problem with ABI spec. nested and flat should not be here.
             match m.kind {
                 EventFieldKind::Key => event.keys.push(inner),
                 EventFieldKind::Data => event.data.push(inner),

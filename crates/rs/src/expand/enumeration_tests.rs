@@ -181,7 +181,6 @@ fn test_enumeration_expand_with_containers_field() {
         .unwrap()
         .token_stream();
 
-    // TODO: use cainome
     let expected: TokenStream = parse_quote! {
         pub enum Type {
             f1(cainome::cairo_serde::NonZero<starknet::core::types::Felt>),
@@ -236,7 +235,6 @@ fn test_enumeration_expand_with_structure_field() {
         .unwrap()
         .token_stream();
 
-    // TODO: use cainome
     let expected: TokenStream = parse_quote! {
         pub enum Type {
             variant(self::my::Inner)

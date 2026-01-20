@@ -12,8 +12,6 @@
 //! 2. Direct JSON array input:
 //!    abigen!(ContractName, [{"type": "function", ...}])
 //!
-//! TODO: support the full artifact JSON to be able to
-//! deploy contracts from abigen.
 use proc_macro_error::emit_error;
 use quote::ToTokens;
 use starknet::core::types::contract::{AbiEntry, SierraClass};

@@ -241,7 +241,7 @@ pub fn abi_to_tokenstream(
 
     for structs in not_sorted_structs {
         let Token::Struct(s) = &*structs.borrow() else {
-            // TODO: log
+            tracing::error!("Expected only Struct tokens in the collection, found something else.");
             continue;
         };
 
@@ -250,7 +250,7 @@ pub fn abi_to_tokenstream(
 
     for enumeration in not_sorted_enums {
         let Token::Enum(e) = &*enumeration.borrow() else {
-            // TODO: log
+            tracing::error!("Expected only Enum tokens in the collection, found something else.");
             continue;
         };
 
@@ -259,7 +259,7 @@ pub fn abi_to_tokenstream(
 
     for event in not_sorted_events {
         let Token::Event(e) = &*event.borrow() else {
-            // TODO: log
+            tracing::error!("Expected only Event tokens in the collection, found something else.");
             continue;
         };
 

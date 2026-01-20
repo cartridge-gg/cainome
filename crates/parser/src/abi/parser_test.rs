@@ -165,7 +165,6 @@ fn test_parsing_all_core_type_struct_fields() {
         ("m15", "core::integer::i128"),
         ("m16", "core::starknet::contract_address::ContractAddress"),
         ("m17", "core::starknet::class_hash::ClassHash"),
-        // TODO: Is this array?
         ("m18", "core::bytes_31::bytes31"),
     ];
 

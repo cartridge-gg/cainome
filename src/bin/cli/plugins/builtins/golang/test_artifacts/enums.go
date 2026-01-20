@@ -94,7 +94,6 @@ func (s *EnumsStructWithStruct) UnmarshalCairo(data []*felt.Felt) error {
 	if err := s.Simple.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}
-	// TODO: Update offset based on consumed data
 
 	return nil
 }
