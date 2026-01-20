@@ -57,7 +57,11 @@ fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
         .map(|it| it.1)
         .collect::<Vec<_>>();
 
-    Ok(paths)
+    if !paths.is_empty() {
+        return Ok(paths);
+    }
+
+    Ok(vec![type_path.to_string()])
 }
 
 // TODO(baitcode): need to find a better way. This method is only solving problems for the generic types inside tuples.

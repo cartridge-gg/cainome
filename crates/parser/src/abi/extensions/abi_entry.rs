@@ -44,8 +44,10 @@ impl TokenConvertable for &AbiStruct {
 
         for field in self.members.iter() {
             let Ok(token) = registry.get(&field.r#type) else {
-                unreachable!(
-                    "Parser should have ensured that all dependencies are present in the registry"
+                return Err(
+                    crate::Error::ConversionFailed(
+                        "Parser should have ensured that all AbiStruct dependencies are present in the registry".to_string()
+                    )
                 );
             };
 
@@ -65,8 +67,10 @@ impl TokenConvertable for &AbiEnum {
 
         for field in self.variants.iter() {
             let Ok(token) = registry.get(&field.r#type) else {
-                unreachable!(
-                    "Parser should have ensured that all dependencies are present in the registry"
+                return Err(
+                    crate::Error::ConversionFailed(
+                        "Parser should have ensured that all AbiEnum dependencies are present in the registry".to_string()
+                    )
                 );
             };
 

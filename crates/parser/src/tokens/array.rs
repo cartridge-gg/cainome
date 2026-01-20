@@ -129,7 +129,7 @@ mod tests {
             panic!("This should fail. Array is incorrect");
         };
 
-        let Error::ParsingFailed(_) = e else {
+        let Error::ConversionFailed(_) = e else {
             panic!("This be Error::TokenInitFailed error");
         };
     }
@@ -142,7 +142,7 @@ mod tests {
             panic!("This should fail. Array is incorrect");
         };
 
-        let Error::ParsingFailed(_) = e else {
+        let Error::ConversionFailed(_) = e else {
             panic!("This be Error::TokenInitFailed error");
         };
     }
@@ -155,7 +155,7 @@ mod tests {
             panic!("This should fail. Array is incorrect");
         };
 
-        let Error::ParsingFailed(_) = e else {
+        let Error::ConversionFailed(_) = e else {
             panic!("This be Error::TokenInitFailed error");
         };
     }

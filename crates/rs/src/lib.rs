@@ -234,33 +234,29 @@ pub fn abi_to_tokenstream(
     );
     let mut root = Module::new().with_includes(contract.expand(ctx))?;
 
-    // TOOD: sort those!
-    let not_sorted_structs = registry.get_structs();
-    let not_sorted_enums = registry.get_enums();
-    let not_sorted_events = registry.get_events();
+    let registered_structs = registry.get_structs();
+    let registered_enums = registry.get_enums();
+    let registered_events = registry.get_events();
 
-    for structs in not_sorted_structs {
-        let Token::Struct(s) = &*structs.borrow() else {
-            tracing::error!("Expected only Struct tokens in the collection, found something else.");
-            continue;
+    for r#struct in registered_structs {
+        let Token::Struct(s) = &*r#struct.borrow() else {
+            unreachable!("Expected only Struct tokens in the collection, found something else.");
         };
 
         root.include_many(s.expand(ctx))?;
     }
 
-    for enumeration in not_sorted_enums {
+    for enumeration in registered_enums {
         let Token::Enum(e) = &*enumeration.borrow() else {
-            tracing::error!("Expected only Enum tokens in the collection, found something else.");
-            continue;
+            unreachable!("Expected only Enum tokens in the collection, found something else.");
         };
 
         root.include_many(e.expand(ctx))?;
     }
 
-    for event in not_sorted_events {
+    for event in registered_events {
         let Token::Event(e) = &*event.borrow() else {
-            tracing::error!("Expected only Event tokens in the collection, found something else.");
-            continue;
+            unreachable!("Expected only Event tokens in the collection, found something else.");
         };
 
         root.include_many(e.expand(ctx))?;

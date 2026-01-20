@@ -93,12 +93,18 @@ impl Module {
         }
 
         let mut content = TokenStream::new();
-        for content_module in self.content.into_values() {
+
+        let mut items = self.content.into_iter().collect::<Vec<_>>();
+        items.sort_by_key(|i| i.0.to_owned());
+
+        for (_, content_module) in items.into_iter() {
             content.extend(content_module);
         }
 
-        let imports = self
-            .imports
+        let mut imports = self.imports.into_iter().collect::<Vec<_>>();
+        imports.sort_by_key(|i| i.to_token_stream().to_string());
+
+        let imports_blocks = imports
             .into_iter()
             .map(|i| {
                 quote! {
@@ -109,7 +115,7 @@ impl Module {
 
         if self.name == ROOT_MODULE_NAME {
             quote! {
-                #(#imports)*
+                #(#imports_blocks)*
 
                 #tokens
 
@@ -119,7 +125,7 @@ impl Module {
             let module_name = utils::str_to_ident(&self.name);
             quote! {
                 pub mod #module_name {
-                    #(#imports)*
+                    #(#imports_blocks)*
 
                     #tokens
 
