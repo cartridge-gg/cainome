@@ -653,6 +653,23 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Structs<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
+    pub fn func4(
+        &self,
+        _a: &crate::bindings::structs::contracts::gen::gen::MyEnum,
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, ()> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata
+            .extend(crate::bindings::structs::contracts::gen::gen::MyEnum::cairo_serialize(_a));
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("func4"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
     pub fn read(
         &self,
     ) -> cainome_cairo_serde::call::FCall<
@@ -670,20 +687,28 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Structs<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn func4(
+    pub fn func1_getcall(
         &self,
-        _a: &crate::bindings::structs::contracts::gen::gen::MyEnum,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, ()> {
+        a: &crate::bindings::structs::contracts::gen::gen::MyStruct,
+    ) -> starknet::core::types::Call {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
         __calldata
-            .extend(crate::bindings::structs::contracts::gen::gen::MyEnum::cairo_serialize(_a));
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("func4"),
+            .extend(crate::bindings::structs::contracts::gen::gen::MyStruct::cairo_serialize(a));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("func1"),
             calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn func1(
+        &self,
+        a: &crate::bindings::structs::contracts::gen::gen::MyStruct,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.func1_getcall(a);
+        self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
@@ -734,31 +759,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Structs<A> {
         a: &crate::bindings::structs::contracts::gen::gen::MyStructInnerGeneric,
     ) -> starknet::accounts::ExecutionV3<A> {
         let __call = self.func5_getcall(a);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn func1_getcall(
-        &self,
-        a: &crate::bindings::structs::contracts::gen::gen::MyStruct,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata
-            .extend(crate::bindings::structs::contracts::gen::gen::MyStruct::cairo_serialize(a));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("func1"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn func1(
-        &self,
-        a: &crate::bindings::structs::contracts::gen::gen::MyStruct,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.func1_getcall(a);
         self.account.execute_v3(vec![__call])
     }
     pub async fn declare(
@@ -868,23 +868,6 @@ impl<P: starknet::providers::Provider + Sync> StructsReader<P> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn read(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<
-        P,
-        (starknet::core::types::Felt, starknet::core::types::Felt),
-    > {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("read"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn func4(
         &self,
         _a: &crate::bindings::structs::contracts::gen::gen::MyEnum,
@@ -896,6 +879,23 @@ impl<P: starknet::providers::Provider + Sync> StructsReader<P> {
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
             entry_point_selector: starknet::macros::selector!("func4"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn read(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<
+        P,
+        (starknet::core::types::Felt, starknet::core::types::Felt),
+    > {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("read"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
