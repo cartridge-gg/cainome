@@ -204,7 +204,7 @@ impl Abigen {
             })?;
 
         let expanded = abi_to_tokenstream(&registry, &ctx)
-            .map_err(|e| Error::ExpansionFailed(format!("{}", e)))?;
+            .map_err(|e| Error::ExpansionFailed(format!("{e}")))?;
 
         Ok(ContractBindings {
             name: self.contract_name,

@@ -48,7 +48,7 @@ impl Module {
         let parsed_imports = result
             .imports
             .iter()
-            .map(|i| syn::parse_str::<syn::UseTree>(&i))
+            .map(|i| syn::parse_str::<syn::UseTree>(i))
             .collect::<Result<Vec<_>, _>>();
 
         current_module.imports.extend(parsed_imports?);

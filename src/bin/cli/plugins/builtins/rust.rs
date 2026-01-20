@@ -46,7 +46,7 @@ impl BuiltinPlugin for RustPlugin {
                 .build();
 
             let expanded = cainome_rs::abi_to_tokenstream(&contract.registry, &ctx)
-                .map_err(|e| Error::ExpansionFailed(format!("{}", e)))?;
+                .map_err(|e| Error::ExpansionFailed(format!("{e}")))?;
 
             let filename = format!(
                 "{}.rs",

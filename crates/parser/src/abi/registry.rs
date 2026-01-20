@@ -3,7 +3,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use crate::{
     tokens::{
         constants, genericity, ArrayContainer, Constructor, NonZeroContainer, OptionContainer,
-        ResultContainer, Struct, Token, TupleContainer, TypePath,
+        ResultContainer, Token, TupleContainer, TypePath,
     },
     CainomeResult, Error,
 };
