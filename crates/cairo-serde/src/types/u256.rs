@@ -342,7 +342,6 @@ mod tests {
             low: 12_u128,
             high: 0_u128,
         };
-        println!("{u256}");
         assert_eq!(format!("{u256}"), "12");
     }
 

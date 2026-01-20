@@ -34,9 +34,6 @@ pub use structure::Struct;
 pub use tuple::TupleContainer;
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum Container {}
-
-#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     // Basic type is well known cairo builtin.
     // It's stored in ABI as a reference and defined in caire
@@ -59,7 +56,9 @@ pub enum Token {
     Function(Function),
     Interface(Interface),
 
-    // Placeholder is a service level value, those should never be exposed
+    // Placeholder is a service level value, those should never be exposed.
+    // This is how placeholders are filtered out from Registry.
+    // https://github.com/cartridge-gg/cainome/blob/a13e7e97c7b69529134d9d048e44b9919f3b9e07/crates/parser/src/abi/parser.rs#L191
     Placeholder,
 
     // Extension token is not expanded by default, it's used to mark a token

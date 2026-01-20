@@ -7,7 +7,7 @@ use std::collections::HashMap;
 use std::fs::{self, File};
 
 fn read_file_legacy(file_path: &str) -> Vec<RawLegacyAbiEntry> {
-    println!("Reading ABI from file: {file_path}");
+    println!("cargo:trace=Reading ABI from file: {file_path}");
     let file = File::open(file_path).unwrap();
 
     if let Ok(class) = serde_json::from_reader::<_, LegacyContractClass>(file) {
@@ -25,7 +25,7 @@ fn read_file_legacy(file_path: &str) -> Vec<RawLegacyAbiEntry> {
 
 fn legacy_expand(out_name: &str, ctx: &ExpansionContext) {
     let cwd = std::env::current_dir().unwrap();
-    println!("Current working directory: {cwd:?}");
+    println!("cargo:trace=Current working directory: {cwd:?}");
 
     let abi = read_file_legacy(ctx.contract_source.as_ref());
 
@@ -34,7 +34,7 @@ fn legacy_expand(out_name: &str, ctx: &ExpansionContext) {
     let registry =
         AbiParser::build_registry(abi, ParserContext::from(&ctx)).expect("failed tokens parsing");
 
-    let expanded = cainome_rs::abi_to_tokenstream(&registry, &ctx);
+    let expanded = cainome_rs::abi_to_tokenstream(&registry, &ctx).expect("expansion failed");
 
     let syntax_tree = syn::parse2::<syn::File>(expanded).unwrap();
     let s = prettyplease::unparse(&syntax_tree);
@@ -48,7 +48,7 @@ fn legacy_expand(out_name: &str, ctx: &ExpansionContext) {
 }
 
 fn read_file(file_path: &str) -> Vec<AbiEntry> {
-    println!("Reading ABI from file: {file_path}");
+    println!("cargo:trace=Reading ABI from file: {file_path}");
     let file = File::open(file_path).unwrap_or_else(|_| panic!("{file_path} not found"));
 
     if let Ok(class) = serde_json::from_reader::<_, SierraClass>(file) {
@@ -66,14 +66,14 @@ fn read_file(file_path: &str) -> Vec<AbiEntry> {
 
 fn expand(out_name: &str, ctx: &ExpansionContext) {
     let cwd = std::env::current_dir().unwrap();
-    println!("Current working directory: {cwd:?}");
+    println!("cargo:debug=Current working directory: {cwd:?}");
 
     let abi = read_file(ctx.contract_source.as_ref());
 
     let registry =
         AbiParser::build_registry(abi, ParserContext::from(ctx)).expect("failed tokens parsing");
 
-    let expanded = cainome_rs::abi_to_tokenstream(&registry, ctx);
+    let expanded = cainome_rs::abi_to_tokenstream(&registry, ctx).expect("expansion failed");
 
     let syntax_tree = syn::parse2::<syn::File>(expanded).unwrap();
     let s = prettyplease::unparse(&syntax_tree);
@@ -84,7 +84,7 @@ fn expand(out_name: &str, ctx: &ExpansionContext) {
 
     let path = cwd.to_str().unwrap();
 
-    println!("Writing expanded code to: {path}/{out_name}");
+    println!("cargo:trace=Writing expanded code to: {path}/{out_name}");
 
     fs::write(format!("{path}/{out_name}"), content).unwrap()
 }

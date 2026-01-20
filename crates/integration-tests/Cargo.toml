@@ -21,6 +21,7 @@ syn = { version = "2.0", features = [ "extra-traits" ]}
 prettyplease = "0.2.19"
 
 [dev-dependencies]
+tracing.workspace = true
 starknet.workspace = true
 cainome-cairo-serde.workspace = true
 cainome-parser.workspace = true

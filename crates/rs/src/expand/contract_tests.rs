@@ -23,6 +23,7 @@ fn test_naive_contract_expansion() {
 
     let generated = Module::new()
         .with_includes(contract.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected: TokenStream = parse_quote! {
@@ -70,6 +71,7 @@ fn test_naive_contract_with_view_function() {
 
     let generated = Module::new()
         .with_includes(contract.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected: TokenStream = parse_quote! {
@@ -139,6 +141,7 @@ fn test_naive_contract_with_view_mutating_function() {
 
     let generated = Module::new()
         .with_includes(contract.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected: TokenStream = parse_quote! {

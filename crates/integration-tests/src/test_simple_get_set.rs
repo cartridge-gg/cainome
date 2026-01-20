@@ -22,7 +22,7 @@ async fn deploy_simple_get_set_and_assert_state(runner: &RunnerCtx) {
 
     let class_hash = SimpleGetSet::declare(path, &account, true).await.unwrap();
 
-    println!("Class hash: {}", class_hash.to_hex_string());
+    tracing::trace!("Class hash: {}", class_hash.to_hex_string());
 
     runner.dev_client().generate_block().await.unwrap();
 
@@ -30,7 +30,7 @@ async fn deploy_simple_get_set_and_assert_state(runner: &RunnerCtx) {
         .await
         .unwrap();
 
-    println!(
+    tracing::trace!(
         "Deployed SimpleGetSet at address: {}",
         simple_get_set.address.to_hex_string()
     );

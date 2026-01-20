@@ -203,7 +203,8 @@ impl Abigen {
                 ))
             })?;
 
-        let expanded = abi_to_tokenstream(&registry, &ctx);
+        let expanded = abi_to_tokenstream(&registry, &ctx)
+            .map_err(|e| Error::ExpansionFailed(format!("{}", e)))?;
 
         Ok(ContractBindings {
             name: self.contract_name,
@@ -222,13 +223,16 @@ impl Abigen {
 /// * `derives` - Derives to be added to the generated types.
 /// * `contract_derives` - Derives to be added to the generated contract.
 /// * `type_skips` - Types to be skipped from the generated types.
-pub fn abi_to_tokenstream(registry: &TypeRegistry, ctx: &ExpansionContext) -> TokenStream {
+pub fn abi_to_tokenstream(
+    registry: &TypeRegistry,
+    ctx: &ExpansionContext,
+) -> Result<TokenStream, Box<dyn std::error::Error + 'static>> {
     let contract = Contract::new(
         &ctx.contract_name,
         ctx.contract_derives.iter().cloned().collect(),
         registry,
     );
-    let mut root = Module::new().with_includes(contract.expand(ctx));
+    let mut root = Module::new().with_includes(contract.expand(ctx))?;
 
     // TOOD: sort those!
     let not_sorted_structs = registry.get_structs();
@@ -241,7 +245,7 @@ pub fn abi_to_tokenstream(registry: &TypeRegistry, ctx: &ExpansionContext) -> To
             continue;
         };
 
-        root.include_many(s.expand(ctx));
+        root.include_many(s.expand(ctx))?;
     }
 
     for enumeration in not_sorted_enums {
@@ -250,7 +254,7 @@ pub fn abi_to_tokenstream(registry: &TypeRegistry, ctx: &ExpansionContext) -> To
             continue;
         };
 
-        root.include_many(e.expand(ctx));
+        root.include_many(e.expand(ctx))?;
     }
 
     for event in not_sorted_events {
@@ -259,8 +263,8 @@ pub fn abi_to_tokenstream(registry: &TypeRegistry, ctx: &ExpansionContext) -> To
             continue;
         };
 
-        root.include_many(e.expand(ctx));
+        root.include_many(e.expand(ctx))?;
     }
 
-    root.token_stream()
+    Ok(root.token_stream())
 }

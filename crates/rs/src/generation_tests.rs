@@ -142,7 +142,7 @@ fn test_complex_case() {
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
 
-    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx);
+    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx).unwrap();
 
     assert_code_has(
         &generated,
@@ -271,7 +271,7 @@ fn test_tuple_with_custom_type_as_func_argument_case() {
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx)).unwrap();
 
-    let generated = abi_to_tokenstream(&registry, &ctx);
+    let generated = abi_to_tokenstream(&registry, &ctx).unwrap();
 
     let expected = quote! {
         #[allow(clippy::ptr_arg)]
@@ -324,7 +324,7 @@ fn test_tuple_with_custom_genetic_type_as_func_argument_case() {
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx)).unwrap();
 
-    let generated = abi_to_tokenstream(&registry, &ctx);
+    let generated = abi_to_tokenstream(&registry, &ctx).unwrap();
 
     let expected = quote! {};
 
@@ -375,7 +375,7 @@ fn test_tuple_with_custom_genetic_type_as_func_argument_case_with_alias() {
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx)).unwrap();
 
-    let generated = abi_to_tokenstream(&registry, &ctx);
+    let generated = abi_to_tokenstream(&registry, &ctx).unwrap();
 
     let expected = quote! {};
 
@@ -479,7 +479,7 @@ fn test_substitution_simple_case() {
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
 
-    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx);
+    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx).unwrap();
 
     assert_code_has_not_struct(
         &generated,

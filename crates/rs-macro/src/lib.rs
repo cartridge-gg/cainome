@@ -50,7 +50,7 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
     let registry = AbiParser::build_registry(abi_entries, ParserContext::from(&ctx))
         .expect("failed tokens parsing");
 
-    let expanded = cainome_rs::abi_to_tokenstream(&registry, &ctx);
+    let expanded = cainome_rs::abi_to_tokenstream(&registry, &ctx).expect("token expansion failed");
 
     if let Some(out_path) = contract_abi.output_path {
         let content: String = expanded.to_string();
@@ -93,7 +93,7 @@ fn abigen_internal_legacy(input: TokenStream) -> TokenStream {
     let registry = AbiParser::build_registry(abi_entries, ParserContext::from(&ctx))
         .expect("failed tokens parsing");
 
-    let expanded = cainome_rs::abi_to_tokenstream(&registry, &ctx);
+    let expanded = cainome_rs::abi_to_tokenstream(&registry, &ctx).expect("token expansion failed");
 
     if let Some(out_path) = contract_abi.output_path {
         let content: String = expanded.to_string();

@@ -14,7 +14,7 @@ fn test_simple_nested_module_expand_no_content() {
     let results =
         vec![ExpansionResult::new("module1::sub1::TypeA").with_item("some", quote::quote! {})];
 
-    let module = Module::new().with_includes(results);
+    let module = Module::new().with_includes(results).unwrap();
 
     assert_eq!(module.name, "");
 
@@ -47,7 +47,7 @@ fn test_2_nested_modules_with_common_parent_expand_no_content() {
         ExpansionResult::new("module1::sub2::TypeB").with_item("some", quote::quote! {}),
     ];
 
-    let module = Module::new().with_includes(results);
+    let module = Module::new().with_includes(results).unwrap();
 
     let generated = module.token_stream();
 

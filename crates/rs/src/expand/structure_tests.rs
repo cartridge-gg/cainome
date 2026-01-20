@@ -20,6 +20,7 @@ fn test_structure_expand_empty() {
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected = parse_quote! {
@@ -45,6 +46,7 @@ fn test_structure_expand_basic_field() {
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected = parse_quote! {
@@ -74,6 +76,7 @@ fn test_structure_expand_with_derive() {
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected = parse_quote! {
@@ -104,6 +107,7 @@ fn test_structure_expand_with_option_field() {
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected = parse_quote! {
@@ -134,6 +138,7 @@ fn test_structure_expand_with_array_field() {
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected = parse_quote! {
@@ -166,6 +171,7 @@ fn test_structure_expand_with_non_zero_field() {
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected: TokenStream = parse_quote! {
@@ -197,6 +203,7 @@ fn test_structure_expand_with_tuple_field() {
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected = parse_quote! {
@@ -235,6 +242,7 @@ fn test_structure_expand_with_self_reference() {
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     // TODO(@baitcode): This is incorrect. Should be Box<> or something.
@@ -293,6 +301,7 @@ fn test_structure_expand_all_core_types() {
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected: TokenStream = parse_quote! {
@@ -354,6 +363,7 @@ fn structure_with_fields_conflicting_with_keywords() {
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected = parse_quote! {

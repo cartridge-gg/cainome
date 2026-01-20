@@ -10,7 +10,7 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct TypeRegistry {
-    pub store: HashMap<String, Rc<RefCell<Token>>>,
+    store: HashMap<String, Rc<RefCell<Token>>>,
 }
 
 // TODO: memoise maybe? set?

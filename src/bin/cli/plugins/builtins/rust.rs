@@ -1,3 +1,4 @@
+use cainome_parser::Error;
 use cainome_rs::expand::ExpansionContextFactory;
 use cainome_rs::{self};
 use convert_case::{Case, Casing};
@@ -44,7 +45,8 @@ impl BuiltinPlugin for RustPlugin {
                 .with_type_skips(&input.type_skips)
                 .build();
 
-            let expanded = cainome_rs::abi_to_tokenstream(&contract.registry, &ctx);
+            let expanded = cainome_rs::abi_to_tokenstream(&contract.registry, &ctx)
+                .map_err(|e| Error::ExpansionFailed(format!("{}", e)))?;
 
             let filename = format!(
                 "{}.rs",

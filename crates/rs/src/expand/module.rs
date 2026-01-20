@@ -8,7 +8,7 @@ use quote::{quote, ToTokens};
 #[derive(Clone)]
 pub struct Module {
     pub name: String,
-    pub imports: HashSet<String>,
+    pub imports: HashSet<syn::UseTree>,
     pub submodules: BTreeMap<String, Module>,
     pub content: HashMap<String, TokenStream>,
 }
@@ -23,7 +23,10 @@ impl Module {
         }
     }
 
-    pub fn include(&mut self, result: ExpansionResult) {
+    pub fn include(
+        &mut self,
+        result: ExpansionResult,
+    ) -> Result<(), Box<dyn std::error::Error + 'static>> {
         let mut current_module = self;
 
         for segment in &result.path {
@@ -39,10 +42,16 @@ impl Module {
         }
 
         if current_module.content.contains_key(&result.name) {
-            return;
+            return Ok(());
         }
 
-        current_module.imports.extend(result.imports);
+        let parsed_imports = result
+            .imports
+            .iter()
+            .map(|i| syn::parse_str::<syn::UseTree>(&i))
+            .collect::<Result<Vec<_>, _>>();
+
+        current_module.imports.extend(parsed_imports?);
 
         let module_content = result.content.into_values().collect::<Vec<_>>();
 
@@ -51,17 +60,25 @@ impl Module {
         };
 
         current_module.content.insert(result.name, module_content);
+        Ok(())
     }
 
-    pub fn with_includes(mut self, results: Vec<ExpansionResult>) -> Self {
-        self.include_many(results);
-        self
+    pub fn with_includes(
+        mut self,
+        results: Vec<ExpansionResult>,
+    ) -> Result<Self, Box<dyn std::error::Error + 'static>> {
+        self.include_many(results)?;
+        Ok(self)
     }
 
-    pub fn include_many(&mut self, results: Vec<ExpansionResult>) {
+    pub fn include_many(
+        &mut self,
+        results: Vec<ExpansionResult>,
+    ) -> Result<(), Box<dyn std::error::Error + 'static>> {
         for result in results {
-            self.include(result);
+            self.include(result)?;
         }
+        Ok(())
     }
 
     pub fn token_stream(self) -> TokenStream {
@@ -84,7 +101,6 @@ impl Module {
         let imports = self
             .imports
             .into_iter()
-            .map(|i| syn::parse_str::<syn::UseTree>(&i).unwrap())
             .map(|i| {
                 quote! {
                     use #i;

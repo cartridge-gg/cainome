@@ -21,6 +21,7 @@ fn test_enum_expand_empty() {
 
     let generated = Module::new()
         .with_includes(enumeration.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected: TokenStream = parse_quote! {
@@ -46,6 +47,7 @@ fn test_enum_expand_simple_variants() {
 
     let generated = Module::new()
         .with_includes(enumeration.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected: TokenStream = parse_quote! {
@@ -101,6 +103,7 @@ fn test_enum_expand_core_type_variants() {
 
     let generated = Module::new()
         .with_includes(enumeration.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     let expected = parse_quote! {
@@ -175,6 +178,7 @@ fn test_enumeration_expand_with_containers_field() {
 
     let generated = Module::new()
         .with_includes(enumeration.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     // TODO: use cainome
@@ -227,7 +231,9 @@ fn test_enumeration_expand_with_structure_field() {
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))
+        .unwrap()
         .with_includes(enumeration.expand(&ctx))
+        .unwrap()
         .token_stream();
 
     // TODO: use cainome
