@@ -307,6 +307,40 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ComponentsEventsFlat<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
+    pub fn array_struct_simple_getcall(&self) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("array_struct_simple"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn array_struct_simple(&self) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.array_struct_simple_getcall();
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn array_struct_simple_other_getcall(&self) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("array_struct_simple_other"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn array_struct_simple_other(&self) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.array_struct_simple_other_getcall();
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
     pub fn read_data(
         &self,
     ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
@@ -318,30 +352,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ComponentsEventsFlat<A> {
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn write_data_getcall(
-        &self,
-        data: &starknet::core::types::Felt,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(data));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("write_data"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn write_data(
-        &self,
-        data: &starknet::core::types::Felt,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.write_data_getcall(data);
-        self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
@@ -379,23 +389,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ComponentsEventsFlat<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn array_struct_simple_getcall(&self) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("array_struct_simple"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn array_struct_simple(&self) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.array_struct_simple_getcall();
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn tuple_events_getcall(&self) -> starknet::core::types::Call {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
@@ -413,19 +406,26 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ComponentsEventsFlat<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn array_struct_simple_other_getcall(&self) -> starknet::core::types::Call {
+    pub fn write_data_getcall(
+        &self,
+        data: &starknet::core::types::Felt,
+    ) -> starknet::core::types::Call {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(data));
         starknet::core::types::Call {
             to: self.address,
-            selector: starknet::macros::selector!("array_struct_simple_other"),
+            selector: starknet::macros::selector!("write_data"),
             calldata: __calldata,
         }
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn array_struct_simple_other(&self) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.array_struct_simple_other_getcall();
+    pub fn write_data(
+        &self,
+        data: &starknet::core::types::Felt,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.write_data_getcall(data);
         self.account.execute_v3(vec![__call])
     }
     pub async fn declare(

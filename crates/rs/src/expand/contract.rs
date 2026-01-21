@@ -18,7 +18,7 @@ use quote::quote;
 pub struct Contract {
     pub name: String,
     pub derives: Vec<String>,
-    pub readonly_methods: Vec<Function>,
+    pub readonly_methods_sorted: Vec<Function>,
     pub mutating_methods: Vec<Function>,
     pub constructor: Option<Constructor>,
 }
@@ -42,13 +42,15 @@ impl Contract {
             }
         }
 
+        readonly_methods.sort_by_key(|f| f.name.to_string());
+
         let constructor = abi.get_constructor();
 
         Self {
             name: name.to_string(),
             derives,
             mutating_methods,
-            readonly_methods,
+            readonly_methods_sorted: readonly_methods,
             constructor,
         }
     }
@@ -235,20 +237,33 @@ impl Expandable for Contract {
             .map(|d| utils::str_to_type(d))
             .collect::<Vec<_>>();
 
-        let externals = self
+        let externals_with_name = self
             .mutating_methods
             .iter()
-            .map(|f| Self::expand_mutable_method(f, ctx))
+            .map(|f| (f.name.to_owned(), Self::expand_mutable_method(f, ctx)))
             .collect::<Vec<_>>();
 
-        let views = self
-            .readonly_methods
+        let views_with_name = self
+            .readonly_methods_sorted
             .iter()
-            .map(|f| Self::expand_readonly_method(f, "A::Provider", ctx))
+            .map(|f| {
+                (
+                    f.name.to_owned(),
+                    Self::expand_readonly_method(f, "A::Provider", ctx),
+                )
+            })
+            .collect::<Vec<_>>();
+
+        let mut externals_and_views_with_name = [externals_with_name, views_with_name].concat();
+        externals_and_views_with_name.sort_by_key(|(name, _)| name.to_string());
+
+        let externals_and_views = externals_and_views_with_name
+            .iter()
+            .map(|(_, f)| f)
             .collect::<Vec<_>>();
 
         let reader_views = self
-            .readonly_methods
+            .readonly_methods_sorted
             .iter()
             .map(|f| Self::expand_readonly_method(f, "P", ctx))
             .collect::<Vec<_>>();
@@ -382,9 +397,7 @@ impl Expandable for Contract {
             quote! {}
         };
 
-        let q = quote! {
-
-            #constructor_calldata
+        let expanded_contract = quote! {
 
             #derives
             pub struct #contract_name_ident<A: #snrs_accounts::ConnectedAccount + Sync> {
@@ -392,6 +405,8 @@ impl Expandable for Contract {
                 pub account: A,
                 pub block_id: #snrs_types::BlockId,
             }
+
+            #constructor_calldata
 
             impl<A: #snrs_accounts::ConnectedAccount + Sync> #contract_name_ident<A> {
 
@@ -420,8 +435,7 @@ impl Expandable for Contract {
                     Self { block_id, ..self }
                 }
 
-                #(#views)*
-                #(#externals)*
+                #(#externals_and_views)*
 
                 #declaration
 
@@ -463,6 +477,6 @@ impl Expandable for Contract {
             }
         };
 
-        vec![ExpansionResult::new(ROOT_MODULE_NAME).with_item(&contract_name, q)]
+        vec![ExpansionResult::new(ROOT_MODULE_NAME).with_item(&contract_name, expanded_contract)]
     }
 }

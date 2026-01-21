@@ -16,7 +16,7 @@ fn test_naive_contract_expansion() {
     let contract = Contract {
         name: "ContractName".to_string(),
         derives: vec![],
-        readonly_methods: vec![],
+        readonly_methods_sorted: vec![],
         mutating_methods: vec![],
         constructor: None,
     };
