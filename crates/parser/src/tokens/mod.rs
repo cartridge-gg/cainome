@@ -82,4 +82,19 @@ impl Token {
     pub fn is_tuple(&self) -> bool {
         matches!(self, Token::Tuple(_))
     }
+
+    pub fn should_be_skipped(&self) -> bool {
+        matches!(self, Token::Skip(_) | Token::Substitute(_))
+    }
+
+    pub fn is_container(&self) -> bool {
+        matches!(
+            self,
+            Token::Array(_)
+                | Token::Option(_)
+                | Token::Result(_)
+                | Token::NonZero(_)
+                | Token::Tuple(_)
+        )
+    }
 }

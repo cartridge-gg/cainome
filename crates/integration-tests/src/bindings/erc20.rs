@@ -876,60 +876,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ERC20<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn owner(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, cainome_cairo_serde::ContractAddress> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("owner"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn name(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("name"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn symbol(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("symbol"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn decimals(&self) -> cainome_cairo_serde::call::FCall<A::Provider, u8> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("decimals"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn total_supply(
         &self,
     ) -> cainome_cairo_serde::call::FCall<A::Provider, cainome_cairo_serde::U256> {
@@ -982,6 +928,60 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ERC20<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
+    pub fn name(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("name"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn symbol(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("symbol"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn decimals(&self) -> cainome_cairo_serde::call::FCall<A::Provider, u8> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("decimals"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn owner(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, cainome_cairo_serde::ContractAddress> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("owner"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
     pub fn transferFrom_getcall(
         &self,
         sender: &cainome_cairo_serde::ContractAddress,
@@ -1016,45 +1016,45 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ERC20<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn transfer_ownership_getcall(
+    pub fn transferOwnership_getcall(
         &self,
-        new_owner: &cainome_cairo_serde::ContractAddress,
+        newOwner: &cainome_cairo_serde::ContractAddress,
     ) -> starknet::core::types::Call {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
         __calldata.extend(cainome_cairo_serde::ContractAddress::cairo_serialize(
-            new_owner,
+            newOwner,
         ));
         starknet::core::types::Call {
             to: self.address,
-            selector: starknet::macros::selector!("transfer_ownership"),
+            selector: starknet::macros::selector!("transferOwnership"),
             calldata: __calldata,
         }
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn transfer_ownership(
+    pub fn transferOwnership(
         &self,
-        new_owner: &cainome_cairo_serde::ContractAddress,
+        newOwner: &cainome_cairo_serde::ContractAddress,
     ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.transfer_ownership_getcall(new_owner);
+        let __call = self.transferOwnership_getcall(newOwner);
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn renounce_ownership_getcall(&self) -> starknet::core::types::Call {
+    pub fn renounceOwnership_getcall(&self) -> starknet::core::types::Call {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
         starknet::core::types::Call {
             to: self.address,
-            selector: starknet::macros::selector!("renounce_ownership"),
+            selector: starknet::macros::selector!("renounceOwnership"),
             calldata: __calldata,
         }
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn renounce_ownership(&self) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.renounce_ownership_getcall();
+    pub fn renounceOwnership(&self) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.renounceOwnership_getcall();
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
@@ -1151,45 +1151,45 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> ERC20<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn transferOwnership_getcall(
+    pub fn transfer_ownership_getcall(
         &self,
-        newOwner: &cainome_cairo_serde::ContractAddress,
+        new_owner: &cainome_cairo_serde::ContractAddress,
     ) -> starknet::core::types::Call {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
         __calldata.extend(cainome_cairo_serde::ContractAddress::cairo_serialize(
-            newOwner,
+            new_owner,
         ));
         starknet::core::types::Call {
             to: self.address,
-            selector: starknet::macros::selector!("transferOwnership"),
+            selector: starknet::macros::selector!("transfer_ownership"),
             calldata: __calldata,
         }
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn transferOwnership(
+    pub fn transfer_ownership(
         &self,
-        newOwner: &cainome_cairo_serde::ContractAddress,
+        new_owner: &cainome_cairo_serde::ContractAddress,
     ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.transferOwnership_getcall(newOwner);
+        let __call = self.transfer_ownership_getcall(new_owner);
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn renounceOwnership_getcall(&self) -> starknet::core::types::Call {
+    pub fn renounce_ownership_getcall(&self) -> starknet::core::types::Call {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
         starknet::core::types::Call {
             to: self.address,
-            selector: starknet::macros::selector!("renounceOwnership"),
+            selector: starknet::macros::selector!("renounce_ownership"),
             calldata: __calldata,
         }
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn renounceOwnership(&self) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.renounceOwnership_getcall();
+    pub fn renounce_ownership(&self) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.renounce_ownership_getcall();
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
@@ -1342,56 +1342,6 @@ impl<P: starknet::providers::Provider + Sync> ERC20Reader<P> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn owner(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<P, cainome_cairo_serde::ContractAddress> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("owner"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn name(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("name"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn symbol(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("symbol"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn decimals(&self) -> cainome_cairo_serde::call::FCall<P, u8> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("decimals"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn total_supply(&self) -> cainome_cairo_serde::call::FCall<P, cainome_cairo_serde::U256> {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
@@ -1436,6 +1386,56 @@ impl<P: starknet::providers::Provider + Sync> ERC20Reader<P> {
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
             entry_point_selector: starknet::macros::selector!("allowance"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn name(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("name"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn symbol(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("symbol"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn decimals(&self) -> cainome_cairo_serde::call::FCall<P, u8> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("decimals"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn owner(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<P, cainome_cairo_serde::ContractAddress> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("owner"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())

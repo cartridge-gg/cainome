@@ -3,8 +3,9 @@ pub mod parser;
 #[cfg(test)]
 mod parser_test;
 
-// pub mod parser_legacy;
 pub mod registry;
+#[cfg(test)]
+mod registry_test;
 
 mod extensions;
 

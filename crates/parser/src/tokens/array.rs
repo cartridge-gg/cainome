@@ -125,11 +125,13 @@ mod tests {
     fn test_parse_wrong_path_invalid1() {
         let res = execute_parsing_for("array::Array::<core::felt252>".to_string());
 
+        println!("res: {:?}", res);
+
         let Result::Err(e) = res else {
             panic!("This should fail. Array is incorrect");
         };
 
-        let Error::ConversionFailed(_) = e else {
+        let Error::ParsingFailed(_) = e else {
             panic!("This be Error::TokenInitFailed error");
         };
     }
@@ -142,7 +144,7 @@ mod tests {
             panic!("This should fail. Array is incorrect");
         };
 
-        let Error::ConversionFailed(_) = e else {
+        let Error::ParsingFailed(_) = e else {
             panic!("This be Error::TokenInitFailed error");
         };
     }
@@ -155,7 +157,7 @@ mod tests {
             panic!("This should fail. Array is incorrect");
         };
 
-        let Error::ConversionFailed(_) = e else {
+        let Error::ParsingFailed(_) = e else {
             panic!("This be Error::TokenInitFailed error");
         };
     }

@@ -1,5 +1,3 @@
-use super::constants::{CAIRO_COMPOSITE_BUILTINS, CAIRO_GENERIC_BUILTINS};
-
 /// Converts a snake case string to pascal case.
 fn snake_to_pascal_case(s: &str) -> String {
     s.split('_')
@@ -38,6 +36,11 @@ pub fn escape_rust_keywords(s: &str) -> String {
     s
 }
 
+// TODO(baitcode): need to find a better way. This method is only solving problems for the generic types inside tuples.
+pub(crate) fn normalize_type_path(type_path: &str) -> String {
+    type_path.to_string().replace(" ", "").into()
+}
+
 /// Extracts the `type_path` with given module `depth`.
 /// The extraction also converts all everything to `snake_case`.
 ///
@@ -61,26 +64,6 @@ pub fn extract_type_path_with_depth(type_path: &str, depth: usize) -> String {
 
     let segments = &segments[segments.len() - depth - 1..segments.len()];
     segments.iter().map(|s| snake_to_pascal_case(s)).collect()
-}
-
-/// Returns true if the current composite is considered as Cairo builtin.
-/// This is useful to avoid expanding the structure if already managed by
-/// the backend (like Option and Result for instance).
-/// Spans and Arrays are handled by `array`.
-pub fn is_builtin(type_path: &str) -> bool {
-    for b in CAIRO_GENERIC_BUILTINS {
-        if type_path.starts_with(b) {
-            return true;
-        }
-    }
-
-    for b in CAIRO_COMPOSITE_BUILTINS {
-        if type_path.starts_with(b) {
-            return true;
-        }
-    }
-
-    false
 }
 
 #[cfg(test)]

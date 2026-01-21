@@ -1,6 +1,7 @@
 use starknet::core::types::contract::{AbiEntry, SierraClass};
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::fmt::Debug;
 use std::rc::Rc;
 
 use crate::abi::extensions::TryTokenConvertable;
@@ -34,7 +35,7 @@ pub trait Named {
     fn get_name(&self) -> String;
 }
 
-pub trait Parseable: TryTokenConvertable + Named + WithDependencies + Clone {}
+pub trait Parseable: TryTokenConvertable + Named + WithDependencies + Clone + Debug {}
 
 impl AbiParser {
     /// Generates the [`Token`]s from the given ABI string.
@@ -105,6 +106,7 @@ impl AbiParser {
     where
         T: Parseable,
     {
+        tracing::info!("Building type registry from ABI entries");
         let mut registry = TypeRegistry::new();
 
         let mut local_entries = VecDeque::from(entries.clone());
@@ -115,6 +117,12 @@ impl AbiParser {
 
         // We will be converting AbiEntries to tokens and drop them upon converting
         while !local_entries.is_empty() {
+            tracing::debug!(
+                "Entries left: {}. Already seen since last change: {}",
+                local_entries.len(),
+                seen_since_last_removal,
+            );
+
             // This branch means that we went through all the AbiEntry and could not
             // convert any. This means Abi is incorrect (well, we might have a bug though)
             if seen_since_last_removal > local_entries.len() {
@@ -129,32 +137,36 @@ impl AbiParser {
 
             let type_path = entry.get_name();
 
-            // Workaround to skip parsing Composite CoreBasics (like core::boolean).
-            // As get also strips all the containers, those will be dropped at this point.
-            // NOTE: this might move into extensions for AbiEntry
-            if let Ok(token) = registry.get(&type_path) {
-                if let Token::Substitute(_) = &*token.borrow() {
-                    continue;
-                }
-
-                if let Token::Basic(_) = &*token.borrow() {
-                    seen_since_last_removal = 0;
-                    continue;
-                }
-
-                // If entry is skipped. Well, we just ignore it
-                if let Token::Skip(_) = &*token.borrow() {
-                    continue;
-                }
-            } else {
+            // Check if type is already in the registry (all basic types should be there).
+            // Registry.get also returns typedefinition for all containers (without registering those).
+            let token = match registry.get(&type_path) {
+                Ok(token) => token,
                 // To support for indirect recursive reference resolution, we fill seen
                 // types with Placeholder to later replace with resolved type.
-                registry.set(&type_path, Token::Placeholder);
+                Err(_) => {
+                    tracing::trace!("Saving placeholder for type: {}", &type_path);
+
+                    registry.set(&type_path, Token::Placeholder)
+                }
+            };
+
+            if let Token::Basic(type_path) | // nowrap
+                Token::Substitute(type_path) |
+                Token::Skip(type_path) = &*token.borrow()
+            {
+                tracing::debug!(
+                    "Type already known or should be skipped: {}",
+                    &type_path.type_path
+                );
+                seen_since_last_removal = 0;
+                continue;
             }
 
             // Check if type should be skipped
             if ctx.is_type_skipped(&type_path) {
+                tracing::debug!("Skipping: {}", &type_path);
                 registry.set(&type_path, Token::Skip(TypePath::new(&type_path)));
+                seen_since_last_removal = 0;
                 continue;
             }
 
@@ -173,14 +185,33 @@ impl AbiParser {
                 continue;
             }
 
+            if token.borrow().is_container() {
+                tracing::debug!("Removing placeholder for container: {}", &type_path);
+                registry.remove(&type_path);
+                continue;
+            }
+
             // Ok, now we can resolve.
             if let Some(token) = entry.try_to_token(&mut registry)? {
+                // Register base generic type as well
+                match &token {
+                    Token::Struct(s) => _ = registry.set(&s.type_path_no_generic(), token.clone()),
+                    Token::Enum(e) => _ = registry.set(&e.type_path_no_generic(), token.clone()),
+                    Token::Event(_)
+                    | Token::Function(_)
+                    | Token::Constructor(_)
+                    | Token::Interface(_) => (),
+                    _ => unreachable!("This token should never get to registry: {:?}", token),
+                }
+
                 registry.set(&entry.get_name(), token);
             } else {
+                tracing::debug!("Could not convert entry to token: {}", &type_path);
                 // This means that entry resolved into token absence, let's remove placeholder.
                 // (happens for implementation)
                 registry.remove(&entry.get_name());
             }
+
             seen_since_last_removal = 0;
             unknown_fields.clear();
         }
@@ -190,7 +221,7 @@ impl AbiParser {
         // Check for unresolved placeholders
         if !uninitialised_placeholders.is_empty() {
             return Err(Error::ParsingFailed(format!(
-                "Can't resolve ABI types. Unresolved: [{}]",
+                "Can't resolve ABI types. Uninitialised: [{}]",
                 uninitialised_placeholders
                     .into_iter()
                     .collect::<Vec<_>>()

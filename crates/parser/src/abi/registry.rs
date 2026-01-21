@@ -2,8 +2,8 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     tokens::{
-        constants, genericity, ArrayContainer, Constructor, NonZeroContainer, OptionContainer,
-        ResultContainer, Token, TupleContainer, TypePath,
+        constants, genericity, utils::normalize_type_path, ArrayContainer, Constructor,
+        NonZeroContainer, OptionContainer, ResultContainer, Token, TupleContainer, TypePath,
     },
     CainomeResult, Error,
 };
@@ -13,7 +13,9 @@ pub struct TypeRegistry {
     store: HashMap<String, Rc<RefCell<Token>>>,
 }
 
-fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
+pub(super) fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
+    let type_path = &normalize_type_path(type_path);
+
     if ArrayContainer::test_path(type_path) {
         let inner_type_path = ArrayContainer::get_inner(type_path)?;
         return get_generic_inner_types(&inner_type_path);
@@ -52,23 +54,39 @@ fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
         return Ok(inners);
     }
 
-    let paths = genericity::extract_generics_args(type_path)?
+    let mut paths = genericity::extract_generics_args(type_path)?
         .into_iter()
         .map(|it| it.1)
         .collect::<Vec<_>>();
 
-    if !paths.is_empty() {
-        return Ok(paths);
-    }
+    paths.push(genericity::type_path_no_generic(type_path));
 
-    Ok(vec![type_path.to_string()])
+    return Ok(paths);
 }
 
-// TODO(baitcode): need to find a better way. This method is only solving problems for the generic types inside tuples.
-fn normalize_type_path(type_path: &str) -> CainomeResult<String> {
-    let type_path = syn::parse_str::<syn::Type>(type_path)?;
-    let type_path = quote::quote!(#type_path);
-    Ok(type_path.to_string())
+/// This function returns all inner generic types even nested ones inside other generics.
+pub(super) fn get_all_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
+    let mut paths: Vec<String> = vec![type_path.to_string()];
+    let mut seen_paths_count = 0;
+    let mut new_seen_paths_count = 1;
+
+    while new_seen_paths_count > seen_paths_count {
+        seen_paths_count = new_seen_paths_count;
+        let nested_types = paths
+            .into_iter()
+            .map(|p| get_generic_inner_types(&p))
+            .collect::<Result<Vec<_>, _>>()?;
+
+        paths = nested_types.concat();
+        new_seen_paths_count = paths.len();
+    }
+
+    let normalised_paths = paths
+        .iter()
+        .map(|p| normalize_type_path(&p))
+        .collect::<Vec<_>>();
+
+    Ok(normalised_paths)
 }
 
 fn wrap_generic_containers(
@@ -126,7 +144,14 @@ fn wrap_generic_containers(
         return Ok(Rc::new(RefCell::new(token)));
     }
 
-    let type_path = normalize_type_path(&type_path)?;
+    let type_path = normalize_type_path(&type_path);
+    tracing::debug!("Looking for type in registry. Normalised: {}", &type_path);
+    if let Some(token) = registry.store.get(&type_path) {
+        return Ok(Rc::clone(token));
+    }
+
+    let type_path = genericity::type_path_no_generic(&type_path);
+    tracing::debug!("Looking for type in registry. Non generic: {}", &type_path);
     if let Some(token) = registry.store.get(&type_path) {
         return Ok(Rc::clone(token));
     }
@@ -158,10 +183,12 @@ impl TypeRegistry {
     }
 
     pub fn is_known_type(&self, path: &str) -> Result<bool, Error> {
-        let inner_paths = get_generic_inner_types(path)?;
+        tracing::trace!("Checking if type is known: {}", path);
 
+        let inner_paths = get_all_generic_inner_types(path)?;
         for path in inner_paths.into_iter() {
-            if !self.store.contains_key(&normalize_type_path(&path)?) {
+            tracing::trace!("Checking inner type: {}", &normalize_type_path(&path));
+            if !self.store.contains_key(&normalize_type_path(&path)) {
                 return Ok(false);
             }
         }
@@ -174,14 +201,16 @@ impl TypeRegistry {
         Ok(generic_token_chain)
     }
 
-    pub fn set(&mut self, path: &str, token: Token) {
-        let type_path = normalize_type_path(path).unwrap_or(path.to_string());
+    pub fn set(&mut self, path: &str, token: Token) -> Rc<RefCell<Token>> {
+        let type_path = normalize_type_path(path);
 
         if let Some(cell) = self.store.get(&type_path) {
             if token == Token::Placeholder {
                 // Do not overwrite with placeholder.
-                return;
+                return Rc::clone(cell);
             }
+
+            tracing::debug!("Replacing type in registry: {}", &type_path);
 
             let mut stored_value = cell.borrow_mut();
 
@@ -193,14 +222,20 @@ impl TypeRegistry {
                 }
                 _ => *stored_value = token,
             };
+
+            Rc::clone(cell)
         } else {
+            tracing::debug!("Saving type in registry: {}", &type_path);
             let reference = Rc::new(RefCell::new(token));
+            let to_return = Rc::clone(&reference);
             self.store.insert(type_path, reference);
+            to_return
         }
     }
 
     pub fn remove(&mut self, path: &str) -> Option<Rc<RefCell<Token>>> {
-        self.store.remove(path)
+        let type_path = normalize_type_path(path);
+        self.store.remove(&type_path)
     }
 
     pub fn values(self) -> Vec<Rc<RefCell<Token>>> {

@@ -601,6 +601,7 @@ dependencies = [
  "syn 2.0.111",
  "thiserror 2.0.12",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

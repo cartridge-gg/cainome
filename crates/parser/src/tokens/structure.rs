@@ -49,4 +49,12 @@ impl Struct {
     pub fn type_path_no_generic(&self) -> String {
         genericity::type_path_no_generic(&self.type_path)
     }
+
+    pub fn get_base_generic_type(&self) -> Self {
+        Self {
+            type_path: self.type_path_no_generic(),
+            fields: self.fields.clone(),
+            generic_args: self.generic_args.clone(),
+        }
+    }
 }

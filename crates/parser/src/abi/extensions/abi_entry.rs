@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, fmt::format, rc::Rc};
 
 use starknet::core::types::contract::{
     legacy::{
@@ -46,7 +46,7 @@ impl TokenConvertable for &AbiStruct {
             let Ok(token) = registry.get(&field.r#type) else {
                 return Err(
                     crate::Error::ConversionFailed(
-                        "Parser should have ensured that all AbiStruct dependencies are present in the registry".to_string()
+                        format!("Parser should have ensured that all AbiStruct({}) dependencies are present in the registry", field.r#type)
                     )
                 );
             };
@@ -69,7 +69,7 @@ impl TokenConvertable for &AbiEnum {
             let Ok(token) = registry.get(&field.r#type) else {
                 return Err(
                     crate::Error::ConversionFailed(
-                        "Parser should have ensured that all AbiEnum dependencies are present in the registry".to_string()
+                        format!("Parser should have ensured that all AbiEnum({}) dependencies are present in the registry", field.r#type)
                     )
                 );
             };

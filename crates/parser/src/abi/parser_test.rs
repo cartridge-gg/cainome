@@ -1,11 +1,24 @@
-use std::{collections::HashMap, rc::Rc};
+use std::{collections::HashMap, rc::Rc, sync::Once};
 
-use starknet::core::types::contract::SierraClass;
+use starknet::core::types::contract::{legacy::LegacyContractClass, AbiEntry, SierraClass};
+use tracing::Level;
 
 use crate::{
     tokens::{EventKind, StateMutability, Token},
     AbiParser, ParserContext,
 };
+
+static INIT: Once = Once::new();
+
+fn init_tracing() {
+    INIT.call_once(|| {
+        tracing_subscriber::fmt()
+            .with_level(true)
+            .with_max_level(Level::TRACE)
+            .with_test_writer()
+            .init();
+    });
+}
 
 #[test]
 fn recursive_struct_parsing() {
@@ -260,19 +273,39 @@ fn check_array_container_is_parsed() {
 }
 
 #[test]
-fn check_tuple_container_is_parsed() {
+fn check_array_container_as_root_type_is_parsed() {
     let abi_json = r#"[
+        {
+            "type": "struct",
+            "name": "core::array::Span::<felt>",
+            "members": [
                 {
-                    "type": "struct",
-                    "name": "my::package::AllInOne",
-                    "members": [
-                        {
-                            "name": "f1",
-                            "type": "(felt, core::integer::i32)"
-                        }
-                    ]
+                    "name": "snapshot",
+                    "type": "@core::array::Array::<felt>"
                 }
-            ]"#;
+            ]
+        }
+    ]"#;
+
+    let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
+    assert_eq!(result.structs.len(), 0);
+}
+
+#[test]
+fn check_tuple_container_is_parsed() {
+    let abi_json = r#"
+        [
+            {
+                "type": "struct",
+                "name": "my::package::AllInOne",
+                "members": [
+                    {
+                        "name": "f1",
+                        "type": "(felt, core::integer::i32)"
+                    }
+                ]
+            }
+        ]"#;
 
     let result = AbiParser::tokens_from_abi_string(abi_json, HashMap::new()).unwrap();
     assert_eq!(result.structs.len(), 1);
@@ -1060,15 +1093,50 @@ fn test_nested_tuple() {
 }
 
 #[test]
-fn test_collect_tokens() {
+fn test_collect_tokens_cairo_ls_abi() {
+    init_tracing();
+
     let sierra_abi = include_str!("../../test_data/cairo_ls_abi.json");
     let sierra = serde_json::from_str::<SierraClass>(sierra_abi).unwrap();
     let tokens = AbiParser::collect_tokens(sierra.abi, ParserContext::default()).unwrap();
+
     assert_ne!(tokens.enums.len(), 0);
     assert_ne!(tokens.functions.len(), 0);
     assert_ne!(tokens.interfaces.len(), 0);
     assert_ne!(tokens.structs.len(), 0);
 }
+
+#[test]
+fn test_collect_tokens_structs() {
+    init_tracing();
+
+    let sierra_abi = include_str!("../../../../contracts/abi/structs.abi.json");
+    let sierra = serde_json::from_str::<Vec<AbiEntry>>(sierra_abi).unwrap();
+    let tokens = AbiParser::collect_tokens(sierra, ParserContext::default()).unwrap();
+
+    assert_eq!(tokens.structs.len(), 17);
+    assert_eq!(tokens.events.len(), 1);
+    assert_eq!(tokens.functions.len(), 15);
+    assert_eq!(tokens.interfaces.len(), 0);
+    assert_eq!(tokens.enums.len(), 0);
+}
+
+#[test]
+fn test_collect_tokens_kkrt_account() {
+    init_tracing();
+
+    let sierra_abi = include_str!("../../../../contracts/cairo0/kkrt_account_cairo0.json");
+    let sierra = serde_json::from_str::<LegacyContractClass>(sierra_abi).unwrap();
+    let tokens = AbiParser::collect_tokens(sierra.abi, ParserContext::default()).unwrap();
+
+    assert_eq!(tokens.structs.len(), 3);
+    assert_eq!(tokens.events.len(), 2);
+    assert_eq!(tokens.functions.len(), 21);
+    assert_eq!(tokens.interfaces.len(), 0);
+    assert_eq!(tokens.enums.len(), 0);
+}
+
+//
 
 #[test]
 fn events_parsing() {
@@ -1410,4 +1478,96 @@ fn test_skip_generic_type() {
     let result = AbiParser::build_registry(abi_entries, ctx);
 
     assert!(result.is_ok(), "Type all types should be skipped");
+
+    // TODO: add assertions
+}
+
+#[test]
+fn test_complex_generic_function_argument() {
+    init_tracing();
+    let abi_json = r#"[
+            {
+                "type": "struct",
+                "name": "contracts::abicov::structs::GenericOne::<core::array::Span::<core::felt252>>",
+                "members": [
+                {
+                    "name": "a",
+                    "type": "core::array::Span::<core::felt252>"
+                },
+                {
+                    "name": "b",
+                    "type": "core::felt252"
+                },
+                {
+                    "name": "c",
+                    "type": "core::integer::u128"
+                }
+                ]
+            },
+            {
+                "type": "function",
+                "name": "get_generic_one_array",
+                "inputs": [],
+                "outputs": [
+                    {
+                        "type": "contracts::abicov::structs::GenericOne::<core::array::Span::<core::felt252>>"
+                    }
+                ],
+                "state_mutability": "view"
+            }
+        ]"#;
+
+    let ctx = ParserContext::new();
+
+    let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
+
+    let result = AbiParser::build_registry(abi_entries, ctx);
+
+    assert!(result.is_ok(), "");
+
+    // TODO: add assertions
+}
+
+#[test]
+fn test_complex_generic_function_argument_with_tuple() {
+    init_tracing();
+    let abi_json = r#"[
+            {
+                "type": "struct",
+                "name": "contracts::abicov::structs::GenericOne::<core::array::Span::<core::felt252>>",
+                "members": [
+                {
+                    "name": "a",
+                    "type": "core::array::Span::<core::felt252>"
+                },
+                {
+                    "name": "b",
+                    "type": "core::felt252"
+                },
+                {
+                    "name": "c",
+                    "type": "core::integer::u128"
+                }
+                ]
+            },
+            {
+                "type": "function",
+                "name": "get_tuple_of_array_generic",
+                "inputs": [],
+                "outputs": [
+                    {
+                        "type": "(core::array::Span::<contracts::abicov::structs::GenericOne::<core::integer::u64>>, core::array::Span::<core::felt252>)"
+                    }
+                ],
+                "state_mutability": "view"
+            }
+        ]"#;
+
+    let ctx = ParserContext::new();
+
+    let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
+
+    let result = AbiParser::build_registry(abi_entries, ctx);
+
+    assert!(result.is_ok(), "");
 }

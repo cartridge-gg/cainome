@@ -553,3 +553,35 @@ fn test_substitution_for_generic_case() {
 
     let _generated = abi_to_tokenstream(&registry.unwrap(), &ctx);
 }
+
+// #[test]
+// fn test_nested_generic_resolution() {
+//     let abi_json = r#"[
+//         {
+//             "type": "struct",
+//             "name": "contracts::abicov::structs::GenericOne::<core::array::Span::<core::felt252>>",
+//             "members": [
+//                 {
+//                     "name": "a",
+//                     "type": "core::array::Span::<core::felt252>"
+//                 },
+//                 {
+//                     "name": "b",
+//                     "type": "core::felt252"
+//                 },
+//                     {
+//                     "name": "c",
+//                     "type": "core::integer::u128"
+//                 }
+//             ]
+//         }
+//     ]
+//     "#;
+
+//     let ctx =
+//         ParserContext::new().with_substitutions(HashMap::from([("core::integer::i128", "i128")]));
+
+//     let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
+
+//     let registry = AbiParser::build_registry(abi_entries, ctx).unwrap();
+// }

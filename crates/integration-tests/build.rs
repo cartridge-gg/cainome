@@ -114,7 +114,6 @@ fn main() {
             ])
             .build(),
     );
-
     expand(
         "./src/bindings/components_events_flat.rs",
         &ExpansionContextFactory::new("../../contracts/abi/components.abi.json")
@@ -186,7 +185,7 @@ fn main() {
             .with_derives(["serde::Serialize", "serde::Deserialize"])
             .with_substitutions(HashMap::from([(
                 "contracts::abicov::structs::GenericOne".to_string(),
-                "GenericOneBis".to_string(),
+                "crate::test_substitutions::GenericOneBis".to_string(),
             )]))
             .build(),
     );

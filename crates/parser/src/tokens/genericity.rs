@@ -54,6 +54,7 @@ pub fn type_path_no_generic(type_path: &str) -> String {
     frags
         .first()
         .unwrap_or(&type_path)
+        .trim()
         .trim_end_matches("::")
         .to_string()
 }
