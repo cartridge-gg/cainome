@@ -48,14 +48,30 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> MyContract<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn get_implementation(
+    pub fn is_valid_jumpdest(
+        &self,
+        index: &starknet::core::types::Felt,
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(index));
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("is_valid_jumpdest"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn bytecode(
         &self,
     ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_implementation"),
+            entry_point_selector: starknet::macros::selector!("bytecode"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
@@ -78,58 +94,14 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> MyContract<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn bytecode(
+    pub fn get_implementation(
         &self,
     ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("bytecode"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn get_nonce(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_nonce"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn is_valid_jumpdest(
-        &self,
-        index: &starknet::core::types::Felt,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(index));
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("is_valid_jumpdest"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn is_initialized(
-        &self,
-    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("is_initialized"),
+            entry_point_selector: starknet::macros::selector!("get_implementation"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
@@ -161,6 +133,206 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> MyContract<A> {
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn get_nonce(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_nonce"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn is_initialized(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<A::Provider, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("is_initialized"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_nonce_getcall(
+        &self,
+        nonce: &starknet::core::types::Felt,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(nonce));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("set_nonce"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_nonce(
+        &self,
+        nonce: &starknet::core::types::Felt,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.set_nonce_getcall(nonce);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_authorized_pre_eip155_tx_getcall(
+        &self,
+        message_hash: &cainome_cairo_serde::U256,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(cainome_cairo_serde::U256::cairo_serialize(message_hash));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("set_authorized_pre_eip155_tx"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_authorized_pre_eip155_tx(
+        &self,
+        message_hash: &cainome_cairo_serde::U256,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.set_authorized_pre_eip155_tx_getcall(message_hash);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_implementation_getcall(
+        &self,
+        implementation_class: &starknet::core::types::Felt,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(
+            implementation_class,
+        ));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("set_implementation"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn set_implementation(
+        &self,
+        implementation_class: &starknet::core::types::Felt,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.set_implementation_getcall(implementation_class);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn write_jumpdests_getcall(
+        &self,
+        jumpdests_len: &starknet::core::types::Felt,
+        jumpdests: &Vec<starknet::core::types::Felt>,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(jumpdests_len));
+        __calldata.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
+            jumpdests,
+        ));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("write_jumpdests"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn write_jumpdests(
+        &self,
+        jumpdests_len: &starknet::core::types::Felt,
+        jumpdests: &Vec<starknet::core::types::Felt>,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.write_jumpdests_getcall(jumpdests_len, jumpdests);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn initialize_getcall(
+        &self,
+        kakarot_address: &starknet::core::types::Felt,
+        evm_address: &starknet::core::types::Felt,
+        implementation_class: &starknet::core::types::Felt,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(
+            kakarot_address,
+        ));
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(evm_address));
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(
+            implementation_class,
+        ));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("initialize"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn initialize(
+        &self,
+        kakarot_address: &starknet::core::types::Felt,
+        evm_address: &starknet::core::types::Felt,
+        implementation_class: &starknet::core::types::Felt,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.initialize_getcall(kakarot_address, evm_address, implementation_class);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn __validate___getcall(
+        &self,
+        call_array_len: &starknet::core::types::Felt,
+        call_array: &Vec<self::CallArray>,
+        calldata_len: &starknet::core::types::Felt,
+        calldata: &Vec<starknet::core::types::Felt>,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(call_array_len));
+        __calldata.extend(Vec::<self::CallArray>::cairo_serialize(call_array));
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(calldata_len));
+        __calldata.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
+            calldata,
+        ));
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("__validate__"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn __validate__(
+        &self,
+        call_array_len: &starknet::core::types::Felt,
+        call_array: &Vec<self::CallArray>,
+        calldata_len: &starknet::core::types::Felt,
+        calldata: &Vec<starknet::core::types::Felt>,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.__validate___getcall(call_array_len, call_array, calldata_len, calldata);
+        self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
@@ -218,126 +390,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> MyContract<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn write_jumpdests_getcall(
-        &self,
-        jumpdests_len: &starknet::core::types::Felt,
-        jumpdests: &Vec<starknet::core::types::Felt>,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(jumpdests_len));
-        __calldata.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
-            jumpdests,
-        ));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("write_jumpdests"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn write_jumpdests(
-        &self,
-        jumpdests_len: &starknet::core::types::Felt,
-        jumpdests: &Vec<starknet::core::types::Felt>,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.write_jumpdests_getcall(jumpdests_len, jumpdests);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn write_bytecode_getcall(
-        &self,
-        bytecode_len: &starknet::core::types::Felt,
-        bytecode: &Vec<starknet::core::types::Felt>,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(bytecode_len));
-        __calldata.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
-            bytecode,
-        ));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("write_bytecode"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn write_bytecode(
-        &self,
-        bytecode_len: &starknet::core::types::Felt,
-        bytecode: &Vec<starknet::core::types::Felt>,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.write_bytecode_getcall(bytecode_len, bytecode);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn __validate___getcall(
-        &self,
-        call_array_len: &starknet::core::types::Felt,
-        call_array: &Vec<self::CallArray>,
-        calldata_len: &starknet::core::types::Felt,
-        calldata: &Vec<starknet::core::types::Felt>,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(call_array_len));
-        __calldata.extend(Vec::<self::CallArray>::cairo_serialize(call_array));
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(calldata_len));
-        __calldata.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
-            calldata,
-        ));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("__validate__"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn __validate__(
-        &self,
-        call_array_len: &starknet::core::types::Felt,
-        call_array: &Vec<self::CallArray>,
-        calldata_len: &starknet::core::types::Felt,
-        calldata: &Vec<starknet::core::types::Felt>,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.__validate___getcall(call_array_len, call_array, calldata_len, calldata);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn write_storage_getcall(
-        &self,
-        storage_addr: &starknet::core::types::Felt,
-        value: &cainome_cairo_serde::U256,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(storage_addr));
-        __calldata.extend(cainome_cairo_serde::U256::cairo_serialize(value));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("write_storage"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn write_storage(
-        &self,
-        storage_addr: &starknet::core::types::Felt,
-        value: &cainome_cairo_serde::U256,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.write_storage_getcall(storage_addr, value);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
     pub fn __execute___getcall(
         &self,
         call_array_len: &starknet::core::types::Felt,
@@ -373,86 +425,82 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> MyContract<A> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn set_authorized_pre_eip155_tx_getcall(
+    pub fn __validate_declare___getcall(
         &self,
-        message_hash: &cainome_cairo_serde::U256,
+        class_hash: &starknet::core::types::Felt,
     ) -> starknet::core::types::Call {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
-        __calldata.extend(cainome_cairo_serde::U256::cairo_serialize(message_hash));
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(class_hash));
         starknet::core::types::Call {
             to: self.address,
-            selector: starknet::macros::selector!("set_authorized_pre_eip155_tx"),
+            selector: starknet::macros::selector!("__validate_declare__"),
             calldata: __calldata,
         }
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn set_authorized_pre_eip155_tx(
+    pub fn __validate_declare__(
         &self,
-        message_hash: &cainome_cairo_serde::U256,
+        class_hash: &starknet::core::types::Felt,
     ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.set_authorized_pre_eip155_tx_getcall(message_hash);
+        let __call = self.__validate_declare___getcall(class_hash);
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn set_implementation_getcall(
+    pub fn write_bytecode_getcall(
         &self,
-        implementation_class: &starknet::core::types::Felt,
+        bytecode_len: &starknet::core::types::Felt,
+        bytecode: &Vec<starknet::core::types::Felt>,
     ) -> starknet::core::types::Call {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(
-            implementation_class,
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(bytecode_len));
+        __calldata.extend(Vec::<starknet::core::types::Felt>::cairo_serialize(
+            bytecode,
         ));
         starknet::core::types::Call {
             to: self.address,
-            selector: starknet::macros::selector!("set_implementation"),
+            selector: starknet::macros::selector!("write_bytecode"),
             calldata: __calldata,
         }
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn set_implementation(
+    pub fn write_bytecode(
         &self,
-        implementation_class: &starknet::core::types::Felt,
+        bytecode_len: &starknet::core::types::Felt,
+        bytecode: &Vec<starknet::core::types::Felt>,
     ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.set_implementation_getcall(implementation_class);
+        let __call = self.write_bytecode_getcall(bytecode_len, bytecode);
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn initialize_getcall(
+    pub fn write_storage_getcall(
         &self,
-        kakarot_address: &starknet::core::types::Felt,
-        evm_address: &starknet::core::types::Felt,
-        implementation_class: &starknet::core::types::Felt,
+        storage_addr: &starknet::core::types::Felt,
+        value: &cainome_cairo_serde::U256,
     ) -> starknet::core::types::Call {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(
-            kakarot_address,
-        ));
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(evm_address));
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(
-            implementation_class,
-        ));
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(storage_addr));
+        __calldata.extend(cainome_cairo_serde::U256::cairo_serialize(value));
         starknet::core::types::Call {
             to: self.address,
-            selector: starknet::macros::selector!("initialize"),
+            selector: starknet::macros::selector!("write_storage"),
             calldata: __calldata,
         }
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn initialize(
+    pub fn write_storage(
         &self,
-        kakarot_address: &starknet::core::types::Felt,
-        evm_address: &starknet::core::types::Felt,
-        implementation_class: &starknet::core::types::Felt,
+        storage_addr: &starknet::core::types::Felt,
+        value: &cainome_cairo_serde::U256,
     ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.initialize_getcall(kakarot_address, evm_address, implementation_class);
+        let __call = self.write_storage_getcall(storage_addr, value);
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]
@@ -491,54 +539,6 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> MyContract<A> {
     ) -> starknet::accounts::ExecutionV3<A> {
         let __call =
             self.execute_starknet_call_getcall(to, function_selector, calldata_len, calldata);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn __validate_declare___getcall(
-        &self,
-        class_hash: &starknet::core::types::Felt,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(class_hash));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("__validate_declare__"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn __validate_declare__(
-        &self,
-        class_hash: &starknet::core::types::Felt,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.__validate_declare___getcall(class_hash);
-        self.account.execute_v3(vec![__call])
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn set_nonce_getcall(
-        &self,
-        nonce: &starknet::core::types::Felt,
-    ) -> starknet::core::types::Call {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(nonce));
-        starknet::core::types::Call {
-            to: self.address,
-            selector: starknet::macros::selector!("set_nonce"),
-            calldata: __calldata,
-        }
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn set_nonce(
-        &self,
-        nonce: &starknet::core::types::Felt,
-    ) -> starknet::accounts::ExecutionV3<A> {
-        let __call = self.set_nonce_getcall(nonce);
         self.account.execute_v3(vec![__call])
     }
     pub async fn declare(
@@ -642,14 +642,28 @@ impl<P: starknet::providers::Provider + Sync> MyContractReader<P> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn get_implementation(
+    pub fn is_valid_jumpdest(
         &self,
+        index: &starknet::core::types::Felt,
     ) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(starknet::core::types::Felt::cairo_serialize(index));
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("is_valid_jumpdest"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn bytecode(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_implementation"),
+            entry_point_selector: starknet::macros::selector!("bytecode"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
@@ -672,54 +686,14 @@ impl<P: starknet::providers::Provider + Sync> MyContractReader<P> {
     }
     #[allow(clippy::ptr_arg)]
     #[allow(clippy::too_many_arguments)]
-    pub fn bytecode(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("bytecode"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn get_nonce(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("get_nonce"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn is_valid_jumpdest(
-        &self,
-        index: &starknet::core::types::Felt,
-    ) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
-        use cainome_cairo_serde::CairoSerde;
-        let mut __calldata = vec![];
-        __calldata.extend(starknet::core::types::Felt::cairo_serialize(index));
-        let __call = starknet::core::types::FunctionCall {
-            contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("is_valid_jumpdest"),
-            calldata: __calldata,
-        };
-        cainome_cairo_serde::call::FCall::new(__call, self.provider())
-    }
-    #[allow(clippy::ptr_arg)]
-    #[allow(clippy::too_many_arguments)]
-    pub fn is_initialized(
+    pub fn get_implementation(
         &self,
     ) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
         use cainome_cairo_serde::CairoSerde;
         let mut __calldata = vec![];
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
-            entry_point_selector: starknet::macros::selector!("is_initialized"),
+            entry_point_selector: starknet::macros::selector!("get_implementation"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())
@@ -746,6 +720,32 @@ impl<P: starknet::providers::Provider + Sync> MyContractReader<P> {
         let __call = starknet::core::types::FunctionCall {
             contract_address: self.address,
             entry_point_selector: starknet::macros::selector!("bytecode_len"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn get_nonce(&self) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("get_nonce"),
+            calldata: __calldata,
+        };
+        cainome_cairo_serde::call::FCall::new(__call, self.provider())
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn is_initialized(
+        &self,
+    ) -> cainome_cairo_serde::call::FCall<P, starknet::core::types::Felt> {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        let __call = starknet::core::types::FunctionCall {
+            contract_address: self.address,
+            entry_point_selector: starknet::macros::selector!("is_initialized"),
             calldata: __calldata,
         };
         cainome_cairo_serde::call::FCall::new(__call, self.provider())

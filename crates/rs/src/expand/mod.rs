@@ -190,7 +190,10 @@ impl ExpansionContextFactory {
                 continue;
             }
 
-            self.derives.insert(derive.as_ref().to_string());
+            self.derives
+                .insert(cainome_parser::tokens::utils::normalize_type_path(
+                    derive.as_ref(),
+                ));
         }
         self
     }
@@ -201,13 +204,17 @@ impl ExpansionContextFactory {
         S: AsRef<str>,
     {
         for derive in derives {
-            self.contract_derives.insert(derive.as_ref().to_string());
+            self.contract_derives
+                .insert(cainome_parser::tokens::utils::normalize_type_path(
+                    derive.as_ref(),
+                ));
         }
         self
     }
 
     pub fn with_substitutions(mut self, substitutions: HashMap<String, String>) -> Self {
         for (k, v) in substitutions {
+            // TODO: normalise all inputs
             self.substitutions.insert(k, v);
         }
         self
@@ -219,6 +226,7 @@ impl ExpansionContextFactory {
         S: AsRef<str>,
     {
         for type_skip in type_skips {
+            // TODO: normalise all inputs
             self.type_skips.push(type_skip.as_ref().to_string());
         }
         self
@@ -226,6 +234,7 @@ impl ExpansionContextFactory {
 
     pub fn with_aliases(mut self, aliases: HashMap<String, String>) -> Self {
         for (k, v) in aliases {
+            // TODO: normalise all inputs
             self.aliases.insert(k, v);
         }
         self
@@ -243,6 +252,7 @@ impl ExpansionContextFactory {
     where
         S: AsRef<str>,
     {
+        // TODO: normalise all inputs
         self.cainome_serde_path = path.as_ref().to_string();
         self
     }
@@ -251,6 +261,7 @@ impl ExpansionContextFactory {
     where
         S: AsRef<str>,
     {
+        // TODO: normalise all inputs
         self.root_module_path = path.as_ref().to_string();
         self
     }
