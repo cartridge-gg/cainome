@@ -214,8 +214,6 @@ fn test_2_generic_variants_aliasing() {
 
     let generated = abi_to_tokenstream(&registry, &ctx).unwrap();
 
-    println!("Generated code:\n{}", generated.to_string());
-
     assert_code_has_struct(
         &generated,
         &parse_quote! {

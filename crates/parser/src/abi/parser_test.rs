@@ -1536,7 +1536,7 @@ fn test_complex_generic_function_argument() {
 
     let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
 
-    let Ok(result) = AbiParser::build_registry(abi_entries, ctx) else {
+    let Ok(_result) = AbiParser::build_registry(abi_entries, ctx) else {
         panic!("Something is wrong");
     };
 
@@ -1582,7 +1582,9 @@ fn test_complex_generic_function_argument_with_tuple() {
 
     let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
 
-    let Ok(result) = AbiParser::build_registry(abi_entries, ctx) else {
+    let Ok(_result) = AbiParser::build_registry(abi_entries, ctx) else {
         panic!("Something is wrong");
     };
+
+    // TODO: add assertions
 }

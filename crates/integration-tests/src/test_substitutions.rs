@@ -11,10 +11,6 @@ use starknet::core::types::Felt;
 //     pub c: T,
 // }
 
-struct Point<T> {
-    x: T,
-    y: T,
-}
 // This example uses an ABI where components introduce several enums with `Event` type name.
 // This showcase how the type_aliases parameter can be leveraged to avoid conflicts.
 #[derive(CairoSerde, serde::Serialize, serde::Deserialize)]

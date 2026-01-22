@@ -38,7 +38,7 @@ pub fn escape_rust_keywords(s: &str) -> String {
 
 // TODO(baitcode): need to find a better way. This method is only solving problems for the generic types inside tuples.
 pub fn normalize_type_path(type_path: &str) -> String {
-    type_path.to_string().replace(" ", "").into()
+    type_path.to_string().replace(" ", "")
 }
 
 /// Extracts the `type_path` with given module `depth`.

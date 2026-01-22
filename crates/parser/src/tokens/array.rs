@@ -125,8 +125,6 @@ mod tests {
     fn test_parse_wrong_path_invalid1() {
         let res = execute_parsing_for("array::Array::<core::felt252>".to_string());
 
-        println!("res: {:?}", res);
-
         let Result::Err(e) = res else {
             panic!("This should fail. Array is incorrect");
         };

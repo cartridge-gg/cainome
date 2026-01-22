@@ -61,7 +61,7 @@ pub(super) fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<Stri
 
     paths.push(genericity::type_path_no_generic(type_path));
 
-    return Ok(paths);
+    Ok(paths)
 }
 
 /// This function returns all inner generic types even nested ones inside other generics.
@@ -83,7 +83,7 @@ pub(super) fn get_all_generic_inner_types(type_path: &str) -> CainomeResult<Vec<
 
     let normalised_paths = paths
         .iter()
-        .map(|p| normalize_type_path(&p))
+        .map(|p| normalize_type_path(p))
         .collect::<Vec<_>>();
 
     Ok(normalised_paths)
@@ -183,7 +183,7 @@ impl TypeRegistry {
     }
 
     pub fn is_known_type(&self, path: &str) -> Result<bool, Error> {
-        let path = normalize_type_path(&path);
+        let path = normalize_type_path(path);
         tracing::trace!("Checking if type is known: {}", path);
 
         let inner_paths = get_all_generic_inner_types(&path)?;

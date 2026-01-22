@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{
     visit::{self, Visit},
-    File, ImplItemFn, ItemFn, ItemStruct, Stmt,
+    File, ImplItemFn, ItemStruct, Stmt,
 };
 use syntect::{easy::HighlightLines, highlighting::ThemeSet, parsing::SyntaxSet};
 

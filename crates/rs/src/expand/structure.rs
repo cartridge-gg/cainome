@@ -2,7 +2,7 @@ use crate::expand::{
     types::{get_additional_derive_requirements, CairoToRust},
     utils, Expandable, ExpansionContext, ExpansionContextFactory, ExpansionResult,
 };
-use cainome_parser::tokens::{genericity, NamedToken, Struct};
+use cainome_parser::tokens::{NamedToken, Struct};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -142,8 +142,8 @@ impl Expandable for Struct {
             .with_derives(get_additional_derive_requirements(&self.fields, ctx))
             .build();
 
-        let declaration = struct_declaration(&name, &self.fields, &ctx);
-        let implementation = struct_implementation(&name, &self.fields, &ctx);
+        let declaration = struct_declaration(name, &self.fields, &ctx);
+        let implementation = struct_implementation(name, &self.fields, &ctx);
 
         let item = quote! {
             #declaration
@@ -152,7 +152,7 @@ impl Expandable for Struct {
         };
 
         vec![
-            ExpansionResult::new(&full_path).with_item(&name, item), // .with_imports(deps)
+            ExpansionResult::new(&full_path).with_item(name, item), // .with_imports(deps)
         ]
     }
 }
