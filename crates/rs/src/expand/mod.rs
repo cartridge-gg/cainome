@@ -1,6 +1,6 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 
-use cainome_parser::ParserContext;
+use cainome_parser::{tokens::genericity, ParserContext};
 use proc_macro2::TokenStream;
 
 use crate::ExecutionVersion;
@@ -116,12 +116,17 @@ pub struct ExpansionContext {
 }
 
 impl ExpansionContext {
-    pub fn apply_alias(&self, type_path_no_generic: &str) -> String {
-        if let Some(alias) = self.aliases.get(type_path_no_generic) {
-            alias.to_string()
-        } else {
-            type_path_no_generic.to_string()
+    pub fn apply_alias(&self, type_path: &str) -> String {
+        if let Some(alias) = self.aliases.get(type_path) {
+            return alias.to_string();
         }
+
+        let no_generic = genericity::type_path_no_generic(type_path);
+        if let Some(alias) = self.aliases.get(&no_generic) {
+            return alias.to_string();
+        }
+
+        no_generic.to_string()
     }
 }
 

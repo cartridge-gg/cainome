@@ -168,7 +168,7 @@ pub fn enum_implementation(
 
 impl Expandable for Enum {
     fn expand(&self, ctx: &ExpansionContext) -> Vec<super::ExpansionResult> {
-        let full_path = ctx.apply_alias(&self.type_path_no_generic());
+        let full_path = ctx.apply_alias(&self.type_path);
         let name = full_path.split("::").last().unwrap().to_owned();
 
         let ctx = ExpansionContextFactory::from(ctx)

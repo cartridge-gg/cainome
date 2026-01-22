@@ -112,6 +112,16 @@ fn main() {
                 "serde::Serialize",
                 "serde::Deserialize",
             ])
+            .with_aliases(HashMap::from([
+                (
+                    "contracts::gen::gen::MyStruct::<core::felt252>".to_string(),
+                    "contracts::gen::gen::MyStructFelt".to_string(),
+                ),
+                (
+                    "contracts::gen::gen::MyStruct::<core::integer::u256>".to_string(),
+                    "contracts::gen::gen::MyStructFeltU256".to_string(),
+                ),
+            ]))
             .build(),
     );
     expand(
@@ -176,19 +186,6 @@ fn main() {
             .with_root_module_path("crate::bindings::components_events")
             .build(),
     );
-    expand(
-        "./src/bindings/substitutions.rs",
-        &ExpansionContextFactory::new("../../contracts/abi/structs.abi.json")
-            .with_contract_name("Substitutions")
-            .with_cainome_serde_path("cainome_cairo_serde")
-            .with_root_module_path("crate::bindings::substitutions")
-            .with_derives(["serde::Serialize", "serde::Deserialize"])
-            .with_substitutions(HashMap::from([(
-                "contracts::abicov::structs::GenericOne".to_string(),
-                "crate::test_substitutions::GenericOneBis".to_string(),
-            )]))
-            .build(),
-    );
     legacy_expand(
         "./src/bindings/udc.rs",
         &ExpansionContextFactory::new("../../contracts/prebuilt/udc.json")
@@ -198,6 +195,39 @@ fn main() {
             .with_is_legacy(true)
             .with_add_declaration(true)
             .with_add_deployment(false)
+            .build(),
+    );
+    expand(
+        "./src/bindings/substitutions.rs",
+        &ExpansionContextFactory::new("../../contracts/abi/structs.abi.json")
+            .with_contract_name("Substitutions")
+            .with_cainome_serde_path("cainome_cairo_serde")
+            .with_root_module_path("crate::bindings::substitutions")
+            .with_derives(["serde::Serialize", "serde::Deserialize"])
+            .with_substitutions(HashMap::from([
+                (
+                    "contracts::abicov::structs::GenericOne::<core::felt252>".to_string(),
+                    "crate::test_substitutions::GenericOneFelt".to_string(),
+                ),
+                // (
+                //     "contracts::abicov::structs::GenericOne::<core::felt252>".to_string(),
+                //     "crate::test_substitutions::GenericOne::<starknet::core::types::Felt>"
+                //         .to_string(),
+                // ),
+                (
+                    "contracts::abicov::structs::GenericOne::<core::integer::u256>".to_string(),
+                    "crate::test_substitutions::GenericOneu256".to_string(),
+                ),
+                (
+                    "contracts::abicov::structs::GenericOne::<core::integer::u64>".to_string(),
+                    "crate::test_substitutions::GenericOneu64".to_string(),
+                ),
+                (
+                    "contracts::abicov::structs::GenericOne::<core::array::Span::<core::felt252>>"
+                        .to_string(),
+                    "crate::test_substitutions::GenericOneSpanFelt".to_string(),
+                ),
+            ]))
             .build(),
     );
 }

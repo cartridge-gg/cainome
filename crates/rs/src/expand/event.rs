@@ -10,7 +10,7 @@ use quote::quote;
 
 fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> TokenStream {
     let snrs_utils = utils::snrs_utils();
-    let full_path = ctx.apply_alias(&event.type_path_no_generic());
+    let full_path = ctx.apply_alias(&event.type_path);
     let event_name_str = full_path.split("::").last().unwrap().to_owned();
     let event_name = utils::str_to_ident(&event_name_str);
 
@@ -88,7 +88,7 @@ fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> Tok
 
 impl Expandable for Event {
     fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult> {
-        let full_path = ctx.apply_alias(&self.type_path_no_generic());
+        let full_path = ctx.apply_alias(&self.type_path);
         let event_name = full_path.split("::").last().unwrap().to_owned();
         let event_name_str = utils::str_to_ident(&event_name);
         let snrs_types = utils::snrs_types();

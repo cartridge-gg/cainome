@@ -18,11 +18,11 @@ pub trait CairoToRust {
 
 impl CairoToRust for TypePath {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
-        ctx.apply_alias(self.type_path())
+        ctx.apply_alias(&self.type_path)
     }
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
-        ctx.apply_alias(self.type_path())
+        ctx.apply_alias(&self.type_path)
     }
 }
 
@@ -134,7 +134,7 @@ impl CairoToRust for Struct {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
         [
             ctx.root_module_path.clone(),
-            ctx.apply_alias(&self.type_path_no_generic()),
+            ctx.apply_alias(&self.type_path),
         ]
         .join("::")
     }
@@ -142,7 +142,7 @@ impl CairoToRust for Struct {
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
         [
             ctx.root_module_path.clone(),
-            ctx.apply_alias(&self.type_path_no_generic()),
+            ctx.apply_alias(&self.type_path),
         ]
         .join("::")
     }
@@ -152,7 +152,7 @@ impl CairoToRust for Event {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
         [
             ctx.root_module_path.clone(),
-            ctx.apply_alias(&self.type_path_no_generic()),
+            ctx.apply_alias(&self.type_path),
         ]
         .join("::")
     }
@@ -160,7 +160,7 @@ impl CairoToRust for Event {
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
         [
             ctx.root_module_path.clone(),
-            ctx.apply_alias(&self.type_path_no_generic()),
+            ctx.apply_alias(&self.type_path),
         ]
         .join("::")
     }

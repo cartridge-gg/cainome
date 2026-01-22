@@ -227,6 +227,8 @@ pub fn abi_to_tokenstream(
     registry: &TypeRegistry,
     ctx: &ExpansionContext,
 ) -> Result<TokenStream, Box<dyn std::error::Error + 'static>> {
+    tracing::trace!("Starting ABI to TokenStream expansion");
+
     let contract = Contract::new(
         &ctx.contract_name,
         ctx.contract_derives.iter().cloned().collect(),
@@ -239,6 +241,8 @@ pub fn abi_to_tokenstream(
     let registered_events = registry.get_events();
 
     for r#struct in registered_structs {
+        tracing::trace!("Expanding struct: {:?}", r#struct.borrow());
+
         let Token::Struct(s) = &*r#struct.borrow() else {
             unreachable!("Expected only Struct tokens in the collection, found something else.");
         };
@@ -247,6 +251,8 @@ pub fn abi_to_tokenstream(
     }
 
     for enumeration in registered_enums {
+        tracing::trace!("Expanding enum: {:?}", enumeration.borrow());
+
         let Token::Enum(e) = &*enumeration.borrow() else {
             unreachable!("Expected only Enum tokens in the collection, found something else.");
         };
@@ -255,6 +261,8 @@ pub fn abi_to_tokenstream(
     }
 
     for event in registered_events {
+        tracing::trace!("Expanding event: {:?}", event.borrow());
+
         let Token::Event(e) = &*event.borrow() else {
             unreachable!("Expected only Event tokens in the collection, found something else.");
         };
@@ -262,5 +270,6 @@ pub fn abi_to_tokenstream(
         root.include_many(e.expand(ctx))?;
     }
 
+    tracing::trace!("Root module expansion started.");
     Ok(root.token_stream())
 }

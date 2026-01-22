@@ -183,12 +183,14 @@ impl TypeRegistry {
     }
 
     pub fn is_known_type(&self, path: &str) -> Result<bool, Error> {
+        let path = normalize_type_path(&path);
         tracing::trace!("Checking if type is known: {}", path);
 
-        let inner_paths = get_all_generic_inner_types(path)?;
+        let inner_paths = get_all_generic_inner_types(&path)?;
         for path in inner_paths.into_iter() {
-            tracing::trace!("Checking inner type: {}", &normalize_type_path(&path));
-            if !self.store.contains_key(&normalize_type_path(&path)) {
+            let path = normalize_type_path(&path);
+            tracing::trace!("Checking inner type: {}", path);
+            if !self.store.contains_key(&path) {
                 return Ok(false);
             }
         }

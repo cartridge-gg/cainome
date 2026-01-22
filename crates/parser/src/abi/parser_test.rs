@@ -1443,9 +1443,24 @@ fn test_substitute_type() {
 
     let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
 
-    let result = AbiParser::build_registry(abi_entries, ctx);
+    let Ok(result) = AbiParser::build_registry(abi_entries, ctx) else {
+        panic!("Something is wrong");
+    };
 
-    assert!(result.is_ok(), "Type core::integer::u256 should be skipped");
+    let token = result
+        .get("contracts::abicov::structs::GenericOne::<core::felt252>")
+        .unwrap();
+
+    let Token::Struct(s) = &*token.borrow() else {
+        panic!("Type GenericOne::<core::felt252> should be present in the registry");
+    };
+
+    assert_eq!(s.fields[2].name, "c");
+    let Token::Substitute(path) = &*s.fields[2].token.borrow() else {
+        panic!("Field c should be of Substitute type");
+    };
+
+    assert_eq!(path.type_path, "cainome::cairo_serde::U256");
 }
 
 #[test]
@@ -1521,9 +1536,9 @@ fn test_complex_generic_function_argument() {
 
     let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
 
-    let result = AbiParser::build_registry(abi_entries, ctx);
-
-    assert!(result.is_ok(), "");
+    let Ok(result) = AbiParser::build_registry(abi_entries, ctx) else {
+        panic!("Something is wrong");
+    };
 
     // TODO: add assertions
 }
@@ -1567,7 +1582,7 @@ fn test_complex_generic_function_argument_with_tuple() {
 
     let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
 
-    let result = AbiParser::build_registry(abi_entries, ctx);
-
-    assert!(result.is_ok(), "");
+    let Ok(result) = AbiParser::build_registry(abi_entries, ctx) else {
+        panic!("Something is wrong");
+    };
 }

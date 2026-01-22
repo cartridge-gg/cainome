@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{
     visit::{self, Visit},
-    File, ItemStruct, Stmt,
+    File, ImplItemFn, ItemFn, ItemStruct, Stmt,
 };
 use syntect::{easy::HighlightLines, highlighting::ThemeSet, parsing::SyntaxSet};
 
@@ -128,6 +128,51 @@ fn find_struct_in_file(generated: &File, expected: &ItemStruct) -> bool {
     finder.visit_file(generated);
 
     finder.found
+}
+
+fn find_impl_fn_in_file(generated: &File, expected: &ImplItemFn) -> bool {
+    struct Finder<'ast> {
+        pub expected: &'ast ImplItemFn,
+        pub found: bool,
+    }
+
+    impl<'ast> Finder<'ast> {
+        fn new(strct: &'ast ImplItemFn) -> Self {
+            Self {
+                expected: strct,
+                found: false,
+            }
+        }
+    }
+
+    impl<'ast> Visit<'ast> for Finder<'ast> {
+        fn visit_impl_item_fn(&mut self, func: &'ast syn::ImplItemFn) {
+            if func == self.expected {
+                self.found = true;
+            } else {
+                visit::visit_impl_item_fn(self, func);
+            }
+        }
+    }
+
+    let mut finder = Finder::new(expected);
+
+    finder.visit_file(generated);
+
+    finder.found
+}
+
+pub fn assert_code_has_impl_fn<T: ToTokens>(generated: &T, expected: &ImplItemFn, message: &str) {
+    let generated_ast = &syn::parse2(generated.to_token_stream()).unwrap();
+    let found = find_impl_fn_in_file(generated_ast, expected);
+
+    assert!(
+        found,
+        "{}. Expected to find statement:\n\n{}\n\nInside of: \n\n{}",
+        message,
+        &expected.to_token_stream(),
+        generated_ast.to_token_stream()
+    );
 }
 
 pub fn assert_code_has_struct<T: ToTokens>(generated: &T, expected: &ItemStruct, message: &str) {

@@ -18,7 +18,6 @@ exclude = [".github/**", "images/**"]
 members = [
 	"crates/cairo-serde",
 	"crates/cairo-serde-derive",
-	"crates/cairo-test-artifacts",
 	"crates/parser",
 	"crates/rs",
 	"crates/rs-macro",

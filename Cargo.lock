@@ -621,6 +621,7 @@ dependencies = [
  "syntect",
  "thiserror 2.0.12",
  "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -1177,20 +1178,6 @@ dependencies = [
  "tracing-log",
  "tracing-subscriber",
  "vector-map",
-]
-
-[[package]]
-name = "cairo-test-artifacts"
-version = "0.1.0"
-dependencies = [
- "cainome",
- "cainome-cairo-serde",
- "cairo-lang-starknet-classes",
- "rand 0.9.2",
- "serde",
- "serde_json",
- "starknet",
- "starknet_api",
 ]
 
 [[package]]

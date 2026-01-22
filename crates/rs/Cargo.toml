@@ -30,3 +30,5 @@ tracing.workspace = true
 
 [dev-dependencies]
 syntect = "5"
+tracing.workspace = true
+tracing-subscriber.workspace = true

@@ -2,7 +2,7 @@ use crate::expand::{
     types::{get_additional_derive_requirements, CairoToRust},
     utils, Expandable, ExpansionContext, ExpansionContextFactory, ExpansionResult,
 };
-use cainome_parser::tokens::{NamedToken, Struct};
+use cainome_parser::tokens::{genericity, NamedToken, Struct};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -12,6 +12,8 @@ pub fn struct_declaration(
     ctx: &ExpansionContext,
 ) -> TokenStream {
     let _ = ctx;
+
+    tracing::trace!("Generating struct declaration for {}", type_name);
 
     let struct_name = utils::str_to_ident(type_name);
 
@@ -132,9 +134,9 @@ pub fn struct_implementation(
 
 impl Expandable for Struct {
     fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult> {
-        let full_path = ctx.apply_alias(&self.type_path_no_generic());
+        let full_path = ctx.apply_alias(&self.type_path);
 
-        let name = full_path.split("::").last().unwrap().to_owned();
+        let name = &full_path.split("::").last().unwrap().to_owned();
 
         let ctx = ExpansionContextFactory::from(ctx)
             .with_derives(get_additional_derive_requirements(&self.fields, ctx))

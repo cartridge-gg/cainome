@@ -14,8 +14,4 @@ impl TypePath {
             type_path: type_path.to_string(),
         }
     }
-
-    pub fn type_path(&self) -> &str {
-        &self.type_path
-    }
 }

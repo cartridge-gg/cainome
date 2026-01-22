@@ -1,12 +1,268 @@
 use std::collections::HashMap;
 
 use crate::expand::for_tests::{
-    assert_code_has, assert_code_has_not, assert_code_has_not_struct, assert_code_has_struct,
+    assert_code_has, assert_code_has_impl_fn, assert_code_has_not, assert_code_has_not_struct,
+    assert_code_has_struct,
 };
 use crate::{abi_to_tokenstream, expand::ExpansionContextFactory, ExecutionVersion};
 use cainome_parser::{tokens::Token, AbiParser, ParserContext};
 use quote::quote;
 use syn::parse_quote;
+
+#[test]
+fn test_generic_with_single_argument_expansion() {
+    let abi = r#"[
+        {
+            "type": "struct",
+            "name": "MyType::<NestedType>",
+            "members": [
+                {
+                    "name": "alias",
+                    "type": "NestedType"
+                },
+                {
+                    "name": "data",
+                    "type": "core::felt252"
+                }
+            ]
+        },
+        {
+            "type": "struct",
+            "name": "NestedType",
+            "members": [
+                {
+                    "name": "data",
+                    "type": "core::integer::u32"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "very_cool_function",
+            "inputs": [
+                {
+                    "name": "value",
+                    "type": "MyType::<NestedType>"
+                }
+            ],
+            "outputs": [],
+            "state_mutability": "external"
+        }
+    ]"#;
+
+    let ctx = ExpansionContextFactory::new("MyContract")
+        .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
+        .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
+        .build();
+
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+    let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx)).unwrap();
+
+    let generated = abi_to_tokenstream(&registry, &ctx).unwrap();
+
+    assert_code_has(
+        &generated,
+        &quote! {
+            #[derive(Debug, PartialEq)]
+            pub struct MyType {
+                pub alias: self::NestedType,
+                pub data: starknet::core::types::Felt,
+            }
+        },
+        "No MyType struct found",
+    );
+
+    assert_code_has(
+        &generated,
+        &quote! {
+            #[derive(Debug, PartialEq)]
+            pub struct NestedType {
+                pub data: u32,
+            }
+        },
+        "No MyType struct found",
+    );
+
+    assert_code_has_impl_fn(
+        &generated,
+        &parse_quote! {
+            #[allow(clippy::ptr_arg)]
+            #[allow(clippy::too_many_arguments)]
+            pub fn very_cool_function_getcall(
+                &self,
+                value: &self::MyType
+            ) -> starknet::core::types::Call {
+                use cainome::cairo_serde::CairoSerde;
+                let mut __calldata = vec![];
+                __calldata.extend(self::MyType::cairo_serialize(value));
+                starknet::core::types::Call {
+                    to: self.address,
+                    selector: starknet::macros::selector!("very_cool_function"),
+                    calldata: __calldata,
+                }
+            }
+        },
+        "No very_cool_function_getcall fn found",
+    );
+
+    assert_code_has_impl_fn(
+        &generated,
+        &parse_quote! {
+            #[allow(clippy::ptr_arg)]
+            #[allow(clippy::too_many_arguments)]
+            pub fn very_cool_function(
+                &self,
+                value: &self::MyType
+            ) -> starknet::accounts::ExecutionV3<A> {
+                let __call = self.very_cool_function_getcall(value);
+                self.account.execute_v3(vec![__call])
+            }
+        },
+        "No very_cool_function fn found",
+    );
+}
+
+#[test]
+fn test_2_generic_variants_aliasing() {
+    let abi = r#"[
+        {
+            "type": "struct",
+            "name": "MyType::<Variant1>",
+            "members": [
+                {
+                    "name": "alias",
+                    "type": "Variant1"
+                },
+                {
+                    "name": "data",
+                    "type": "core::felt252"
+                }
+            ]
+        },
+        {
+            "type": "struct",
+            "name": "MyType::<Variant2>",
+            "members": [
+                {
+                    "name": "alias",
+                    "type": "Variant2"
+                },
+                {
+                    "name": "data",
+                    "type": "core::felt252"
+                }
+            ]
+        },
+        {
+            "type": "struct",
+            "name": "Variant1",
+            "members": [
+                {
+                    "name": "data",
+                    "type": "core::integer::u32"
+                }
+            ]
+        },
+        {
+            "type": "struct",
+            "name": "Variant2",
+            "members": [
+                {
+                    "name": "data",
+                    "type": "core::integer::u64"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "set",
+            "inputs": [
+                {
+                    "name": "v1",
+                    "type": "MyType::<Variant1>"
+                },
+                {
+                    "name": "v2",
+                    "type": "MyType::<Variant2>"
+                }
+
+            ],
+            "outputs": [],
+            "state_mutability": "external"
+        }
+    ]"#;
+
+    let ctx = ExpansionContextFactory::new("MyContract")
+        .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
+        .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_aliases(HashMap::from([
+            (
+                "MyType::<Variant1>".to_string(),
+                "MyTypeVariant1".to_string(),
+            ),
+            (
+                "MyType::<Variant2>".to_string(),
+                "MyTypeVariant2".to_string(),
+            ),
+        ]))
+        .build();
+
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+    let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx)).unwrap();
+
+    let generated = abi_to_tokenstream(&registry, &ctx).unwrap();
+
+    println!("Generated code:\n{}", generated.to_string());
+
+    assert_code_has_struct(
+        &generated,
+        &parse_quote! {
+            #[derive(Debug, PartialEq, )]
+            pub struct MyTypeVariant1 {
+                pub alias: self::Variant1,
+                pub data: starknet::core::types::Felt
+            }
+        },
+        "MyTypeVariant1 not found",
+    );
+    assert_code_has_struct(
+        &generated,
+        &parse_quote! {
+            #[derive(Debug, PartialEq, )]
+            pub struct MyTypeVariant2 {
+                pub alias: self::Variant2,
+                pub data: starknet::core::types::Felt
+            }
+        },
+        "MyTypeVariant1 not found",
+    );
+
+    assert_code_has_impl_fn(
+        &generated,
+        &parse_quote! {
+            #[allow(clippy::ptr_arg)]
+            #[allow(clippy::too_many_arguments)]
+            pub fn set_getcall(
+                &self,
+                v1: &self::MyTypeVariant1,
+                v2: &self::MyTypeVariant2
+            ) -> starknet::core::types::Call {
+                use cainome::cairo_serde::CairoSerde;
+                let mut __calldata = vec![];
+                __calldata.extend(self::MyTypeVariant1::cairo_serialize(v1));
+                __calldata.extend(self::MyTypeVariant2::cairo_serialize(v2));
+                starknet::core::types::Call {
+                    to: self.address,
+                    selector: starknet::macros::selector!("set"),
+                    calldata: __calldata,
+                }
+            }
+        },
+        "set_getcall not found",
+    );
+}
 
 #[ignore = "Generics are not yet handled properly"]
 #[test]
