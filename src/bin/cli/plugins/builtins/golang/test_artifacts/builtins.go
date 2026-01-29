@@ -203,8 +203,6 @@ func (s *BuiltinsStructNonZeroInput) UnmarshalCairo(data []*felt.Felt) error {
 	if err := s.Res.UnmarshalCairo(data[offset:]); err != nil {
 		return err
 	}
-	// TODO: Update offset based on consumed data
-
 
 	return nil
 }

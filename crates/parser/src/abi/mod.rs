@@ -1,7 +1,12 @@
 pub mod parser;
-pub mod parser_legacy;
 
-mod conversions;
+#[cfg(test)]
+mod parser_test;
 
-// TODO: add ABI files and parse them to assert
-// the tokens content.
+pub mod registry;
+#[cfg(test)]
+mod registry_test;
+
+mod extensions;
+
+pub mod parser_context;

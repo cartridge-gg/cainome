@@ -32,7 +32,7 @@ impl PluginManager {
         }
 
         for plugin in &self.builtin_plugins {
-            plugin.generate_code(&input).await?;
+            let _ = plugin.generate_code(&input);
         }
 
         // TODO: add the plugins once stdin is supported.

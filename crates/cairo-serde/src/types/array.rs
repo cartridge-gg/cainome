@@ -27,8 +27,7 @@ where
     fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType> {
         if offset >= felts.len() {
             return Err(Error::Deserialize(format!(
-                "Buffer too short to deserialize an array: offset ({}) : buffer {:?}",
-                offset, felts,
+                "Buffer too short to deserialize an array: offset ({offset}) : buffer {felts:?}",
             )));
         }
 
@@ -39,8 +38,7 @@ where
 
         if offset + len >= felts.len() {
             return Err(Error::Deserialize(format!(
-                "Buffer too short to deserialize an array of length {}: offset ({}) : buffer {:?}",
-                len, offset, felts,
+                "Buffer too short to deserialize an array of length {len}: offset ({offset}) : buffer {felts:?}",
             )));
         }
 

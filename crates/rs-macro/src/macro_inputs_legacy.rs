@@ -9,8 +9,6 @@
 //! Loading from a file with only the ABI array.
 //! abigen!(ContractName, "path/to/abi.json"
 //!
-//! TODO: support the full artifact JSON to be able to
-//! deploy contracts from abigen.
 use proc_macro_error::emit_error;
 use quote::ToTokens;
 use starknet::core::types::contract::legacy::{LegacyContractClass, RawLegacyAbiEntry};
@@ -37,10 +35,16 @@ pub(crate) struct ContractAbiLegacy {
     pub abi: Vec<RawLegacyAbiEntry>,
     pub output_path: Option<String>,
     pub type_aliases: HashMap<String, String>,
+    pub type_substitutions: HashMap<String, String>,
     pub execution_version: ExecutionVersion,
     pub derives: Vec<String>,
     pub contract_derives: Vec<String>,
     pub type_skips: Vec<String>,
+    pub contract_source_path: Option<String>,
+    pub add_declaration: bool,
+    pub add_deployment: bool,
+    pub cainome_serde_path: String,
+    pub root_module_path: String,
 }
 
 impl Parse for ContractAbiLegacy {
@@ -75,28 +79,36 @@ impl Parse for ContractAbiLegacy {
                 serde_json::from_reader::<_, Vec<RawLegacyAbiEntry>>(open_json_file(
                     &json_path.value(),
                 )?)
-                .map_err(|e| {
-                    syn::Error::new(json_path.span(), format!("JSON parse error: {}", e))
-                })?
+                .map_err(|e| syn::Error::new(json_path.span(), format!("JSON parse error: {e}")))?
             }
         } else {
-            if let Ok(legacy_class) =
-                serde_json::from_str::<LegacyContractClass>(&abi_or_path.value())
-            {
+            let content;
+            syn::bracketed!(content in input);
+            let array_content: proc_macro2::TokenStream = content.parse()?;
+
+            let array_str = format!("[{array_content}]");
+
+            if let Ok(legacy_class) = serde_json::from_str::<LegacyContractClass>(&array_str) {
                 legacy_class.abi
             } else {
-                serde_json::from_str::<Vec<RawLegacyAbiEntry>>(&abi_or_path.value()).map_err(
-                    |e| syn::Error::new(abi_or_path.span(), format!("JSON parse error: {}", e)),
-                )?
+                serde_json::from_str::<Vec<RawLegacyAbiEntry>>(&array_str).map_err(|e| {
+                    syn::Error::new(abi_or_path.span(), format!("JSON parse error: {e}"))
+                })?
             }
         };
 
         let mut output_path: Option<String> = None;
         let mut execution_version = ExecutionVersion::V3;
         let mut type_aliases = HashMap::new();
+        let mut type_substitutions = HashMap::new();
         let mut derives = Vec::new();
         let mut contract_derives = Vec::new();
         let mut type_skips = Vec::new();
+        let mut contract_source_path: Option<String> = None;
+        let mut add_declaration = true;
+        let mut add_deployment = true;
+        let mut cainome_serde_path = "cainome::cairo_serde".to_string();
+        let mut root_module_path = "self".to_string();
 
         loop {
             if input.parse::<Token![,]>().is_err() {
@@ -136,12 +148,39 @@ impl Parse for ContractAbiLegacy {
                         type_aliases.insert(ta.abi, ta.alias);
                     }
                 }
+                "type_substitutions" => {
+                    let content;
+                    braced!(content in input);
+                    let parsed =
+                        content.parse_terminated(Spanned::<TypeSubstitution>::parse, Token![;])?;
+
+                    let mut abi_types = HashSet::new();
+                    let mut aliases = HashSet::new();
+
+                    for type_sub in parsed {
+                        if !abi_types.insert(type_sub.abi.clone()) {
+                            emit_error!(
+                                type_sub.span(),
+                                format!("{} duplicate abi type", type_sub.abi)
+                            );
+                        }
+                        if !aliases.insert(type_sub.sub.clone()) {
+                            emit_error!(
+                                type_sub.span(),
+                                format!("{} duplicate substitution name", type_sub.sub)
+                            );
+                        }
+
+                        let ta = type_sub.into_inner();
+                        type_substitutions.insert(ta.abi, ta.sub);
+                    }
+                }
                 "execution_version" => {
                     let content;
                     parenthesized!(content in input);
                     let ev = content.parse::<LitStr>()?.value();
                     execution_version = ExecutionVersion::from_str(&ev).map_err(|e| {
-                        syn::Error::new(content.span(), format!("Invalid execution version: {}", e))
+                        syn::Error::new(content.span(), format!("Invalid execution version: {e}"))
                     })?;
                 }
                 "output_path" => {
@@ -176,6 +215,32 @@ impl Parse for ContractAbiLegacy {
                         type_skips.push(type_skip.to_token_stream().to_string());
                     }
                 }
+                "contract_source_path" => {
+                    let content;
+                    parenthesized!(content in input);
+                    contract_source_path = Some(content.parse::<LitStr>()?.value());
+                }
+                "add_declaration" => {
+                    let content;
+                    parenthesized!(content in input);
+                    add_declaration = content.parse::<syn::LitBool>()?.value();
+                }
+                "add_deployment" => {
+                    let content;
+                    parenthesized!(content in input);
+                    add_deployment = content.parse::<syn::LitBool>()?.value();
+                }
+                "cainome_serde_path" => {
+                    let content;
+                    parenthesized!(content in input);
+                    cainome_serde_path = content.parse::<LitStr>()?.value();
+                }
+                "root_module_path" => {
+                    let content;
+                    parenthesized!(content in input);
+                    root_module_path = content.parse::<LitStr>()?.value();
+                }
+
                 _ => emit_error!(name.span(), format!("unexpected named parameter `{name}`")),
             }
         }
@@ -184,11 +249,17 @@ impl Parse for ContractAbiLegacy {
             name,
             abi,
             output_path,
+            type_substitutions,
             type_aliases,
             derives,
             contract_derives,
             execution_version,
             type_skips,
+            contract_source_path,
+            add_declaration,
+            add_deployment,
+            cainome_serde_path,
+            root_module_path,
         })
     }
 }
@@ -215,11 +286,33 @@ impl Parse for TypeAlias {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct TypeSubstitution {
+    abi: String,
+    sub: String,
+}
+
+impl Parse for TypeSubstitution {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let abi = input
+            .parse::<Type>()?
+            .into_token_stream()
+            .to_string()
+            .replace(' ', "");
+
+        input.parse::<Token![as]>()?;
+
+        let sub = input.parse::<Ident>()?.to_string();
+
+        Ok(TypeSubstitution { abi, sub })
+    }
+}
+
 fn open_json_file(file_path: &str) -> Result<File> {
     File::open(file_path).map_err(|e| {
         syn::Error::new(
             str_to_litstr(file_path).span(),
-            format!("JSON open file {} error: {}", file_path, e),
+            format!("JSON open file {file_path} error: {e}"),
         )
     })
 }

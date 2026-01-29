@@ -124,12 +124,6 @@ impl From<PluginOptions> for PluginManager {
             )));
         }
 
-        if options.golang {
-            builtin_plugins.push(Box::new(crate::plugins::builtins::GolangPlugin::new(
-                options.golang_options,
-            )));
-        }
-
         Self {
             builtin_plugins,
             plugins,

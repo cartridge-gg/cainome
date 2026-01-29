@@ -1,7 +1,9 @@
 //! Utils function for expansion.
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
-use syn::{Ident, LitInt, LitStr, Type};
+use syn::{Ident, LitStr, Type};
+
+use crate::expand::ExpansionContext;
 
 pub fn str_to_ident(str_in: &str) -> Ident {
     if is_rust_keyword(str_in) {
@@ -13,19 +15,19 @@ pub fn str_to_ident(str_in: &str) -> Ident {
 }
 
 pub fn str_to_type(str_in: &str) -> Type {
-    syn::parse_str(str_in).unwrap_or_else(|_| panic!("Can't convert {} to syn::Type", str_in))
+    syn::parse_str(str_in).unwrap_or_else(|_| panic!("Can't convert {str_in} to syn::Type"))
 }
 
 pub fn str_to_litstr(str_in: &str) -> LitStr {
     LitStr::new(str_in, proc_macro2::Span::call_site())
 }
 
-pub fn str_to_litint(str_in: &str) -> LitInt {
-    LitInt::new(str_in, proc_macro2::Span::call_site())
-}
-
 pub fn snrs_types() -> Type {
     str_to_type("starknet::core::types")
+}
+
+pub fn snrs_contract() -> Type {
+    str_to_type("starknet::contract")
 }
 
 pub fn snrs_utils() -> Type {
@@ -36,17 +38,12 @@ pub fn snrs_accounts() -> Type {
     str_to_type("starknet::accounts")
 }
 
+pub fn cairo_lang() -> Type {
+    str_to_type("cairo_lang_starknet_classes")
+}
+
 pub fn snrs_providers() -> Type {
     str_to_type("starknet::providers")
-}
-
-pub fn cainome_cairo_serde() -> Type {
-    str_to_type(&cainome_cairo_serde_path())
-}
-
-#[inline]
-pub fn cainome_cairo_serde_path() -> String {
-    String::from("cainome::cairo_serde")
 }
 
 #[inline]
@@ -55,7 +52,7 @@ pub fn starknet_rs_types_path() -> String {
 }
 
 #[derive(Debug, PartialEq)]
-enum SerdeHexType {
+pub enum SerdeHexType {
     None,
     Single,
     Tuple(usize),
@@ -70,16 +67,16 @@ impl SerdeHexType {
 
 /// Serde derive for hex serialization of struct member or enum variant.
 /// In the case of tuples, all the elements will be serialized as hex.
-pub fn serde_hex_derive(ty: &str) -> TokenStream2 {
-    let serde_single = format!("{}::serialize_as_hex", cainome_cairo_serde_path());
-    let serde_vec = format!("{}::serialize_as_hex_vec", cainome_cairo_serde_path());
-    let serde_tuple_2 = format!("{}::serialize_as_hex_t2", cainome_cairo_serde_path());
-    let serde_tuple_3 = format!("{}::serialize_as_hex_t3", cainome_cairo_serde_path());
+pub fn serde_hex_derive(ty: &str, ctx: &ExpansionContext) -> TokenStream2 {
+    let serde_single = format!("{}::serialize_as_hex", ctx.cainome_serde_path);
+    let serde_vec = format!("{}::serialize_as_hex_vec", ctx.cainome_serde_path);
+    let serde_tuple_2 = format!("{}::serialize_as_hex_t2", ctx.cainome_serde_path);
+    let serde_tuple_3 = format!("{}::serialize_as_hex_t3", ctx.cainome_serde_path);
 
-    let deser_single = format!("{}::deserialize_from_hex", cainome_cairo_serde_path());
-    let deser_vec = format!("{}::deserialize_from_hex_vec", cainome_cairo_serde_path());
-    let deser_tuple_2 = format!("{}::deserialize_from_hex_t2", cainome_cairo_serde_path());
-    let deser_tuple_3 = format!("{}::deserialize_from_hex_t3", cainome_cairo_serde_path());
+    let deser_single = format!("{}::deserialize_from_hex", ctx.cainome_serde_path);
+    let deser_vec = format!("{}::deserialize_from_hex_vec", ctx.cainome_serde_path);
+    let deser_tuple_2 = format!("{}::deserialize_from_hex_t2", ctx.cainome_serde_path);
+    let deser_tuple_3 = format!("{}::deserialize_from_hex_t3", ctx.cainome_serde_path);
 
     let serde_hex = is_serde_hex_int(ty);
 
@@ -97,7 +94,7 @@ pub fn serde_hex_derive(ty: &str) -> TokenStream2 {
         SerdeHexType::Vec => quote! {
             #[serde(serialize_with = #serde_vec, deserialize_with = #deser_vec)]
         },
-        _ => panic!("Unsupported type {} for serde_hex", ty),
+        _ => panic!("Unsupported type {ty} for serde_hex"),
     }
 }
 
@@ -109,7 +106,7 @@ pub fn serde_hex_derive(ty: &str) -> TokenStream2 {
 /// This function returns the number of type that require serde_hex serialization.
 /// The type might be a single integer type, or a tuple of integer types.
 #[inline]
-fn is_serde_hex_int(ty: &str) -> SerdeHexType {
+pub fn is_serde_hex_int(ty: &str) -> SerdeHexType {
     let tuple = is_serde_hex_tuple(ty);
     if !tuple.is_none() {
         return tuple;
@@ -183,7 +180,7 @@ mod tests {
         let keywords = vec!["let", "match", "type", "impl", "fn", "struct", "move"];
         for keyword in keywords {
             let ident = str_to_ident(keyword);
-            assert_eq!(ident.to_string(), format!("r#{}", keyword));
+            assert_eq!(ident.to_string(), format!("r#{keyword}"));
         }
     }
 

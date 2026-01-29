@@ -1,5 +1,9 @@
 //! Function tokens.
+use std::{cell::RefCell, rc::Rc};
+
 use convert_case::{Case, Casing};
+
+use crate::tokens::NamedToken;
 
 use super::Token;
 
@@ -20,10 +24,10 @@ pub enum FunctionOutputKind {
 pub struct Function {
     pub name: String,
     pub state_mutability: StateMutability,
-    pub inputs: Vec<(String, Token)>,
-    pub outputs: Vec<Token>,
-    // Only cairo0 has named outputs.
-    pub named_outputs: Vec<(String, Token)>,
+    pub inputs: Vec<NamedToken>,
+    pub outputs: Vec<Rc<RefCell<Token>>>,
+    // Only cairo0 has named outputs. Soooo. Currently this one is unused in v3 execution.
+    pub named_outputs: Vec<NamedToken>,
 }
 
 impl Function {
@@ -34,20 +38,6 @@ impl Function {
             inputs: vec![],
             outputs: vec![],
             named_outputs: vec![],
-        }
-    }
-
-    pub fn apply_alias(&mut self, type_path: &str, alias: &str) {
-        for (_, ref mut t) in &mut self.inputs {
-            if let Token::Composite(ref mut c) = t {
-                c.apply_alias(type_path, alias);
-            }
-        }
-
-        for ref mut t in &mut self.outputs {
-            if let Token::Composite(ref mut c) = t {
-                c.apply_alias(type_path, alias);
-            }
         }
     }
 

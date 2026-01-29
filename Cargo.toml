@@ -21,7 +21,7 @@ members = [
 	"crates/parser",
 	"crates/rs",
 	"crates/rs-macro",
-	"crates/cairo-test-artifacts",
+	"crates/integration-tests",
 ]
 
 [workspace.dependencies]
@@ -43,16 +43,21 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 url = "2.5"
 # temp: change this to proper crates.io version
-starknet = "0.17.0"
-starknet-types-core = "0.2"
-
+starknet = { git = "https://github.com/dojoengine/starknet-rs", branch = "feat/types-rs-100-blake2s" }
+starknet-crypto = { git = "https://github.com/dojoengine/starknet-rs", branch = "feat/types-rs-100-blake2s" }
+starknet-types-core = { version = "=1.0.0" }
+tokio = { version = "1.40", features = ["full"] }
+katana-runner = { git = "https://github.com/dojoengine/katana", branch = "types-rs-100-blake2s" }
+cairo-lang-starknet-classes = "=2.13.1"
+# "=2.12.3"
 [dependencies]
 camino.workspace = true
+cainome-rs-macro = { version = "0.5.1", path = "crates/rs-macro", optional = true }
+
 cainome-parser.workspace = true
 cainome-cairo-serde.workspace = true
 cainome-cairo-serde-derive.workspace = true
 cainome-rs.workspace = true
-cainome-rs-macro = { version = "0.5.1", path = "crates/rs-macro", optional = true }
 
 async-trait.workspace = true
 anyhow.workspace = true
@@ -67,15 +72,20 @@ thiserror.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 url.workspace = true
-tokio = { version = "1.40", features = ["full"], optional = true }
+tokio.workspace = true
 
 [dev-dependencies]
 paste = "1.0"
+# For examples
+quote = "1.0"
+syn = { version = "2.0", features = [ "extra-traits" ]}
+prettyplease = "0.2.19"
+smol_str = "=0.3.2"
 
 [features]
-default = []
+default = ["build-binary"]
 abigen-rs = ["cainome-rs-macro"]
-build-binary = ["tokio"]
+build-binary = []
 
 [[bin]]
 name = "cainome"

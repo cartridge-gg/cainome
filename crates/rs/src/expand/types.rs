@@ -1,144 +1,269 @@
-use cainome_parser::tokens::Token;
+use std::rc::Rc;
 
-use super::utils;
+use cainome_parser::tokens::{
+    ArrayContainer, Enum, Event, NamedToken, NonZeroContainer, OptionContainer, ResultContainer,
+    Struct, Token, TupleContainer, TypePath,
+};
+
+use crate::expand::{
+    utils::{is_serde_hex_int, SerdeHexType},
+    ExpansionContext,
+};
 
 pub trait CairoToRust {
-    fn to_rust_type(&self) -> String;
+    fn to_rust_type(&self, ctx: &ExpansionContext) -> String;
 
-    fn to_rust_type_path(&self) -> String;
+    fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String;
 }
 
-impl CairoToRust for Token {
-    fn to_rust_type(&self) -> String {
-        match self {
-            Token::CoreBasic(t) => basic_types_to_rust(&t.type_name()),
-            Token::Array(t) => {
-                if t.is_legacy {
-                    let ccsp = utils::cainome_cairo_serde_path();
-                    format!("{}::CairoArrayLegacy<{}>", ccsp, t.inner.to_rust_type())
-                } else {
-                    format!("Vec<{}>", t.inner.to_rust_type())
-                }
-            }
-            Token::Tuple(t) => {
-                let mut s = String::from("(");
+impl CairoToRust for TypePath {
+    fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
+        ctx.apply_alias(&self.type_path)
+    }
 
-                for (idx, inner) in t.inners.iter().enumerate() {
-                    s.push_str(&inner.to_rust_type());
+    fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
+        ctx.apply_alias(&self.type_path)
+    }
+}
 
-                    if idx < t.inners.len() - 1 {
-                        s.push_str(", ");
-                    }
-                }
-                s.push(')');
-
-                s
-            }
-            Token::Composite(c) => {
-                let mut s = c.type_name_or_alias();
-
-                let (type_name, is_builtin) = builtin_composite_to_rust(&s);
-                if is_builtin {
-                    s = type_name;
-                }
-
-                s
-            }
-            Token::Option(o) => format!("Option<{}>", o.inner.to_rust_type()),
-            Token::Result(r) => format!(
-                "Result<{}, {}>",
-                r.inner.to_rust_type(),
-                r.error.to_rust_type()
-            ),
-            Token::NonZero(n) => {
-                let ccsp = utils::cainome_cairo_serde_path();
-                format!("{}::NonZero<{}>", ccsp, n.inner.to_rust_type())
-            }
-            _ => "__FUNCTION_NOT_SUPPORTED__".to_string(),
+impl CairoToRust for ArrayContainer {
+    fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
+        let internal_type = (&*self.inner.borrow()).to_rust_type(ctx);
+        if ctx.is_legacy {
+            let ccsp = ctx.cainome_serde_path.to_string();
+            format!("{ccsp}::CairoArrayLegacy<{internal_type}>")
+        } else {
+            format!("Vec<{internal_type}>")
         }
     }
 
-    fn to_rust_type_path(&self) -> String {
-        match self {
-            Token::CoreBasic(t) => basic_types_to_rust(&t.type_name()),
-            Token::Array(t) => {
-                if t.is_legacy {
-                    let ccsp = utils::cainome_cairo_serde_path();
-                    format!(
-                        "{}::CairoArrayLegacy::<{}>",
-                        ccsp,
-                        t.inner.to_rust_type_path()
-                    )
-                } else {
-                    format!("Vec::<{}>", t.inner.to_rust_type_path())
-                }
-            }
-            Token::Tuple(t) => {
-                let mut s = String::from("(");
-                for (idx, inner) in t.inners.iter().enumerate() {
-                    s.push_str(&inner.to_rust_type_path());
-
-                    if idx < t.inners.len() - 1 {
-                        s.push_str(", ");
-                    }
-                }
-                s.push(')');
-                s
-            }
-            Token::Composite(c) => {
-                let mut s = c.type_name_or_alias();
-
-                let (type_name, is_builtin) = builtin_composite_to_rust(&s);
-                if is_builtin {
-                    s = type_name;
-                }
-
-                s
-            }
-            Token::Option(o) => format!("Option::<{}>", o.inner.to_rust_type_path()),
-            Token::Result(r) => format!(
-                "Result::<{}, {}>",
-                r.inner.to_rust_type_path(),
-                r.error.to_rust_type_path()
-            ),
-            Token::NonZero(n) => {
-                let ccsp = utils::cainome_cairo_serde_path();
-                format!("{}::NonZero::<{}>", ccsp, n.inner.to_rust_type_path())
-            }
-            _ => "__FUNCTION_NOT_SUPPORTED__".to_string(),
+    fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
+        if ctx.is_legacy {
+            let ccsp = ctx.cainome_serde_path.to_string();
+            format!(
+                "{ccsp}::CairoArrayLegacy::<{}>",
+                (&*self.inner.borrow()).to_rust_type_path(ctx)
+            )
+        } else {
+            format!("Vec::<{}>", (&*self.inner.borrow()).to_rust_type_path(ctx))
         }
     }
 }
 
-fn basic_types_to_rust(type_name: &str) -> String {
-    let ccsp = utils::cainome_cairo_serde_path();
-    let snrs_types = utils::starknet_rs_types_path();
+impl CairoToRust for OptionContainer {
+    fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
+        format!("Option<{}>", (&*self.inner.borrow()).to_rust_type(ctx))
+    }
 
-    match type_name {
-        "ClassHash" => format!("{ccsp}::ClassHash"),
-        "ContractAddress" => format!("{ccsp}::ContractAddress"),
-        "EthAddress" => format!("{ccsp}::EthAddress"),
-        "felt252" => format!("{snrs_types}::Felt"),
-        "felt" => format!("{snrs_types}::Felt"),
-        "bytes31" => format!("{ccsp}::Bytes31"),
-        "ByteArray" => format!("{ccsp}::ByteArray"),
-        "NonZero" => format!("{ccsp}::NonZero"),
-        "U256" => format!("{ccsp}::U256"),
-        _ => type_name.to_string(),
+    fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
+        format!(
+            "Option::<{}>",
+            (&*self.inner.borrow()).to_rust_type_path(ctx)
+        )
     }
 }
 
-fn builtin_composite_to_rust(type_name: &str) -> (String, bool) {
-    let ccsp = utils::cainome_cairo_serde_path();
-    let snrs_types = utils::starknet_rs_types_path();
-
-    match type_name {
-        "EthAddress" => (format!("{ccsp}::EthAddress"), true),
-        "ByteArray" => (format!("{ccsp}::ByteArray"), true),
-        "NonZero" => (format!("{ccsp}::NonZero"), true),
-        "U256" => (format!("{ccsp}::U256"), true),
-        // <https://github.com/starkware-libs/cairo/blob/35b299291fd7819f75409fb303ece7d30e4adb19/corelib/src/internal/bounded_int.cairo#L5>
-        "BoundedInt" => (format!("{snrs_types}::Felt"), true),
-        _ => (type_name.to_string(), false),
+impl CairoToRust for ResultContainer {
+    fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
+        format!(
+            "Result<{}, {}>",
+            (&*self.inner.borrow()).to_rust_type(ctx),
+            (&*self.error.borrow()).to_rust_type(ctx)
+        )
     }
+
+    fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
+        format!(
+            "Result::<{}, {}>",
+            (&*self.inner.borrow()).to_rust_type_path(ctx),
+            (&*self.error.borrow()).to_rust_type_path(ctx)
+        )
+    }
+}
+
+impl CairoToRust for NonZeroContainer {
+    fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
+        let ccsp = ctx.cainome_serde_path.to_string();
+        format!(
+            "{ccsp}::NonZero<{}>",
+            (&*self.inner.borrow()).to_rust_type(ctx)
+        )
+    }
+
+    fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
+        let ccsp = ctx.cainome_serde_path.to_string();
+        format!(
+            "{ccsp}::NonZero::<{}>",
+            (&*self.inner.borrow()).to_rust_type_path(ctx)
+        )
+    }
+}
+
+impl CairoToRust for TupleContainer {
+    fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
+        let mut s = String::from("(");
+
+        for (idx, inner) in self.inners.iter().enumerate() {
+            let inner_type = (&*inner.borrow()).to_rust_type(ctx);
+            s.push_str(&inner_type);
+
+            if idx < self.inners.len() - 1 {
+                s.push_str(", ");
+            }
+        }
+        s.push(')');
+
+        s
+    }
+
+    fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
+        let mut s = String::from("(");
+        for (idx, inner) in self.inners.iter().enumerate() {
+            s.push_str(&(&*inner.borrow()).to_rust_type_path(ctx));
+
+            if idx < self.inners.len() - 1 {
+                s.push_str(", ");
+            }
+        }
+        s.push(')');
+        s
+    }
+}
+
+impl CairoToRust for Struct {
+    fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
+        [
+            ctx.root_module_path.clone(),
+            ctx.apply_alias(&self.type_path),
+        ]
+        .join("::")
+    }
+
+    fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
+        [
+            ctx.root_module_path.clone(),
+            ctx.apply_alias(&self.type_path),
+        ]
+        .join("::")
+    }
+}
+
+impl CairoToRust for Event {
+    fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
+        [
+            ctx.root_module_path.clone(),
+            ctx.apply_alias(&self.type_path),
+        ]
+        .join("::")
+    }
+
+    fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
+        [
+            ctx.root_module_path.clone(),
+            ctx.apply_alias(&self.type_path),
+        ]
+        .join("::")
+    }
+}
+
+impl CairoToRust for Enum {
+    fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
+        [
+            ctx.root_module_path.clone(),
+            ctx.apply_alias(&self.type_path_no_generic()),
+        ]
+        .join("::")
+    }
+
+    fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
+        [
+            ctx.root_module_path.clone(),
+            ctx.apply_alias(&self.type_path_no_generic()),
+        ]
+        .join("::")
+    }
+}
+
+impl CairoToRust for &Token {
+    fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
+        match self {
+            Token::Basic(t) => t.to_rust_type(ctx),
+            Token::Array(t) => t.to_rust_type(ctx),
+            Token::Option(t) => t.to_rust_type(ctx),
+            Token::Result(t) => t.to_rust_type(ctx),
+            Token::NonZero(t) => t.to_rust_type(ctx),
+            Token::Tuple(t) => t.to_rust_type(ctx),
+            Token::Struct(t) => t.to_rust_type(ctx),
+            Token::Event(t) => t.to_rust_type(ctx),
+            Token::Enum(t) => t.to_rust_type(ctx),
+            Token::Constructor(_) => "__CONSTRUCTOR_NOT_SUPPORTED__".to_string(),
+            Token::Interface(_) => "__INTERFACE_NOT_SUPPORTED__".to_string(),
+            Token::Function(_) => "__FUNCTION_NOT_SUPPORTED__".to_string(),
+            Token::Placeholder => "__PLACEHOLDER__".to_string(),
+            Token::Substitute(t) => t.to_rust_type(ctx),
+            Token::Skip(t) => t.to_rust_type(ctx),
+        }
+    }
+
+    fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
+        match self {
+            Token::Basic(t) => t.to_rust_type_path(ctx),
+            Token::Array(t) => t.to_rust_type_path(ctx),
+            Token::Option(t) => t.to_rust_type_path(ctx),
+            Token::Result(t) => t.to_rust_type_path(ctx),
+            Token::NonZero(t) => t.to_rust_type_path(ctx),
+            Token::Tuple(t) => t.to_rust_type_path(ctx),
+            Token::Struct(t) => t.to_rust_type_path(ctx),
+            Token::Event(t) => t.to_rust_type_path(ctx),
+            Token::Enum(t) => t.to_rust_type_path(ctx),
+            Token::Function(_) => "__FUNCTION_NOT_SUPPORTED__".to_string(),
+            Token::Interface(_) => "__INTERFACE_NOT_SUPPORTED__".to_string(),
+            Token::Constructor(_) => "__CONSTRUCTOR_NOT_SUPPORTED__".to_string(),
+            Token::Placeholder => "__PLACEHOLDER__".to_string(),
+            Token::Skip(t) => t.to_rust_type_path(ctx),
+            Token::Substitute(t) => t.to_rust_type_path(ctx),
+        }
+    }
+}
+
+fn check_requires_serde_derive(items: &[NamedToken], ctx: &ExpansionContext) -> bool {
+    // Unwrapping all container types to get inner types
+    let unwrapped_types = items
+        .iter()
+        .flat_map(|named_token| match &*named_token.token.borrow() {
+            Token::Array(t) => vec![Rc::clone(&t.inner)],
+            Token::Option(t) => vec![Rc::clone(&t.inner)],
+            Token::Result(t) => vec![Rc::clone(&t.inner), Rc::clone(&t.error)],
+            Token::NonZero(t) => vec![Rc::clone(&t.inner)],
+            Token::Tuple(t) => t.inners.iter().map(Rc::clone).collect(),
+            // Composite types are added as is as those are imported from their modules
+            // Basic types are also added but only to be skipped later
+            _ => vec![Rc::clone(&named_token.token)],
+        });
+
+    for token in unwrapped_types {
+        let inner_token = &*token.borrow();
+
+        let type_path = inner_token.to_rust_type_path(ctx);
+
+        let serde_hex = is_serde_hex_int(&type_path);
+        if serde_hex != SerdeHexType::None {
+            return true;
+        }
+    }
+
+    false
+}
+
+pub fn get_additional_derive_requirements(
+    items: &[NamedToken],
+    ctx: &ExpansionContext,
+) -> Vec<String> {
+    if check_requires_serde_derive(items, ctx) {
+        return vec![
+            "serde::Serialize".to_string(),
+            "serde::Deserialize".to_string(),
+        ];
+    }
+    vec![]
 }

@@ -1,3 +1,51 @@
+# TODO:
+
+[x] modules
+[x] tests for enum generation
+[x] tests for tuple <> brackets
+[x] tests for reserved words usage in fields
+[x] module dependencies
+[x] examples conversion
+[x] cairo0
+[x] think of substitions (external)
+[x] generic structs handling. I didn't test those properly (old functionality)
+[x] prefix cainome with additional setting
+[x] deploy and declare calls method
+
+Add v0.11.0 branch from main and create PR against it.
+
+[ ] Do proper interface impl's
+[ ] go-bindings
+[ ] tests for nested events of level 2 and more
+[ ] starknet-rust
+[ ] tests for serialisation rules
+[ ] event structure split (not critical)
+[ ] functions registry paths intersection. think on type prefixes for token paths
+[ ] ??? integration tests. create bindings, deploy to testnet, call, assert result
+[ ] If we can generate code, why not generate tests as well
+
+RELEASE:
+[ ] PR - feature parity, modules disabled by default?, skips
+[ ] Check CI, pay attention to a release order
+[ ] Review
+
+```rust
+fn builtin_composite_to_rust(type_name: &str) -> (String, bool) {
+    let ccsp = utils::cainome_cairo_serde_path();
+    let snrs_types = utils::starknet_rs_types_path();
+
+    match type_name {
+        "EthAddress" => (format!("{ccsp}::EthAddress"), true),
+        "ByteArray" => (format!("{ccsp}::ByteArray"), true),
+        "NonZero" => (format!("{ccsp}::NonZero"), true),
+        "U256" => (format!("{ccsp}::U256"), true),
+        // <https://github.com/starkware-libs/cairo/blob/35b299291fd7819f75409fb303ece7d30e4adb19/corelib/src/internal/bounded_int.cairo#L5>
+        "BoundedInt" => (format!("{snrs_types}::Felt"), true),
+        _ => (type_name.to_string(), false),
+    }
+}
+```
+
 # Cainome: bindings generation from Cairo ABI
 
 Cainome is a library to generate bindings from Cairo ABI.

@@ -61,8 +61,7 @@ where
 
         if Felt::from(offset) + len > Felt::from(felts.len()) {
             return Err(Error::Deserialize(format!(
-                "Buffer too short to deserialize an array of length {}: offset ({}) : buffer {:?}",
-                len, offset, felts,
+                "Buffer too short to deserialize an array of length {len}: offset ({offset}) : buffer {felts:?}",
             )));
         }
 

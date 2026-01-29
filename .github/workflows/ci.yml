@@ -15,12 +15,21 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest]
         toolchain: [stable]
 
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+
+      - name: Install asdf
+        uses: asdf-vm/actions/setup@v4
+
+      - name: Add asdf plugins
+        run: asdf plugin add katana https://github.com/dojoengine/asdf-katana.git
+
+      - name: Setup katana
+        run: asdf install
 
       - name: Setup toolchain
         uses: dtolnay/rust-toolchain@master

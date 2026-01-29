@@ -30,8 +30,7 @@ impl CairoSerde for ContractAddress {
     fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType> {
         if offset >= felts.len() {
             return Err(Error::Deserialize(format!(
-                "Buffer too short to deserialize a ContractAddress: offset ({}) : buffer {:?}",
-                offset, felts,
+                "Buffer too short to deserialize a ContractAddress: offset ({offset}) : buffer {felts:?}",
             )));
         }
 
@@ -65,8 +64,7 @@ impl CairoSerde for ClassHash {
     fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType> {
         if offset >= felts.len() {
             return Err(Error::Deserialize(format!(
-                "Buffer too short to deserialize a ClassHash: offset ({}) : buffer {:?}",
-                offset, felts,
+                "Buffer too short to deserialize a ClassHash: offset ({offset}) : buffer {felts:?}",
             )));
         }
 
@@ -100,8 +98,7 @@ impl CairoSerde for EthAddress {
     fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType> {
         if offset >= felts.len() {
             return Err(Error::Deserialize(format!(
-                "Buffer too short to deserialize an EthAddress: offset ({}) : buffer {:?}",
-                offset, felts,
+                "Buffer too short to deserialize an EthAddress: offset ({offset}) : buffer {felts:?}",
             )));
         }
 

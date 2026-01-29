@@ -25,6 +25,7 @@ mod event {
         value: felt252,
     }
 
+
     #[derive(Drop, starknet::Event)]
     struct MyEventC {
         #[key]

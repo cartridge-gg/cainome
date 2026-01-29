@@ -11,6 +11,8 @@ pub enum Error {
     ConversionFailed(String),
     #[error("Parser error: {0}")]
     ParsingFailed(String),
+    #[error("Expansion error: {0}")]
+    ExpansionFailed(String),
     #[error(transparent)]
     IO(#[from] std::io::Error),
     #[error(transparent)]

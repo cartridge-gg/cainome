@@ -1,6 +1,5 @@
 use syn::{GenericArgument, PathArguments, Type};
 
-use super::Token;
 use crate::CainomeResult;
 
 /// Extracts the generic arguments from a type path.
@@ -11,11 +10,10 @@ use crate::CainomeResult;
 ///
 /// # Returns
 ///
-/// Returns a vector of tuples, where each tuple contains a string and a [`Token`].
-/// The string is the name of the generic argument, starting to 'A' and incrementing
-/// by 1 for each generic argument. The token is the token representing the generic
-/// argument type.
-pub fn extract_generics_args(type_path: &str) -> CainomeResult<Vec<(String, Token)>> {
+/// Returns a vector of tuples, where each tuple contains a pair: generic argument name and current argument's
+/// type path. Generic argument starts at 'A' and incrementing by 1 over the ASCII table for each generic
+/// argument.
+pub fn extract_generics_args(type_path: &str) -> CainomeResult<Vec<(String, String)>> {
     let t: Type = syn::parse_str(type_path)?;
 
     let mut generic_args = vec![];
@@ -31,7 +29,7 @@ pub fn extract_generics_args(type_path: &str) -> CainomeResult<Vec<(String, Toke
                     if let GenericArgument::Type(ty) = arg {
                         let arg_name = ((ascii + i as u8) as char).to_string();
                         let arg_str = quote::quote!(#ty).to_string().replace(' ', "");
-                        generic_args.push((arg_name, Token::parse(&arg_str)?));
+                        generic_args.push((arg_name, arg_str));
                         i += 1;
                     }
                 }
@@ -56,6 +54,7 @@ pub fn type_path_no_generic(type_path: &str) -> String {
     frags
         .first()
         .unwrap_or(&type_path)
+        .trim()
         .trim_end_matches("::")
         .to_string()
 }
@@ -90,7 +89,7 @@ mod tests {
         let generics_args = extract_generics_args("module::TypeName::<core::felt252>").unwrap();
         assert_eq!(generics_args.len(), 1);
         assert_eq!(generics_args[0].0, "A");
-        assert_eq!(generics_args[0].1, Token::parse("core::felt252").unwrap());
+        assert_eq!(generics_args[0].1, "core::felt252");
     }
 
     #[test]
@@ -99,8 +98,8 @@ mod tests {
             extract_generics_args("module::TypeName::<core::felt252, core::bool>").unwrap();
         assert_eq!(generics_args.len(), 2);
         assert_eq!(generics_args[0].0, "A");
-        assert_eq!(generics_args[0].1, Token::parse("core::felt252").unwrap());
+        assert_eq!(generics_args[0].1, "core::felt252");
         assert_eq!(generics_args[1].0, "B");
-        assert_eq!(generics_args[1].1, Token::parse("core::bool").unwrap());
+        assert_eq!(generics_args[1].1, "core::bool");
     }
 }

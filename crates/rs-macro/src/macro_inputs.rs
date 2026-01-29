@@ -12,8 +12,6 @@
 //! 2. Direct JSON array input:
 //!    abigen!(ContractName, [{"type": "function", ...}])
 //!
-//! TODO: support the full artifact JSON to be able to
-//! deploy contracts from abigen.
 use proc_macro_error::emit_error;
 use quote::ToTokens;
 use starknet::core::types::contract::{AbiEntry, SierraClass};
@@ -41,10 +39,16 @@ pub(crate) struct ContractAbi {
     pub abi: Vec<AbiEntry>,
     pub output_path: Option<String>,
     pub type_aliases: HashMap<String, String>,
+    pub type_substitutions: HashMap<String, String>,
     pub execution_version: ExecutionVersion,
     pub derives: Vec<String>,
     pub contract_derives: Vec<String>,
     pub type_skips: Vec<String>,
+    pub contract_source_path: Option<String>,
+    pub add_declaration: bool,
+    pub add_deployment: bool,
+    pub cainome_serde_path: String,
+    pub root_module_path: String,
 }
 
 impl Parse for ContractAbi {
@@ -58,8 +62,11 @@ impl Parse for ContractAbi {
         //
         // If the input starts with a `[` token then we parse it as a JSON array.
         let abi = if input.peek(syn::token::Bracket) {
-            let array_content = input.parse::<proc_macro2::TokenStream>()?;
-            let array_str = array_content.to_string();
+            let content;
+            syn::bracketed!(content in input);
+            let array_content: proc_macro2::TokenStream = content.parse()?;
+
+            let array_str = format!("[{array_content}]");
 
             serde_json::from_str::<Vec<AbiEntry>>(&array_str)
                 .map_err(|e| syn::Error::new(input.span(), format!("Invalid ABI format: {e}")))?
@@ -105,7 +112,7 @@ impl Parse for ContractAbi {
                 }
             } else {
                 serde_json::from_str::<Vec<AbiEntry>>(&abi_str_or_path.value()).map_err(|e| {
-                    syn::Error::new(abi_str_or_path.span(), format!("JSON parse error: {}", e))
+                    syn::Error::new(abi_str_or_path.span(), format!("JSON parse error: {e}"))
                 })?
             }
         };
@@ -113,9 +120,15 @@ impl Parse for ContractAbi {
         let mut output_path: Option<String> = None;
         let mut execution_version = ExecutionVersion::V3;
         let mut type_aliases = HashMap::new();
+        let mut type_substitutions = HashMap::new();
         let mut derives = Vec::new();
         let mut contract_derives = Vec::new();
         let mut type_skips = Vec::new();
+        let mut contract_source_path = None;
+        let mut add_declaration = true;
+        let mut add_deployment = true;
+        let mut cainome_serde_path = "cainome::cairo_serde".to_string();
+        let mut root_module_path = "self".to_string();
 
         loop {
             if input.parse::<Token![,]>().is_err() {
@@ -155,6 +168,33 @@ impl Parse for ContractAbi {
                         type_aliases.insert(ta.abi, ta.alias);
                     }
                 }
+                "type_substitutions" => {
+                    let content;
+                    braced!(content in input);
+                    let parsed =
+                        content.parse_terminated(Spanned::<TypeSubstitution>::parse, Token![;])?;
+
+                    let mut abi_types = HashSet::new();
+                    let mut aliases = HashSet::new();
+
+                    for type_sub in parsed {
+                        if !abi_types.insert(type_sub.abi.clone()) {
+                            emit_error!(
+                                type_sub.span(),
+                                format!("{} duplicate abi type", type_sub.abi)
+                            );
+                        }
+                        if !aliases.insert(type_sub.sub.clone()) {
+                            emit_error!(
+                                type_sub.span(),
+                                format!("{} duplicate substitution name", type_sub.sub)
+                            );
+                        }
+
+                        let ta = type_sub.into_inner();
+                        type_substitutions.insert(ta.abi, ta.sub);
+                    }
+                }
                 "output_path" => {
                     let content;
                     parenthesized!(content in input);
@@ -165,7 +205,7 @@ impl Parse for ContractAbi {
                     parenthesized!(content in input);
                     let ev = content.parse::<LitStr>()?.value();
                     execution_version = ExecutionVersion::from_str(&ev).map_err(|e| {
-                        syn::Error::new(content.span(), format!("Invalid execution version: {}", e))
+                        syn::Error::new(content.span(), format!("Invalid execution version: {e}"))
                     })?;
                 }
                 "derives" => {
@@ -195,6 +235,31 @@ impl Parse for ContractAbi {
                         type_skips.push(type_skip.to_token_stream().to_string());
                     }
                 }
+                "contract_source_path" => {
+                    let content;
+                    parenthesized!(content in input);
+                    contract_source_path = Some(content.parse::<LitStr>()?.value());
+                }
+                "add_declaration" => {
+                    let content;
+                    parenthesized!(content in input);
+                    add_declaration = content.parse::<syn::LitBool>()?.value();
+                }
+                "add_deployment" => {
+                    let content;
+                    parenthesized!(content in input);
+                    add_deployment = content.parse::<syn::LitBool>()?.value();
+                }
+                "cainome_serde_path" => {
+                    let content;
+                    parenthesized!(content in input);
+                    cainome_serde_path = content.parse::<LitStr>()?.value();
+                }
+                "root_module_path" => {
+                    let content;
+                    parenthesized!(content in input);
+                    root_module_path = content.parse::<LitStr>()?.value();
+                }
                 _ => emit_error!(name.span(), format!("unexpected named parameter `{name}`")),
             }
         }
@@ -204,11 +269,35 @@ impl Parse for ContractAbi {
             abi,
             output_path,
             type_aliases,
+            type_substitutions,
             execution_version,
             derives,
             contract_derives,
             type_skips,
+            contract_source_path,
+            add_declaration,
+            add_deployment,
+            cainome_serde_path,
+            root_module_path,
         })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct TypeSubstitution {
+    abi: String,
+    sub: String,
+}
+
+impl Parse for TypeSubstitution {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let abi = sanitize_str(&input.parse::<Type>()?.into_token_stream().to_string());
+
+        input.parse::<Token![as]>()?;
+
+        let sub = sanitize_str(&input.parse::<Type>()?.into_token_stream().to_string());
+
+        Ok(TypeSubstitution { abi, sub })
     }
 }
 
@@ -238,7 +327,7 @@ fn open_json_file(file_path: &str) -> Result<File> {
     File::open(file_path).map_err(|e| {
         syn::Error::new(
             str_to_litstr(file_path).span(),
-            format!("JSON open file {} error: {}", file_path, e),
+            format!("JSON open file {file_path} error: {e}"),
         )
     })
 }

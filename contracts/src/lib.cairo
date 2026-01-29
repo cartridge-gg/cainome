@@ -12,6 +12,8 @@ mod abicov {
 }
 
 mod basic;
+
+mod event;
 mod gen;
 
 mod simple_get_set;

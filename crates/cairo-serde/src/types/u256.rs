@@ -76,7 +76,7 @@ impl Display for U256 {
         num += BigUint::from(self.high);
         num <<= 128;
         num += BigUint::from(self.low);
-        write!(f, "{}", num)
+        write!(f, "{num}")
     }
 }
 
@@ -342,8 +342,7 @@ mod tests {
             low: 12_u128,
             high: 0_u128,
         };
-        println!("{}", u256);
-        assert_eq!(format!("{}", u256), "12");
+        assert_eq!(format!("{u256}"), "12");
     }
 
     #[test]

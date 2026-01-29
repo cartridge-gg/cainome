@@ -20,7 +20,7 @@ jobs:
       - name: "Setup stable toolchain"
         uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: 1.87.0
+          toolchain: 1.88.0
           components: rustfmt, clippy
 
       - name: Use Rust cache
@@ -30,7 +30,7 @@ jobs:
 
       - name: Install prettier
         run: |
-          yarn global add prettier
+          yarn global add prettier@3.7.4
 
       - name: Setup Scarb
         uses: software-mansion/setup-scarb@v1
