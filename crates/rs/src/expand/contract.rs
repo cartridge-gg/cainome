@@ -64,7 +64,6 @@ impl Contract {
         let mut out = vec![];
 
         for NamedToken { name, token } in f.inputs.iter() {
-            println!("Getting input for func: {} || {:?}", name, &*token.borrow());
             let name = utils::str_to_ident(name);
             let token = &*token.borrow();
             let ty = utils::str_to_type(&token.to_rust_type_path(ctx));

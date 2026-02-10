@@ -93,8 +93,6 @@ fn expand(out_name: &str, ctx: &ExpansionContext) {
 }
 
 fn main() {
-    // return;
-
     legacy_expand(
         "./src/bindings/kkrt_account_cairo0.rs",
         &ExpansionContextFactory::new("../../contracts/cairo0/kkrt_account_cairo0.json")
@@ -129,6 +127,7 @@ fn main() {
             // ]))
             .build(),
     );
+
     expand(
         "./src/bindings/components_events_flat.rs",
         &ExpansionContextFactory::new("../../contracts/abi/components.abi.json")

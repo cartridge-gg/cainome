@@ -16,13 +16,12 @@ pub fn struct_declaration(
     fields_to_generics: &HashMap<String, HashSet<String>>,
     ctx: &ExpansionContext,
 ) -> TokenStream {
-    let _ = ctx;
-
     tracing::trace!("Generating struct declaration for {}", type_name);
 
     let struct_name = utils::str_to_ident(type_name);
     let is_generic = !generic_arg_names.is_empty();
     let mut members: Vec<TokenStream> = vec![];
+
     for inner in fields {
         let name = utils::str_to_ident(&inner.name);
         let token = &*inner.token.borrow();

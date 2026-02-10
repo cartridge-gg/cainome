@@ -1,5 +1,8 @@
-use std::cell::RefCell;
 use std::rc::Rc;
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+};
 
 use crate::{
     abi::registry::TypeRegistry,
@@ -10,9 +13,9 @@ use crate::{
 #[derive(Debug, Clone, PartialEq)]
 pub struct Enum {
     pub type_path: String,
-    pub variants: Vec<NamedToken>,
+    variants: Vec<NamedToken>,
     pub generic_args: Vec<(String, Rc<RefCell<Token>>)>,
-    pub alias: Option<String>,
+    pub fields_to_generics: HashMap<String, HashSet<String>>,
 }
 
 impl Enum {
@@ -29,25 +32,29 @@ impl Enum {
         };
 
         Ok(Self {
-            type_path,
+            type_path: genericity::type_path_no_generic(&type_path),
             generic_args: generic_args_with_types,
             variants: vec![],
-            alias: None,
+            fields_to_generics: HashMap::new(),
         })
     }
 
-    pub fn with_variant(self, name: &str, token: Rc<RefCell<Token>>) -> Self {
-        Self {
-            variants: {
-                let mut v = self.variants;
-                v.push(NamedToken {
-                    name: name.to_string(),
-                    token,
-                });
-                v
-            },
-            ..self
+    pub fn with_variant(mut self, name: &str, token: Rc<RefCell<Token>>) -> Self {
+        self.variants.push(NamedToken {
+            name: name.to_string(),
+            token: Rc::clone(&token),
+        });
+        for (generic_name, generic_token) in self.generic_args.iter() {
+            if &*token.borrow() == &*generic_token.borrow() {
+                let generic_candidates = self
+                    .fields_to_generics
+                    .entry(name.to_string())
+                    .or_insert_with(|| HashSet::new());
+
+                generic_candidates.insert(generic_name.to_owned());
+            }
         }
+        self
     }
 
     pub fn with_variants(self, variants: Vec<NamedToken>) -> Self {
@@ -60,5 +67,20 @@ impl Enum {
 
     pub fn is_generic(&self) -> bool {
         !self.generic_args.is_empty()
+    }
+
+    pub fn merge_generic_variant(&mut self, variant: &Enum) {
+        for (field_name, candidates) in variant.fields_to_generics.iter() {
+            let old_candidates = self
+                .fields_to_generics
+                .entry(field_name.to_owned())
+                .or_default();
+            let new_candidates = old_candidates.intersection(&candidates).cloned().collect();
+            *old_candidates = new_candidates;
+        }
+    }
+
+    pub fn get_variants(&self) -> &Vec<NamedToken> {
+        &self.variants
     }
 }

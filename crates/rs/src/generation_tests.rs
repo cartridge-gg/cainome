@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::Once;
 
 use crate::expand::for_tests::{
-    assert_code_has, assert_code_has_impl_fn, assert_code_has_not, assert_code_has_not_struct,
-    assert_code_has_struct,
+    assert_code_has, assert_code_has_enum, assert_code_has_impl_fn, assert_code_has_not,
+    assert_code_has_not_struct, assert_code_has_struct,
 };
 use crate::{abi_to_tokenstream, expand::ExpansionContextFactory, ExecutionVersion};
 use cainome_parser::{tokens::Token, AbiParser, ParserContext};
@@ -990,10 +990,10 @@ fn test_nested_generic_field() {
 
     let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
 
-    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx);
+    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx).unwrap();
 
     assert_code_has_struct(
-        &generated.unwrap(),
+        &generated.clone(),
         &parse_quote! {
             pub struct GenericVar<A> {
                 pub a: A,
@@ -1002,4 +1002,74 @@ fn test_nested_generic_field() {
         },
         "GenericVar<A> not found",
     );
+}
+
+#[test]
+fn test_nested_generic_field_in_enumeration() {
+    init_tracing();
+
+    let abi = r#"[
+        {
+            "type": "enum",
+            "name": "my::Nested::<core::felt252>",
+            "variants": [
+                {
+                    "name": "One",
+                    "type": "core::felt252"
+                },
+                {
+                    "name": "Two",
+                    "type": "(core::felt252, core::felt252)"
+                }
+            ]
+        },
+        {
+            "type": "struct",
+            "name": "my::Var",
+            "members": [
+                {
+                    "name": "a",
+                    "type": "core::felt252"
+                },
+                {
+                    "name": "nested",
+                    "type": "my::Nested::<core::felt252>"
+                }
+            ]
+        }
+    ]"#;
+
+    let ctx = ExpansionContextFactory::new("MyContract")
+        .with_add_declaration(false)
+        .with_add_deployment(false)
+        .with_root_module_path("root")
+        .build();
+
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+    let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
+
+    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx).unwrap();
+
+    assert_code_has_struct(
+        &generated.clone(),
+        &parse_quote! {
+            pub struct Var {
+                pub a: starknet::core::types::Felt,
+                pub nested: root::my::Nested::<starknet::core::types::Felt>
+            }
+        },
+        "Var not found",
+    );
+
+    assert_code_has_enum(
+        &generated.clone(),
+        &parse_quote! {
+            pub enum Nested<A> {
+                One(A),
+                Two((starknet::core::types::Felt, starknet::core::types::Felt))
+            }
+        },
+        "Nested<A> not found",
+    )
 }

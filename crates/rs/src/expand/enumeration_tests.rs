@@ -37,10 +37,7 @@ fn test_enum_expand_simple_variants() {
 
     let mut enumeration = Enum::new("my::Enum", &registry).unwrap();
 
-    enumeration.variants.push(NamedToken {
-        name: "variant1".to_string(),
-        token: registry.get("felt").unwrap(),
-    });
+    enumeration = enumeration.with_variant("variant1", registry.get("felt").unwrap());
 
     let ctx = ExpansionContextFactory::new("ContractName").build();
     registry.apply_substitutions(&ctx.substitutions);

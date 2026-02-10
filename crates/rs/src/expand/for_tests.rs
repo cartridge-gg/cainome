@@ -4,7 +4,7 @@ use proc_macro2::TokenStream;
 use quote::ToTokens;
 use syn::{
     visit::{self, Visit},
-    File, ImplItemFn, ItemStruct, Stmt,
+    File, ImplItemFn, ItemEnum, ItemStruct, Stmt,
 };
 use syntect::{easy::HighlightLines, highlighting::ThemeSet, parsing::SyntaxSet};
 
@@ -130,6 +130,38 @@ fn find_struct_in_file(generated: &File, expected: &ItemStruct) -> bool {
     finder.found
 }
 
+fn find_enum_in_file(generated: &File, expected: &ItemEnum) -> bool {
+    struct Finder<'ast> {
+        pub expected: &'ast ItemEnum,
+        pub found: bool,
+    }
+
+    impl<'ast> Finder<'ast> {
+        fn new(enam: &'ast ItemEnum) -> Self {
+            Self {
+                expected: enam,
+                found: false,
+            }
+        }
+    }
+
+    impl<'ast> Visit<'ast> for Finder<'ast> {
+        fn visit_item_enum(&mut self, item_enum: &'ast syn::ItemEnum) {
+            if item_enum == self.expected {
+                self.found = true;
+            } else {
+                visit::visit_item_enum(self, item_enum);
+            }
+        }
+    }
+
+    let mut finder = Finder::new(expected);
+
+    finder.visit_file(generated);
+
+    finder.found
+}
+
 fn find_impl_fn_in_file(generated: &File, expected: &ImplItemFn) -> bool {
     struct Finder<'ast> {
         pub expected: &'ast ImplItemFn,
@@ -181,13 +213,25 @@ pub fn assert_code_has_struct<T: ToTokens>(generated: &T, expected: &ItemStruct,
 
     assert!(
         found,
-        "{}. Expected to find statement:\n\n{}\n\nInside of: \n\n{}",
+        "{}. Expected to find struct:\n\n{}\n\nInside of: \n\n{}",
         message,
         &expected.to_token_stream(),
         generated_ast.to_token_stream()
     );
 }
 
+pub fn assert_code_has_enum<T: ToTokens>(generated: &T, expected: &ItemEnum, message: &str) {
+    let generated_ast = &syn::parse2(generated.to_token_stream()).unwrap();
+    let found = find_enum_in_file(generated_ast, expected);
+
+    assert!(
+        found,
+        "{}. Expected to find enum:\n\n{}\n\nInside of: \n\n{}",
+        message,
+        &expected.to_token_stream(),
+        generated_ast.to_token_stream()
+    );
+}
 pub fn assert_code_has_not_struct<T: ToTokens>(
     generated: &T,
     expected: &ItemStruct,

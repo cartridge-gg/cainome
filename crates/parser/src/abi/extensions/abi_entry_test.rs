@@ -34,26 +34,28 @@ fn test_enum_variant_composite_inner_kind() {
         panic!("Should be enum");
     };
 
+    let variants = enum_token.get_variants();
+
     assert_eq!(enum_token.type_path, "test::TestEnum");
-    assert_eq!(enum_token.variants.len(), 3);
+    assert_eq!(variants.len(), 3);
 
     // Check that variant without data has NotUsed kind
-    assert_eq!(enum_token.variants[0].name, "VariantWithoutData");
-    let Token::Basic(f1t) = &*enum_token.variants[0].token.borrow() else {
+    assert_eq!(variants[0].name, "VariantWithoutData");
+    let Token::Basic(f1t) = &*variants[0].token.borrow() else {
         panic!("First field token should be basic");
     };
     assert_eq!(f1t.type_path, "()");
 
     // Check that variant with felt252 has Data kind
-    assert_eq!(enum_token.variants[1].name, "VariantWithFelt252");
-    let Token::Basic(f2t) = &*enum_token.variants[1].token.borrow() else {
+    assert_eq!(variants[1].name, "VariantWithFelt252");
+    let Token::Basic(f2t) = &*variants[1].token.borrow() else {
         panic!("Second field token should be basic");
     };
     assert_eq!(f2t.type_path, "core::felt252");
 
     // Check that variant with tuple has Data kind
-    assert_eq!(enum_token.variants[2].name, "VariantWithTuple");
-    let Token::Tuple(f3t) = &*enum_token.variants[2].token.borrow() else {
+    assert_eq!(variants[2].name, "VariantWithTuple");
+    let Token::Tuple(f3t) = &*variants[2].token.borrow() else {
         panic!("Third field token should be basic");
     };
     assert_eq!(f3t.type_path, "(core::felt252,core::integer::u32)");

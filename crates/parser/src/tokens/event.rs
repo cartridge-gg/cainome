@@ -26,6 +26,7 @@ pub struct Event {
     // Only for kind == Enum
     pub nested: Vec<NamedToken>,
     pub flat: Vec<NamedToken>,
+
     pub generic_args: Vec<(String, Rc<RefCell<Token>>)>,
 }
 
@@ -54,7 +55,24 @@ impl Event {
         genericity::type_path_no_generic(&self.type_path)
     }
 
+    // Can never be generic!
     pub fn is_generic(&self) -> bool {
         !self.generic_args.is_empty()
+    }
+
+    pub fn with_key(mut self, name: &str, token: Rc<RefCell<Token>>) -> Self {
+        self.keys.push(NamedToken {
+            name: name.to_string(),
+            token,
+        });
+        self
+    }
+
+    pub fn with_data(mut self, name: &str, token: Rc<RefCell<Token>>) -> Self {
+        self.data.push(NamedToken {
+            name: name.to_string(),
+            token,
+        });
+        self
     }
 }

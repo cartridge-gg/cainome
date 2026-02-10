@@ -107,8 +107,10 @@ impl Expandable for Event {
                     .with_derives(get_additional_derive_requirements(&variants, ctx))
                     .build();
 
-                let declaration = enum_declaration(&event_name, &variants, &ctx);
-                let implementation = enum_implementation(&event_name, &variants, &ctx);
+                let declaration =
+                    enum_declaration(&event_name, &variants, &vec![], &HashMap::new(), &ctx);
+                let implementation =
+                    enum_implementation(&event_name, &variants, &vec![], &HashMap::new(), &ctx);
 
                 let definition = quote! {
 

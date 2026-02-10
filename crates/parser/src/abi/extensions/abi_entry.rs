@@ -71,10 +71,7 @@ impl TokenConvertable for &AbiEnum {
                 );
             };
 
-            enumeration.variants.push(NamedToken {
-                name: field.name.clone(),
-                token,
-            });
+            enumeration = enumeration.with_variant(&field.name, token);
         }
 
         Ok(Token::Enum(enumeration))

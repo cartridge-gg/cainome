@@ -381,6 +381,78 @@ pub mod contracts {
                 }
             }
             #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+            pub enum MyEnumGeneric<A> {
+                One(A),
+                Two((starknet::core::types::Felt, starknet::core::types::Felt)),
+            }
+            impl<A> cainome_cairo_serde::CairoSerde for MyEnumGeneric<A>
+            where
+                A: cainome_cairo_serde::CairoSerde<RustType = A>,
+            {
+                type RustType = Self;
+                const SERIALIZED_SIZE: std::option::Option<usize> = std::option::Option::None;
+                #[inline]
+                fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
+                    match __rust {
+                        MyEnumGeneric::One(val) => A::cairo_serialized_size(val) + 1,
+                        MyEnumGeneric::Two(val) => <(
+                            starknet::core::types::Felt,
+                            starknet::core::types::Felt,
+                        )>::cairo_serialized_size(
+                            val
+                        ) + 1,
+                        _ => 0,
+                    }
+                }
+                fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
+                    match __rust {
+                        MyEnumGeneric::One(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&0usize));
+                            temp.extend(A::cairo_serialize(val));
+                            temp
+                        }
+                        MyEnumGeneric::Two(val) => {
+                            let mut temp = vec![];
+                            temp.extend(usize::cairo_serialize(&1usize));
+                            temp.extend(
+                                <(
+                                    starknet::core::types::Felt,
+                                    starknet::core::types::Felt,
+                                )>::cairo_serialize(val),
+                            );
+                            temp
+                        }
+                        _ => vec![],
+                    }
+                }
+                fn cairo_deserialize(
+                    __felts: &[starknet::core::types::Felt],
+                    __offset: usize,
+                ) -> cainome_cairo_serde::Result<Self::RustType> {
+                    let __f = __felts[__offset];
+                    let __index = u128::from_be_bytes(__f.to_bytes_be()[16..].try_into().unwrap());
+                    match __index as usize {
+                        0usize => Ok(MyEnumGeneric::One(A::cairo_deserialize(
+                            __felts,
+                            __offset + 1,
+                        )?)),
+                        1usize => Ok(MyEnumGeneric::Two(<(
+                            starknet::core::types::Felt,
+                            starknet::core::types::Felt,
+                        )>::cairo_deserialize(
+                            __felts, __offset + 1
+                        )?)),
+                        _ => {
+                            return Err(cainome_cairo_serde::Error::Deserialize(format!(
+                                "Index not handle for enum {}",
+                                "MyEnumGeneric"
+                            )));
+                        }
+                    }
+                }
+            }
+            #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
             pub struct MyStruct<A> {
                 pub f1: starknet::core::types::Felt,
                 pub f2: A,
@@ -709,6 +781,38 @@ impl<A: starknet::accounts::ConnectedAccount + Sync> Structs<A> {
         a: &crate::bindings::structs::contracts::gen::gen::MyStructInnerGeneric,
     ) -> starknet::accounts::ExecutionV3<A> {
         let __call = self.func5_getcall(a);
+        self.account.execute_v3(vec![__call])
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn func666_getcall(
+        &self,
+        a: &crate::bindings::structs::contracts::gen::gen::MyEnumGeneric<
+            starknet::core::types::Felt,
+        >,
+    ) -> starknet::core::types::Call {
+        use cainome_cairo_serde::CairoSerde;
+        let mut __calldata = vec![];
+        __calldata.extend(
+            crate::bindings::structs::contracts::gen::gen::MyEnumGeneric::<
+                starknet::core::types::Felt,
+            >::cairo_serialize(a),
+        );
+        starknet::core::types::Call {
+            to: self.address,
+            selector: starknet::macros::selector!("func666"),
+            calldata: __calldata,
+        }
+    }
+    #[allow(clippy::ptr_arg)]
+    #[allow(clippy::too_many_arguments)]
+    pub fn func666(
+        &self,
+        a: &crate::bindings::structs::contracts::gen::gen::MyEnumGeneric<
+            starknet::core::types::Felt,
+        >,
+    ) -> starknet::accounts::ExecutionV3<A> {
+        let __call = self.func666_getcall(a);
         self.account.execute_v3(vec![__call])
     }
     #[allow(clippy::ptr_arg)]

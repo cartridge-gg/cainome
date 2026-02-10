@@ -193,11 +193,26 @@ impl CairoToRust for Enum {
     }
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
-        [
-            ctx.root_module_path.clone(),
-            ctx.apply_alias(&self.type_path_no_generic()),
-        ]
-        .join("::")
+        if self.is_generic() {
+            let generic_args = self
+                .generic_args
+                .iter()
+                .map(|(_, t)| (&*t.borrow()).to_rust_type_path(ctx))
+                .collect::<Vec<_>>();
+
+            [
+                ctx.root_module_path.clone(),
+                ctx.apply_alias(&self.type_path),
+                format!("<{}>", generic_args.join(",")),
+            ]
+            .join("::")
+        } else {
+            [
+                ctx.root_module_path.clone(),
+                ctx.apply_alias(&self.type_path),
+            ]
+            .join("::")
+        }
     }
 }
 

@@ -1,6 +1,9 @@
-use cainome_parser::tokens::{Enum, NamedToken, Token, TypePath};
+use std::collections::{HashMap, HashSet};
+
+use cainome_parser::tokens::{genericity, Enum, NamedToken, Token, TypePath};
 use proc_macro2::TokenStream;
 use quote::quote;
+use syn::Ident;
 
 use crate::expand::types::{get_additional_derive_requirements, CairoToRust};
 use crate::expand::{
@@ -10,24 +13,46 @@ use crate::expand::{
 pub fn enum_declaration(
     type_name: &str,
     variants: &[NamedToken],
+    generic_arg_names: &Vec<Ident>,
+    fields_to_generics: &HashMap<String, HashSet<String>>,
     ctx: &ExpansionContext,
 ) -> TokenStream {
     let enum_name = utils::str_to_ident(type_name);
-
+    let is_generic = !generic_arg_names.is_empty();
     let mut generated_variants: Vec<TokenStream> = vec![];
 
     for inner in variants {
         let name = utils::str_to_ident(&inner.name);
-
         let token = &*inner.token.borrow();
-        let serde = utils::serde_hex_derive(&token.to_rust_type(ctx), ctx);
+
+        let generic_type = if is_generic {
+            // Calculate default value (in case resolver won't work)
+            let default_generic_type = fields_to_generics
+                // Check if generic candidates exist for the field
+                .get(&inner.name)
+                .unwrap_or(&HashSet::new())
+                .iter()
+                .next()
+                .cloned()
+                // if not use type from ABI
+                .unwrap_or(token.to_rust_type_path(ctx));
+
+            ctx.generic_resolver
+                .resolve_generic_member(type_name, inner, ctx)
+                .unwrap_or(default_generic_type)
+        } else {
+            token.to_rust_type_path(ctx)
+        };
+
+        let ty = utils::str_to_type(&generic_type);
+
+        let serde = utils::serde_hex_derive(&generic_type, ctx);
 
         match &*inner.token.borrow() {
             Token::Basic(TypePath { type_path }) if type_path == "()" => {
                 generated_variants.push(quote!(#serde #name));
             }
             _ => {
-                let ty = utils::str_to_type(&token.to_rust_type(ctx));
                 generated_variants.push(quote!(#serde #name(#ty)));
             }
         }
@@ -45,10 +70,16 @@ pub fn enum_declaration(
         quote! {}
     };
 
+    let generic_args = if is_generic {
+        quote! (<#(#generic_arg_names),*>)
+    } else {
+        quote!()
+    };
+
     quote! {
         #derive
 
-        pub enum #enum_name {
+        pub enum #enum_name #generic_args {
             #(#generated_variants),*
         }
     }
@@ -57,10 +88,13 @@ pub fn enum_declaration(
 pub fn enum_implementation(
     type_name: &str,
     variants: &[NamedToken],
+    generic_arg_names: &Vec<Ident>,
+    fields_to_generics: &HashMap<String, HashSet<String>>,
     ctx: &ExpansionContext,
 ) -> TokenStream {
     let enum_name = utils::str_to_ident(type_name);
     let enum_name_str = utils::str_to_litstr(type_name);
+    let is_generic = !generic_arg_names.is_empty();
 
     let mut serialized_sizes: Vec<TokenStream> = vec![];
     let mut serializations: Vec<TokenStream> = vec![];
@@ -70,7 +104,26 @@ pub fn enum_implementation(
         let variant_name = utils::str_to_ident(&inner.name);
         let token = &*inner.token.borrow();
 
-        let ty = utils::str_to_type(&token.to_rust_type(ctx));
+        let generic_type_path = if is_generic {
+            // Calculate default value (in case resolver won't work)
+            let default_generic_type = fields_to_generics
+                // Check if generic candidates exist for the field
+                .get(&inner.name)
+                .unwrap_or(&HashSet::new())
+                .iter()
+                .next()
+                .cloned()
+                // if not then use type from ABI
+                .unwrap_or(token.to_rust_type(ctx));
+
+            ctx.generic_resolver
+                .resolve_generic_member(type_name, inner, ctx)
+                .unwrap_or(default_generic_type)
+        } else {
+            token.to_rust_type(ctx)
+        };
+
+        let ty = utils::str_to_type(&generic_type_path);
 
         // Tuples type used as rust type path must be surrounded
         // by angle brackets.
@@ -126,8 +179,17 @@ pub fn enum_implementation(
         _ => return Err(#ccs::Error::Deserialize(format!("Index not handle for enum {}", #enum_name_str)))
     });
 
+    let (generic_args, generic_where) = if is_generic {
+        (
+            quote! (<#(#generic_arg_names),*>),
+            quote! ( where #(#generic_arg_names: #ccs::CairoSerde<RustType = #generic_arg_names>),*),
+        )
+    } else {
+        (quote!(), quote!())
+    };
+
     let (impl_line, rust_type) = (
-        quote!(impl #ccs::CairoSerde for #enum_name),
+        quote!(impl #generic_args #ccs::CairoSerde for #enum_name #generic_args #generic_where),
         quote!(
             type RustType = Self;
         ),
@@ -169,14 +231,37 @@ pub fn enum_implementation(
 impl Expandable for Enum {
     fn expand(&self, ctx: &ExpansionContext) -> Vec<super::ExpansionResult> {
         let full_path = ctx.apply_alias(&self.type_path);
-        let name = full_path.split("::").last().unwrap().to_owned();
+        let full_path_no_generic = genericity::type_path_no_generic(&full_path);
+        let name = &full_path_no_generic.split("::").last().unwrap().to_owned();
 
         let ctx = ExpansionContextFactory::from(ctx)
-            .with_derives(get_additional_derive_requirements(&self.variants, ctx))
+            .with_derives(get_additional_derive_requirements(
+                &self.get_variants(),
+                ctx,
+            ))
             .build();
 
-        let declaration = enum_declaration(&name, &self.variants, &ctx);
-        let implementation = enum_implementation(&name, &self.variants, &ctx);
+        let generic_arg_names = &self
+            .generic_args
+            .iter()
+            .map(|(name, _)| utils::str_to_ident(name))
+            .collect::<Vec<_>>();
+
+        let declaration = enum_declaration(
+            &name,
+            &self.get_variants(),
+            generic_arg_names,
+            &self.fields_to_generics,
+            &ctx,
+        );
+
+        let implementation = enum_implementation(
+            &name,
+            &self.get_variants(),
+            generic_arg_names,
+            &self.fields_to_generics,
+            &ctx,
+        );
 
         let item = quote! {
             #declaration
@@ -184,6 +269,6 @@ impl Expandable for Enum {
             #implementation
         };
 
-        vec![ExpansionResult::new(&full_path).with_item(&name, item)]
+        vec![ExpansionResult::new(&full_path_no_generic).with_item(&name, item)]
     }
 }

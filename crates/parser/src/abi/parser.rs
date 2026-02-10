@@ -88,6 +88,11 @@ impl AbiParser {
     where
         T: WithDependencies,
     {
+        tracing::trace!(
+            "Checking dependencies for entry: {:?}",
+            entry.get_dependencies()
+        );
+
         for dep in entry.get_dependencies().iter() {
             // Skipped types are always unknown
             if ctx.is_type_skipped(dep) {
@@ -186,7 +191,10 @@ impl AbiParser {
             }
 
             if token.borrow().is_container() {
-                tracing::debug!("Removing placeholder for container: {}", &type_path);
+                tracing::debug!(
+                    "Removing placeholder for container (span, array etc.): {}",
+                    &type_path
+                );
                 registry.remove(&type_path);
                 continue;
             }
@@ -198,6 +206,8 @@ impl AbiParser {
                 if !token.is_expandable() {
                     unreachable!("This token should never get to registry: {:?}", token);
                 }
+
+                tracing::debug!("Checking genericity: {}", &type_path);
 
                 // IMPORTANT:
                 // This is a bit of generic magic (i.e. the crotch).
@@ -227,9 +237,28 @@ impl AbiParser {
                                 registry.set(&path, token.clone());
                             }
                         }
+                        Token::Enum(enumeration) => {
+                            let path = &enumeration.type_path_no_generic();
+
+                            let base_token = registry.get(path);
+
+                            if let Ok(base_token) = base_token {
+                                let mut base_token = base_token.borrow_mut();
+
+                                let Token::Enum(base_enum) = &mut *base_token else {
+                                    unreachable!("Base generic path collided with different token type: path is {:?}, token is {:?}.", path, enumeration)
+                                };
+
+                                base_enum.merge_generic_variant(enumeration);
+                            } else {
+                                registry.set(&path, token.clone());
+                            }
+                        }
                         _ => {}
                     }
                 }
+
+                tracing::debug!("Saving token: {}", &entry.get_name());
 
                 registry.set(&entry.get_name(), token);
             } else {

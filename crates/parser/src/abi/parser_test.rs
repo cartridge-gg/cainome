@@ -446,10 +446,12 @@ fn check_basic_enum_is_parsed() {
         panic!("Only element parsed from ABI should be Token::Enum");
     };
 
-    assert_eq!(s1.variants.len(), 2);
+    let variants = s1.get_variants();
 
-    let f1_inner = s1.variants[0].clone();
-    let f2_inner = s1.variants[1].clone();
+    assert_eq!(variants.len(), 2);
+
+    let f1_inner = variants[0].clone();
+    let f2_inner = variants[1].clone();
 
     let Token::Basic(a1) = &*f1_inner.token.borrow() else {
         panic!("First variant should be CoreBasic");
@@ -1041,7 +1043,7 @@ fn test_dojo_starter_direction_available_abi() {
         let Token::Enum(array_inner) = &*a.inner.borrow() else {
             panic!("Expect array of Direction Enums")
         };
-        assert_eq!(5, array_inner.variants.len());
+        assert_eq!(5, array_inner.get_variants().len());
         // Check that copy was properly done
 
         assert_eq!(array_inner, e);
@@ -1086,7 +1088,7 @@ fn test_nested_tuple() {
             panic!("Expect first tuple element to be Enum")
         };
 
-        assert_eq!(5, tuple_f1.variants.len());
+        assert_eq!(5, tuple_f1.get_variants().len());
         // Check that copy was properly done
         assert_eq!(tuple_f1, e);
     }

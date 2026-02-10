@@ -89,6 +89,7 @@ impl Module {
 
         // Flatten modules
         for module in modules {
+            tracing::trace!("Flatteneing module: {} of {}", module.name, self.name);
             tokens.extend(module.token_stream())
         }
 
