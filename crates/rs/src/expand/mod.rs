@@ -33,6 +33,7 @@ pub(crate) mod structure;
 #[cfg(test)]
 mod structure_tests;
 
+pub mod generic_resolver;
 mod types;
 pub mod utils;
 
@@ -89,7 +90,7 @@ impl ExpansionResult {
     }
 }
 
-#[derive(Clone)]
+// #[derive(Clone)]
 pub struct ExpansionContext {
     // TODO: expose properties through methods
     pub contract_name: String,
@@ -102,6 +103,7 @@ pub struct ExpansionContext {
     pub contract_source: String,
     pub add_declaration: bool,
     pub add_deployment: bool,
+    pub generic_resolver: Box<dyn generic_resolver::GenericResolver>,
 
     // TODO: syn::Type?
     pub root_module_path: String,
@@ -120,13 +122,13 @@ impl ExpansionContext {
         if let Some(alias) = self.aliases.get(type_path) {
             return alias.to_string();
         }
+        type_path.to_owned()
+        // let no_generic = genericity::type_path_no_generic(type_path);
+        // if let Some(alias) = self.aliases.get(&no_generic) {
+        //     return alias.to_string();
+        // }
 
-        let no_generic = genericity::type_path_no_generic(type_path);
-        if let Some(alias) = self.aliases.get(&no_generic) {
-            return alias.to_string();
-        }
-
-        no_generic.to_string()
+        // no_generic.to_string()
     }
 }
 
@@ -144,6 +146,7 @@ pub struct ExpansionContextFactory {
     // TODO: syn::Type?
     root_module_path: String,
     cainome_serde_path: String,
+    generic_resolver: Box<dyn generic_resolver::GenericResolver>,
     is_legacy: bool,
 }
 
@@ -152,6 +155,8 @@ impl ExpansionContextFactory {
     where
         S: AsRef<str>,
     {
+        let resolver = generic_resolver::DefaultGenericResolver::new();
+
         Self {
             derives: BTreeSet::new(),
             contract_derives: BTreeSet::new(),
@@ -166,6 +171,7 @@ impl ExpansionContextFactory {
             is_legacy: false,
             add_declaration: true,
             add_deployment: true,
+            generic_resolver: Box::new(resolver),
         }
     }
 
@@ -281,6 +287,14 @@ impl ExpansionContextFactory {
         self
     }
 
+    pub fn with_generic_resolver(
+        mut self,
+        resolver: Box<dyn generic_resolver::GenericResolver>,
+    ) -> Self {
+        self.generic_resolver = resolver;
+        self
+    }
+
     pub fn build(self) -> ExpansionContext {
         let cainome_serde_path = self.cainome_serde_path;
         let snrs_types = utils::starknet_rs_types_path();
@@ -352,6 +366,7 @@ impl ExpansionContextFactory {
             sierra_add_pythonic_hints: false,
             deployer_generate_salt: true,
             deployer_is_unique: true,
+            generic_resolver: Box::new(generic_resolver::DefaultGenericResolver::new()),
         }
     }
 }
@@ -388,11 +403,4 @@ impl From<&ExpansionContext> for ExpansionContextFactory {
 
 pub trait Expandable {
     fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult>;
-}
-
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    fn test_module_expand_empty() {}
 }

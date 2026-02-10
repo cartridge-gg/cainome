@@ -11,6 +11,7 @@ use crate::expand::{
 };
 
 pub trait CairoToRust {
+    // TODO: looks like it should be replaced with to_rust_type_path.
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String;
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String;
@@ -31,13 +32,14 @@ impl CairoToRust for ArrayContainer {
         let internal_type = (&*self.inner.borrow()).to_rust_type(ctx);
         if ctx.is_legacy {
             let ccsp = ctx.cainome_serde_path.to_string();
-            format!("{ccsp}::CairoArrayLegacy<{internal_type}>")
+            format!("{ccsp}::CairoArrayLegacy::<{internal_type}>")
         } else {
-            format!("Vec<{internal_type}>")
+            format!("Vec::<{internal_type}>")
         }
     }
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
+        let internal_type_path = (&*self.inner.borrow()).to_rust_type_path(ctx);
         if ctx.is_legacy {
             let ccsp = ctx.cainome_serde_path.to_string();
             format!(
@@ -45,14 +47,14 @@ impl CairoToRust for ArrayContainer {
                 (&*self.inner.borrow()).to_rust_type_path(ctx)
             )
         } else {
-            format!("Vec::<{}>", (&*self.inner.borrow()).to_rust_type_path(ctx))
+            format!("Vec::<{internal_type_path}>")
         }
     }
 }
 
 impl CairoToRust for OptionContainer {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
-        format!("Option<{}>", (&*self.inner.borrow()).to_rust_type(ctx))
+        format!("Option::<{}>", (&*self.inner.borrow()).to_rust_type(ctx))
     }
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
@@ -66,7 +68,7 @@ impl CairoToRust for OptionContainer {
 impl CairoToRust for ResultContainer {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
         format!(
-            "Result<{}, {}>",
+            "Result::<{}, {}>",
             (&*self.inner.borrow()).to_rust_type(ctx),
             (&*self.error.borrow()).to_rust_type(ctx)
         )
@@ -85,7 +87,7 @@ impl CairoToRust for NonZeroContainer {
     fn to_rust_type(&self, ctx: &ExpansionContext) -> String {
         let ccsp = ctx.cainome_serde_path.to_string();
         format!(
-            "{ccsp}::NonZero<{}>",
+            "{ccsp}::NonZero::<{}>",
             (&*self.inner.borrow()).to_rust_type(ctx)
         )
     }
@@ -140,11 +142,26 @@ impl CairoToRust for Struct {
     }
 
     fn to_rust_type_path(&self, ctx: &ExpansionContext) -> String {
-        [
-            ctx.root_module_path.clone(),
-            ctx.apply_alias(&self.type_path),
-        ]
-        .join("::")
+        if self.is_generic() {
+            let generic_args = self
+                .generic_args
+                .iter()
+                .map(|(_, t)| (&*t.borrow()).to_rust_type_path(ctx))
+                .collect::<Vec<_>>();
+
+            [
+                ctx.root_module_path.clone(),
+                ctx.apply_alias(&self.type_path),
+                format!("<{}>", generic_args.join(",")),
+            ]
+            .join("::")
+        } else {
+            [
+                ctx.root_module_path.clone(),
+                ctx.apply_alias(&self.type_path),
+            ]
+            .join("::")
+        }
     }
 }
 

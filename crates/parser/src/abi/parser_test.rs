@@ -1582,9 +1582,228 @@ fn test_complex_generic_function_argument_with_tuple() {
 
     let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
 
-    let Ok(_result) = AbiParser::build_registry(abi_entries, ctx) else {
+    let Ok(registry) = AbiParser::build_registry(abi_entries, ctx) else {
         panic!("Something is wrong");
     };
 
-    // TODO: add assertions
+    let generic_base = registry.get("contracts::abicov::structs::GenericOne");
+
+    assert!(generic_base.is_ok(), "Generic base type should be present");
+
+    let generic_variant = registry
+        .get("contracts::abicov::structs::GenericOne::<core::array::Span::<core::felt252>>");
+
+    assert!(
+        generic_variant.is_ok(),
+        "Generic variant type should be present"
+    );
 }
+
+#[test]
+fn test_generic_linking() {
+    let abi_json = r#"[
+            {
+                "type": "struct",
+                "name": "GenericOne::<core::integer::u32>",
+                "members": [
+                    {
+                        "name": "a",
+                        "type": "core::integer::u32"
+                    }
+                ]
+            },
+            {
+                "type": "struct",
+                "name": "GenericOne::<core::felt252>",
+                "members": [
+                    {
+                        "name": "a",
+                        "type": "core::felt252"
+                    }
+                ]
+            },
+            {
+                "type": "function",
+                "name": "my_func",
+                "inputs": [
+                    {
+                        "name": "value",
+                        "type": "GenericOne::<core::integer::u32>"
+                    },
+                    {
+                        "name": "value",
+                        "type": "GenericOne::<core::felt252>"
+                    }
+                ],
+                "outputs": [{"type": "core::integer::u32"}],
+                "state_mutability": "view"
+            }
+        ]"#;
+
+    let ctx = ParserContext::new();
+
+    let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
+
+    let Ok(registry) = AbiParser::build_registry(abi_entries, ctx) else {
+        panic!("Something is wrong");
+    };
+
+    let Ok(token) = registry.get("my_func") else {
+        panic!("my_func should be present in the registry");
+    };
+
+    let Token::Function(func) = &*token.borrow() else {
+        panic!("my_func should be a function");
+    };
+
+    {
+        // Getting generic parameter for the first argument of my_func
+        let argument_token = &*func.inputs[0].token.borrow();
+        assert!(argument_token.is_generic());
+
+        let Token::Struct(argument) = &*argument_token else {
+            panic!("argument_token argument should be a struct");
+        };
+
+        let argument_generic_parameter = &*argument.generic_args[0].1.borrow();
+        let Token::Basic(path) = argument_generic_parameter else {
+            panic!("Generic parameter should be Basic");
+        };
+
+        assert_eq!(path.type_path, "core::integer::u32");
+    }
+
+    {
+        // Getting generic parameter for the second argument of my_func
+        let argument_token = &*func.inputs[1].token.borrow();
+        assert!(argument_token.is_generic());
+
+        let Token::Struct(argument) = &*argument_token else {
+            panic!("argument_token argument should be a struct");
+        };
+
+        let argument_generic_parameter = &*argument.generic_args[0].1.borrow();
+        let Token::Basic(path) = argument_generic_parameter else {
+            panic!("Generic parameter should be Basic");
+        };
+
+        assert_eq!(path.type_path, "core::felt252");
+    }
+    // let func_token = &*registry.get("my_func").borrow;
+}
+
+// #[test]
+// fn test_generic_resolution_ambiguity_resolved_succesfully() {
+//     init_tracing();
+//     let abi_json = r#"[
+//             {
+//                 "type": "struct",
+//                 "name": "contracts::abicov::structs::GenericOne::<core::felt252>",
+//                 "members": [
+//                     {
+//                         "name": "a",
+//                         "type": "core::felt252"
+//                     },
+//                     {
+//                         "name": "b",
+//                         "type": "core::felt252"
+//                     },
+//                     {
+//                         "name": "c",
+//                         "type": "core::integer::u128"
+//                     }
+//                 ]
+//             },
+//             {
+//                 "type": "struct",
+//                 "name": "contracts::abicov::structs::GenericOne::<core::integer::u128>",
+//                 "members": [
+//                     {
+//                         "name": "a",
+//                         "type": "core::integer::u128"
+//                     },
+//                     {
+//                         "name": "b",
+//                         "type": "core::felt252"
+//                     },
+//                     {
+//                         "name": "c",
+//                         "type": "core::integer::u128"
+//                     }
+//                 ]
+//             }
+//         ]"#;
+
+//     let ctx = ParserContext::new();
+
+//     let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
+
+//     let Ok(registry) = AbiParser::build_registry(abi_entries, ctx) else {
+//         panic!("Something is wrong");
+//     };
+
+//     let generic_base_result = registry.get("contracts::abicov::structs::GenericOne");
+
+//     assert!(
+//         generic_base_result.is_ok(),
+//         "Generic base type should be present"
+//     );
+
+//     let generic_base = &*generic_base_result.unwrap();
+//     let token = &*generic_base.borrow();
+
+//     let Token::Struct(s) = token else {
+//         panic!("Generic base should be Struct");
+//     };
+
+//     // assert!(s.can_be_resolved())
+// }
+
+// #[test]
+// fn test_generic_resolution_ambiguity_cant_be_resolved_succesfully() {
+//     init_tracing();
+//     let abi_json = r#"[
+//             {
+//                 "type": "struct",
+//                 "name": "contracts::abicov::structs::GenericOne::<core::felt252>",
+//                 "members": [
+//                     {
+//                         "name": "a",
+//                         "type": "core::felt252"
+//                     },
+//                     {
+//                         "name": "b",
+//                         "type": "core::felt252"
+//                     },
+//                     {
+//                         "name": "c",
+//                         "type": "core::integer::u128"
+//                     }
+//                 ]
+//             }
+//         ]"#;
+
+//     let ctx = ParserContext::new();
+
+//     let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
+
+//     let Ok(registry) = AbiParser::build_registry(abi_entries, ctx) else {
+//         panic!("Something is wrong");
+//     };
+
+//     let generic_base_result = registry.get("contracts::abicov::structs::GenericOne");
+
+//     assert!(
+//         generic_base_result.is_ok(),
+//         "Generic base type should be present"
+//     );
+
+//     let generic_base = &*generic_base_result.unwrap();
+//     let token = &*generic_base.borrow();
+
+//     let Token::Struct(s) = token else {
+//         panic!("Generic base should be Struct");
+//     };
+
+//     assert!(!s.can_be_resolved())
+// }

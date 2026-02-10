@@ -51,10 +51,7 @@ impl TokenConvertable for &AbiStruct {
                 );
             };
 
-            structure.fields.push(NamedToken {
-                name: field.name.clone(),
-                token,
-            });
+            structure = structure.with_field(&field.name, token);
         }
 
         Ok(Token::Struct(structure))
@@ -183,10 +180,7 @@ impl TokenConvertable for &RawLegacyStruct {
         for field in self.members.iter() {
             let token = registry.get(&field.r#type)?;
 
-            structure.fields.push(NamedToken {
-                name: field.name.clone(),
-                token,
-            });
+            structure = structure.with_field(&field.name, token);
         }
 
         Ok(Token::Struct(structure))

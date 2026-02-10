@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::expand::{
     enumeration::{enum_declaration, enum_implementation},
     structure::{struct_declaration, struct_implementation},
@@ -162,8 +164,10 @@ impl Expandable for Event {
                     .with_derives(get_additional_derive_requirements(&fields, ctx))
                     .build();
 
-                let declaration = struct_declaration(&event_name, &fields, &ctx);
-                let implementation = struct_implementation(&event_name, &fields, &ctx);
+                let declaration =
+                    struct_declaration(&event_name, &fields, &vec![], &HashMap::new(), &ctx);
+                let implementation =
+                    struct_implementation(&event_name, &fields, &vec![], &HashMap::new(), &ctx);
 
                 let definition = quote! {
                     #declaration

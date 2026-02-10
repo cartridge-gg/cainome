@@ -1,8 +1,8 @@
 use proc_macro2::TokenStream;
 use quote::quote;
-use syn::{DataStruct, Ident, Type};
+use syn::{DataStruct, Generics, Ident, Type};
 
-pub fn derive_struct(ident: Ident, data: DataStruct) -> TokenStream {
+pub fn derive_struct(ident: Ident, generics: Generics, data: DataStruct) -> TokenStream {
     let (fields, types) = fields_accessors_and_types(&data.fields);
 
     let cairo_serialized_size = quote! {
@@ -39,11 +39,26 @@ pub fn derive_struct(ident: Ident, data: DataStruct) -> TokenStream {
         }
     };
 
+    let mut generic_contraint_list = vec![];
+    for param in generics.type_params() {
+        generic_contraint_list.push(quote! {
+            #param: ::cainome_cairo_serde::CairoSerde<RustType = #param>
+        });
+    }
+
+    let generic_contraints = if generic_contraint_list.is_empty() {
+        quote! {}
+    } else {
+        quote! { where #(#generic_contraint_list),* }
+    };
+
     // There is no easy way to check for the members being staticaly sized at compile time.
     // Any of the members of the composite type can have a dynamic size.
     // This is why we return `None` for the `SERIALIZED_SIZE` constant.
     let output = quote! {
-        impl ::cainome_cairo_serde::CairoSerde for #ident {
+        impl #generics ::cainome_cairo_serde::CairoSerde for #ident #generics
+        #generic_contraints
+        {
             type RustType = Self;
 
             const SERIALIZED_SIZE: Option<usize> = None;

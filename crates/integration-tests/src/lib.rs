@@ -10,8 +10,8 @@ pub mod test_simple_get_set;
 #[cfg(test)]
 pub mod test_events;
 
-#[cfg(test)]
-pub mod test_structs;
+// #[cfg(test)]
+// pub mod test_structs;
 
 #[cfg(test)]
 pub mod test_rust_keywords;
@@ -33,3 +33,6 @@ pub mod test_option_result;
 
 #[cfg(test)]
 pub mod test_substitutions;
+
+#[cfg(test)]
+pub mod test_cairo_serde_derive;

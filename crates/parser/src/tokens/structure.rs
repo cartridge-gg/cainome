@@ -1,4 +1,8 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{
+    cell::RefCell,
+    collections::{HashMap, HashSet},
+    rc::Rc,
+};
 
 use crate::{
     abi::registry::TypeRegistry,
@@ -11,6 +15,7 @@ pub struct Struct {
     pub type_path: String,
     pub fields: Vec<NamedToken>,
     pub generic_args: Vec<(String, Rc<RefCell<Token>>)>,
+    pub fields_to_generics: HashMap<String, HashSet<String>>,
 }
 
 impl Struct {
@@ -27,22 +32,36 @@ impl Struct {
         };
 
         Ok(Self {
-            type_path,
+            // TODO: need to remove the code that strips generics from type_path then.
+            type_path: genericity::type_path_no_generic(&type_path),
             generic_args: generic_args_with_types,
             fields: vec![],
+            fields_to_generics: HashMap::new(),
         })
     }
 
     pub fn with_field(mut self, name: &str, token: Rc<RefCell<Token>>) -> Self {
         self.fields.push(NamedToken {
             name: name.to_string(),
-            token,
+            token: Rc::clone(&token),
         });
+        for (generic_name, generic_token) in self.generic_args.iter() {
+            if &*token.borrow() == &*generic_token.borrow() {
+                let generic_candidates = self
+                    .fields_to_generics
+                    .entry(name.to_string())
+                    .or_insert_with(|| HashSet::new());
+
+                generic_candidates.insert(generic_name.to_owned());
+            }
+        }
         self
     }
 
     pub fn with_fields(mut self, fields: Vec<NamedToken>) -> Self {
-        self.fields.extend(fields);
+        for field in fields {
+            self = self.with_field(&field.name, Rc::clone(&field.token));
+        }
         self
     }
 
@@ -50,11 +69,18 @@ impl Struct {
         genericity::type_path_no_generic(&self.type_path)
     }
 
-    pub fn get_base_generic_type(&self) -> Self {
-        Self {
-            type_path: self.type_path_no_generic(),
-            fields: self.fields.clone(),
-            generic_args: self.generic_args.clone(),
+    pub fn is_generic(&self) -> bool {
+        !self.generic_args.is_empty()
+    }
+
+    pub fn merge_generic_variant(&mut self, variant: &Struct) {
+        for (field_name, candidates) in variant.fields_to_generics.iter() {
+            let old_candidates = self
+                .fields_to_generics
+                .entry(field_name.to_owned())
+                .or_default();
+            let new_candidates = old_candidates.intersection(&candidates).cloned().collect();
+            *old_candidates = new_candidates;
         }
     }
 }
