@@ -2,15 +2,10 @@ use std::collections::{HashMap, HashSet};
 
 use crate::tokens::genericity;
 
+#[derive(Debug, Default)]
 pub struct ParserContext {
     pub substitutions: HashMap<String, String>,
     pub type_skips: HashSet<String>,
-}
-
-impl Default for ParserContext {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 impl ParserContext {

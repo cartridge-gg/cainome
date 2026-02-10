@@ -382,9 +382,9 @@ pub mod contracts {
             }
             #[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
             pub struct MyStruct<A> {
-                pub f1: starknet::core::types::Felt,
+                pub f1: A,
                 pub f2: A,
-                pub f3: starknet::core::types::Felt,
+                pub f3: A,
             }
             impl<A> cainome_cairo_serde::CairoSerde for MyStruct<A>
             where
@@ -395,16 +395,16 @@ pub mod contracts {
                 #[inline]
                 fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
                     let mut __size = 0;
-                    __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.f1);
+                    __size += A::cairo_serialized_size(&__rust.f1);
                     __size += A::cairo_serialized_size(&__rust.f2);
-                    __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.f3);
+                    __size += A::cairo_serialized_size(&__rust.f3);
                     __size
                 }
                 fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
                     let mut __out: Vec<starknet::core::types::Felt> = vec![];
-                    __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.f1));
+                    __out.extend(A::cairo_serialize(&__rust.f1));
                     __out.extend(A::cairo_serialize(&__rust.f2));
-                    __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.f3));
+                    __out.extend(A::cairo_serialize(&__rust.f3));
                     __out
                 }
                 fn cairo_deserialize(
@@ -412,12 +412,12 @@ pub mod contracts {
                     __offset: usize,
                 ) -> cainome_cairo_serde::Result<Self::RustType> {
                     let mut __offset = __offset;
-                    let f1 = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-                    __offset += starknet::core::types::Felt::cairo_serialized_size(&f1);
+                    let f1 = A::cairo_deserialize(__felts, __offset)?;
+                    __offset += A::cairo_serialized_size(&f1);
                     let f2 = A::cairo_deserialize(__felts, __offset)?;
                     __offset += A::cairo_serialized_size(&f2);
-                    let f3 = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
-                    __offset += starknet::core::types::Felt::cairo_serialized_size(&f3);
+                    let f3 = A::cairo_deserialize(__felts, __offset)?;
+                    __offset += A::cairo_serialized_size(&f3);
                     Ok(MyStruct { f1, f2, f3 })
                 }
             }

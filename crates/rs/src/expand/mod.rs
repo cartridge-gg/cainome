@@ -92,7 +92,6 @@ impl ExpansionResult {
     }
 }
 
-// #[derive(Clone)]
 pub struct ExpansionContext {
     // TODO: expose properties through methods
     pub contract_name: String,
