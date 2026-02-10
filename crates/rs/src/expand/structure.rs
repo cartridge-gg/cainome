@@ -1,14 +1,19 @@
+use std::collections::{HashMap, HashSet};
+
 use crate::expand::{
     types::{get_additional_derive_requirements, CairoToRust},
     utils, Expandable, ExpansionContext, ExpansionContextFactory, ExpansionResult,
 };
-use cainome_parser::tokens::{NamedToken, Struct};
+use cainome_parser::tokens::{genericity, NamedToken, Struct};
 use proc_macro2::TokenStream;
 use quote::quote;
+use syn::Ident;
 
 pub fn struct_declaration(
     type_name: &str,
     fields: &Vec<NamedToken>,
+    generic_arg_names: &Vec<Ident>,
+    fields_to_generics: &HashMap<String, HashSet<String>>,
     ctx: &ExpansionContext,
 ) -> TokenStream {
     let _ = ctx;
@@ -16,14 +21,34 @@ pub fn struct_declaration(
     tracing::trace!("Generating struct declaration for {}", type_name);
 
     let struct_name = utils::str_to_ident(type_name);
-
+    let is_generic = !generic_arg_names.is_empty();
     let mut members: Vec<TokenStream> = vec![];
     for inner in fields {
         let name = utils::str_to_ident(&inner.name);
         let token = &*inner.token.borrow();
-        let ty = utils::str_to_type(&token.to_rust_type(ctx));
 
-        let serde = utils::serde_hex_derive(&token.to_rust_type(ctx), ctx);
+        let generic_type = if is_generic {
+            // Calculate default value (in case resolver won't work)
+            let default_generic_type = fields_to_generics
+                // Check if generic candidates exist for the field
+                .get(&inner.name)
+                .unwrap_or(&HashSet::new())
+                .iter()
+                .next()
+                .cloned()
+                // if not use type from ABI
+                .unwrap_or(token.to_rust_type_path(ctx));
+
+            ctx.generic_resolver
+                .resolve_generic_member(type_name, inner, ctx)
+                .unwrap_or(default_generic_type)
+        } else {
+            token.to_rust_type_path(ctx)
+        };
+
+        let ty = utils::str_to_type(&generic_type);
+
+        let serde = utils::serde_hex_derive(&generic_type, ctx);
 
         members.push(quote!(#serde pub #name: #ty));
     }
@@ -43,9 +68,15 @@ pub fn struct_declaration(
         quote! {}
     };
 
+    let generic_args = if is_generic {
+        quote! (<#(#generic_arg_names),*>)
+    } else {
+        quote!()
+    };
+
     quote! {
         #derive
-        pub struct #struct_name {
+        pub struct #struct_name #generic_args {
             #(#members),*
         }
     }
@@ -54,10 +85,13 @@ pub fn struct_declaration(
 pub fn struct_implementation(
     type_name: &str,
     fields: &Vec<NamedToken>,
+    generic_arg_names: &Vec<Ident>,
+    fields_to_generics: &HashMap<String, HashSet<String>>,
     ctx: &ExpansionContext,
 ) -> TokenStream {
     let struct_name = utils::str_to_ident(type_name);
 
+    let is_generic = !generic_arg_names.is_empty();
     let mut sizes: Vec<TokenStream> = vec![];
     let mut sers: Vec<TokenStream> = vec![];
     let mut desers: Vec<TokenStream> = vec![];
@@ -66,7 +100,27 @@ pub fn struct_implementation(
     for inner in fields {
         let name = utils::str_to_ident(&inner.name);
         let token = &*inner.token.borrow();
-        let ty = utils::str_to_type(&token.to_rust_type_path(ctx));
+
+        let generic_type_path = if is_generic {
+            // Calculate default value (in case resolver won't work)
+            let default_generic_type = fields_to_generics
+                // Check if generic candidates exist for the field
+                .get(&inner.name)
+                .unwrap_or(&HashSet::new())
+                .iter()
+                .next()
+                .cloned()
+                // if not use type from ABI
+                .unwrap_or(token.to_rust_type(ctx));
+
+            ctx.generic_resolver
+                .resolve_generic_member(type_name, inner, ctx)
+                .unwrap_or(default_generic_type)
+        } else {
+            token.to_rust_type(ctx)
+        };
+
+        let ty = utils::str_to_type(&generic_type_path);
 
         // Tuples type used as rust type path item path must be surrounded
         // by angle brackets.
@@ -94,8 +148,17 @@ pub fn struct_implementation(
     let ccs = utils::str_to_type(&ctx.cainome_serde_path);
     let snrs_types = utils::snrs_types();
 
+    let (generic_args, generic_where) = if is_generic {
+        (
+            quote! (<#(#generic_arg_names),*>),
+            quote! ( where #(#generic_arg_names: #ccs::CairoSerde<RustType = #generic_arg_names>),*),
+        )
+    } else {
+        (quote!(), quote!())
+    };
+
     let (impl_line, rust_type) = (
-        quote!(impl #ccs::CairoSerde for #struct_name),
+        quote!(impl #generic_args #ccs::CairoSerde for #struct_name #generic_args #generic_where),
         quote!(
             type RustType = Self;
         ),
@@ -135,15 +198,33 @@ pub fn struct_implementation(
 impl Expandable for Struct {
     fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult> {
         let full_path = ctx.apply_alias(&self.type_path);
-
-        let name = &full_path.split("::").last().unwrap().to_owned();
+        let full_path_no_generic = genericity::type_path_no_generic(&full_path);
+        let name = &full_path_no_generic.split("::").last().unwrap().to_owned();
 
         let ctx = ExpansionContextFactory::from(ctx)
             .with_derives(get_additional_derive_requirements(&self.fields, ctx))
             .build();
 
-        let declaration = struct_declaration(name, &self.fields, &ctx);
-        let implementation = struct_implementation(name, &self.fields, &ctx);
+        let generic_arg_names = &self
+            .generic_args
+            .iter()
+            .map(|(name, _)| utils::str_to_ident(name))
+            .collect::<Vec<_>>();
+
+        let declaration = struct_declaration(
+            name,
+            &self.fields,
+            generic_arg_names,
+            &self.fields_to_generics,
+            &ctx,
+        );
+        let implementation = struct_implementation(
+            name,
+            &self.fields,
+            generic_arg_names,
+            &self.fields_to_generics,
+            &ctx,
+        );
 
         let item = quote! {
             #declaration
@@ -152,7 +233,7 @@ impl Expandable for Struct {
         };
 
         vec![
-            ExpansionResult::new(&full_path).with_item(name, item), // .with_imports(deps)
+            ExpansionResult::new(&full_path_no_generic).with_item(name, item), // .with_imports(deps)
         ]
     }
 }

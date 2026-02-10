@@ -193,15 +193,42 @@ impl AbiParser {
 
             // Ok, now we can resolve.
             if let Some(token) = entry.try_to_token(&mut registry)? {
-                // Register base generic type as well
-                match &token {
-                    Token::Struct(s) => _ = registry.set(&s.type_path_no_generic(), token.clone()),
-                    Token::Enum(e) => _ = registry.set(&e.type_path_no_generic(), token.clone()),
-                    Token::Event(_)
-                    | Token::Function(_)
-                    | Token::Constructor(_)
-                    | Token::Interface(_) => (),
-                    _ => unreachable!("This token should never get to registry: {:?}", token),
+                // Assert that only specific tokens can get saved to store.
+                // TODO: expandable? maybe need better naming
+                if !token.is_expandable() {
+                    unreachable!("This token should never get to registry: {:?}", token);
+                }
+
+                // IMPORTANT:
+                // This is a bit of generic magic (i.e. the crotch).
+                // I remove generic arguments from type path and store
+                // generic base type. This allows to register all generic variants
+                // in single token. But I will also store a generic variant. But will
+                // not remove generic arguments from it's type path. It's not an obvious
+                // behaviour and might cause confusion.
+                // TODO: refactor
+
+                if token.is_generic() {
+                    match &token {
+                        Token::Struct(structure) => {
+                            let path = &structure.type_path_no_generic();
+
+                            let base_token = registry.get(path);
+
+                            if let Ok(base_token) = base_token {
+                                let mut base_token = base_token.borrow_mut();
+
+                                let Token::Struct(base_struct) = &mut *base_token else {
+                                    unreachable!("Base generic path collided with different token type: path is {:?}, token is {:?}.", path, structure)
+                                };
+
+                                base_struct.merge_generic_variant(structure);
+                            } else {
+                                registry.set(&path, token.clone());
+                            }
+                        }
+                        _ => {}
+                    }
                 }
 
                 registry.set(&entry.get_name(), token);

@@ -1,9 +1,9 @@
 use proc_macro2::{Span, TokenStream};
 use quote::quote;
-use syn::{DataEnum, Ident, Type, Variant};
+use syn::{DataEnum, Generics, Ident, Type, Variant};
 use unzip_n::unzip_n;
 
-pub fn derive_enum(ident: Ident, data: DataEnum) -> TokenStream {
+pub fn derive_enum(ident: Ident, generics: Generics, data: DataEnum) -> TokenStream {
     let matches = &data
         .variants
         .iter()
@@ -58,11 +58,26 @@ pub fn derive_enum(ident: Ident, data: DataEnum) -> TokenStream {
         }
     };
 
+    let mut generic_contraint_list = vec![];
+    for param in generics.type_params() {
+        generic_contraint_list.push(quote! {
+            #param: ::cainome_cairo_serde::CairoSerde<RustType = #param>
+        });
+    }
+
+    let generic_contraints = if generic_contraint_list.is_empty() {
+        quote! {}
+    } else {
+        quote! { where #(#generic_contraint_list),* }
+    };
+
     // There is no easy way to check for the members being staticaly sized at compile time.
     // Any of the members of the composite type can have a dynamic size.
     // This is why we return `None` for the `SERIALIZED_SIZE` constant.
     let output = quote! {
-        impl ::cainome_cairo_serde::CairoSerde for #ident {
+        impl #generics ::cainome_cairo_serde::CairoSerde for #ident #generics
+        #generic_contraints
+        {
             type RustType = Self;
 
             const SERIALIZED_SIZE: Option<usize> = None;

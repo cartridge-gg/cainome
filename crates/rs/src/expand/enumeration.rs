@@ -70,7 +70,7 @@ pub fn enum_implementation(
         let variant_name = utils::str_to_ident(&inner.name);
         let token = &*inner.token.borrow();
 
-        let ty = utils::str_to_type(&token.to_rust_type_path(ctx));
+        let ty = utils::str_to_type(&token.to_rust_type(ctx));
 
         // Tuples type used as rust type path must be surrounded
         // by angle brackets.

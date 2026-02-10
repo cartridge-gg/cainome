@@ -36,10 +36,7 @@ fn test_structure_expand_basic_field() {
 
     let mut structure = Struct::new("my::Type", &registry).unwrap();
 
-    structure.fields.push(NamedToken {
-        name: "f1".to_string(),
-        token: registry.get("felt").unwrap(),
-    });
+    structure = structure.with_field("f1", registry.get("felt").unwrap());
 
     let ctx = ExpansionContextFactory::new("ContractName").build();
     registry.apply_substitutions(&ctx.substitutions);
@@ -64,10 +61,7 @@ fn test_structure_expand_with_derive() {
 
     let mut structure = Struct::new("my::Type", &registry).unwrap();
 
-    structure.fields.push(NamedToken {
-        name: "f1".to_string(),
-        token: registry.get("felt").unwrap(),
-    });
+    structure = structure.with_field("f1", registry.get("felt").unwrap());
 
     let ctx = ExpansionContextFactory::new("ContractName")
         .with_derives(vec!["serde::Serialize", "serde::Deserialize", "Clone"])
@@ -95,10 +89,7 @@ fn test_structure_expand_with_option_field() {
 
     let mut structure = Struct::new("my::Type", &registry).unwrap();
 
-    structure.fields.push(NamedToken {
-        name: "f1".to_string(),
-        token: registry.get("core::option::Option<felt>").unwrap(),
-    });
+    structure = structure.with_field("f1", registry.get("core::option::Option<felt>").unwrap());
 
     let ctx = ExpansionContextFactory::new("ContractName")
         .with_derives(vec!["Serde", "Clone"])
@@ -126,10 +117,10 @@ fn test_structure_expand_with_array_field() {
 
     let mut structure = Struct::new("my::Type", &registry).unwrap();
 
-    structure.fields.push(NamedToken {
-        name: "f1".to_string(),
-        token: registry.get("core::array::Array<core::felt252>").unwrap(),
-    });
+    structure = structure.with_field(
+        "f1",
+        registry.get("core::array::Array<core::felt252>").unwrap(),
+    );
 
     let ctx = ExpansionContextFactory::new("ContractName")
         .with_derives(vec!["serde::Serialize", "serde::Deserialize", "Clone"])
@@ -140,6 +131,8 @@ fn test_structure_expand_with_array_field() {
         .with_includes(structure.expand(&ctx))
         .unwrap()
         .token_stream();
+
+    println!("GENERATED:\n{}", generated); // --- IGNORE ---
 
     let expected = parse_quote! {
         #[derive(Clone, serde::Deserialize, serde::Serialize,)]
@@ -157,12 +150,12 @@ fn test_structure_expand_with_non_zero_field() {
 
     let mut structure = Struct::new("my::Type", &registry).unwrap();
 
-    structure.fields.push(NamedToken {
-        name: "f1".to_string(),
-        token: registry
+    structure = structure.with_field(
+        "f1",
+        registry
             .get("core::zeroable::NonZero<core::felt252>")
             .unwrap(),
-    });
+    );
 
     let ctx = ExpansionContextFactory::new("ContractName")
         .with_derives(vec!["Serde", "Clone"])
@@ -194,12 +187,12 @@ fn test_structure_expand_with_tuple_field() {
 
     let mut structure = Struct::new("my::Type", &registry).unwrap();
 
-    structure.fields.push(NamedToken {
-        name: "f1".to_string(),
-        token: registry
+    structure = structure.with_field(
+        "f1",
+        registry
             .get("(core::felt252, core::option::Option<felt>)")
             .unwrap(),
-    });
+    );
 
     let generated = Module::new()
         .with_includes(structure.expand(&ctx))
@@ -225,10 +218,7 @@ fn test_structure_expand_with_self_reference() {
         registry.set("my::Type", Token::Placeholder);
         // Construct type
         let mut structure = Struct::new("my::Type", &registry).unwrap();
-        structure.fields.push(NamedToken {
-            name: "f1".to_string(),
-            token: registry.get("my::Type").unwrap(),
-        });
+        structure = structure.with_field("f1", registry.get("my::Type").unwrap());
         // Update placeholder
         registry.set("my::Type", Token::Struct(structure.clone()));
 

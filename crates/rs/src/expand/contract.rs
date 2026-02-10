@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use cainome_parser::{
     tokens::{Constructor, Function, FunctionOutputKind, NamedToken, Token},
     TypeRegistry,
@@ -62,6 +64,7 @@ impl Contract {
         let mut out = vec![];
 
         for NamedToken { name, token } in f.inputs.iter() {
+            println!("Getting input for func: {} || {:?}", name, &*token.borrow());
             let name = utils::str_to_ident(name);
             let token = &*token.borrow();
             let ty = utils::str_to_type(&token.to_rust_type_path(ctx));
@@ -112,10 +115,12 @@ impl Contract {
         let serializations = Self::get_serializations_for_func(f, ctx);
 
         let inputs = Self::get_inputs_for_func(f, ctx);
+
         let input_names = inputs
             .iter()
             .map(|(name, _ty)| name.clone())
             .collect::<Vec<_>>();
+
         let inputs_sub = inputs
             .iter()
             .map(|(name, ty)| quote!(#name:#ty))
@@ -337,10 +342,21 @@ impl Expandable for Contract {
 
         if let Some(constructor) = &self.constructor {
             if !constructor.inputs.is_empty() {
-                let declaration =
-                    struct_declaration(&constructor_calldata_name, &constructor.inputs, ctx);
-                let implementation =
-                    struct_implementation(&constructor_calldata_name, &constructor.inputs, ctx);
+                let declaration = struct_declaration(
+                    &constructor_calldata_name,
+                    &constructor.inputs,
+                    &vec![],
+                    &HashMap::new(),
+                    &ctx,
+                );
+
+                let implementation = struct_implementation(
+                    &constructor_calldata_name,
+                    &constructor.inputs,
+                    &vec![],
+                    &HashMap::new(),
+                    ctx,
+                );
 
                 constructor_calldata = quote! {
                     #declaration

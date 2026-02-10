@@ -83,6 +83,15 @@ impl Token {
         matches!(self, Token::Tuple(_))
     }
 
+    pub fn is_generic(&self) -> bool {
+        match &self {
+            Token::Struct(s) => s.is_generic(),
+            Token::Enum(e) => e.is_generic(),
+            Token::Event(e) => !e.is_generic(),
+            _ => self.is_container(),
+        }
+    }
+
     pub fn should_be_skipped(&self) -> bool {
         matches!(self, Token::Skip(_) | Token::Substitute(_))
     }
@@ -95,6 +104,19 @@ impl Token {
                 | Token::Result(_)
                 | Token::NonZero(_)
                 | Token::Tuple(_)
+        )
+    }
+
+    // TODO: discuss naming
+    pub fn is_expandable(&self) -> bool {
+        matches!(
+            self,
+            Token::Struct(_)
+                | Token::Enum(_)
+                | Token::Event(_)
+                | Token::Interface(_)
+                | Token::Function(_)
+                | Token::Constructor(_)
         )
     }
 }

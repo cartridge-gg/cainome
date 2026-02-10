@@ -11,6 +11,7 @@ use crate::{
 #[derive(Debug, Clone)]
 pub struct TypeRegistry {
     store: HashMap<String, Rc<RefCell<Token>>>,
+    // TODO: add base generic types here?
 }
 
 pub(super) fn get_generic_inner_types(type_path: &str) -> CainomeResult<Vec<String>> {
@@ -242,6 +243,10 @@ impl TypeRegistry {
 
     pub fn values(self) -> Vec<Rc<RefCell<Token>>> {
         self.store.into_values().collect()
+    }
+
+    pub fn get_unresolvable_generics(&self) -> Vec<Rc<RefCell<Token>>> {
+        vec![]
     }
 
     pub fn get_uninitialised_placeholders(&self) -> Vec<String> {

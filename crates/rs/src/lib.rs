@@ -234,6 +234,7 @@ pub fn abi_to_tokenstream(
         ctx.contract_derives.iter().cloned().collect(),
         registry,
     );
+
     let mut root = Module::new().with_includes(contract.expand(ctx))?;
 
     let registered_structs = registry.get_structs();

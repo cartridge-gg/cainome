@@ -57,4 +57,8 @@ impl Enum {
     pub fn type_path_no_generic(&self) -> String {
         genericity::type_path_no_generic(&self.type_path)
     }
+
+    pub fn is_generic(&self) -> bool {
+        !self.generic_args.is_empty()
+    }
 }
