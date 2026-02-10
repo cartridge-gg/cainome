@@ -235,10 +235,7 @@ impl Expandable for Enum {
         let name = &full_path_no_generic.split("::").last().unwrap().to_owned();
 
         let ctx = ExpansionContextFactory::from(ctx)
-            .with_derives(get_additional_derive_requirements(
-                &self.get_variants(),
-                ctx,
-            ))
+            .with_derives(get_additional_derive_requirements(self.get_variants(), ctx))
             .build();
 
         let generic_arg_names = &self
@@ -248,16 +245,16 @@ impl Expandable for Enum {
             .collect::<Vec<_>>();
 
         let declaration = enum_declaration(
-            &name,
-            &self.get_variants(),
+            name,
+            self.get_variants(),
             generic_arg_names,
             &self.fields_to_generics,
             &ctx,
         );
 
         let implementation = enum_implementation(
-            &name,
-            &self.get_variants(),
+            name,
+            self.get_variants(),
             generic_arg_names,
             &self.fields_to_generics,
             &ctx,
@@ -269,6 +266,6 @@ impl Expandable for Enum {
             #implementation
         };
 
-        vec![ExpansionResult::new(&full_path_no_generic).with_item(&name, item)]
+        vec![ExpansionResult::new(&full_path_no_generic).with_item(name, item)]
     }
 }

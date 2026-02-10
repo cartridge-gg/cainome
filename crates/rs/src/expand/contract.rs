@@ -346,7 +346,7 @@ impl Expandable for Contract {
                     &constructor.inputs,
                     &vec![],
                     &HashMap::new(),
-                    &ctx,
+                    ctx,
                 );
 
                 let implementation = struct_implementation(

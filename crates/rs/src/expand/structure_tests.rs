@@ -132,8 +132,6 @@ fn test_structure_expand_with_array_field() {
         .unwrap()
         .token_stream();
 
-    println!("GENERATED:\n{}", generated); // --- IGNORE ---
-
     let expected = parse_quote! {
         #[derive(Clone, serde::Deserialize, serde::Serialize,)]
         pub struct Type {

@@ -11,13 +11,8 @@ pub trait GenericResolver {
     ) -> Option<String>;
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct DefaultGenericResolver;
-
-impl DefaultGenericResolver {
-    pub fn new() -> Self {
-        Self {}
-    }
-}
 
 impl GenericResolver for DefaultGenericResolver {
     fn resolve_generic_member(

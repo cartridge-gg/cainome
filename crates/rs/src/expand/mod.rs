@@ -1,11 +1,12 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 
-use cainome_parser::{tokens::genericity, ParserContext};
+use cainome_parser::ParserContext;
 use proc_macro2::TokenStream;
 
-use crate::ExecutionVersion;
 mod module;
 pub(crate) use module::Module;
+
+use crate::ExecutionVersion;
 
 #[cfg(test)]
 pub mod for_tests;
@@ -155,7 +156,7 @@ impl ExpansionContextFactory {
     where
         S: AsRef<str>,
     {
-        let resolver = generic_resolver::DefaultGenericResolver::new();
+        let resolver = generic_resolver::DefaultGenericResolver;
 
         Self {
             derives: BTreeSet::new(),
@@ -366,7 +367,7 @@ impl ExpansionContextFactory {
             sierra_add_pythonic_hints: false,
             deployer_generate_salt: true,
             deployer_is_unique: true,
-            generic_resolver: Box::new(generic_resolver::DefaultGenericResolver::new()),
+            generic_resolver: Box::new(generic_resolver::DefaultGenericResolver),
         }
     }
 }

@@ -1663,7 +1663,7 @@ fn test_generic_linking() {
         let argument_token = &*func.inputs[0].token.borrow();
         assert!(argument_token.is_generic());
 
-        let Token::Struct(argument) = &*argument_token else {
+        let Token::Struct(argument) = argument_token else {
             panic!("argument_token argument should be a struct");
         };
 
@@ -1680,7 +1680,7 @@ fn test_generic_linking() {
         let argument_token = &*func.inputs[1].token.borrow();
         assert!(argument_token.is_generic());
 
-        let Token::Struct(argument) = &*argument_token else {
+        let Token::Struct(argument) = argument_token else {
             panic!("argument_token argument should be a struct");
         };
 

@@ -45,11 +45,9 @@ impl Enum {
             token: Rc::clone(&token),
         });
         for (generic_name, generic_token) in self.generic_args.iter() {
-            if &*token.borrow() == &*generic_token.borrow() {
-                let generic_candidates = self
-                    .fields_to_generics
-                    .entry(name.to_string())
-                    .or_insert_with(|| HashSet::new());
+            if *token.borrow() == *generic_token.borrow() {
+                let generic_candidates =
+                    self.fields_to_generics.entry(name.to_string()).or_default();
 
                 generic_candidates.insert(generic_name.to_owned());
             }
@@ -75,7 +73,7 @@ impl Enum {
                 .fields_to_generics
                 .entry(field_name.to_owned())
                 .or_default();
-            let new_candidates = old_candidates.intersection(&candidates).cloned().collect();
+            let new_candidates = old_candidates.intersection(candidates).cloned().collect();
             *old_candidates = new_candidates;
         }
     }

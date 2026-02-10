@@ -1,5 +1,5 @@
 use proc_macro::{self};
-use syn::{parse_macro_input, Data, DeriveInput, Generics};
+use syn::{parse_macro_input, Data, DeriveInput};
 
 mod derive_enum;
 mod derive_struct;

@@ -234,7 +234,7 @@ impl AbiParser {
 
                                 base_struct.merge_generic_variant(structure);
                             } else {
-                                registry.set(&path, token.clone());
+                                registry.set(path, token.clone());
                             }
                         }
                         Token::Enum(enumeration) => {
@@ -251,7 +251,7 @@ impl AbiParser {
 
                                 base_enum.merge_generic_variant(enumeration);
                             } else {
-                                registry.set(&path, token.clone());
+                                registry.set(path, token.clone());
                             }
                         }
                         _ => {}

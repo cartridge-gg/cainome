@@ -96,7 +96,7 @@ pub fn max_bipartite_matching(
             }
         }
 
-        return false;
+        false
     }
 
     let mut match_r = HashMap::new();

@@ -32,7 +32,7 @@ fn legacy_expand(out_name: &str, ctx: &ExpansionContext) {
     let registry =
         AbiParser::build_registry(abi, ParserContext::from(ctx)).expect("failed tokens parsing");
 
-    let expanded = cainome_rs::abi_to_tokenstream(&registry, &ctx).expect("expansion failed");
+    let expanded = cainome_rs::abi_to_tokenstream(&registry, ctx).expect("expansion failed");
 
     let debug_data = expanded.to_string();
 
