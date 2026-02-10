@@ -3,11 +3,12 @@ use std::cell::RefCell;
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::fmt::Debug;
 use std::rc::Rc;
+use syn::token;
 
 use crate::abi::extensions::TryTokenConvertable;
 use crate::abi::parser_context::ParserContext;
 use crate::abi::registry::TypeRegistry;
-use crate::tokens::{Token, TypePath};
+use crate::tokens::{Struct, Token, TypePath};
 use crate::{CainomeResult, Error};
 
 #[derive(Debug, Clone, PartialEq, Default)]

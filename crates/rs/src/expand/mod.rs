@@ -125,12 +125,6 @@ impl ExpansionContext {
             return alias.to_string();
         }
         type_path.to_owned()
-        // let no_generic = genericity::type_path_no_generic(type_path);
-        // if let Some(alias) = self.aliases.get(&no_generic) {
-        //     return alias.to_string();
-        // }
-
-        // no_generic.to_string()
     }
 }
 

@@ -30,7 +30,7 @@ pub fn resolve_generics(
         .unwrap_or(default_generic_type)
 }
 
-fn get_generic_args_fields(input: Vec<(String, Rc<RefCell<Token>>)>) -> Vec<syn::Ident> {
+pub fn get_generic_args_fields(input: &Vec<(String, Rc<RefCell<Token>>)>) -> Vec<syn::Ident> {
     input
         .iter()
         .map(|(name, _)| utils::str_to_ident(name))

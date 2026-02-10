@@ -87,7 +87,7 @@ impl Token {
         match &self {
             Token::Struct(s) => s.is_generic(),
             Token::Enum(e) => e.is_generic(),
-            Token::Event(e) => !e.is_generic(),
+            Token::Event(e) => e.is_generic(),
             _ => self.is_container(),
         }
     }

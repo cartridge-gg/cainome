@@ -68,51 +68,6 @@ pub fn extract_type_path_with_depth(type_path: &str, depth: usize) -> String {
     segments.iter().map(|s| snake_to_pascal_case(s)).collect()
 }
 
-pub fn max_bipartite_matching(
-    left: &Vec<String>,
-    adj: &HashMap<String, BTreeSet<String>>,
-) -> HashMap<String, String> {
-    fn try_augment(
-        left: &str,
-        seen_left: &mut HashSet<String>,
-        adjacent_matrix: &HashMap<String, BTreeSet<String>>,
-        match_r: &mut HashMap<String, String>,
-    ) -> bool {
-        if seen_left.contains(left) {
-            return false;
-        }
-
-        seen_left.insert(left.to_owned());
-
-        for right in adjacent_matrix.get(left).unwrap_or(&BTreeSet::new()) {
-            let Some(owner) = match_r.get(right).cloned() else {
-                match_r.insert(right.to_owned(), left.to_owned());
-                return true;
-            };
-
-            if try_augment(&owner, seen_left, adjacent_matrix, match_r) {
-                match_r.insert(right.to_owned(), left.to_owned());
-                return true;
-            }
-        }
-
-        false
-    }
-
-    let mut match_r = HashMap::new();
-    for l in left {
-        let mut seen_left = HashSet::new();
-        try_augment(l, &mut seen_left, adj, &mut match_r);
-    }
-
-    // Invert the matching to get left -> right mapping
-    let mut match_l = HashMap::new();
-    for (r, l) in match_r {
-        match_l.insert(l, r);
-    }
-    match_l
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

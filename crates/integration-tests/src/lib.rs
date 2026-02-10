@@ -10,8 +10,8 @@ pub mod test_simple_get_set;
 #[cfg(test)]
 pub mod test_events;
 
-// #[cfg(test)]
-// pub mod test_structs;
+#[cfg(test)]
+pub mod test_structs;
 
 #[cfg(test)]
 pub mod test_rust_keywords;

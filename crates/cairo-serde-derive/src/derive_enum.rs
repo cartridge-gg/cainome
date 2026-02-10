@@ -58,17 +58,17 @@ pub fn derive_enum(ident: Ident, generics: Generics, data: DataEnum) -> TokenStr
         }
     };
 
-    let mut generic_contraint_list = vec![];
+    let mut generic_contraints_list = vec![];
     for param in generics.type_params() {
-        generic_contraint_list.push(quote! {
+        generic_contraints_list.push(quote! {
             #param: ::cainome_cairo_serde::CairoSerde<RustType = #param>
         });
     }
 
-    let generic_contraints = if generic_contraint_list.is_empty() {
+    let generic_contraints = if generic_contraints_list.is_empty() {
         quote! {}
     } else {
-        quote! { where #(#generic_contraint_list),* }
+        quote! { where #(#generic_contraints_list),* }
     };
 
     // There is no easy way to check for the members being staticaly sized at compile time.

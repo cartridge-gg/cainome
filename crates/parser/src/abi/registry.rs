@@ -245,10 +245,6 @@ impl TypeRegistry {
         self.store.into_values().collect()
     }
 
-    pub fn get_unresolvable_generics(&self) -> Vec<Rc<RefCell<Token>>> {
-        vec![]
-    }
-
     pub fn get_uninitialised_placeholders(&self) -> Vec<String> {
         let mut unresolved_placeholders = vec![];
 

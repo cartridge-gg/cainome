@@ -115,16 +115,6 @@ fn main() {
                 "serde::Serialize",
                 "serde::Deserialize",
             ])
-            // .with_aliases(HashMap::from([
-            //     (
-            //         "contracts::gen::gen::MyStruct::<core::felt252>".to_string(),
-            //         "contracts::gen::gen::MyStructFelt".to_string(),
-            //     ),
-            //     (
-            //         "contracts::gen::gen::MyStruct::<core::integer::u256>".to_string(),
-            //         "contracts::gen::gen::MyStructFeltU256".to_string(),
-            //     ),
-            // ]))
             .build(),
     );
 
@@ -213,11 +203,6 @@ fn main() {
                     "contracts::abicov::structs::GenericOne::<core::felt252>".to_string(),
                     "crate::test_substitutions::GenericOneFelt".to_string(),
                 ),
-                // (
-                //     "contracts::abicov::structs::GenericOne::<core::felt252>".to_string(),
-                //     "crate::test_substitutions::GenericOne::<starknet::core::types::Felt>"
-                //         .to_string(),
-                // ),
                 (
                     "contracts::abicov::structs::GenericOne::<core::integer::u256>".to_string(),
                     "crate::test_substitutions::GenericOneu256".to_string(),

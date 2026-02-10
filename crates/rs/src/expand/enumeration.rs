@@ -226,18 +226,12 @@ impl Expandable for Enum {
             .with_derives(get_additional_derive_requirements(self.get_variants(), ctx))
             .build();
 
-        let generic_arg_names = get_generic_args_fields(self.generic_args);
-
-        &self
-            .generic_args
-            .iter()
-            .map(|(name, _)| utils::str_to_ident(name))
-            .collect::<Vec<_>>();
+        let generic_arg_names = get_generic_args_fields(&self.generic_args);
 
         let declaration = enum_declaration(
             name,
             self.get_variants(),
-            generic_arg_names,
+            &generic_arg_names,
             &self.fields_to_generics,
             &ctx,
         );
@@ -245,7 +239,7 @@ impl Expandable for Enum {
         let implementation = enum_implementation(
             name,
             self.get_variants(),
-            generic_arg_names,
+            &generic_arg_names,
             &self.fields_to_generics,
             &ctx,
         );

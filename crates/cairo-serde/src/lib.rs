@@ -53,21 +53,3 @@ pub trait CairoSerde {
     /// Deserializes an array of felts into the given type.
     fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self::RustType>;
 }
-
-// pub trait CairoSerde
-// where
-//     Self: Sized,
-// {
-//     /// The serialized size of the type in felts, if known at compile time.
-//     const SERIALIZED_SIZE: Option<usize> = Some(1);
-
-//     /// Whether the serialized size is dynamic.
-//     const DYNAMIC: bool = Self::SERIALIZED_SIZE.is_none();
-
-//     #[inline]
-//     fn cairo_serialized_size(_rust: &Self) -> usize {
-//         Self::SERIALIZED_SIZE.unwrap()
-//     }
-//     fn cairo_serialize(rust: &Self) -> Vec<Felt>;
-//     fn cairo_deserialize(felts: &[Felt], offset: usize) -> Result<Self>;
-// }

@@ -63,11 +63,6 @@ mod gen {
         Eleven: (felt252, u8, u128),
     }
 
-    #[derive(Serde, Drop)]
-    enum MyEnumGeneric<T> {
-        One: T,
-        Two: (T, T),
-    }
 
     #[external(v0)]
     fn func1(ref self: ContractState, a: MyStruct<felt252>) {
@@ -80,9 +75,6 @@ mod gen {
         self.v1.write(a.f2.low.into());
         self.v2.write(a.f2.high.into());
     }
-
-    #[external(v0)]
-    fn func666(ref self: ContractState, a: MyEnumGeneric<felt252>) {}
 
     #[external(v0)]
     fn read(self: @ContractState) -> (felt252, felt252) {
