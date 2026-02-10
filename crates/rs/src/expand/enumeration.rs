@@ -5,6 +5,7 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::Ident;
 
+use crate::expand::genericity::{get_generic_args_fields, resolve_generics};
 use crate::expand::types::{get_additional_derive_requirements, CairoToRust};
 use crate::expand::{
     utils, Expandable, ExpansionContext, ExpansionContextFactory, ExpansionResult,
@@ -26,20 +27,7 @@ pub fn enum_declaration(
         let token = &*inner.token.borrow();
 
         let generic_type = if is_generic {
-            // Calculate default value (in case resolver won't work)
-            let default_generic_type = fields_to_generics
-                // Check if generic candidates exist for the field
-                .get(&inner.name)
-                .unwrap_or(&HashSet::new())
-                .iter()
-                .next()
-                .cloned()
-                // if not use type from ABI
-                .unwrap_or(token.to_rust_type_path(ctx));
-
-            ctx.generic_resolver
-                .resolve_generic_member(type_name, inner, ctx)
-                .unwrap_or(default_generic_type)
+            resolve_generics(type_name, inner, fields_to_generics, ctx)
         } else {
             token.to_rust_type_path(ctx)
         };
@@ -238,7 +226,9 @@ impl Expandable for Enum {
             .with_derives(get_additional_derive_requirements(self.get_variants(), ctx))
             .build();
 
-        let generic_arg_names = &self
+        let generic_arg_names = get_generic_args_fields(self.generic_args);
+
+        &self
             .generic_args
             .iter()
             .map(|(name, _)| utils::str_to_ident(name))

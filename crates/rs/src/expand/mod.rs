@@ -15,6 +15,7 @@ pub mod for_tests;
 mod module_tests;
 
 pub(crate) mod contract;
+pub(crate) mod genericity;
 
 #[cfg(test)]
 mod contract_tests;
