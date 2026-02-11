@@ -60,13 +60,19 @@ impl GenericResolver for GenericResolverFromMapping {
 }
 
 impl GenericResolverFromMapping {
-    pub fn new(mappings: Vec<(&str, &str, &str)>) -> Rc<Self> {
+    pub fn new<T>(mappings: Vec<(T, T, T)>) -> Rc<Self>
+    where
+        T: AsRef<str>,
+    {
         let mappings = mappings
             .into_iter()
             .map(|(type_path, field_name, generic_arg)| {
                 (
-                    (type_path.to_owned(), field_name.to_owned()),
-                    generic_arg.to_owned(),
+                    (
+                        type_path.as_ref().to_owned(),
+                        field_name.as_ref().to_owned(),
+                    ),
+                    generic_arg.as_ref().to_owned(),
                 )
             })
             .collect();

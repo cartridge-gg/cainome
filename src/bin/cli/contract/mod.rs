@@ -48,6 +48,9 @@ pub struct ContractParserConfig {
     pub type_aliases: HashMap<String, String>,
     /// The contract aliases to be provided to the Cainome parser.
     pub contract_aliases: HashMap<String, String>,
+    /// Mappings for a generic types. Are used to construct a GenericResolver type.
+    /// This vector of tuples has the form (type_path, field_name, generic_param_name).
+    pub generic_parameter_mapping: Vec<(String, String, String)>,
     /// Optional list of specific contract files to include from the artifacts path.
     /// If not specified, all files with the sierra_extension will be included.
     /// File paths are resolved relative to the artifacts path and should include
@@ -69,6 +72,7 @@ impl Default for ContractParserConfig {
         Self {
             sierra_extension: ".contract_class.json".to_string(),
             type_aliases: HashMap::default(),
+            generic_parameter_mapping: Vec::default(),
             contract_aliases: HashMap::default(),
             contracts: None,
         }

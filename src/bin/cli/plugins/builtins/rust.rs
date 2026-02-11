@@ -1,4 +1,5 @@
 use cainome_parser::Error;
+use cainome_rs::expand::generic_resolver::GenericResolverFromMapping;
 use cainome_rs::expand::ExpansionContextFactory;
 use cainome_rs::{self};
 use convert_case::{Case, Casing};
@@ -43,6 +44,9 @@ impl BuiltinPlugin for RustPlugin {
                 .with_derives(derives)
                 .with_execution(input.execution_version)
                 .with_type_skips(&input.type_skips)
+                .with_generic_resolver(GenericResolverFromMapping::new(
+                    input.generic_parameter_mapping.clone(),
+                ))
                 .build();
 
             let expanded = cainome_rs::abi_to_tokenstream(&contract.registry, &ctx)

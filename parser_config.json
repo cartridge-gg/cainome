@@ -1,5 +1,6 @@
 {
   "sierra_extension": ".json",
   "contract_aliases": {},
-  "type_aliases": {}
+  "type_aliases": {},
+  "generic_parameter_mapping": []
 }

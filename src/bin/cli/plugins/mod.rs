@@ -14,6 +14,7 @@ pub struct PluginInput {
     pub output_dir: Utf8PathBuf,
     pub contracts: Vec<ContractData>,
     pub execution_version: ExecutionVersion,
+    pub generic_parameter_mapping: Vec<(String, String, String)>,
     pub type_skips: Vec<String>,
 }
 
