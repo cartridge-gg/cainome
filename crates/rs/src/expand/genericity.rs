@@ -14,6 +14,7 @@ pub fn resolve_generics(
     fields_to_generics: &HashMap<String, HashSet<String>>,
     ctx: &ExpansionContext,
 ) -> String {
+    // TODO: maybe move up.
     let original_type = (&*field.token.borrow()).to_rust_type_path(ctx);
 
     // Calculate default value for field to assign to generic_type (in case resolver won't work)

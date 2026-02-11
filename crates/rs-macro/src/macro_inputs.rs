@@ -22,6 +22,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufReader, Seek, SeekFrom};
 use std::path::Path;
+use std::rc::Rc;
 use std::str::FromStr;
 use syn::{
     braced,
@@ -52,7 +53,7 @@ pub(crate) struct ContractAbi {
     pub add_deployment: bool,
     pub cainome_serde_path: String,
     pub root_module_path: String,
-    pub generic_resolver: Box<dyn GenericResolver>,
+    pub generic_resolver: Rc<dyn GenericResolver>,
 }
 
 impl Parse for ContractAbi {
@@ -133,7 +134,7 @@ impl Parse for ContractAbi {
         let mut add_deployment = true;
         let mut cainome_serde_path = "cainome::cairo_serde".to_string();
         let mut root_module_path = "self".to_string();
-        let mut generic_resolver: Box<dyn GenericResolver> = Box::new(DefaultGenericResolver);
+        let mut generic_resolver: Rc<dyn GenericResolver> = Rc::new(DefaultGenericResolver);
 
         loop {
             if input.parse::<Token![,]>().is_err() {
@@ -153,11 +154,11 @@ impl Parse for ContractAbi {
                         content.parse_terminated(Spanned::<GenericMapping>::parse, Token![;])?;
 
                     let mappings = parsed
-                        .into_iter()
-                        .map(|p| (p.r#type.clone(), p.field.clone(), p.generic_arg.clone()))
+                        .iter()
+                        .map(|p| (p.r#type.as_str(), p.field.as_str(), p.generic_arg.as_str()))
                         .collect::<Vec<_>>();
 
-                    generic_resolver = Box::new(GenericResolverFromMapping::new(mappings));
+                    generic_resolver = Rc::new(GenericResolverFromMapping::new(mappings));
                 }
                 "type_aliases" => {
                     let content;

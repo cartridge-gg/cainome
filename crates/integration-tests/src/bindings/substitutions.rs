@@ -121,7 +121,7 @@ pub mod contracts {
             }
             #[derive(serde::Deserialize, serde::Serialize)]
             pub struct GenericTwo<A, B> {
-                pub a: B,
+                pub a: A,
                 pub b: B,
                 pub c: starknet::core::types::Felt,
                 pub d: crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
@@ -140,7 +140,7 @@ pub mod contracts {
                 #[inline]
                 fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
                     let mut __size = 0;
-                    __size += B::cairo_serialized_size(&__rust.a);
+                    __size += A::cairo_serialized_size(&__rust.a);
                     __size += B::cairo_serialized_size(&__rust.b);
                     __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.c);
                     __size
@@ -158,7 +158,7 @@ pub mod contracts {
                 }
                 fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
                     let mut __out: Vec<starknet::core::types::Felt> = vec![];
-                    __out.extend(B::cairo_serialize(&__rust.a));
+                    __out.extend(A::cairo_serialize(&__rust.a));
                     __out.extend(B::cairo_serialize(&__rust.b));
                     __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.c));
                     __out
@@ -182,8 +182,8 @@ pub mod contracts {
                     __offset: usize,
                 ) -> cainome_cairo_serde::Result<Self::RustType> {
                     let mut __offset = __offset;
-                    let a = B::cairo_deserialize(__felts, __offset)?;
-                    __offset += B::cairo_serialized_size(&a);
+                    let a = A::cairo_deserialize(__felts, __offset)?;
+                    __offset += A::cairo_serialized_size(&a);
                     let b = B::cairo_deserialize(__felts, __offset)?;
                     __offset += B::cairo_serialized_size(&b);
                     let c = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
