@@ -12,6 +12,7 @@ use crate::expand::{
 };
 
 pub fn enum_declaration(
+    full_path: &str,
     type_name: &str,
     variants: &[NamedToken],
     generic_arg_names: &Vec<Ident>,
@@ -27,7 +28,7 @@ pub fn enum_declaration(
         let token = &*inner.token.borrow();
 
         let generic_type = if is_generic {
-            resolve_generics(type_name, inner, fields_to_generics, ctx)
+            resolve_generics(full_path, inner, fields_to_generics, ctx)
         } else {
             token.to_rust_type_path(ctx)
         };
@@ -74,6 +75,7 @@ pub fn enum_declaration(
 }
 
 pub fn enum_implementation(
+    full_path: &str,
     type_name: &str,
     variants: &[NamedToken],
     generic_arg_names: &Vec<Ident>,
@@ -93,20 +95,7 @@ pub fn enum_implementation(
         let token = &*inner.token.borrow();
 
         let generic_type_path = if is_generic {
-            // Calculate default value (in case resolver won't work)
-            let default_generic_type = fields_to_generics
-                // Check if generic candidates exist for the field
-                .get(&inner.name)
-                .unwrap_or(&HashSet::new())
-                .iter()
-                .next()
-                .cloned()
-                // if not then use type from ABI
-                .unwrap_or(token.to_rust_type(ctx));
-
-            ctx.generic_resolver
-                .resolve_generic_member(type_name, inner, ctx)
-                .unwrap_or(default_generic_type)
+            resolve_generics(full_path, inner, fields_to_generics, ctx)
         } else {
             token.to_rust_type(ctx)
         };
@@ -229,6 +218,7 @@ impl Expandable for Enum {
         let generic_arg_names = get_generic_args_fields(&self.generic_args);
 
         let declaration = enum_declaration(
+            &full_path,
             name,
             self.get_variants(),
             &generic_arg_names,
@@ -237,6 +227,7 @@ impl Expandable for Enum {
         );
 
         let implementation = enum_implementation(
+            &full_path,
             name,
             self.get_variants(),
             &generic_arg_names,

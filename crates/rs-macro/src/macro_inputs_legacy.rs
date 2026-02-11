@@ -9,6 +9,9 @@
 //! Loading from a file with only the ABI array.
 //! abigen!(ContractName, "path/to/abi.json"
 //!
+use cainome_rs::expand::generic_resolver::{
+    DefaultGenericResolver, GenericResolver, GenericResolverFromMapping,
+};
 use proc_macro_error::emit_error;
 use quote::ToTokens;
 use starknet::core::types::contract::legacy::{LegacyContractClass, RawLegacyAbiEntry};
@@ -29,7 +32,6 @@ use cainome_rs::ExecutionVersion;
 
 const CARGO_MANIFEST_DIR: &str = "$CARGO_MANIFEST_DIR/";
 
-#[derive(Clone, Debug)]
 pub(crate) struct ContractAbiLegacy {
     pub name: Ident,
     pub abi: Vec<RawLegacyAbiEntry>,
@@ -45,6 +47,7 @@ pub(crate) struct ContractAbiLegacy {
     pub add_deployment: bool,
     pub cainome_serde_path: String,
     pub root_module_path: String,
+    pub generic_resolver: Box<dyn GenericResolver>,
 }
 
 impl Parse for ContractAbiLegacy {
@@ -109,6 +112,7 @@ impl Parse for ContractAbiLegacy {
         let mut add_deployment = true;
         let mut cainome_serde_path = "cainome::cairo_serde".to_string();
         let mut root_module_path = "self".to_string();
+        let mut generic_resolver: Box<dyn GenericResolver> = Box::new(DefaultGenericResolver);
 
         loop {
             if input.parse::<Token![,]>().is_err() {
@@ -121,6 +125,19 @@ impl Parse for ContractAbiLegacy {
             };
 
             match name.to_string().as_str() {
+                "generic_resolver" => {
+                    let content;
+                    braced!(content in input);
+                    let parsed =
+                        content.parse_terminated(Spanned::<GenericMapping>::parse, Token![;])?;
+
+                    let mappings = parsed
+                        .into_iter()
+                        .map(|p| (p.r#type.clone(), p.field.clone(), p.generic_arg.clone()))
+                        .collect::<Vec<_>>();
+
+                    generic_resolver = Box::new(GenericResolverFromMapping::new(mappings));
+                }
                 "type_aliases" => {
                     let content;
                     braced!(content in input);
@@ -260,6 +277,7 @@ impl Parse for ContractAbiLegacy {
             add_deployment,
             cainome_serde_path,
             root_module_path,
+            generic_resolver,
         })
     }
 }
@@ -305,6 +323,33 @@ impl Parse for TypeSubstitution {
         let sub = input.parse::<Ident>()?.to_string();
 
         Ok(TypeSubstitution { abi, sub })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct GenericMapping {
+    pub r#type: String,
+    pub field: String,
+    pub generic_arg: String,
+}
+
+impl Parse for GenericMapping {
+    fn parse(input: ParseStream) -> Result<Self> {
+        let r#type = input.parse::<Ident>()?.to_string();
+
+        input.parse::<Token![->]>()?;
+
+        let field = input.parse::<Ident>()?.to_string();
+
+        input.parse::<Token![=]>()?;
+
+        let generic_arg = input.parse::<Ident>()?.to_string();
+
+        Ok(Self {
+            r#type,
+            field,
+            generic_arg,
+        })
     }
 }
 

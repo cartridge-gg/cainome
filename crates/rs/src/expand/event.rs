@@ -107,10 +107,22 @@ impl Expandable for Event {
                     .with_derives(get_additional_derive_requirements(&variants, ctx))
                     .build();
 
-                let declaration =
-                    enum_declaration(&event_name, &variants, &vec![], &HashMap::new(), &ctx);
-                let implementation =
-                    enum_implementation(&event_name, &variants, &vec![], &HashMap::new(), &ctx);
+                let declaration = enum_declaration(
+                    &full_path,
+                    &event_name,
+                    &variants,
+                    &vec![],
+                    &HashMap::new(),
+                    &ctx,
+                );
+                let implementation = enum_implementation(
+                    &full_path,
+                    &event_name,
+                    &variants,
+                    &vec![],
+                    &HashMap::new(),
+                    &ctx,
+                );
 
                 let definition = quote! {
 
@@ -166,10 +178,22 @@ impl Expandable for Event {
                     .with_derives(get_additional_derive_requirements(&fields, ctx))
                     .build();
 
-                let declaration =
-                    struct_declaration(&event_name, &fields, &vec![], &HashMap::new(), &ctx);
-                let implementation =
-                    struct_implementation(&event_name, &fields, &vec![], &HashMap::new(), &ctx);
+                let declaration = struct_declaration(
+                    &full_path,
+                    &event_name,
+                    &fields,
+                    &vec![],
+                    &HashMap::new(),
+                    &ctx,
+                );
+                let implementation = struct_implementation(
+                    &full_path,
+                    &event_name,
+                    &fields,
+                    &vec![],
+                    &HashMap::new(),
+                    &ctx,
+                );
 
                 let definition = quote! {
                     #declaration

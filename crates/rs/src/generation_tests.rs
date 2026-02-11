@@ -1,10 +1,12 @@
 use std::collections::HashMap;
+use std::rc::Rc;
 use std::sync::Once;
 
 use crate::expand::for_tests::{
     assert_code_has, assert_code_has_enum, assert_code_has_impl_fn, assert_code_has_not,
     assert_code_has_not_struct, assert_code_has_struct,
 };
+use crate::expand::generic_resolver::GenericResolverFromMapping;
 use crate::{abi_to_tokenstream, expand::ExpansionContextFactory, ExecutionVersion};
 use cainome_parser::{tokens::Token, AbiParser, ParserContext};
 use quote::quote;
@@ -1072,4 +1074,51 @@ fn test_nested_generic_field_in_enumeration() {
         },
         "Nested<A> not found",
     )
+}
+
+#[test]
+fn test_generic_resolver() {
+    init_tracing();
+    let abi = r#"[
+        {
+            "type": "struct",
+            "name": "my::Var<core::felt252>",
+            "members": [
+                {
+                    "name": "a",
+                    "type": "core::felt252"
+                },
+                {
+                    "name": "b",
+                    "type": "core::felt252"
+                }
+            ]
+        }
+    ]"#;
+
+    let resolver = GenericResolverFromMapping::new(vec![("my::Var", "b", "A")]);
+
+    let ctx = ExpansionContextFactory::new("MyContract")
+        .with_add_declaration(false)
+        .with_add_deployment(false)
+        .with_root_module_path("root")
+        .with_generic_resolver(Rc::new(resolver))
+        .build();
+
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+    let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
+
+    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx).unwrap();
+
+    assert_code_has_struct(
+        &generated.clone(),
+        &parse_quote! {
+            pub struct Var<A> {
+                pub a: starknet::core::types::Felt,
+                pub b: A
+            }
+        },
+        "Var not found",
+    );
 }

@@ -1,4 +1,7 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::{
+    collections::{BTreeSet, HashMap, HashSet},
+    rc::Rc,
+};
 
 use cainome_parser::ParserContext;
 use proc_macro2::TokenStream;
@@ -104,7 +107,7 @@ pub struct ExpansionContext {
     pub contract_source: String,
     pub add_declaration: bool,
     pub add_deployment: bool,
-    pub generic_resolver: Box<dyn generic_resolver::GenericResolver>,
+    pub generic_resolver: Rc<dyn generic_resolver::GenericResolver>,
 
     // TODO: syn::Type?
     pub root_module_path: String,
@@ -141,7 +144,7 @@ pub struct ExpansionContextFactory {
     // TODO: syn::Type?
     root_module_path: String,
     cainome_serde_path: String,
-    generic_resolver: Box<dyn generic_resolver::GenericResolver>,
+    generic_resolver: Rc<dyn generic_resolver::GenericResolver>,
     is_legacy: bool,
 }
 
@@ -166,7 +169,7 @@ impl ExpansionContextFactory {
             is_legacy: false,
             add_declaration: true,
             add_deployment: true,
-            generic_resolver: Box::new(resolver),
+            generic_resolver: Rc::new(resolver),
         }
     }
 
@@ -284,7 +287,7 @@ impl ExpansionContextFactory {
 
     pub fn with_generic_resolver(
         mut self,
-        resolver: Box<dyn generic_resolver::GenericResolver>,
+        resolver: Rc<dyn generic_resolver::GenericResolver>,
     ) -> Self {
         self.generic_resolver = resolver;
         self
@@ -361,7 +364,7 @@ impl ExpansionContextFactory {
             sierra_add_pythonic_hints: false,
             deployer_generate_salt: true,
             deployer_is_unique: true,
-            generic_resolver: Box::new(generic_resolver::DefaultGenericResolver),
+            generic_resolver: self.generic_resolver,
         }
     }
 }
@@ -393,6 +396,7 @@ impl From<&ExpansionContext> for ExpansionContextFactory {
             .with_cainome_serde_path(&value.cainome_serde_path)
             .with_is_legacy(value.is_legacy)
             .with_root_module_path(value.root_module_path.clone())
+            .with_generic_resolver(Rc::clone(&value.generic_resolver))
     }
 }
 

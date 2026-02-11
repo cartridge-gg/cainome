@@ -121,7 +121,7 @@ pub mod contracts {
             }
             #[derive(serde::Deserialize, serde::Serialize)]
             pub struct GenericTwo<A, B> {
-                pub a: A,
+                pub a: B,
                 pub b: B,
                 pub c: starknet::core::types::Felt,
                 pub d: crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
@@ -140,7 +140,7 @@ pub mod contracts {
                 #[inline]
                 fn cairo_serialized_size(__rust: &Self::RustType) -> usize {
                     let mut __size = 0;
-                    __size += A::cairo_serialized_size(&__rust.a);
+                    __size += B::cairo_serialized_size(&__rust.a);
                     __size += B::cairo_serialized_size(&__rust.b);
                     __size += starknet::core::types::Felt::cairo_serialized_size(&__rust.c);
                     __size
@@ -150,15 +150,15 @@ pub mod contracts {
                     __size += Vec::<
                         crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
                     >::cairo_serialized_size(&__rust.e);
-                    __size
-                        += crate::bindings::substitutions::contracts::abicov::structs::GenericOne::cairo_serialized_size(
-                            &__rust.f,
-                        );
+                    __size +=
+                        crate::bindings::substitutions::contracts::abicov::structs::GenericOne::<
+                            crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
+                        >::cairo_serialized_size(&__rust.f);
                     __size
                 }
                 fn cairo_serialize(__rust: &Self::RustType) -> Vec<starknet::core::types::Felt> {
                     let mut __out: Vec<starknet::core::types::Felt> = vec![];
-                    __out.extend(A::cairo_serialize(&__rust.a));
+                    __out.extend(B::cairo_serialize(&__rust.a));
                     __out.extend(B::cairo_serialize(&__rust.b));
                     __out.extend(starknet::core::types::Felt::cairo_serialize(&__rust.c));
                     __out
@@ -170,12 +170,11 @@ pub mod contracts {
                     __out.extend(Vec::<
                         crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
                     >::cairo_serialize(&__rust.e));
-                    __out
-                        .extend(
-                            crate::bindings::substitutions::contracts::abicov::structs::GenericOne::cairo_serialize(
-                                &__rust.f,
-                            ),
-                        );
+                    __out.extend(
+                        crate::bindings::substitutions::contracts::abicov::structs::GenericOne::<
+                            crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
+                        >::cairo_serialize(&__rust.f),
+                    );
                     __out
                 }
                 fn cairo_deserialize(
@@ -183,8 +182,8 @@ pub mod contracts {
                     __offset: usize,
                 ) -> cainome_cairo_serde::Result<Self::RustType> {
                     let mut __offset = __offset;
-                    let a = A::cairo_deserialize(__felts, __offset)?;
-                    __offset += A::cairo_serialized_size(&a);
+                    let a = B::cairo_deserialize(__felts, __offset)?;
+                    __offset += B::cairo_serialized_size(&a);
                     let b = B::cairo_deserialize(__felts, __offset)?;
                     __offset += B::cairo_serialized_size(&b);
                     let c = starknet::core::types::Felt::cairo_deserialize(__felts, __offset)?;
@@ -203,14 +202,13 @@ pub mod contracts {
                     __offset += Vec::<
                         crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
                     >::cairo_serialized_size(&e);
-                    let f = crate::bindings::substitutions::contracts::abicov::structs::GenericOne::cairo_deserialize(
-                        __felts,
-                        __offset,
-                    )?;
-                    __offset
-                        += crate::bindings::substitutions::contracts::abicov::structs::GenericOne::cairo_serialized_size(
-                            &f,
-                        );
+                    let f = crate::bindings::substitutions::contracts::abicov::structs::GenericOne::<
+                        crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
+                    >::cairo_deserialize(__felts, __offset)?;
+                    __offset +=
+                        crate::bindings::substitutions::contracts::abicov::structs::GenericOne::<
+                            crate::bindings::substitutions::contracts::abicov::structs::ToAlias,
+                        >::cairo_serialized_size(&f);
                     Ok(GenericTwo { a, b, c, d, e, f })
                 }
             }

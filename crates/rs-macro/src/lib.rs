@@ -45,6 +45,7 @@ fn abigen_internal(input: TokenStream) -> TokenStream {
         .with_add_deployment(contract_abi.add_deployment)
         .with_cainome_serde_path(contract_abi.cainome_serde_path)
         .with_root_module_path(contract_abi.root_module_path)
+        .with_generic_resolver(contract_abi.generic_resolver)
         .build();
 
     let registry = AbiParser::build_registry(abi_entries, ParserContext::from(&ctx))
@@ -88,6 +89,7 @@ fn abigen_internal_legacy(input: TokenStream) -> TokenStream {
         .with_add_deployment(contract_abi.add_deployment)
         .with_cainome_serde_path(contract_abi.cainome_serde_path)
         .with_root_module_path(contract_abi.root_module_path)
+        .with_generic_resolver(contract_abi.generic_resolver)
         .build();
 
     let registry = AbiParser::build_registry(abi_entries, ParserContext::from(&ctx))

@@ -343,6 +343,7 @@ impl Expandable for Contract {
             if !constructor.inputs.is_empty() {
                 let declaration = struct_declaration(
                     &constructor_calldata_name,
+                    &constructor_calldata_name,
                     &constructor.inputs,
                     &vec![],
                     &HashMap::new(),
@@ -350,6 +351,7 @@ impl Expandable for Contract {
                 );
 
                 let implementation = struct_implementation(
+                    &constructor_calldata_name,
                     &constructor_calldata_name,
                     &constructor.inputs,
                     &vec![],
