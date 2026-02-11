@@ -29,7 +29,7 @@ fn test_struct_event_expansion() {
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(event.expand(&ctx))
+        .with_includes(event.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -222,7 +222,7 @@ fn test_simple_case_nested_struct_in_enum() {
     };
 
     let generated = Module::new()
-        .with_includes(enum_event.expand(&ctx))
+        .with_includes(enum_event.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 

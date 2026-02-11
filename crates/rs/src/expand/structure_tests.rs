@@ -19,7 +19,7 @@ fn test_structure_expand_empty() {
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -42,7 +42,7 @@ fn test_structure_expand_basic_field() {
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -69,7 +69,7 @@ fn test_structure_expand_with_derive() {
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -97,7 +97,7 @@ fn test_structure_expand_with_option_field() {
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -128,7 +128,7 @@ fn test_structure_expand_with_array_field() {
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -161,7 +161,7 @@ fn test_structure_expand_with_non_zero_field() {
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -193,7 +193,7 @@ fn test_structure_expand_with_tuple_field() {
     );
 
     let generated = Module::new()
-        .with_includes(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -229,7 +229,7 @@ fn test_structure_expand_with_self_reference() {
         .build();
 
     let generated = Module::new()
-        .with_includes(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -288,7 +288,7 @@ fn test_structure_expand_all_core_types() {
         ]);
 
     let generated = Module::new()
-        .with_includes(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -350,7 +350,7 @@ fn structure_with_fields_conflicting_with_keywords() {
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 

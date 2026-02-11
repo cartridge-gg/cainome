@@ -22,7 +22,7 @@ fn test_naive_contract_expansion() {
     };
 
     let generated = Module::new()
-        .with_includes(contract.expand(&ctx))
+        .with_includes(contract.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -70,7 +70,7 @@ fn test_naive_contract_with_view_function() {
     let contract = Contract::new("ContractName", vec![], &registry);
 
     let generated = Module::new()
-        .with_includes(contract.expand(&ctx))
+        .with_includes(contract.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -140,7 +140,7 @@ fn test_naive_contract_with_view_mutating_function() {
     let contract = Contract::new("ContractName", vec![], &registry);
 
     let generated = Module::new()
-        .with_includes(contract.expand(&ctx))
+        .with_includes(contract.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 

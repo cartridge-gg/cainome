@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::rc::Rc;
 use std::sync::Once;
 
 use crate::expand::for_tests::{
@@ -69,6 +68,9 @@ fn test_generic_with_single_argument_expansion() {
     let ctx = ExpansionContextFactory::new("MyContract")
         .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
         .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![
+            ("MyType", "alias", "A"), //nowrap
+        ]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();
@@ -579,6 +581,9 @@ fn test_tuple_with_custom_genetic_type_as_func_argument_case() {
     let ctx = ExpansionContextFactory::new("MyContract")
         .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
         .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![
+            // ("contracts::abicov::structs::ToAlias", "a", "A"), //nowrap
+        ]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();
@@ -630,6 +635,9 @@ fn test_tuple_with_custom_genetic_type_as_func_argument_case_with_alias() {
         .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
         .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
         .with_aliases(aliases)
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![
+            ("ToAlias", "a", "A"), //nowrap
+        ]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();
@@ -849,6 +857,9 @@ fn test_simple_generic_rendering_resolves_easy_struct() {
         .with_add_declaration(false)
         .with_add_deployment(false)
         .with_root_module_path("root")
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![
+            ("my::GenericVar", "a", "A"), //nowrap
+        ]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();
@@ -915,6 +926,9 @@ fn test_simple_generic_fucntion() {
         .with_add_declaration(false)
         .with_add_deployment(false)
         .with_root_module_path("root")
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![
+            ("my::GenericVar", "a", "A"), //nowrap
+        ]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();
@@ -986,6 +1000,10 @@ fn test_nested_generic_field() {
         .with_add_declaration(false)
         .with_add_deployment(false)
         .with_root_module_path("root")
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![
+            ("my::Nested", "a", "A"),     //nowrap
+            ("my::GenericVar", "a", "A"), //nowrap
+        ]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();
@@ -1045,6 +1063,9 @@ fn test_nested_generic_field_in_enumeration() {
         .with_add_declaration(false)
         .with_add_deployment(false)
         .with_root_module_path("root")
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![
+            ("my::Nested", "One", "A"), //nowrap
+        ]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();
@@ -1096,13 +1117,11 @@ fn test_generic_resolver() {
         }
     ]"#;
 
-    let resolver = GenericResolverFromMapping::new(vec![("my::Var", "b", "A")]);
-
     let ctx = ExpansionContextFactory::new("MyContract")
         .with_add_declaration(false)
         .with_add_deployment(false)
         .with_root_module_path("root")
-        .with_generic_resolver(Rc::new(resolver))
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![("my::Var", "b", "A")]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();

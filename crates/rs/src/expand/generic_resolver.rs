@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, rc::Rc};
 
 use cainome_parser::tokens::NamedToken;
 
@@ -10,14 +10,14 @@ pub trait GenericResolver: std::fmt::Debug {
         type_path: &str,
         field: &NamedToken,
         ctx: &ExpansionContext,
-    ) -> ResolveResult;
+    ) -> GenericResolveResult;
 }
 
 #[derive(Debug, Clone, Default)]
 pub struct DefaultGenericResolver;
 
 #[derive(Debug)]
-pub enum ResolveResult {
+pub enum GenericResolveResult {
     Resolved(Option<String>),
     Unresolved,
 }
@@ -28,8 +28,8 @@ impl GenericResolver for DefaultGenericResolver {
         _type_path: &str,
         _field: &NamedToken,
         _ctx: &ExpansionContext,
-    ) -> ResolveResult {
-        ResolveResult::Unresolved
+    ) -> GenericResolveResult {
+        GenericResolveResult::Unresolved
     }
 }
 
@@ -44,7 +44,7 @@ impl GenericResolver for GenericResolverFromMapping {
         type_path: &str,
         field: &NamedToken,
         _ctx: &ExpansionContext,
-    ) -> ResolveResult {
+    ) -> GenericResolveResult {
         let key = &(type_path.to_string(), field.name.clone());
         let val = self.mappings.get(key).cloned();
 
@@ -55,12 +55,12 @@ impl GenericResolver for GenericResolverFromMapping {
             val
         );
 
-        ResolveResult::Resolved(val)
+        GenericResolveResult::Resolved(val)
     }
 }
 
 impl GenericResolverFromMapping {
-    pub fn new(mappings: Vec<(&str, &str, &str)>) -> Self {
+    pub fn new(mappings: Vec<(&str, &str, &str)>) -> Rc<Self> {
         let mappings = mappings
             .into_iter()
             .map(|(type_path, field_name, generic_arg)| {
@@ -70,6 +70,6 @@ impl GenericResolverFromMapping {
                 )
             })
             .collect();
-        Self { mappings }
+        Rc::new(Self { mappings })
     }
 }

@@ -158,7 +158,7 @@ impl Parse for ContractAbi {
                         .map(|p| (p.r#type.as_str(), p.field.as_str(), p.generic_arg.as_str()))
                         .collect::<Vec<_>>();
 
-                    generic_resolver = Rc::new(GenericResolverFromMapping::new(mappings));
+                    generic_resolver = GenericResolverFromMapping::new(mappings);
                 }
                 "type_aliases" => {
                     let content;

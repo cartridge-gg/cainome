@@ -137,7 +137,7 @@ impl Parse for ContractAbiLegacy {
                         .map(|p| (p.r#type.as_str(), p.field.as_str(), p.generic_arg.as_str()))
                         .collect::<Vec<_>>();
 
-                    generic_resolver = Rc::new(GenericResolverFromMapping::new(mappings));
+                    generic_resolver = GenericResolverFromMapping::new(mappings);
                 }
                 "type_aliases" => {
                     let content;
@@ -336,15 +336,15 @@ pub(crate) struct GenericMapping {
 
 impl Parse for GenericMapping {
     fn parse(input: ParseStream) -> Result<Self> {
-        let r#type = input.parse::<Ident>()?.to_string();
+        let r#type = input.parse::<LitStr>()?.value();
 
         input.parse::<Token![->]>()?;
 
-        let field = input.parse::<Ident>()?.to_string();
+        let field = input.parse::<LitStr>()?.value();
 
         input.parse::<Token![=]>()?;
 
-        let generic_arg = input.parse::<Ident>()?.to_string();
+        let generic_arg = input.parse::<LitStr>()?.value();
 
         Ok(Self {
             r#type,

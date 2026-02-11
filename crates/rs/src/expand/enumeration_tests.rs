@@ -20,7 +20,7 @@ fn test_enum_expand_empty() {
     let ctx = ExpansionContextFactory::new("ContractName").build();
 
     let generated = Module::new()
-        .with_includes(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -43,7 +43,7 @@ fn test_enum_expand_simple_variants() {
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -99,7 +99,7 @@ fn test_enum_expand_core_type_variants() {
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -174,7 +174,7 @@ fn test_enumeration_expand_with_containers_field() {
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -226,9 +226,9 @@ fn test_enumeration_expand_with_structure_field() {
         .build();
 
     let generated = Module::new()
-        .with_includes(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx).unwrap())
         .unwrap()
-        .with_includes(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 

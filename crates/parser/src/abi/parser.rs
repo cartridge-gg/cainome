@@ -209,50 +209,17 @@ impl AbiParser {
 
                 tracing::debug!("Checking genericity: {}", &type_path);
 
-                // IMPORTANT:
-                // This is a bit of generic magic (i.e. the crotch).
-                // I remove generic arguments from type path and store
-                // generic base type. This allows to register all generic variants
-                // in single token. But I will also store a generic variant. But will
-                // not remove generic arguments from it's type path. It's not an obvious
-                // behaviour and might cause confusion.
-                // TODO: refactor
-
+                // Let's register generic types without generic arguments first, so they can be used in
+                // resolution of other tokens.
                 if token.is_generic() {
                     match &token {
                         Token::Struct(structure) => {
                             let path = &structure.type_path_no_generic();
-
-                            let base_token = registry.get(path);
-
-                            if let Ok(base_token) = base_token {
-                                let mut base_token = base_token.borrow_mut();
-
-                                let Token::Struct(base_struct) = &mut *base_token else {
-                                    unreachable!("Base generic path collided with different token type: path is {:?}, token is {:?}.", path, structure)
-                                };
-
-                                base_struct.merge_generic_variant(structure);
-                            } else {
-                                registry.set(path, token.clone());
-                            }
+                            registry.set(path, token.clone());
                         }
                         Token::Enum(enumeration) => {
                             let path = &enumeration.type_path_no_generic();
-
-                            let base_token = registry.get(path);
-
-                            if let Ok(base_token) = base_token {
-                                let mut base_token = base_token.borrow_mut();
-
-                                let Token::Enum(base_enum) = &mut *base_token else {
-                                    unreachable!("Base generic path collided with different token type: path is {:?}, token is {:?}.", path, enumeration)
-                                };
-
-                                base_enum.merge_generic_variant(enumeration);
-                            } else {
-                                registry.set(path, token.clone());
-                            }
+                            registry.set(path, token.clone());
                         }
                         _ => {}
                     }

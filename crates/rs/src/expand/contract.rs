@@ -1,8 +1,6 @@
-use std::collections::HashMap;
-
 use cainome_parser::{
     tokens::{Constructor, Function, FunctionOutputKind, NamedToken, Token},
-    TypeRegistry,
+    CainomeResult, TypeRegistry,
 };
 use proc_macro2::TokenStream;
 
@@ -221,7 +219,7 @@ impl Contract {
 }
 
 impl Expandable for Contract {
-    fn expand(&self, ctx: &super::ExpansionContext) -> Vec<ExpansionResult> {
+    fn expand(&self, ctx: &super::ExpansionContext) -> CainomeResult<Vec<ExpansionResult>> {
         let contract_name = self.name.clone();
         let constructor_calldata_name = format!("{contract_name}Calldata");
         let reader = utils::str_to_ident(format!("{contract_name}Reader").as_str());
@@ -346,18 +344,16 @@ impl Expandable for Contract {
                     &constructor_calldata_name,
                     &constructor.inputs,
                     &vec![],
-                    &HashMap::new(),
                     ctx,
-                );
+                )?;
 
                 let implementation = struct_implementation(
                     &constructor_calldata_name,
                     &constructor_calldata_name,
                     &constructor.inputs,
                     &vec![],
-                    &HashMap::new(),
                     ctx,
-                );
+                )?;
 
                 constructor_calldata = quote! {
                     #declaration
@@ -494,6 +490,8 @@ impl Expandable for Contract {
             }
         };
 
-        vec![ExpansionResult::new(ROOT_MODULE_NAME).with_item(&contract_name, expanded_contract)]
+        Ok(vec![
+            ExpansionResult::new(ROOT_MODULE_NAME).with_item(&contract_name, expanded_contract)
+        ])
     }
 }

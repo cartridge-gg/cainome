@@ -1,5 +1,6 @@
 use cainome_parser::{AbiParser, ParserContext};
 
+use cainome_rs::expand::generic_resolver::GenericResolverFromMapping;
 use cainome_rs::expand::{ExpansionContext, ExpansionContextFactory};
 use starknet::core::types::contract::legacy::{LegacyContractClass, RawLegacyAbiEntry};
 use starknet::core::types::contract::{AbiEntry, SierraClass};
@@ -99,7 +100,6 @@ fn main() {
             .with_contract_name("MyContract")
             .with_derives(["Debug"])
             .with_cainome_serde_path("cainome_cairo_serde")
-            // .with_add_deployment(false)
             .build(),
     );
     expand(
@@ -115,6 +115,9 @@ fn main() {
                 "serde::Serialize",
                 "serde::Deserialize",
             ])
+            .with_generic_resolver(GenericResolverFromMapping::new(
+                vec![("contracts::gen::gen::MyStruct", "f2", "A")], //nowrap
+            ))
             .build(),
     );
 
@@ -216,6 +219,11 @@ fn main() {
                         .to_string(),
                     "crate::test_substitutions::GenericOneSpanFelt".to_string(),
                 ),
+            ]))
+            .with_generic_resolver(GenericResolverFromMapping::new(vec![
+                ("contracts::abicov::structs::GenericTwo", "a", "A"), //nowrap
+                ("contracts::abicov::structs::GenericTwo", "b", "B"), //nowrap
+                ("contracts::abicov::structs::GenericOne", "a", "A"),
             ]))
             .build(),
     );

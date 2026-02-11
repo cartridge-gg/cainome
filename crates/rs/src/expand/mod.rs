@@ -3,7 +3,7 @@ use std::{
     rc::Rc,
 };
 
-use cainome_parser::ParserContext;
+use cainome_parser::{CainomeResult, ParserContext};
 use proc_macro2::TokenStream;
 
 mod module;
@@ -18,7 +18,6 @@ pub mod for_tests;
 mod module_tests;
 
 pub(crate) mod contract;
-pub(crate) mod genericity;
 
 #[cfg(test)]
 mod contract_tests;
@@ -401,5 +400,5 @@ impl From<&ExpansionContext> for ExpansionContextFactory {
 }
 
 pub trait Expandable {
-    fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult>;
+    fn expand(&self, ctx: &ExpansionContext) -> CainomeResult<Vec<ExpansionResult>>;
 }
