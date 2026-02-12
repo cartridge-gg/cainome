@@ -1,0 +1,4 @@
+interface:
+  display_name: "Cainome Development"
+  short_description: "Contributor workflow for cartridge-gg/cainome"
+  default_prompt: "Use $cainome-development to implement and validate changes in cainome."
