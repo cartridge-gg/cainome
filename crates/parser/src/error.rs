@@ -9,6 +9,8 @@ pub enum Error {
     TokenInitFailed(String),
     #[error("Conversion error: {0}")]
     ConversionFailed(String),
+    #[error("Impossible to resolve generic field: {0}")]
+    GenericResolvationFailed(String),
     #[error("Parser error: {0}")]
     ParsingFailed(String),
     #[error("Expansion error: {0}")]

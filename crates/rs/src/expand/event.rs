@@ -4,7 +4,10 @@ use crate::expand::{
     types::{get_additional_derive_requirements, CairoToRust},
     utils, Expandable, ExpansionContext, ExpansionContextFactory, ExpansionResult,
 };
-use cainome_parser::tokens::{Event, EventKind, Token};
+use cainome_parser::{
+    tokens::{Event, EventKind, Token},
+    CainomeResult,
+};
 use proc_macro2::TokenStream;
 use quote::quote;
 
@@ -87,7 +90,7 @@ fn from_event_conversion_from_enum(event: &Event, ctx: &ExpansionContext) -> Tok
 }
 
 impl Expandable for Event {
-    fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult> {
+    fn expand(&self, ctx: &ExpansionContext) -> CainomeResult<Vec<ExpansionResult>> {
         let full_path = ctx.apply_alias(&self.type_path);
         let event_name = full_path.split("::").last().unwrap().to_owned();
         let event_name_str = utils::str_to_ident(&event_name);
@@ -105,8 +108,10 @@ impl Expandable for Event {
                     .with_derives(get_additional_derive_requirements(&variants, ctx))
                     .build();
 
-                let declaration = enum_declaration(&event_name, &variants, &ctx);
-                let implementation = enum_implementation(&event_name, &variants, &ctx);
+                let declaration =
+                    enum_declaration(&full_path, &event_name, &variants, &vec![], &ctx)?;
+                let implementation =
+                    enum_implementation(&full_path, &event_name, &variants, &vec![], &ctx)?;
 
                 let definition = quote! {
 
@@ -151,7 +156,9 @@ impl Expandable for Event {
                     }
                 };
 
-                vec![ExpansionResult::new(&full_path).with_item(&event_name, definition)]
+                Ok(vec![
+                    ExpansionResult::new(&full_path).with_item(&event_name, definition)
+                ])
             }
             cainome_parser::tokens::EventKind::Struct => {
                 let fields = [self.keys.clone(), self.data.clone()].concat();
@@ -162,8 +169,10 @@ impl Expandable for Event {
                     .with_derives(get_additional_derive_requirements(&fields, ctx))
                     .build();
 
-                let declaration = struct_declaration(&event_name, &fields, &ctx);
-                let implementation = struct_implementation(&event_name, &fields, &ctx);
+                let declaration =
+                    struct_declaration(&full_path, &event_name, &fields, &vec![], &ctx)?;
+                let implementation =
+                    struct_implementation(&full_path, &event_name, &fields, &vec![], &ctx)?;
 
                 let definition = quote! {
                     #declaration
@@ -215,7 +224,9 @@ impl Expandable for Event {
                     }
                 };
 
-                vec![ExpansionResult::new(&full_path).with_item(&event_name, definition)]
+                Ok(vec![
+                    ExpansionResult::new(&full_path).with_item(&event_name, definition)
+                ])
             }
         }
     }

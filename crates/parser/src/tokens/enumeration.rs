@@ -10,9 +10,8 @@ use crate::{
 #[derive(Debug, Clone, PartialEq)]
 pub struct Enum {
     pub type_path: String,
-    pub variants: Vec<NamedToken>,
+    variants: Vec<NamedToken>,
     pub generic_args: Vec<(String, Rc<RefCell<Token>>)>,
-    pub alias: Option<String>,
 }
 
 impl Enum {
@@ -29,25 +28,18 @@ impl Enum {
         };
 
         Ok(Self {
-            type_path,
+            type_path: genericity::type_path_no_generic(&type_path),
             generic_args: generic_args_with_types,
             variants: vec![],
-            alias: None,
         })
     }
 
-    pub fn with_variant(self, name: &str, token: Rc<RefCell<Token>>) -> Self {
-        Self {
-            variants: {
-                let mut v = self.variants;
-                v.push(NamedToken {
-                    name: name.to_string(),
-                    token,
-                });
-                v
-            },
-            ..self
-        }
+    pub fn with_variant(mut self, name: &str, token: Rc<RefCell<Token>>) -> Self {
+        self.variants.push(NamedToken {
+            name: name.to_string(),
+            token: Rc::clone(&token),
+        });
+        self
     }
 
     pub fn with_variants(self, variants: Vec<NamedToken>) -> Self {
@@ -56,5 +48,13 @@ impl Enum {
 
     pub fn type_path_no_generic(&self) -> String {
         genericity::type_path_no_generic(&self.type_path)
+    }
+
+    pub fn is_generic(&self) -> bool {
+        !self.generic_args.is_empty()
+    }
+
+    pub fn get_variants(&self) -> &Vec<NamedToken> {
+        &self.variants
     }
 }

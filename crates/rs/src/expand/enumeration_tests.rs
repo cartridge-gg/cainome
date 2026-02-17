@@ -20,7 +20,7 @@ fn test_enum_expand_empty() {
     let ctx = ExpansionContextFactory::new("ContractName").build();
 
     let generated = Module::new()
-        .with_includes(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -37,16 +37,13 @@ fn test_enum_expand_simple_variants() {
 
     let mut enumeration = Enum::new("my::Enum", &registry).unwrap();
 
-    enumeration.variants.push(NamedToken {
-        name: "variant1".to_string(),
-        token: registry.get("felt").unwrap(),
-    });
+    enumeration = enumeration.with_variant("variant1", registry.get("felt").unwrap());
 
     let ctx = ExpansionContextFactory::new("ContractName").build();
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -102,7 +99,7 @@ fn test_enum_expand_core_type_variants() {
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -177,7 +174,7 @@ fn test_enumeration_expand_with_containers_field() {
     registry.apply_substitutions(&ctx.substitutions);
 
     let generated = Module::new()
-        .with_includes(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 
@@ -229,9 +226,9 @@ fn test_enumeration_expand_with_structure_field() {
         .build();
 
     let generated = Module::new()
-        .with_includes(structure.expand(&ctx))
+        .with_includes(structure.expand(&ctx).unwrap())
         .unwrap()
-        .with_includes(enumeration.expand(&ctx))
+        .with_includes(enumeration.expand(&ctx).unwrap())
         .unwrap()
         .token_stream();
 

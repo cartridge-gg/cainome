@@ -446,10 +446,12 @@ fn check_basic_enum_is_parsed() {
         panic!("Only element parsed from ABI should be Token::Enum");
     };
 
-    assert_eq!(s1.variants.len(), 2);
+    let variants = s1.get_variants();
 
-    let f1_inner = s1.variants[0].clone();
-    let f2_inner = s1.variants[1].clone();
+    assert_eq!(variants.len(), 2);
+
+    let f1_inner = variants[0].clone();
+    let f2_inner = variants[1].clone();
 
     let Token::Basic(a1) = &*f1_inner.token.borrow() else {
         panic!("First variant should be CoreBasic");
@@ -1041,7 +1043,7 @@ fn test_dojo_starter_direction_available_abi() {
         let Token::Enum(array_inner) = &*a.inner.borrow() else {
             panic!("Expect array of Direction Enums")
         };
-        assert_eq!(5, array_inner.variants.len());
+        assert_eq!(5, array_inner.get_variants().len());
         // Check that copy was properly done
 
         assert_eq!(array_inner, e);
@@ -1086,7 +1088,7 @@ fn test_nested_tuple() {
             panic!("Expect first tuple element to be Enum")
         };
 
-        assert_eq!(5, tuple_f1.variants.len());
+        assert_eq!(5, tuple_f1.get_variants().len());
         // Check that copy was properly done
         assert_eq!(tuple_f1, e);
     }
@@ -1582,9 +1584,112 @@ fn test_complex_generic_function_argument_with_tuple() {
 
     let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
 
-    let Ok(_result) = AbiParser::build_registry(abi_entries, ctx) else {
+    let Ok(registry) = AbiParser::build_registry(abi_entries, ctx) else {
         panic!("Something is wrong");
     };
 
-    // TODO: add assertions
+    let generic_base = registry.get("contracts::abicov::structs::GenericOne");
+
+    assert!(generic_base.is_ok(), "Generic base type should be present");
+
+    let generic_variant = registry
+        .get("contracts::abicov::structs::GenericOne::<core::array::Span::<core::felt252>>");
+
+    assert!(
+        generic_variant.is_ok(),
+        "Generic variant type should be present"
+    );
+}
+
+#[test]
+fn test_generic_linking() {
+    let abi_json = r#"[
+            {
+                "type": "struct",
+                "name": "GenericOne::<core::integer::u32>",
+                "members": [
+                    {
+                        "name": "a",
+                        "type": "core::integer::u32"
+                    }
+                ]
+            },
+            {
+                "type": "struct",
+                "name": "GenericOne::<core::felt252>",
+                "members": [
+                    {
+                        "name": "a",
+                        "type": "core::felt252"
+                    }
+                ]
+            },
+            {
+                "type": "function",
+                "name": "my_func",
+                "inputs": [
+                    {
+                        "name": "value",
+                        "type": "GenericOne::<core::integer::u32>"
+                    },
+                    {
+                        "name": "value",
+                        "type": "GenericOne::<core::felt252>"
+                    }
+                ],
+                "outputs": [{"type": "core::integer::u32"}],
+                "state_mutability": "view"
+            }
+        ]"#;
+
+    let ctx = ParserContext::new();
+
+    let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
+
+    let Ok(registry) = AbiParser::build_registry(abi_entries, ctx) else {
+        panic!("Something is wrong");
+    };
+
+    let Ok(token) = registry.get("my_func") else {
+        panic!("my_func should be present in the registry");
+    };
+
+    let Token::Function(func) = &*token.borrow() else {
+        panic!("my_func should be a function");
+    };
+
+    {
+        // Getting generic parameter for the first argument of my_func
+        let argument_token = &*func.inputs[0].token.borrow();
+        assert!(argument_token.is_generic());
+
+        let Token::Struct(argument) = argument_token else {
+            panic!("argument_token argument should be a struct");
+        };
+
+        let argument_generic_parameter = &*argument.generic_args[0].1.borrow();
+        let Token::Basic(path) = argument_generic_parameter else {
+            panic!("Generic parameter should be Basic");
+        };
+
+        assert_eq!(path.type_path, "core::integer::u32");
+    }
+
+    {
+        // Getting generic parameter for the second argument of my_func
+        let argument_token = &*func.inputs[1].token.borrow();
+        assert!(argument_token.is_generic());
+
+        let Token::Struct(argument) = argument_token else {
+            panic!("argument_token argument should be a struct");
+        };
+
+        let argument_generic_parameter = &*argument.generic_args[0].1.borrow();
+        let Token::Basic(path) = argument_generic_parameter else {
+            panic!("Generic parameter should be Basic");
+        };
+
+        assert_eq!(path.type_path, "core::felt252");
+    }
+    // let func_token = &*registry.get("my_func").borrow;
 }

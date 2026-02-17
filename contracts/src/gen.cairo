@@ -63,6 +63,7 @@ mod gen {
         Eleven: (felt252, u8, u128),
     }
 
+
     #[external(v0)]
     fn func1(ref self: ContractState, a: MyStruct<felt252>) {
         self.v1.write(a.f1);

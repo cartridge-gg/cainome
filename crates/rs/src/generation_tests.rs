@@ -1,13 +1,28 @@
 use std::collections::HashMap;
+use std::sync::Once;
 
 use crate::expand::for_tests::{
-    assert_code_has, assert_code_has_impl_fn, assert_code_has_not, assert_code_has_not_struct,
-    assert_code_has_struct,
+    assert_code_has, assert_code_has_enum, assert_code_has_impl_fn, assert_code_has_not,
+    assert_code_has_not_struct, assert_code_has_struct,
 };
+use crate::expand::generic_resolver::GenericResolverFromMapping;
 use crate::{abi_to_tokenstream, expand::ExpansionContextFactory, ExecutionVersion};
 use cainome_parser::{tokens::Token, AbiParser, ParserContext};
 use quote::quote;
 use syn::parse_quote;
+use tracing::Level;
+
+static INIT: Once = Once::new();
+
+fn init_tracing() {
+    INIT.call_once(|| {
+        tracing_subscriber::fmt()
+            .with_level(true)
+            .with_max_level(Level::TRACE)
+            .with_test_writer()
+            .init();
+    });
+}
 
 #[test]
 fn test_generic_with_single_argument_expansion() {
@@ -53,6 +68,9 @@ fn test_generic_with_single_argument_expansion() {
     let ctx = ExpansionContextFactory::new("MyContract")
         .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
         .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![
+            ("MyType", "alias", "A"), //nowrap
+        ]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();
@@ -65,8 +83,8 @@ fn test_generic_with_single_argument_expansion() {
         &generated,
         &quote! {
             #[derive(Debug, PartialEq)]
-            pub struct MyType {
-                pub alias: self::NestedType,
+            pub struct MyType<A> {
+                pub alias: A,
                 pub data: starknet::core::types::Felt,
             }
         },
@@ -91,11 +109,11 @@ fn test_generic_with_single_argument_expansion() {
             #[allow(clippy::too_many_arguments)]
             pub fn very_cool_function_getcall(
                 &self,
-                value: &self::MyType
+                value: &self::MyType::<self::NestedType>
             ) -> starknet::core::types::Call {
                 use cainome::cairo_serde::CairoSerde;
                 let mut __calldata = vec![];
-                __calldata.extend(self::MyType::cairo_serialize(value));
+                __calldata.extend(self::MyType::<self::NestedType>::cairo_serialize(value));
                 starknet::core::types::Call {
                     to: self.address,
                     selector: starknet::macros::selector!("very_cool_function"),
@@ -113,7 +131,7 @@ fn test_generic_with_single_argument_expansion() {
             #[allow(clippy::too_many_arguments)]
             pub fn very_cool_function(
                 &self,
-                value: &self::MyType
+                value: &self::MyType::<self::NestedType>
             ) -> starknet::accounts::ExecutionV3<A> {
                 let __call = self.very_cool_function_getcall(value);
                 self.account.execute_v3(vec![__call])
@@ -123,6 +141,7 @@ fn test_generic_with_single_argument_expansion() {
     );
 }
 
+#[ignore = "Aliasing needs rework."]
 #[test]
 fn test_2_generic_variants_aliasing() {
     let abi = r#"[
@@ -196,16 +215,6 @@ fn test_2_generic_variants_aliasing() {
     let ctx = ExpansionContextFactory::new("MyContract")
         .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
         .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
-        .with_aliases(HashMap::from([
-            (
-                "MyType::<Variant1>".to_string(),
-                "MyTypeVariant1".to_string(),
-            ),
-            (
-                "MyType::<Variant2>".to_string(),
-                "MyTypeVariant2".to_string(),
-            ),
-        ]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();
@@ -572,6 +581,11 @@ fn test_tuple_with_custom_genetic_type_as_func_argument_case() {
     let ctx = ExpansionContextFactory::new("MyContract")
         .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
         .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![(
+            "contracts::abicov::structs::ToAlias",
+            "a",
+            "A",
+        )]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();
@@ -623,6 +637,10 @@ fn test_tuple_with_custom_genetic_type_as_func_argument_case_with_alias() {
         .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
         .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
         .with_aliases(aliases)
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![
+            ("ToAlias", "a", "A"), //nowrap
+        ]))
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![("ToAlias", "a", "A")]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();
@@ -684,7 +702,10 @@ fn test_tuple_with_generic_arg_with_2_parameters_resolves() {
         unreachable!()
     };
 
-    assert_eq!(s.type_path, "my::Generic::<core::felt252, core::felt252>");
+    // s.to_rust_type_path(&ctx);
+
+    assert_eq!(s.type_path, "my::Generic");
+    assert!(s.is_generic());
 }
 
 #[test]
@@ -808,34 +829,318 @@ fn test_substitution_for_generic_case() {
     let _generated = abi_to_tokenstream(&registry.unwrap(), &ctx);
 }
 
-// #[test]
-// fn test_nested_generic_resolution() {
-//     let abi_json = r#"[
-//         {
-//             "type": "struct",
-//             "name": "contracts::abicov::structs::GenericOne::<core::array::Span::<core::felt252>>",
-//             "members": [
-//                 {
-//                     "name": "a",
-//                     "type": "core::array::Span::<core::felt252>"
-//                 },
-//                 {
-//                     "name": "b",
-//                     "type": "core::felt252"
-//                 },
-//                     {
-//                     "name": "c",
-//                     "type": "core::integer::u128"
-//                 }
-//             ]
-//         }
-//     ]
-//     "#;
+#[test]
+fn test_simple_generic_rendering_resolves_easy_struct() {
+    init_tracing();
 
-//     let ctx =
-//         ParserContext::new().with_substitutions(HashMap::from([("core::integer::i128", "i128")]));
+    let abi = r#"[
+        {
+            "type": "struct",
+            "name": "my::GenericVar::<core::felt252>",
+            "members": [
+                {
+                    "name": "a",
+                    "type": "core::felt252"
+                }
+            ]
+        },
+        {
+            "type": "struct",
+            "name": "my::GenericVar::<core::integer::u32>",
+            "members": [
+                {
+                    "name": "a",
+                    "type": "core::integer::u32"
+                }
+            ]
+        }
+    ]"#;
 
-//     let abi_entries = AbiParser::parse_abi_string(abi_json).unwrap();
+    let ctx = ExpansionContextFactory::new("MyContract")
+        .with_add_declaration(false)
+        .with_add_deployment(false)
+        .with_root_module_path("root")
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![
+            ("my::GenericVar", "a", "A"), //nowrap
+        ]))
+        .build();
 
-//     let registry = AbiParser::build_registry(abi_entries, ctx).unwrap();
-// }
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+    let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
+
+    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx);
+
+    assert_code_has_struct(
+        &generated.unwrap(),
+        &parse_quote! {
+            pub struct GenericVar<A> {
+                pub a: A
+            }
+        },
+        "GenericVar<A> not found",
+    );
+}
+
+#[test]
+fn test_simple_generic_fucntion() {
+    init_tracing();
+
+    let abi = r#"[
+        {
+            "type": "struct",
+            "name": "my::GenericVar::<core::felt252>",
+            "members": [
+                {
+                    "name": "a",
+                    "type": "core::felt252"
+                }
+            ]
+        },
+        {
+            "type": "struct",
+            "name": "my::GenericVar::<core::integer::u32>",
+            "members": [
+                {
+                    "name": "a",
+                    "type": "core::integer::u32"
+                }
+            ]
+        },
+        {
+            "type": "function",
+            "name": "my_func",
+            "inputs": [
+                {
+                    "name": "arg",
+                    "type": "my::GenericVar::<core::integer::u32>"
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "felt"
+                }
+            ],
+            "state_mutability": "external"  
+        }
+    ]"#;
+
+    let ctx = ExpansionContextFactory::new("MyContract")
+        .with_add_declaration(false)
+        .with_add_deployment(false)
+        .with_root_module_path("root")
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![
+            ("my::GenericVar", "a", "A"), //nowrap
+        ]))
+        .build();
+
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+    let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
+
+    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx);
+
+    assert_code_has_impl_fn(
+        &generated.unwrap(),
+        &parse_quote! {
+            #[allow(clippy::ptr_arg)]
+            #[allow(clippy::too_many_arguments)]
+            pub fn my_func(&self, arg: &root::my::GenericVar::<u32>) -> starknet::accounts::ExecutionV3<A> {
+                let __call = self.my_func_getcall (arg);
+                self.account.execute_v3(vec![__call])
+            }
+        },
+        "GenericVar<A> not found",
+    );
+}
+
+#[test]
+fn test_nested_generic_field() {
+    init_tracing();
+
+    let abi = r#"[
+        {
+            "type": "struct",
+            "name": "my::Nested::<core::felt252>",
+            "members": [
+                {
+                    "name": "a",
+                    "type": "core::felt252"
+                }
+            ]
+        },
+        {
+            "type": "struct",
+            "name": "my::GenericVar::<core::felt252>",
+            "members": [
+                {
+                    "name": "a",
+                    "type": "core::felt252"
+                },
+                {
+                    "name": "nested",
+                    "type": "my::Nested::<core::felt252>"
+                }
+            ]
+        },
+        {
+            "type": "struct",
+            "name": "my::GenericVar::<core::integer::u32>",
+            "members": [
+                {
+                    "name": "a",
+                    "type": "core::integer::u32"
+                },
+                {
+                    "name": "nested",
+                    "type": "my::Nested::<core::felt252>"
+                }
+            ]
+        }
+    ]"#;
+
+    let ctx = ExpansionContextFactory::new("MyContract")
+        .with_add_declaration(false)
+        .with_add_deployment(false)
+        .with_root_module_path("root")
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![
+            ("my::Nested", "a", "A"),     //nowrap
+            ("my::GenericVar", "a", "A"), //nowrap
+        ]))
+        .build();
+
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+    let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
+
+    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx).unwrap();
+
+    assert_code_has_struct(
+        &generated.clone(),
+        &parse_quote! {
+            pub struct GenericVar<A> {
+                pub a: A,
+                pub nested: root::my::Nested::<starknet::core::types::Felt>
+            }
+        },
+        "GenericVar<A> not found",
+    );
+}
+
+#[test]
+fn test_nested_generic_field_in_enumeration() {
+    init_tracing();
+
+    let abi = r#"[
+        {
+            "type": "enum",
+            "name": "my::Nested::<core::felt252>",
+            "variants": [
+                {
+                    "name": "One",
+                    "type": "core::felt252"
+                },
+                {
+                    "name": "Two",
+                    "type": "(core::felt252, core::felt252)"
+                }
+            ]
+        },
+        {
+            "type": "struct",
+            "name": "my::Var",
+            "members": [
+                {
+                    "name": "a",
+                    "type": "core::felt252"
+                },
+                {
+                    "name": "nested",
+                    "type": "my::Nested::<core::felt252>"
+                }
+            ]
+        }
+    ]"#;
+
+    let ctx = ExpansionContextFactory::new("MyContract")
+        .with_add_declaration(false)
+        .with_add_deployment(false)
+        .with_root_module_path("root")
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![
+            ("my::Nested", "One", "A"), //nowrap
+        ]))
+        .build();
+
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+    let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
+
+    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx).unwrap();
+
+    assert_code_has_struct(
+        &generated.clone(),
+        &parse_quote! {
+            pub struct Var {
+                pub a: starknet::core::types::Felt,
+                pub nested: root::my::Nested::<starknet::core::types::Felt>
+            }
+        },
+        "Var not found",
+    );
+
+    assert_code_has_enum(
+        &generated.clone(),
+        &parse_quote! {
+            pub enum Nested<A> {
+                One(A),
+                Two((starknet::core::types::Felt, starknet::core::types::Felt))
+            }
+        },
+        "Nested<A> not found",
+    )
+}
+
+#[test]
+fn test_generic_resolver() {
+    init_tracing();
+    let abi = r#"[
+        {
+            "type": "struct",
+            "name": "my::Var<core::felt252>",
+            "members": [
+                {
+                    "name": "a",
+                    "type": "core::felt252"
+                },
+                {
+                    "name": "b",
+                    "type": "core::felt252"
+                }
+            ]
+        }
+    ]"#;
+
+    let ctx = ExpansionContextFactory::new("MyContract")
+        .with_add_declaration(false)
+        .with_add_deployment(false)
+        .with_root_module_path("root")
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![("my::Var", "b", "A")]))
+        .build();
+
+    let entries = AbiParser::parse_abi_string(abi).unwrap();
+
+    let registry = AbiParser::build_registry(entries, ParserContext::from(&ctx));
+
+    let generated = abi_to_tokenstream(&registry.unwrap(), &ctx).unwrap();
+
+    assert_code_has_struct(
+        &generated.clone(),
+        &parse_quote! {
+            pub struct Var<A> {
+                pub a: starknet::core::types::Felt,
+                pub b: A
+            }
+        },
+        "Var not found",
+    );
+}

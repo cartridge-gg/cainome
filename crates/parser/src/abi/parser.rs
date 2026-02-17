@@ -88,6 +88,11 @@ impl AbiParser {
     where
         T: WithDependencies,
     {
+        tracing::trace!(
+            "Checking dependencies for entry: {:?}",
+            entry.get_dependencies()
+        );
+
         for dep in entry.get_dependencies().iter() {
             // Skipped types are always unknown
             if ctx.is_type_skipped(dep) {
@@ -186,23 +191,41 @@ impl AbiParser {
             }
 
             if token.borrow().is_container() {
-                tracing::debug!("Removing placeholder for container: {}", &type_path);
+                tracing::debug!(
+                    "Removing placeholder for container (span, array etc.): {}",
+                    &type_path
+                );
                 registry.remove(&type_path);
                 continue;
             }
 
             // Ok, now we can resolve.
             if let Some(token) = entry.try_to_token(&mut registry)? {
-                // Register base generic type as well
-                match &token {
-                    Token::Struct(s) => _ = registry.set(&s.type_path_no_generic(), token.clone()),
-                    Token::Enum(e) => _ = registry.set(&e.type_path_no_generic(), token.clone()),
-                    Token::Event(_)
-                    | Token::Function(_)
-                    | Token::Constructor(_)
-                    | Token::Interface(_) => (),
-                    _ => unreachable!("This token should never get to registry: {:?}", token),
+                // Assert that only specific tokens can get saved to store.
+                // TODO: expandable? maybe need better naming
+                if !token.is_expandable() {
+                    unreachable!("This token should never get to registry: {:?}", token);
                 }
+
+                tracing::debug!("Checking genericity: {}", &type_path);
+
+                // Let's register generic types without generic arguments first, so they can be used in
+                // resolution of other tokens.
+                if token.is_generic() {
+                    match &token {
+                        Token::Struct(structure) => {
+                            let path = &structure.type_path_no_generic();
+                            registry.set(path, token.clone());
+                        }
+                        Token::Enum(enumeration) => {
+                            let path = &enumeration.type_path_no_generic();
+                            registry.set(path, token.clone());
+                        }
+                        _ => {}
+                    }
+                }
+
+                tracing::debug!("Saving token: {}", &entry.get_name());
 
                 registry.set(&entry.get_name(), token);
             } else {

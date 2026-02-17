@@ -234,7 +234,8 @@ pub fn abi_to_tokenstream(
         ctx.contract_derives.iter().cloned().collect(),
         registry,
     );
-    let mut root = Module::new().with_includes(contract.expand(ctx))?;
+
+    let mut root = Module::new().with_includes(contract.expand(ctx)?)?;
 
     let registered_structs = registry.get_structs();
     let registered_enums = registry.get_enums();
@@ -247,7 +248,7 @@ pub fn abi_to_tokenstream(
             unreachable!("Expected only Struct tokens in the collection, found something else.");
         };
 
-        root.include_many(s.expand(ctx))?;
+        root.include_many(s.expand(ctx)?)?;
     }
 
     for enumeration in registered_enums {
@@ -257,7 +258,7 @@ pub fn abi_to_tokenstream(
             unreachable!("Expected only Enum tokens in the collection, found something else.");
         };
 
-        root.include_many(e.expand(ctx))?;
+        root.include_many(e.expand(ctx)?)?;
     }
 
     for event in registered_events {
@@ -267,7 +268,7 @@ pub fn abi_to_tokenstream(
             unreachable!("Expected only Event tokens in the collection, found something else.");
         };
 
-        root.include_many(e.expand(ctx))?;
+        root.include_many(e.expand(ctx)?)?;
     }
 
     tracing::trace!("Root module expansion started.");

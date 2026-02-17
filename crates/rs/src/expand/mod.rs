@@ -1,11 +1,15 @@
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::{
+    collections::{BTreeSet, HashMap, HashSet},
+    rc::Rc,
+};
 
-use cainome_parser::{tokens::genericity, ParserContext};
+use cainome_parser::{CainomeResult, ParserContext};
 use proc_macro2::TokenStream;
 
-use crate::ExecutionVersion;
 mod module;
 pub(crate) use module::Module;
+
+use crate::ExecutionVersion;
 
 #[cfg(test)]
 pub mod for_tests;
@@ -33,6 +37,7 @@ pub(crate) mod structure;
 #[cfg(test)]
 mod structure_tests;
 
+pub mod generic_resolver;
 mod types;
 pub mod utils;
 
@@ -89,7 +94,6 @@ impl ExpansionResult {
     }
 }
 
-#[derive(Clone)]
 pub struct ExpansionContext {
     // TODO: expose properties through methods
     pub contract_name: String,
@@ -102,6 +106,7 @@ pub struct ExpansionContext {
     pub contract_source: String,
     pub add_declaration: bool,
     pub add_deployment: bool,
+    pub generic_resolver: Rc<dyn generic_resolver::GenericResolver>,
 
     // TODO: syn::Type?
     pub root_module_path: String,
@@ -120,13 +125,7 @@ impl ExpansionContext {
         if let Some(alias) = self.aliases.get(type_path) {
             return alias.to_string();
         }
-
-        let no_generic = genericity::type_path_no_generic(type_path);
-        if let Some(alias) = self.aliases.get(&no_generic) {
-            return alias.to_string();
-        }
-
-        no_generic.to_string()
+        type_path.to_owned()
     }
 }
 
@@ -144,6 +143,7 @@ pub struct ExpansionContextFactory {
     // TODO: syn::Type?
     root_module_path: String,
     cainome_serde_path: String,
+    generic_resolver: Rc<dyn generic_resolver::GenericResolver>,
     is_legacy: bool,
 }
 
@@ -152,6 +152,8 @@ impl ExpansionContextFactory {
     where
         S: AsRef<str>,
     {
+        let resolver = generic_resolver::DefaultGenericResolver;
+
         Self {
             derives: BTreeSet::new(),
             contract_derives: BTreeSet::new(),
@@ -166,6 +168,7 @@ impl ExpansionContextFactory {
             is_legacy: false,
             add_declaration: true,
             add_deployment: true,
+            generic_resolver: Rc::new(resolver),
         }
     }
 
@@ -281,6 +284,14 @@ impl ExpansionContextFactory {
         self
     }
 
+    pub fn with_generic_resolver(
+        mut self,
+        resolver: Rc<dyn generic_resolver::GenericResolver>,
+    ) -> Self {
+        self.generic_resolver = resolver;
+        self
+    }
+
     pub fn build(self) -> ExpansionContext {
         let cainome_serde_path = self.cainome_serde_path;
         let snrs_types = utils::starknet_rs_types_path();
@@ -352,6 +363,7 @@ impl ExpansionContextFactory {
             sierra_add_pythonic_hints: false,
             deployer_generate_salt: true,
             deployer_is_unique: true,
+            generic_resolver: self.generic_resolver,
         }
     }
 }
@@ -383,16 +395,10 @@ impl From<&ExpansionContext> for ExpansionContextFactory {
             .with_cainome_serde_path(&value.cainome_serde_path)
             .with_is_legacy(value.is_legacy)
             .with_root_module_path(value.root_module_path.clone())
+            .with_generic_resolver(Rc::clone(&value.generic_resolver))
     }
 }
 
 pub trait Expandable {
-    fn expand(&self, ctx: &ExpansionContext) -> Vec<ExpansionResult>;
-}
-
-#[cfg(test)]
-mod tests {
-
-    #[test]
-    fn test_module_expand_empty() {}
+    fn expand(&self, ctx: &ExpansionContext) -> CainomeResult<Vec<ExpansionResult>>;
 }

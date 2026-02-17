@@ -12,6 +12,9 @@
 //! 2. Direct JSON array input:
 //!    abigen!(ContractName, [{"type": "function", ...}])
 //!
+use cainome_rs::expand::generic_resolver::{
+    DefaultGenericResolver, GenericResolver, GenericResolverFromMapping,
+};
 use proc_macro_error::emit_error;
 use quote::ToTokens;
 use starknet::core::types::contract::{AbiEntry, SierraClass};
@@ -19,6 +22,7 @@ use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::io::{BufReader, Seek, SeekFrom};
 use std::path::Path;
+use std::rc::Rc;
 use std::str::FromStr;
 use syn::{
     braced,
@@ -28,12 +32,12 @@ use syn::{
     Ident, LitStr, Token, Type,
 };
 
+use crate::macro_inputs_legacy::GenericMapping;
 use crate::spanned::Spanned;
 use cainome_rs::ExecutionVersion;
 
 const CARGO_MANIFEST_DIR: &str = "$CARGO_MANIFEST_DIR/";
 
-#[derive(Clone, Debug)]
 pub(crate) struct ContractAbi {
     pub name: Ident,
     pub abi: Vec<AbiEntry>,
@@ -49,6 +53,7 @@ pub(crate) struct ContractAbi {
     pub add_deployment: bool,
     pub cainome_serde_path: String,
     pub root_module_path: String,
+    pub generic_resolver: Rc<dyn GenericResolver>,
 }
 
 impl Parse for ContractAbi {
@@ -129,6 +134,7 @@ impl Parse for ContractAbi {
         let mut add_deployment = true;
         let mut cainome_serde_path = "cainome::cairo_serde".to_string();
         let mut root_module_path = "self".to_string();
+        let mut generic_resolver: Rc<dyn GenericResolver> = Rc::new(DefaultGenericResolver);
 
         loop {
             if input.parse::<Token![,]>().is_err() {
@@ -141,6 +147,19 @@ impl Parse for ContractAbi {
             };
 
             match name.to_string().as_str() {
+                "generic_resolver" => {
+                    let content;
+                    braced!(content in input);
+                    let parsed =
+                        content.parse_terminated(Spanned::<GenericMapping>::parse, Token![;])?;
+
+                    let mappings = parsed
+                        .iter()
+                        .map(|p| (p.r#type.as_str(), p.field.as_str(), p.generic_arg.as_str()))
+                        .collect::<Vec<_>>();
+
+                    generic_resolver = GenericResolverFromMapping::new(mappings);
+                }
                 "type_aliases" => {
                     let content;
                     braced!(content in input);
@@ -279,6 +298,7 @@ impl Parse for ContractAbi {
             add_deployment,
             cainome_serde_path,
             root_module_path,
+            generic_resolver,
         })
     }
 }

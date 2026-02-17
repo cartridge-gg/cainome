@@ -33,3 +33,6 @@ pub mod test_option_result;
 
 #[cfg(test)]
 pub mod test_substitutions;
+
+#[cfg(test)]
+pub mod test_cairo_serde_derive;

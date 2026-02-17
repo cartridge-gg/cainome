@@ -52,6 +52,7 @@ async fn main() -> CainomeCliResult<()> {
         output_dir: args.output_dir,
         contracts,
         execution_version: args.execution_version,
+        generic_parameter_mapping: parser_config.generic_parameter_mapping,
         type_skips: args.type_skips.unwrap_or_default(),
     })
     .await?;
