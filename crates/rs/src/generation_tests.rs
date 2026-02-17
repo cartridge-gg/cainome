@@ -581,6 +581,11 @@ fn test_tuple_with_custom_genetic_type_as_func_argument_case() {
     let ctx = ExpansionContextFactory::new("MyContract")
         .with_contract_derives(vec!["Debug".to_string(), "Clone".to_string()])
         .with_derives(vec!["Debug".to_string(), "PartialEq".to_string()])
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![(
+            "contracts::abicov::structs::ToAlias",
+            "a",
+            "A",
+        )]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();
@@ -635,6 +640,7 @@ fn test_tuple_with_custom_genetic_type_as_func_argument_case_with_alias() {
         .with_generic_resolver(GenericResolverFromMapping::new(vec![
             ("ToAlias", "a", "A"), //nowrap
         ]))
+        .with_generic_resolver(GenericResolverFromMapping::new(vec![("ToAlias", "a", "A")]))
         .build();
 
     let entries = AbiParser::parse_abi_string(abi).unwrap();
