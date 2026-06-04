@@ -12,7 +12,7 @@
 //! based on it's state mutability found in the ABI itself.
 //!
 //! * `FCall` - Struct for readonly functions.
-//! * `ExecutionV1` - Struct from starknet-rs for transaction based functions.
+//! * `ExecutionV3` - Struct from starknet-rust for transaction based functions.
 use cainome_parser::tokens::{Function, FunctionOutputKind, StateMutability, Token};
 use proc_macro2::TokenStream as TokenStream2;
 use quote::quote;
@@ -24,14 +24,12 @@ use crate::ExecutionVersion;
 impl ExecutionVersion {
     pub fn get_type_str(&self) -> String {
         match self {
-            ExecutionVersion::V1 => "starknet::accounts::ExecutionV1<A>".to_string(),
-            ExecutionVersion::V3 => "starknet::accounts::ExecutionV3<A>".to_string(),
+            ExecutionVersion::V3 => "starknet_rust::accounts::ExecutionV3<'_, A>".to_string(),
         }
     }
 
     pub fn get_call_str(&self) -> TokenStream2 {
         match self {
-            ExecutionVersion::V1 => quote!(self.account.execute_v1(vec![__call])),
             ExecutionVersion::V3 => quote!(self.account.execute_v3(vec![__call])),
         }
     }
@@ -110,9 +108,9 @@ impl CairoFunction {
                     let mut __calldata = vec![];
                     #(#serializations)*
 
-                    let __call = starknet::core::types::FunctionCall {
+                    let __call = starknet_rust::core::types::FunctionCall {
                         contract_address: self.address,
-                        entry_point_selector: starknet::macros::selector!(#func_name),
+                        entry_point_selector: starknet_rust::macros::selector!(#func_name),
                         calldata: __calldata,
                     };
 
@@ -123,10 +121,10 @@ impl CairoFunction {
                 }
             },
             StateMutability::External => {
-                // For now, ExecutionV1 can't return the list of calls.
+                // For now, ExecutionV3 can't return the list of calls.
                 // This would be helpful to easily access the calls
                 // without having to add `_getcall()` method.
-                // If starknet-rs provides a way to get the calls,
+                // If starknet-rust provides a way to get the calls,
                 // we can remove `_getcall()` method.
                 //
                 // TODO: if it's possible to do it with lifetime,
@@ -140,15 +138,15 @@ impl CairoFunction {
                     pub fn #func_name_call(
                         &self,
                         #(#inputs),*
-                    ) -> starknet::core::types::Call {
+                    ) -> starknet_rust::core::types::Call {
                         use #ccs::CairoSerde;
 
                         let mut __calldata = vec![];
                         #(#serializations)*
 
-                        starknet::core::types::Call {
+                        starknet_rust::core::types::Call {
                             to: self.address,
-                            selector: starknet::macros::selector!(#func_name),
+                            selector: starknet_rust::macros::selector!(#func_name),
                             calldata: __calldata,
                         }
                     }
@@ -164,9 +162,9 @@ impl CairoFunction {
                         let mut __calldata = vec![];
                         #(#serializations)*
 
-                        let __call = starknet::core::types::Call {
+                        let __call = starknet_rust::core::types::Call {
                             to: self.address,
-                            selector: starknet::macros::selector!(#func_name),
+                            selector: starknet_rust::macros::selector!(#func_name),
                             calldata: __calldata,
                         };
 

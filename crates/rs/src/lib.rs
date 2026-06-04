@@ -94,7 +94,7 @@ impl Abigen {
             contract_name: contract_name.to_string(),
             abi_source: Utf8PathBuf::from(abi_source),
             types_aliases: HashMap::new(),
-            execution_version: ExecutionVersion::V1,
+            execution_version: ExecutionVersion::V3,
             derives: vec![],
             contract_derives: vec![],
             type_skips: vec![],
@@ -297,12 +297,12 @@ pub fn abi_to_tokenstream(
     let reader = utils::str_to_ident(format!("{}Reader", contract_name).as_str());
 
     tokens.push(quote! {
-        impl<A: starknet::accounts::ConnectedAccount + Sync> #contract_name<A> {
+        impl<A: starknet_rust::accounts::ConnectedAccount + Sync> #contract_name<A> {
             #(#views)*
             #(#externals)*
         }
 
-        impl<P: starknet::providers::Provider + Sync> #reader<P> {
+        impl<P: starknet_rust::providers::Provider + Sync> #reader<P> {
             #(#reader_views)*
         }
     });

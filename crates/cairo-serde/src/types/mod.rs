@@ -14,7 +14,7 @@ pub mod u256;
 #[cfg(test)]
 mod tests {
     use crate::CairoSerde;
-    use ::starknet::core::types::Felt;
+    use ::starknet_rust::core::types::Felt;
 
     #[test]
     fn test_serialize_several_values() {

@@ -21,7 +21,7 @@ pub use types::starknet::*;
 pub use types::u256::*;
 pub use types::*;
 
-use ::starknet::core::types::Felt;
+use ::starknet_rust::core::types::Felt;
 
 /// CairoSerde trait to implement in order to serialize/deserialize
 /// a Rust type to/from a CairoSerde.

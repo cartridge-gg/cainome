@@ -98,18 +98,18 @@ The expansion of the macros generates the following:
 
   // This will generate a rust struct with the make `MyStruct`:
   MyStruct {
-    a: starknet::core::types::Felt,
+    a: starknet_rust::core::types::Felt,
     a: U256, // Note the `PascalCase` here. As `u256` is a struct, it follows the common rule.
   }
   ```
 
-- **Contract** type with the identifier of your choice (`MyContract` in the previous example). This type contains all the functions (externals and views) of your contract being exposed in the ABI. To initialize this type, you need the contract address and any type that implements `ConnectedAccount` from `starknet-rs`. Remember that `Arc<ConnectedAccount>` also implements `ConnectedAccount`.
+- **Contract** type with the identifier of your choice (`MyContract` in the previous example). This type contains all the functions (externals and views) of your contract being exposed in the ABI. To initialize this type, you need the contract address and any type that implements `ConnectedAccount` from `starknet-rust`. Remember that `Arc<ConnectedAccount>` also implements `ConnectedAccount`.
   ```rust
   let account = SingleOwnerAccount::new(...);
   let contract_address = Felt::from_hex("0x1234...");
   let contract = MyContract::new(contract_address, account);
   ```
-- **Contract Reader** type with the identifier of your choice with the suffix `Reader` (`MyContractReader`) in the previous example. The reader contains only the views of your contract. To initialize a reader, you need the contract address and a provider from `starknet-rs`.
+- **Contract Reader** type with the identifier of your choice with the suffix `Reader` (`MyContractReader`) in the previous example. The reader contains only the views of your contract. To initialize a reader, you need the contract address and a provider from `starknet-rust`.
   ```rust
   let provider = AnyProvider::JsonRpcHttp(...);
   let contract_address = Felt::from_hex("0x1234...");
@@ -125,7 +125,7 @@ The expansion of the macros generates the following:
       .await
       .expect("Call to `get_my_struct` failed");
   ```
-- For each **external**, the contract type contains a function with the same arguments. Calling the function return a `starknet::accounts::ExecutionV1` type from `starknet-rs`, which allows you to completly customize the fees, doing only a simulation etc... To actually send the transaction, you use the `send()` method on the `ExecutionV3` struct. You can find the [associated methods with this struct on starknet-rs repo](https://github.com/xJonathanLEI/starknet-rs/blob/171b0c65cac407ee33972e0ab2c3f8744c083753/starknet-accounts/src/account/execution.rs#L403).
+- For each **external**, the contract type contains a function with the same arguments. Calling the function returns a `starknet_rust::accounts::ExecutionV3` type from `starknet-rust`, which allows you to customize the fees, run a simulation, or send the transaction. To actually send the transaction, you use the `send()` method on the `ExecutionV3` struct. You can find the [associated methods](https://docs.rs/starknet-rust-accounts/latest/starknet_rust_accounts/struct.ExecutionV3.html) in the `starknet-rust-accounts` crate.
 
   ```rust
   let my_struct = MyStruct {
@@ -143,8 +143,7 @@ The expansion of the macros generates the following:
       .expect("Call to `set_my_struct` failed");
   ```
 
-  To support multicall, currently `ExecutionV1` type does not expose the `Call`s.
-  To circumvey this, for each of the external function an other function with `_getcall` suffix is generated:
+  To support multicall, each external function also gets a function with the `_getcall` suffix:
 
   ```rust
   // Gather the `Call`s.
@@ -154,14 +153,14 @@ The expansion of the macros generates the following:
   // Then use the account exposed by the `MyContract` type to realize the multicall.
   let tx_res = contract
       .account
-      .execute(vec![set_a_call, set_b_call])
+      .execute_v3(vec![set_a_call, set_b_call])
       .send()
       .await
       .expect("Multicall failed");
   ```
 
 - For each `Event` enumeration in the contract, the trait `TryFrom<EmittedEvent>` is generated. `EmittedEvent` is the type used
-  by `starknet-rs` when events are fetched using `provider.get_events()`.
+  by `starknet-rust` when events are fetched using `provider.get_events()`.
 
   ```rust
   let events = provider.get_events(...).await.unwrap();
@@ -199,7 +198,7 @@ The expansion of the macros generates the following:
 
   ```rust
   pub struct GetBlockhashRegistryOutput {
-      pub address: starknet::core::types::Felt,
+      pub address: starknet_rust::core::types::Felt,
   }
   ```
 

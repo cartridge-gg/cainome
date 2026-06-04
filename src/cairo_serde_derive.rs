@@ -6,8 +6,8 @@ mod tests {
 
     use cainome_cairo_serde::CairoSerde;
     use cainome_cairo_serde_derive::CairoSerde;
-    use starknet::macros::felt;
-    use starknet_types_core::felt::Felt;
+    use starknet_rust::core::types::Felt;
+    use starknet_rust::macros::felt;
 
     #[derive(Debug, CairoSerde, PartialEq)]
     struct ExampleSimple {

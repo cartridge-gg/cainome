@@ -1,7 +1,7 @@
 //! CairoSerde implementation for `Vec`.
 //! They are used for Array and Span cairo types.
 use crate::{CairoSerde, Error, Result};
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 
 impl<T, RT> CairoSerde for Vec<T>
 where

@@ -1,4 +1,4 @@
-use starknet::core::types::contract::{
+use starknet_rust::core::types::contract::{
     legacy::{RawLegacyEvent, RawLegacyStruct},
     AbiEnum, AbiEventEnum, AbiEventStruct, AbiStruct, EventFieldKind,
     StateMutability as StarknetStateMutability,

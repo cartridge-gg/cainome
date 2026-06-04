@@ -1,5 +1,5 @@
 use cainome::rs::abigen;
-use starknet::{
+use starknet_rust::{
     macros::felt,
     providers::{jsonrpc::HttpTransport, JsonRpcClient},
 };

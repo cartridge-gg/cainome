@@ -15,7 +15,7 @@ pub fn derive_struct(ident: Ident, data: DataStruct) -> TokenStream {
     };
 
     let cairo_serialize = quote! {
-        fn cairo_serialize(rust: &Self::RustType) -> Vec<::starknet::core::types::Felt> {
+        fn cairo_serialize(rust: &Self::RustType) -> Vec<::starknet_rust::core::types::Felt> {
             let mut result = Vec::new();
             #(
                 result.extend(<#types as ::cainome_cairo_serde::CairoSerde>::cairo_serialize(&rust.#fields));
@@ -25,7 +25,7 @@ pub fn derive_struct(ident: Ident, data: DataStruct) -> TokenStream {
     };
 
     let cairo_deserialize = quote! {
-        fn cairo_deserialize(felt: &[::starknet::core::types::Felt], offset: usize) -> Result<Self::RustType, ::cainome_cairo_serde::Error> {
+        fn cairo_deserialize(felt: &[::starknet_rust::core::types::Felt], offset: usize) -> Result<Self::RustType, ::cainome_cairo_serde::Error> {
             let mut current_offset = offset;
             Ok(Self {
                 #(

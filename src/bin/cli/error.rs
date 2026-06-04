@@ -1,5 +1,5 @@
 use cainome_parser::Error as CainomeError;
-use starknet::providers::ProviderError;
+use starknet_rust::providers::ProviderError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

@@ -5,7 +5,7 @@
 //!
 //! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/option.cairo#L6>
 use crate::{CairoSerde, Error, Result};
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 
 impl<T, RT> CairoSerde for Option<T>
 where
@@ -61,7 +61,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use starknet::core::types::Felt;
+    use starknet_rust::core::types::Felt;
 
     #[test]
     fn test_option_some_cairo_serialize() {

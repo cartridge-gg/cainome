@@ -14,7 +14,7 @@ use std::{
     string::FromUtf8Error,
 };
 
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 
 use crate::error::{Error, Result as CainomeResult};
 use crate::CairoSerde;
@@ -287,7 +287,7 @@ impl TryFrom<&str> for ByteArray {
 #[cfg(test)]
 mod tests {
     use super::ByteArray;
-    use starknet::core::types::Felt;
+    use starknet_rust::core::types::Felt;
 
     #[test]
     fn test_from_string_empty_string_default() {

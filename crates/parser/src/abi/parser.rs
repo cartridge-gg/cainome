@@ -1,4 +1,4 @@
-use starknet::core::types::contract::{AbiEntry, AbiEvent, SierraClass, TypedAbiEvent};
+use starknet_rust::core::types::contract::{AbiEntry, AbiEvent, SierraClass, TypedAbiEvent};
 use std::collections::HashMap;
 
 use crate::tokens::{Array, Composite, CompositeType, CoreBasic, Function, Token};

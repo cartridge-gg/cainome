@@ -1,7 +1,7 @@
 use crate::CairoSerde;
 use num_bigint::{BigInt, BigUint, ParseBigIntError};
 use serde_with::{DeserializeAs, DisplayFromStr, SerializeAs};
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 use std::{
     cmp::Ordering,
     fmt::Display,

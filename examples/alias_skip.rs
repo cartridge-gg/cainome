@@ -1,14 +1,14 @@
 use cainome::rs::abigen;
 use cainome_cairo_serde_derive::CairoSerde;
 use serde::Serialize;
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 
 /*
 use std::sync::Arc;
 use katana_runner::{KatanaRunner, KatanaRunnerConfig};
-use starknet::contract::ContractFactory;
-use starknet::core::types::{contract::SierraClass, BlockId, BlockTag};
-use starknet::accounts::{Account, ExecutionEncoding, SingleOwnerAccount}; */
+use starknet_rust::contract::ContractFactory;
+use starknet_rust::core::types::{contract::SierraClass, BlockId, BlockTag};
+use starknet_rust::accounts::{Account, ExecutionEncoding, SingleOwnerAccount}; */
 
 pub const CONTRACT_ARTIFACT: &str = "./contracts/target/dev/contracts_structs.contract_class.json";
 
