@@ -47,7 +47,7 @@ Quick usage overview of the binary.
 - `--rust`: Generate Rust bindings
 - `--golang`: Generate Go bindings
 - `--golang-package <name>`: Specify Go package name (default: "abigen")
-- `--execution-version <v1|v3>`: StarkNet execution version
+- `--execution-version <v3>`: StarkNet execution version
 - `--artifacts-path <path>`: Path to directory containing `.contract_class.json` files
 - `--contract-address <address>`: Contract address to fetch ABI from
 - `--contract-name <name>`: Contract name (required when fetching from chain)

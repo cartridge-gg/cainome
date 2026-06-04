@@ -27,12 +27,12 @@ All those types, even if they are represented in the ABI as an `enum` or a `stru
 Cairo Serde provides serialization support for the following types:
 
 - `boolean` -> `bool`.
-- `felt252` -> `starknet::core::types::Felt`.
+- `felt252` -> `starknet_rust::core::types::Felt`.
 - `integers (signed and unsigned)` -> `u[8,16,32,64,128], i[8,16,32,64,128], usize`.
 - `Option` -> `Option`
 - `Result` -> `Result`
 - `ContractAddress` -> Custom type in this crate `ContractAddress`.
-- `EthAddress` -> Custom type in this crate `EthAddress` (TODO: use the EthAddress from `starknet-rs`).
+- `EthAddress` -> Custom type in this crate `EthAddress` (TODO: use the EthAddress from `starknet-rust`).
 - `ClassHash` -> Custom type in this crate `ClassHash`.
 - `Array/Span` -> `Vec`.
 - `Tuple` -> native tuples + the unit `()` type.

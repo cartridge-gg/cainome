@@ -1,6 +1,6 @@
 //! CairoSerde implementation for bool.
 use crate::{CairoSerde, Error, Result};
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 
 impl CairoSerde for bool {
     type RustType = Self;

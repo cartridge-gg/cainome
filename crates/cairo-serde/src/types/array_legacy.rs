@@ -1,6 +1,6 @@
 //! Dedicated struct for cairo 0 arrays, where len is not prefixed.
 use crate::{CairoSerde, Error, Result};
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, serde::Serialize, serde::Deserialize)]
 pub struct CairoArrayLegacy<T>(pub Vec<T>);
@@ -83,7 +83,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use starknet::macros::felt;
+    use starknet_rust::macros::felt;
 
     #[test]
     fn array_offset_len_ok() {

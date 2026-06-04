@@ -17,7 +17,7 @@ fn main() {
     // Start the test file with common imports and abigen calls
     writeln!(test_file, "// Generated test file - do not edit manually").unwrap();
     writeln!(test_file, "use cainome_cairo_serde::CairoSerde;").unwrap();
-    writeln!(test_file, "use starknet::core::types::Felt;").unwrap();
+    writeln!(test_file, "use starknet_rust::core::types::Felt;").unwrap();
     writeln!(test_file, "use cainome::rs::abigen;").unwrap();
     writeln!(test_file, "#[allow(unused_imports)]").unwrap();
     writeln!(test_file, "use serde::{{Serialize, Deserialize}};").unwrap();

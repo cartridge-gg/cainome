@@ -1,7 +1,7 @@
-use starknet::core::types::contract::legacy::{
+use starknet_rust::core::types::contract::legacy::{
     RawLegacyAbiEntry, RawLegacyMember, RawLegacyStruct,
 };
-use starknet::core::types::contract::StateMutability;
+use starknet_rust::core::types::contract::StateMutability;
 use std::collections::HashMap;
 
 use crate::tokens::{Composite, CompositeType, CoreBasic, Function, Token};

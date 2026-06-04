@@ -19,7 +19,7 @@ use cainome::rs::abigen;
 abigen!(MyContract, "/path/project.contract_class.json");
 
 fn main() -> Result<()> {
-   // starknet-rs provider + contract address.
+   // starknet-rust provider + contract address.
    let contract = MyContract::new(contract_address, provider);
 
    // Send transactions.

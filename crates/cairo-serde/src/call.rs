@@ -1,5 +1,5 @@
 //! This file must be in the proc_macro2 crate that must be reworked.
-use starknet::core::types::{BlockId, BlockTag, FunctionCall};
+use starknet_rust::core::types::{BlockId, BlockTag, FunctionCall};
 use std::marker::PhantomData;
 
 use crate::{CairoSerde, Error, Result as CairoResult};
@@ -14,7 +14,7 @@ pub struct FCall<'p, P, T> {
 
 impl<'p, P, T> FCall<'p, P, T>
 where
-    P: starknet::providers::Provider + Sync,
+    P: starknet_rust::providers::Provider + Sync,
     T: CairoSerde<RustType = T>,
 {
     pub fn new(call_raw: FunctionCall, provider: &'p P) -> Self {
@@ -44,7 +44,7 @@ where
         T::cairo_deserialize(&r, 0)
     }
 
-    pub async fn raw_call(self) -> CairoResult<Vec<starknet::core::types::Felt>> {
+    pub async fn raw_call(self) -> CairoResult<Vec<starknet_rust::core::types::Felt>> {
         self.provider
             .call(self.call_raw, self.block_id)
             .await

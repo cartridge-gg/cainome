@@ -1,6 +1,6 @@
 //! CairoSerde implementation for integers (signed/unsigned).
 use crate::{CairoSerde, Error, Result};
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 
 macro_rules! implement_trait_for_unsigned {
     ($type:ty) => {

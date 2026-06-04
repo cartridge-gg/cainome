@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::fs;
 use url::Url;
 
-use starknet::{
+use starknet_rust::{
     core::types::{BlockId, BlockTag, ContractClass, Felt},
     providers::{jsonrpc::HttpTransport, AnyProvider, JsonRpcClient, Provider},
 };

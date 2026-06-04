@@ -31,7 +31,7 @@ pub fn derive_enum(ident: Ident, data: DataEnum) -> TokenStream {
     };
 
     let cairo_serialize = quote! {
-        fn cairo_serialize(rust: &Self::RustType) -> Vec<::starknet::core::types::Felt> {
+        fn cairo_serialize(rust: &Self::RustType) -> Vec<::starknet_rust::core::types::Felt> {
             match rust {
                 #(
                     #matches => #serialize,
@@ -47,10 +47,10 @@ pub fn derive_enum(ident: Ident, data: DataEnum) -> TokenStream {
         .map(|(i, _)| syn::LitInt::new(&i.to_string(), Span::call_site()))
         .collect::<Vec<_>>();
     let cairo_deserialize = quote! {
-        fn cairo_deserialize(felt: &[::starknet::core::types::Felt], offset: usize) -> Result<Self::RustType, ::cainome_cairo_serde::Error> {
+        fn cairo_deserialize(felt: &[::starknet_rust::core::types::Felt], offset: usize) -> Result<Self::RustType, ::cainome_cairo_serde::Error> {
             let offset = offset + 1;
             #(
-                if felt[offset - 1] == ::starknet::core::types::Felt::from(#deserialize_matches) {
+                if felt[offset - 1] == ::starknet_rust::core::types::Felt::from(#deserialize_matches) {
                     return Ok(#deserialize);
                 }
             )*
@@ -124,7 +124,7 @@ fn derive_variant_cairo_serialize(
     quote! {
         {
             let mut result = Vec::new();
-            result.push(::starknet::core::types::Felt::from(#index));
+            result.push(::starknet_rust::core::types::Felt::from(#index));
             #(
                 result.extend(<#types as ::cainome_cairo_serde::CairoSerde>::cairo_serialize(&#fields));
             )*

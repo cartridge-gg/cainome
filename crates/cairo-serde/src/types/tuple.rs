@@ -1,6 +1,6 @@
 //! CairoSerde implementation for tuples.
 use crate::{CairoSerde, Result};
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 
 impl CairoSerde for () {
     type RustType = Self;
@@ -71,7 +71,7 @@ impl_tuples!(5, A:RA:r0:0, B:RB:r1:1, C:RC:r2:2, D:RD:r3:3, E:RE:r4:4);
 
 #[cfg(test)]
 mod tests {
-    use starknet::core::types::Felt;
+    use starknet_rust::core::types::Felt;
 
     use super::*;
 

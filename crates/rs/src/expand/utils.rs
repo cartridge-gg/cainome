@@ -25,19 +25,19 @@ pub fn str_to_litint(str_in: &str) -> LitInt {
 }
 
 pub fn snrs_types() -> Type {
-    str_to_type("starknet::core::types")
+    str_to_type("starknet_rust::core::types")
 }
 
 pub fn snrs_utils() -> Type {
-    str_to_type("starknet::core::utils")
+    str_to_type("starknet_rust::core::utils")
 }
 
 pub fn snrs_accounts() -> Type {
-    str_to_type("starknet::accounts")
+    str_to_type("starknet_rust::accounts")
 }
 
 pub fn snrs_providers() -> Type {
-    str_to_type("starknet::providers")
+    str_to_type("starknet_rust::providers")
 }
 
 pub fn cainome_cairo_serde() -> Type {
@@ -51,7 +51,7 @@ pub fn cainome_cairo_serde_path() -> String {
 
 #[inline]
 pub fn starknet_rs_types_path() -> String {
-    String::from("starknet::core::types")
+    String::from("starknet_rust::core::types")
 }
 
 #[derive(Debug, PartialEq)]

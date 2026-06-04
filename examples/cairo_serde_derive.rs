@@ -1,7 +1,7 @@
 use cainome_cairo_serde::CairoSerde;
 use cainome_cairo_serde_derive::CairoSerde;
 use serde::Serialize;
-use starknet_types_core::felt::Felt;
+use starknet_rust::core::types::Felt;
 
 #[derive(Debug, CairoSerde, PartialEq, Serialize)]
 struct ExampleSimple {

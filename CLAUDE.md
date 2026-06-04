@@ -87,7 +87,7 @@ The project provides seamless integration with **Cairo and StarkNet**:
 
 ### Key Integration Points
 
-- **StarkNet SDK**: Integration with starknet-rs for contract interaction
+- **StarkNet SDK**: Integration with starknet-rust for contract interaction
 - **Cairo Contracts**: Direct ABI consumption from Cairo compiler output
 - **Type Safety**: Compile-time guarantees for contract interaction
 - **Code Generation**: Macro-based and CLI-based binding generation
@@ -169,7 +169,7 @@ Cainome uses an extensible plugin system:
 - **Performance**: Efficient parsing and code generation for large ABIs
 - **Usability**: Clear error messages and intuitive API design
 - **Cairo Evolution**: Stay compatible with Cairo language updates
-- **StarkNet Integration**: Maintain compatibility with starknet-rs ecosystem
+- **StarkNet Integration**: Maintain compatibility with starknet-rust ecosystem
 
 ### Example Usage Patterns
 

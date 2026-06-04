@@ -1,6 +1,6 @@
 use cainome::cairo_serde::U256;
 use cainome::rs::abigen;
-use starknet::{
+use starknet_rust::{
     accounts::{Account, ConnectedAccount, ExecutionEncoding, SingleOwnerAccount},
     core::types::{BlockId, BlockTag, Felt},
     providers::{jsonrpc::HttpTransport, AnyProvider, JsonRpcClient},
@@ -106,8 +106,8 @@ async fn main() {
     let set_b_call = contract.set_b_getcall(&U256 { low: 0xff, high: 0 });
 
     // Then, we use the account exposed by the contract to execute the multicall.
-    // Once again, there is no abstraction on starknet-rs type, so you have
-    // the full control from starknet-rs library.
+    // Once again, there is no abstraction on starknet-rust type, so you have
+    // the full control from starknet-rust library.
     let _tx_res = contract
         .account
         .execute_v3(vec![set_a_call, set_b_call])

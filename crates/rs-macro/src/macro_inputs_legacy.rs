@@ -13,7 +13,7 @@
 //! deploy contracts from abigen.
 use proc_macro_error::emit_error;
 use quote::ToTokens;
-use starknet::core::types::contract::legacy::{LegacyContractClass, RawLegacyAbiEntry};
+use starknet_rust::core::types::contract::legacy::{LegacyContractClass, RawLegacyAbiEntry};
 use std::collections::{HashMap, HashSet};
 use std::fs::File;
 use std::path::Path;

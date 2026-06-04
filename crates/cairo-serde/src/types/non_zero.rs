@@ -4,7 +4,7 @@
 //!
 //! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/zeroable.cairo#L38>
 use crate::{CairoSerde, ContractAddress, Result, U256};
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 
 #[derive(Debug, PartialEq, PartialOrd, Clone, serde::Serialize, serde::Deserialize)]
 pub struct NonZero<T: Zeroable>(T);

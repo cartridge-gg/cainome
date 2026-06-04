@@ -2,7 +2,7 @@
 //!
 //! They are alf `Felt` under the hood.
 use crate::{CairoSerde, Error, Result};
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 
 /// ContractAddress.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, serde::Serialize, serde::Deserialize)]

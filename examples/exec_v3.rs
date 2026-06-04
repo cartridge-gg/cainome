@@ -1,5 +1,5 @@
 use cainome::rs::abigen;
-use starknet::{
+use starknet_rust::{
     accounts::{ExecutionEncoding, SingleOwnerAccount},
     core::types::Felt,
     providers::{jsonrpc::HttpTransport, AnyProvider, JsonRpcClient},

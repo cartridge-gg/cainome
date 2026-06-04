@@ -2,7 +2,7 @@
 //!
 //! <https://github.com/starkware-libs/cairo/blob/main/corelib/src/result.cairo#L6>
 use crate::{CairoSerde, Error as CairoError, Result as CairoResult};
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 
 impl<T, RT, E, RE> CairoSerde for Result<T, E>
 where
@@ -62,7 +62,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use starknet::core::types::Felt;
+    use starknet_rust::core::types::Felt;
 
     #[test]
     fn test_result_ok_cairo_serialize() {

@@ -1,6 +1,6 @@
 use super::CairoSerde;
 
-use starknet::{core::types::Felt, providers::ProviderError};
+use starknet_rust::{core::types::Felt, providers::ProviderError};
 
 /// Cairo types result.
 pub type Result<T> = core::result::Result<T, Error>;

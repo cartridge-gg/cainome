@@ -3,7 +3,7 @@
 use cainome_rs::ExecutionVersion;
 use camino::Utf8PathBuf;
 use clap::{Args, Parser};
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 use url::Url;
 
 use crate::plugins::PluginManager;
@@ -55,7 +55,7 @@ pub struct CainomeArgs {
 
     #[arg(long)]
     #[arg(value_name = "EXECUTION_VERSION")]
-    #[arg(help = "The execution version to use. Supported values are 'v1', 'V1', 'v3', or 'V3'.")]
+    #[arg(help = "The execution version to use. Supported values are 'v3' or 'V3'.")]
     pub execution_version: ExecutionVersion,
 
     #[arg(long)]

@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use cainome::rs::abigen;
 use paste::paste;
-use starknet::core::types::Felt;
+use starknet_rust::core::types::Felt;
 
 abigen!(
     MyContract,
